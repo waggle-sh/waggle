@@ -331,7 +331,7 @@ func TestRenderedTemplatesClean(t *testing.T) {
 		t.Error("devcontainer socket path")
 	}
 	cfg := get(t, dir, ".waggle/control/config.yaml")
-	for _, s := range []string{"socket_path: .waggle/control/run.sock", "derived_workplan: .waggle/hive/WORKPLAN.md", "merge_strategy: native_queue"} {
+	for _, s := range []string{"socket_path: .waggle/control/run.sock", "derived_workplan: .waggle/hive/WORKPLAN.md", "merge_strategy: up_to_date"} {
 		if !strings.Contains(cfg, s) {
 			t.Errorf("config.yaml missing %q", s)
 		}

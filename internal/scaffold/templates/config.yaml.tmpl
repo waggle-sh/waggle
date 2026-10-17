@@ -15,7 +15,7 @@ hive:
 forge:
   provider: {{FORGE}}
   comb_mode: {{COMB_MODE}} # "direct" (git push refs) | "relay" (GitHub Action comment relay)
-  merge_strategy: native_queue
+  merge_strategy: up_to_date # "up_to_date" (branch must be current with main before merge) | "native_queue" (opt in where the plan supports a merge queue)
 
 daemon:
   socket_path: .waggle/control/run.sock
