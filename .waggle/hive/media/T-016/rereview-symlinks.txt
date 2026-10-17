@@ -1,0 +1,203 @@
+
+##### a) roster.json -> outside file
+-- dry run:
+waggle upgrade refused: .waggle/control/roster.json is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .waggle/control/roster.json is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md victim.txt  victim=precious
+tree: 
+
+##### b) roles/ -> outside dir
+-- dry run:
+waggle upgrade refused: .waggle/control/roles is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .waggle/control/roles is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md victim.txt  victim=precious
+tree: 
+
+##### c) hand-added symlink roles/evil.md -> outside
+-- dry run:
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+  [same]    .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+dry exit=141
+-- apply:
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+  [same]    .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+apply exit=141
+outside after: extra.md precious victim.txt  victim=precious
+tree: 
+
+##### d) config.yaml -> outside
+-- dry run:
+waggle upgrade refused: .waggle/control/config.yaml is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .waggle/control/config.yaml is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md victim.txt  victim=# SPDX-License-Ident
+tree: 
+victim changed: no
+
+##### e) socket
+waggle upgrade refused: .waggle/control/run.sock exists; stop waggled first: scaffold: refused, nothing written
+exit=1
+
+##### f) .waggle itself -> outside dir (whole hive moved out)
+-- dry run:
+waggle upgrade refused: .waggle is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .waggle is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md victim.txt wg  victim=precious
+tree: 
+cp: /dev/null/wg: Not a directory
+
+##### g) .waggle/control -> outside dir
+config.yaml devcontainer.json local.yaml roles roster.json WAGGLE.md 
+-- dry run:
+waggle upgrade refused: .waggle/control is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .waggle/control is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: ctl extra.md victim.txt  victim=precious
+tree: 
+a8c5c84e1818fde2377a7781bb564658
+
+##### h) .claude -> outside dir
+-- dry run:
+waggle upgrade refused: .claude is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .claude is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: cl extra.md victim.txt  victim=precious
+tree: 
+waggle-builder.md waggle-forager.md waggle-guard.md waggle-queen.md waggle-scout.md 
+##### h2) .claude/agents -> outside dir
+-- dry run:
+waggle upgrade refused: .claude/agents is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .claude/agents is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: ag extra.md victim.txt  victim=precious
+tree: 
+waggle-builder.md waggle-forager.md waggle-guard.md waggle-queen.md waggle-scout.md 
+##### h3) --runtime=none with .claude -> outside
+Review with git status, then open a hive PR. This changes .waggle/control/ (Tier 3) and needs Head Keeper approval. exit=0
+ M .waggle/control/config.yaml;
+##### i) CLAUDE.md -> outside file
+-- dry run:
+waggle upgrade refused: CLAUDE.md is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: CLAUDE.md is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md victim.txt  victim=<!-- waggle:start --
+tree: 
+victim changed: no
+
+##### i2) AGENTS.md hive, AGENTS.md -> outside
+-- dry run:
+waggle upgrade refused: AGENTS.md is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: AGENTS.md is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md victim.txt  victim=<!-- waggle:start --
+tree: 
+victim changed: no
+
+##### j) .gitignore -> outside
+warning: unable to access '.gitignore': Too many levels of symbolic links
+-- dry run:
+waggle upgrade refused: .gitignore is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .gitignore is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md victim.txt  victim=# --- waggle:start -
+warning: unable to access '.gitignore': Too many levels of symbolic links
+tree: 
+victim changed: no
+
+##### k) workflow file symlink
+ln: .github/workflows/waggle-gate.yml: No such file or directory
+-- dry run:
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+  [same]    .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+dry exit=141
+-- apply:
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+  [same]    .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+apply exit=141
+outside after: extra.md victim.txt  victim=# SPDX-License-Ident
+tree: 
+
+##### l) .github -> outside
+-- dry run:
+waggle upgrade refused: .github is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .github is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md gh victim.txt  victim=precious
+tree: 
+
+##### m) shim waggle-queen.md symlink -> outside
+waggle-builder.md waggle-forager.md waggle-guard.md waggle-queen.md waggle-scout.md -- dry run:
+waggle upgrade refused: .claude/agents/waggle-queen.md is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .claude/agents/waggle-queen.md is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md victim.txt  victim=---
+# waggle:generat
+tree: 
+
+##### n) benign: no symlinks, apply works
+Review with git status, then open a hive PR. This changes .waggle/control/ (Tier 3) and needs Head K
+exit=0
+
+##### o) symlink to a dir INSIDE the repo (roles -> docs)
+-- dry run:
+waggle upgrade refused: .waggle/control/roles is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+dry exit=1
+-- apply:
+waggle upgrade refused: .waggle/control/roles is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+apply exit=1
+outside after: extra.md victim.txt  victim=precious
+tree: 
+##### c) hand-added roles/evil.md -> outside file (no head pipe)
+exit=0
+  [remove]  .waggle/control/roles/evil.md
+0
+victim: precious
+##### k) gate workflow -> outside file
+waggle upgrade refused: .github/workflows/waggle-gate.yml is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+victim changed: no
+##### k2) .github/workflows -> outside dir
+waggle upgrade refused: .github/workflows is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+waggle-gate.yml
+##### p) leaf symlink to nonexistent target (dangling) roster.json
+waggle upgrade refused: .waggle/control/roster.json is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: scaffold: refused, nothing written
+victim.txt
+##### q) .waggle/hive -> outside (upgrade must never touch hive)
+Review with git status, then open a hive PR. This changes .waggle/control/ (Tier
+media
+reviews
+tasks
+x
+ M .waggle/control/config.yaml;##### r) pin edit + symlinked local.yaml / WAGGLE.md (seeded, not written)
+waggle upgrade refused: .waggle/control/WAGGLE.md is a symli
+victim changed: no
