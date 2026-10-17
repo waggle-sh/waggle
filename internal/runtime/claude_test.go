@@ -77,18 +77,18 @@ func TestMaterializeShims(t *testing.T) {
 func TestRunRefusesUnresolvedSelection(t *testing.T) {
 	a := NewClaudeAdapter(AdapterConfig{})
 	ctx := context.Background()
-	_, err := a.Run(ctx, Invocation{Role: "forager", TaskID: "T-5"})
-	wantErr(t, err, ErrUnresolved, "forager", "T-5")
+	_, err := a.Run(ctx, Invocation{Role: "builder", TaskID: "T-5"})
+	wantErr(t, err, ErrUnresolved, "builder", "T-5")
 
 	guard := mustResolve(t, testPolicy(), "guard", nil, nil)
-	_, err = a.Run(ctx, Invocation{Role: "forager", TaskID: "T-5", Selection: guard})
-	wantErr(t, err, ErrUnresolved, "forager")
+	_, err = a.Run(ctx, Invocation{Role: "builder", TaskID: "T-5", Selection: guard})
+	wantErr(t, err, ErrUnresolved, "builder")
 
-	_, err = a.Run(ctx, Invocation{Role: "forager", Selection: Selection{Role: "forager", Model: "opus"}})
+	_, err = a.Run(ctx, Invocation{Role: "builder", Selection: Selection{Role: "builder", Model: "opus"}})
 	wantErr(t, err, ErrUnresolved)
 
-	forager := mustResolve(t, testPolicy(), "forager", nil, nil)
-	_, err = a.Run(ctx, Invocation{Role: "forager", Selection: forager})
+	builder := mustResolve(t, testPolicy(), "builder", nil, nil)
+	_, err = a.Run(ctx, Invocation{Role: "builder", Selection: builder})
 	if err == nil || errors.Is(err, ErrUnresolved) {
 		t.Errorf("Run with a resolved selection: %v; want the waggled error only", err)
 	}
@@ -96,8 +96,8 @@ func TestRunRefusesUnresolvedSelection(t *testing.T) {
 
 func TestClaudeArgs(t *testing.T) {
 	a := NewClaudeAdapter(AdapterConfig{DefaultArgs: []string{"--print", "--verbose"}})
-	sel := mustResolve(t, testPolicy(), "forager", nil, nil)
-	got := a.claudeArgs(Invocation{Role: "forager", Selection: sel})
+	sel := mustResolve(t, testPolicy(), "builder", nil, nil)
+	got := a.claudeArgs(Invocation{Role: "builder", Selection: sel})
 	want := []string{"--model", "sonnet", "--print", "--verbose"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Errorf("claudeArgs = %q; want %q", got, want)

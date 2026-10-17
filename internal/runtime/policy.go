@@ -11,7 +11,7 @@ import (
 
 // Role ids the policy treats specially; every other role is governed only by
 // its roster minimum and a recorded override.
-const roleForager, roleGuard, roleDaemon = "forager", "guard", "waggled"
+const roleBuilder, roleGuard, roleDaemon = "builder", "guard", "waggled"
 
 var (
 	// ErrUnknownRole reports a role id missing from the roster minimums.
@@ -24,8 +24,8 @@ var (
 	ErrBelowMinimum = errors.New("level below roster minimum")
 	// ErrGuardFloor reports a guard override under the guard floor on a Tier 2, Tier 3 or unknown-tier task.
 	ErrGuardFloor = errors.New("guard level below floor")
-	// ErrNoCrossModel reports that no model at or above the guard's level differs from the forager's.
-	ErrNoCrossModel = errors.New("no model differs from the forager's")
+	// ErrNoCrossModel reports that no model at or above the guard's level differs from the builder's.
+	ErrNoCrossModel = errors.New("no model differs from the builder's")
 	// ErrOverrideUnrecorded reports an override whose decision the lookup could not confirm.
 	ErrOverrideUnrecorded = errors.New("override has no recorded decision")
 	// ErrUnresolved reports an Invocation whose Selection did not come from Resolve for its role.
@@ -70,13 +70,13 @@ type TaskContext struct {
 type Selection struct {
 	Role, Adapter, Model string
 	Level                Level
-	SteppedUp            bool // forager step-up applied
+	SteppedUp            bool // builder step-up applied
 	resolved             bool // set only by Resolve
 }
 
 // Validate checks the policy is complete: every minimum is a valid level, all
 // three primaries are mapped, no alternate equals its own primary, and the
-// forager and guard roles are present. waggled may not appear in the roster.
+// builder and guard roles are present. waggled may not appear in the roster.
 func (p Policy) Validate() error {
 	for role, l := range p.Minimums {
 		if role == roleDaemon {
@@ -86,7 +86,7 @@ func (p Policy) Validate() error {
 			return fmt.Errorf("%w: role %s minimum %s", ErrInvalidLevel, role, l)
 		}
 	}
-	for _, role := range []string{roleForager, roleGuard} {
+	for _, role := range []string{roleBuilder, roleGuard} {
 		if _, ok := p.Minimums[role]; !ok {
 			return fmt.Errorf("%w: role %s has no roster minimum", ErrUnknownRole, role)
 		}
@@ -108,7 +108,7 @@ func (p Policy) levelPath(l Level) string {
 
 // Resolve picks the model for role on task: roster minimum, recorded override
 // (decisionExists must confirm its decision ID; a nil lookup rejects every
-// override), forager step-up, guard floor, model lookup, cross-model rule.
+// override), builder step-up, guard floor, model lookup, cross-model rule.
 func (p Policy) Resolve(role string, task *TaskContext, decisionExists func(id int) bool) (Selection, error) {
 	if task == nil {
 		task = &TaskContext{}
@@ -134,7 +134,7 @@ func (p Policy) Resolve(role string, task *TaskContext, decisionExists func(id i
 }
 
 // effectiveLevel applies the roster minimum, a recorded override, and the
-// forager step-up (rules 1 to 4). It never consults the guard floor.
+// builder step-up (rules 1 to 4). It never consults the guard floor.
 func (p Policy) effectiveLevel(role string, task *TaskContext, decisionExists func(int) bool) (Level, bool, error) {
 	level, ok := p.Minimums[role]
 	if !ok {
@@ -149,27 +149,27 @@ func (p Policy) effectiveLevel(role string, task *TaskContext, decisionExists fu
 		}
 		level = ov.Level
 	}
-	if role == roleForager && task.GuardMustFix >= 2 && level < LevelFrontier {
+	if role == roleBuilder && task.GuardMustFix >= 2 && level < LevelFrontier {
 		return level + 1, true, nil
 	}
 	return level, false, nil
 }
 
 // guardLevel applies the guard floor (rule 5) and returns the level to resolve
-// plus the forager's model, which the guard must not share (rule 7).
+// plus the builder's model, which the guard must not share (rule 7).
 func (p Policy) guardLevel(level Level, task *TaskContext, decisionExists func(int) bool) (Level, string, error) {
-	foragerLevel, _, err := p.effectiveLevel(roleForager, task, decisionExists)
+	builderLevel, _, err := p.effectiveLevel(roleBuilder, task, decisionExists)
 	if err != nil {
 		return 0, "", err
 	}
-	floor := max(p.Minimums[roleGuard], foragerLevel)
+	floor := max(p.Minimums[roleGuard], builderLevel)
 	if _, overridden := task.Overrides[roleGuard]; !overridden {
 		level = floor
 	} else if level < floor && !lowTier(task.Tier) {
 		return 0, "", fmt.Errorf("%w: role %s task %q level %s is below floor %s", ErrGuardFloor, roleGuard, task.TaskID, level, floor)
 	}
-	foragerModel, err := p.pick(roleForager, foragerLevel, task, "")
-	return level, foragerModel, err
+	builderModel, err := p.pick(roleBuilder, builderLevel, task, "")
+	return level, builderModel, err
 }
 
 // pick returns the primary model for level (rule 6). With avoid set it walks
@@ -189,7 +189,7 @@ func (p Policy) pick(role string, level Level, task *TaskContext, avoid string) 
 			}
 		}
 	}
-	return "", fmt.Errorf("%w: role %s task %q level %s shares model %q with the forager (set runtimes.adapters.%s.alternates.%s)",
+	return "", fmt.Errorf("%w: role %s task %q level %s shares model %q with the builder (set runtimes.adapters.%s.alternates.%s)",
 		ErrNoCrossModel, role, task.TaskID, level, avoid, p.Models.Adapter, level)
 }
 
