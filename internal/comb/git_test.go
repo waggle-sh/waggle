@@ -129,6 +129,14 @@ func TestAcquireTier3Rejected(t *testing.T) {
 			t.Errorf("dir %q: got %v; want ErrTier3Path", d, err)
 		}
 	}
+	// Trailing dots would resolve to the Tier 3 path on Windows (F1); they fail
+	// directory validation before any Tier check.
+	for _, d := range []string{".waggle.", ".WAGGLE.", ".github./workflows", ".git."} {
+		err := b.AcquireLease(ctx, mkLease("T-001", "k1", "internal/ok", d))
+		if !errors.Is(err, ErrInvalidLease) {
+			t.Errorf("dir %q: got %v; want ErrInvalidLease", d, err)
+		}
+	}
 	if refs := claimRefs(t, dir); refs != "" {
 		t.Fatalf("refs created after rejection: %s", refs)
 	}
