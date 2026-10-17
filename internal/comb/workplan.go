@@ -21,8 +21,9 @@ const workplanHeader = "<!-- GENERATED FILE: derived from refs/waggle/claims/* b
 // yields byte-identical output. now is used only to drop leases with
 // ExpiresAt <= now and never appears in the output. Leases are sorted by numeric
 // ticket ID (unparseable IDs last, by raw string) on a copy, so the caller's
-// slice is not modified. Cell values are escaped because input is not assumed
-// to be validated.
+// slice is not modified. Input is not assumed to be validated: a cell value
+// that fails its field validator renders as the literal "(invalid)" so
+// WORKPLAN.md never carries free text, and every cell is still escaped.
 func RenderWorkplan(leases []Lease, now time.Time) []byte {
 	active := make([]Lease, 0, len(leases))
 	for _, l := range leases {
@@ -43,20 +44,42 @@ func RenderWorkplan(leases []Lease, now time.Time) []byte {
 	for _, l := range active {
 		dirs := make([]string, len(l.Directories))
 		for i, d := range l.Directories {
-			dirs[i] = "`" + escapeCell(d) + "`"
+			dirs[i] = invalidCell
+			if isCanonicalDir(d) {
+				dirs[i] = "`" + d + "`"
+			}
 		}
+		dirCell := invalidCell
+		if len(dirs) > 0 {
+			dirCell = strings.Join(dirs, ", ")
+		}
+		ticket, err := ParseTicketID(l.TicketID)
 		cells := []string{
-			escapeCell(l.TicketID),
-			escapeCell(l.KeeperID),
-			escapeCell(l.Role),
-			escapeCell(l.Gate),
-			strings.Join(dirs, ", "),
+			validOr(err == nil, ticket),
+			validOr(keeperIDPattern.MatchString(l.KeeperID), l.KeeperID),
+			validOr(isClaimRole(l.Role), l.Role),
+			validOr(l.Gate == "light" || l.Gate == "full", l.Gate),
+			dirCell,
 			formatUTC(l.ClaimedAt),
 			formatUTC(l.ExpiresAt),
+		}
+		for i, c := range cells {
+			cells[i] = escapeCell(c)
 		}
 		buf.WriteString("| " + strings.Join(cells, " | ") + " |\n")
 	}
 	return buf.Bytes()
+}
+
+// invalidCell replaces any cell value that fails validation. No part of the
+// rejected value is ever echoed.
+const invalidCell = "(invalid)"
+
+func validOr(ok bool, s string) string {
+	if ok {
+		return s
+	}
+	return invalidCell
 }
 
 // lessTicket orders parseable ticket IDs numerically before unparseable ones,

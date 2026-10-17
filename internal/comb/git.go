@@ -50,7 +50,11 @@ type Options struct {
 	DefaultTTL             time.Duration    // <= 0 means default 120m (leases.default_ttl_minutes)
 	Now                    func() time.Time // nil means time.Now
 	GitBinary              string           // "" means "git"
-	ExtraEnv               []string         // appended to the git child env (tests use this)
+	// ExtraEnv is appended to the git child environment after the scrubbed
+	// parent environment and the fixed settings (see childEnv), so it may set
+	// any variable, including the scrubbed GIT_DIR family. It is explicit
+	// caller input; tests use it to isolate git config.
+	ExtraEnv []string
 }
 
 // GitBackend is the single Comb codepath of RFC-0003 section 3.1. Each ticket
@@ -87,6 +91,9 @@ type GitBackend struct {
 	// hookBeforeWrite, when set by tests, runs after the claim ref is read and
 	// before the CAS write, to force deterministic races.
 	hookBeforeWrite func()
+	// hookBeforeRetry, when set by tests, runs before each backoff in a CAS retry
+	// loop (local acquire, local release, remote push) with the 0-based attempt.
+	hookBeforeRetry func(attempt int)
 }
 
 var _ Backend = (*GitBackend)(nil)
@@ -153,17 +160,64 @@ func (e *gitError) Unwrap() []error {
 	return []error{e.err}
 }
 
+// scrubbedGitEnv lists the parent environment variables dropped from every git
+// child (F3), compared case-insensitively. Each redirects which repository git
+// operates on, overriding "-C repoDir": the repository, work tree and index
+// (GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE, GIT_COMMON_DIR, GIT_PREFIX), the
+// object store (GIT_OBJECT_DIRECTORY, GIT_ALTERNATE_OBJECT_DIRECTORIES,
+// GIT_QUARANTINE_PATH), the ref namespace (GIT_NAMESPACE), repository
+// discovery (GIT_CEILING_DIRECTORIES, GIT_DISCOVERY_ACROSS_FILESYSTEM) and
+// object substitution (GIT_REPLACE_REF_BASE, GIT_NO_REPLACE_OBJECTS,
+// GIT_GRAFT_FILE, GIT_SHALLOW_FILE). A parent git process (a hook, or a
+// "git -C other" wrapper) sets these. Credential, config, trace and PATH
+// variables are kept: they are the user's own and remote mode needs them.
+var scrubbedGitEnv = []string{
+	"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_PREFIX",
+	"GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_QUARANTINE_PATH",
+	"GIT_NAMESPACE",
+	"GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+	"GIT_REPLACE_REF_BASE", "GIT_NO_REPLACE_OBJECTS", "GIT_GRAFT_FILE", "GIT_SHALLOW_FILE",
+}
+
+// childEnv builds a git child environment: parent minus scrubbedGitEnv, then
+// GIT_TERMINAL_PROMPT=0, LC_ALL=C (stable messages for parsing) and
+// GIT_NO_REPLACE_OBJECTS=1 (a refs/replace entry can never substitute a
+// different lease.json), then extra (Options.ExtraEnv) and the per-call
+// entries, in that order. It is pure so it can be unit tested.
+func childEnv(parent, extra, call []string) []string {
+	out := make([]string, 0, len(parent)+3+len(extra)+len(call))
+	for _, kv := range parent {
+		key, _, _ := strings.Cut(kv, "=")
+		if isScrubbedGitVar(key) {
+			continue
+		}
+		out = append(out, kv)
+	}
+	out = append(out, "GIT_TERMINAL_PROMPT=0", "LC_ALL=C", "GIT_NO_REPLACE_OBJECTS=1")
+	out = append(out, extra...)
+	return append(out, call...)
+}
+
+func isScrubbedGitVar(key string) bool {
+	for _, s := range scrubbedGitEnv {
+		if strings.EqualFold(key, s) {
+			return true
+		}
+	}
+	return false
+}
+
 // git runs one git command. It is the only place this package starts a process:
 // exec.CommandContext with "-C repoDir" and separate argv entries, no shell.
-// Stdout is returned even on failure (push --porcelain reports there).
+// The child environment is os.Environ() minus scrubbedGitEnv, plus the fixed
+// settings, Options.ExtraEnv and the per-call env (see childEnv). Stdout is
+// returned even on failure (push --porcelain reports there).
 func (b *GitBackend) git(ctx context.Context, stdin []byte, env []string, args ...string) ([]byte, error) {
 	argv := make([]string, 0, len(args)+2)
 	argv = append(argv, "-C", b.repoDir)
 	argv = append(argv, args...)
 	cmd := exec.CommandContext(ctx, b.gitBin, argv...)
-	childEnv := append(os.Environ(), "GIT_TERMINAL_PROMPT=0", "LC_ALL=C")
-	childEnv = append(childEnv, b.extraEnv...)
-	cmd.Env = append(childEnv, env...)
+	cmd.Env = childEnv(os.Environ(), b.extraEnv, env)
 	if stdin != nil {
 		cmd.Stdin = bytes.NewReader(stdin)
 	}
@@ -359,7 +413,12 @@ func parseLease(data []byte) (Lease, error) {
 	return l, nil
 }
 
-// decodeLease parses lease.json and checks it against the ref's ticket number.
+// decodeLease parses lease.json, checks it against the ref's ticket number and
+// re-validates every field with the rules AcquireLease applies (F4). The
+// directory limit is not enforced on stored claims, so a config change never
+// turns an existing claim malformed. The returned lease carries normalized
+// directories, so a claim stored as "foo/" blocks "foo/bar" like one stored
+// as "foo".
 func decodeLease(data []byte, num int) (Lease, string) {
 	l, err := parseLease(data)
 	if err != nil {
@@ -368,10 +427,14 @@ func decodeLease(data []byte, num int) (Lease, string) {
 	if l.TicketID != ticketDisplay(num) {
 		return Lease{}, fmt.Sprintf("lease ticket_id %q does not match ref", l.TicketID)
 	}
-	if _, err := NormalizeDirectories(l.Directories, math.MaxInt); err != nil {
-		return Lease{}, "invalid directories: " + err.Error()
+	v, err := validateLeaseFields(l, math.MaxInt)
+	if err != nil {
+		return Lease{}, err.Error()
 	}
-	return l, ""
+	if v.ClaimedAt.After(v.ExpiresAt) {
+		return Lease{}, "claimed_at is after expires_at"
+	}
+	return v, ""
 }
 
 // scan reads and decodes every claim ref. In remote mode callers sync first.
@@ -402,6 +465,10 @@ func isActive(l Lease, now time.Time) bool { return l.ExpiresAt.After(now) }
 // race. The merge gate (waggle-gate.yml) is authoritative. Malformed claim refs
 // for other tickets are ignored by the overlap check; a malformed ref for the
 // target ticket returns ErrMalformedClaim. Losing a race returns ErrAlreadyClaimed.
+//
+// Stored claims are re-validated with the current field and directory rules
+// when they are read, and the overlap check sees their normalized directories.
+// A rule change can therefore surface an existing claim as malformed.
 func (b *GitBackend) AcquireLease(ctx context.Context, lease Lease) error {
 	if b.relay {
 		return ErrRelayNotImplemented
@@ -538,8 +605,20 @@ func (b *GitBackend) buildCommit(ctx context.Context, l Lease, parent, msg strin
 // casLocal writes ref from expected to newOID with update-ref, classifying a
 // lost race as ErrAlreadyClaimed and retrying transient lock contention.
 func (b *GitBackend) casLocal(ctx context.Context, ref, newOID, expected, zero, msg, ticket string) error {
-	for attempt := 0; ; attempt++ {
+	return b.casLoop(ctx, ref, expected, zero, func() error {
 		_, err := b.git(ctx, nil, nil, "update-ref", "-m", msg, ref, newOID, expected)
+		return err
+	}, fmt.Errorf("%s: lost claim race: %w", ticket, ErrAlreadyClaimed))
+}
+
+// casLoop runs write, a local update-ref compare-and-swap on ref, until it
+// succeeds. After a failure it re-reads ref: when the ref no longer holds
+// expected (changed or gone) it returns lost; when git reported lock
+// contention it backs off and retries up to maxCASRetries times; otherwise it
+// returns the git error.
+func (b *GitBackend) casLoop(ctx context.Context, ref, expected, zero string, write func() error, lost error) error {
+	for attempt := 0; ; attempt++ {
+		err := write()
 		if err == nil {
 			return nil
 		}
@@ -551,15 +630,17 @@ func (b *GitBackend) casLocal(ctx context.Context, ref, newOID, expected, zero, 
 			return err
 		}
 		if cur != expected {
-			return fmt.Errorf("%s: lost claim race: %w", ticket, ErrAlreadyClaimed)
+			return lost
 		}
-		if isLockContention(err) && attempt < maxCASRetries {
-			if serr := sleepBackoff(ctx); serr != nil {
-				return serr
-			}
-			continue
+		if !isLockContention(err) || attempt >= maxCASRetries {
+			return err
 		}
-		return err
+		if b.hookBeforeRetry != nil {
+			b.hookBeforeRetry(attempt)
+		}
+		if serr := sleepBackoff(ctx); serr != nil {
+			return serr
+		}
 	}
 }
 
@@ -628,6 +709,9 @@ func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero,
 			return fmt.Errorf("comb: %s: push rejected %d times with remote ref unchanged: %w",
 				ticket, attempt+1, err)
 		}
+		if b.hookBeforeRetry != nil {
+			b.hookBeforeRetry(attempt)
+		}
 		if serr := sleepBackoff(ctx); serr != nil {
 			return serr
 		}
@@ -638,7 +722,8 @@ func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero,
 // compare-and-swap delete against the OID that was read. It returns ErrNotFound
 // when no claim exists, ErrNotOwner when another Keeper owns it (expired or not;
 // a non-owner takes over with AcquireLease instead), and ErrConcurrentUpdate when
-// the ref changed between read and delete.
+// the ref changed between read and delete. In local mode transient lock
+// contention is retried like AcquireLease does.
 func (b *GitBackend) ReleaseLease(ctx context.Context, ticketID string, keeperID string) error {
 	if b.relay {
 		return ErrRelayNotImplemented
@@ -692,27 +777,24 @@ func (b *GitBackend) ReleaseLease(ctx context.Context, ticketID string, keeperID
 		_, _ = b.git(ctx, nil, nil, "update-ref", "-d", ref, c.oid)
 		return nil
 	}
-	if _, err := b.git(ctx, nil, nil, "update-ref", "-d", ref, c.oid); err != nil {
-		if ctx.Err() != nil {
-			return err
-		}
-		zero, zerr := b.zeroOID(ctx)
-		if zerr != nil {
-			return err
-		}
-		cur, rerr := b.readRefOID(ctx, ref, zero)
-		if rerr == nil && cur != c.oid {
-			return fmt.Errorf("%s: %w", c.lease.TicketID, ErrConcurrentUpdate)
-		}
+	zero, err := b.zeroOID(ctx)
+	if err != nil {
 		return err
 	}
-	return nil
+	return b.casLoop(ctx, ref, c.oid, zero, func() error {
+		_, err := b.git(ctx, nil, nil, "update-ref", "-d", ref, c.oid)
+		return err
+	}, fmt.Errorf("%s: %w", c.lease.TicketID, ErrConcurrentUpdate))
 }
 
 // ListActiveLeases returns every unexpired, well-formed claim sorted by numeric
 // ticket ID. If some claim refs are malformed it returns the valid leases and a
 // *MalformedClaimsError; the slice is valid in that case. A git or transport
 // failure returns nil and the error.
+//
+// Every stored claim is re-validated with the current field and directory
+// rules, so a rule change can report an existing claim as malformed. Returned
+// leases carry canonical ticket IDs and normalized directories only.
 func (b *GitBackend) ListActiveLeases(ctx context.Context) ([]Lease, error) {
 	if b.relay {
 		return nil, ErrRelayNotImplemented
