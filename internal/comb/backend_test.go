@@ -348,3 +348,48 @@ func TestNewGitBackendOptions(t *testing.T) {
 		}
 	}
 }
+
+// T-014 phase A test 1: Tier classification ignores case, and the hive
+// carve-out matches exact case only, so a case variant resolves upward.
+func TestRequiredMinTierCaseInsensitive(t *testing.T) {
+	cases := map[string]RiskTier{
+		".GITHUB/workflows/ci.yml": Tier3ControlPlane,
+		".WAGGLE/control/x":        Tier3ControlPlane,
+		".waggle/HIVE/tasks/a":     Tier3ControlPlane,
+		".Waggle/hive/tasks/a":     Tier3ControlPlane,
+		".GITLAB-CI.YML":           Tier3ControlPlane,
+		".DevContainer/x":          Tier3ControlPlane,
+		".waggle/hive/tasks/a":     Tier2Logic,
+		"claude.MD":                Tier2Logic,
+		"Agents.md":                Tier2Logic,
+		"README.md":                Tier0Trivial,
+		"INTERNAL/COMB/x.go":       Tier0Trivial,
+		".GITHUB/ISSUE_TEMPLATE/x": Tier0Trivial,
+	}
+	for p, want := range cases {
+		if got := RequiredMinTier(p); got != want {
+			t.Errorf("RequiredMinTier(%q) = %d; want %d", p, got, want)
+		}
+	}
+	// Every list entry, in any case, keeps at least its tier. This also covers
+	// entries other tickets append to the lists (T-008's go.mod and vendor/).
+	variants := func(p string) []string {
+		return []string{p, strings.ToUpper(p), strings.ToLower(p), strings.ToUpper(p[:1]) + p[1:]}
+	}
+	lists := []struct {
+		prefixes []string
+		min      RiskTier
+	}{{HardcodedTier3Prefixes, Tier3ControlPlane}, {HardcodedTier2MinPrefixes, Tier2Logic}}
+	for _, list := range lists {
+		for _, p := range list.prefixes {
+			for _, v := range variants(p) {
+				bare := strings.TrimSuffix(v, "/")
+				for _, path := range []string{bare, bare + "/x"} {
+					if got := RequiredMinTier(path); got < list.min {
+						t.Errorf("RequiredMinTier(%q) = %d; want at least %d", path, got, list.min)
+					}
+				}
+			}
+		}
+	}
+}
