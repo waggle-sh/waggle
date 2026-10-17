@@ -385,7 +385,7 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 			line(out, "rewrite", "%s", f.dst)
 			plan.renders = append(plan.renders, pendingEdit{rel: f.dst, old: have, new: want, existed: true})
 			if opts.Diff {
-				if err := printDiff(g, out, root, plan.abs(f.dst), f.dst, want); err != nil {
+				if err := printDiff(g, out, root, f.dst, want); err != nil {
 					return nil, err
 				}
 			}
@@ -521,9 +521,10 @@ func topKeys(content string) []string {
 	return keys
 }
 
-// printDiff prints the unified diff from the hive file to the rendered
-// template through git diff --no-index, whose exit status 1 means "differs".
-func printDiff(g gitRunner, out io.Writer, root, hiveAbs, rel, want string) error {
+// printDiff prints the unified diff from the hive file (repo-relative, so the
+// header reads a/<rel>) to the rendered template through git diff --no-index,
+// whose exit status 1 means "differs".
+func printDiff(g gitRunner, out io.Writer, root, rel, want string) error {
 	tmp, err := os.MkdirTemp("", "waggle-upgrade-")
 	if err != nil {
 		return err
@@ -533,7 +534,7 @@ func printDiff(g gitRunner, out io.Writer, root, hiveAbs, rel, want string) erro
 	if err := os.WriteFile(render, []byte(want), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", render, err)
 	}
-	diff, err := g.run(root, "diff", "--no-index", "--no-color", "--", hiveAbs, render)
+	diff, err := g.run(root, "diff", "--no-index", "--no-color", "--", filepath.FromSlash(rel), render)
 	var exit *exec.ExitError
 	if err != nil && (!errors.As(err, &exit) || exit.ExitCode() != 1) {
 		return err

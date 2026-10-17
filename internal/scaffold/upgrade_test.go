@@ -219,7 +219,7 @@ func TestUpgradeRestoresHandEditedManagedFile(t *testing.T) {
 	o, _ := upgradeOpts(dir, "none", fixedBuild, false)
 	o.Diff = true
 	out := upgrade(t, o)
-	wantLines(t, out, "[rewrite] "+layout.Roster, "\n--- ", "\n+++ ", "\n-x\n")
+	wantLines(t, out, "[rewrite] "+layout.Roster, "\n--- a/"+layout.Roster+"\n", "\n+++ ", "\n-x\n")
 	if got := get(t, dir, layout.Roster); got != want+"x" {
 		t.Error("dry run wrote roster.json")
 	}
