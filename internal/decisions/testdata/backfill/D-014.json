@@ -1,0 +1,16 @@
+{
+  "kind": "strategy",
+  "title": "waggled build order",
+  "question": "In what order is waggled built?",
+  "options": [
+    "decide, dispatch, run.sock loop, Cells",
+    "Alternatives not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "waggle decide, then waggle dispatch (worktree plus headless claude -p), then the run.sock daemon loop, then Cells.",
+  "rationale": "Smallest deterministic slice first; each step is usable on its own.",
+  "tickets": [
+    "T-006"
+  ],
+  "supersedes": []
+}

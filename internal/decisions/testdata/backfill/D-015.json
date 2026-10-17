@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "GitHub App is the sole claim writer in team mode",
+  "question": "How is claim integrity protected in team mode?",
+  "options": [
+    "Waggle GitHub App as sole claim writer with gate signature checks",
+    "Alternatives not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "In team mode a Waggle GitHub App is the sole claim writer via the GitHub API (GitHub-verified commits); the gate rejects claim chains containing commits not signed by the App; waggled raises an alert on rewrites.",
+  "rationale": "Git refs have no per-ref ACL. Needs a GitHub App registration (a credential decision) later.",
+  "tickets": [
+    "T-002",
+    "T-005"
+  ],
+  "supersedes": []
+}

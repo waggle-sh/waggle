@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "T-011 phase A approved for merge after the guard pass, once product CI is on main",
+  "question": "Does the Head Keeper approve T-011 phase A (branch t-011a) for merge?",
+  "options": [
+    "Approve after the guard pass",
+    "Hold for changes"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "The Head Keeper approved T-011 phase A (branch t-011a) for merge after the guard pass, with merge_strategy up_to_date added to the config template. It merges once product CI (T-019) is on main.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-011",
+    "T-019"
+  ],
+  "supersedes": []
+}

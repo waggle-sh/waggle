@@ -1,0 +1,14 @@
+{
+  "kind": "credentials",
+  "title": "waggle-sh deploy access uses a fine-grained token owned by waggle-sh",
+  "question": "Which credential does deploy work use for GitHub access to waggle-sh?",
+  "options": [
+    "The Keeper's personal token",
+    "A new fine-grained token owned by waggle-sh"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Waggle-sh GitHub access for deploy work uses a new fine-grained token owned by waggle-sh, stored in the L19 Claude Deploy 1Password vault.",
+  "rationale": "Not recorded",
+  "tickets": [],
+  "supersedes": []
+}

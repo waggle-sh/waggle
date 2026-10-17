@@ -1,0 +1,14 @@
+{
+  "kind": "scope",
+  "title": "Release checklist includes a clean-environment test",
+  "question": "How is a public release checked against environments unlike the Keeper's machine?",
+  "options": [
+    "Test only on the Keeper's machine",
+    "Clean-environment test before any public release"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "The release checklist includes a clean-environment test (fresh macOS user account or Linux container without 1Password, Orca, or the Keeper's global Claude config) before any public release.",
+  "rationale": "The Keeper's machine is not representative of users (\"not everyone will have 1password ... or want to set up a PAT\").",
+  "tickets": [],
+  "supersedes": []
+}
