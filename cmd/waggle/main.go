@@ -53,6 +53,9 @@ func main() {
 		}
 		fmt.Printf("Hive initialized. Next: edit %s and commit.\n", layout.WaggleMD)
 
+	case "decide":
+		os.Exit(runDecide(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
+
 	case "uninstall":
 		os.Exit(runUninstall(os.Args[2:], os.Stdout, os.Stderr))
 
@@ -78,6 +81,7 @@ Usage:
 
 Commands (v0.1 Bootstrap):
   init      Scaffold .waggle/control/, .waggle/hive/, the gate workflow, and local runtime shims
+  decide    Append one decision entry to .waggle/hive/DECISIONS.md from a JSON file (--file)
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status   Plain-text report of active Comb leases and waggled daemon state
   version   Print version`)
