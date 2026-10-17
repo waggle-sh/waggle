@@ -269,3 +269,5 @@ func TestNewGitBackendOptions(t *testing.T) {
 		}
 	}
 }
+
+func TestScratchRulesetCheck(t *testing.T) { t.Fatal("scratch: intentional failure to verify the main ruleset blocks a red PR") }
