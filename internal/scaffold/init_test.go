@@ -303,7 +303,7 @@ func TestRenderedTemplatesClean(t *testing.T) {
 	dir := t.TempDir()
 	o, _ := opts(dir, "claude-code")
 	mustInit(t, o)
-	forbidden := []string{"docs/tasks", "docs/reviews", "docs/media", "Master Keeper", "Controller", "—", "–", "internal/comb"}
+	forbidden := []string{"docs/tasks", "docs/reviews", "docs/media", "Master" + " Keeper", "Control" + "ler", "\u2014", "\u2013", "internal/comb"}
 	for rel, content := range snapshot(t, dir) {
 		for _, f := range forbidden {
 			if strings.Contains(content, f) {
