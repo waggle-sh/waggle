@@ -1,0 +1,9 @@
+BUILD_OK
+VET_OK
+gofmt:
+gofmt done
+?   	github.com/waggle-sh/waggle/cmd/waggle	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/comb	20.481s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.196s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	1.314s

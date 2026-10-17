@@ -1,0 +1,4 @@
+cmd/waggle/main.go
+internal/runtime/claude.go
+internal/runtime/runtime.go
+internal/scaffold/init.go

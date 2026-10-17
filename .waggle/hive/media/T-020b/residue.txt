@@ -1,0 +1,2 @@
+HEAD:docs/RFC-0003.md:1:# RFC-0003: Waggle Architecture & v0.1 Bootstrap Specification
+HEAD:docs/RFC-0003.md:40:## 3. Core Architecture & Security Invariants

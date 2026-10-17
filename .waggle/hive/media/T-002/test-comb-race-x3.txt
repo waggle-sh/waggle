@@ -1,0 +1,2 @@
+ok  	github.com/waggle-dev/waggle/internal/comb	18.809s
+exit 0

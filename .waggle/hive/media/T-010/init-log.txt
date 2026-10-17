@@ -1,0 +1,21 @@
+Initializing Waggle Hive (profile=cli, delivery=installed, comb=direct, runtime=claude-code)...
+  [create] .waggle/roles/forager.md
+  [create] WAGGLE.md
+  [create] .devcontainer/devcontainer.json
+  [create] .github/workflows/waggle-gate.yml
+  [create] .waggle/roles/scout.md
+  [create] .waggle/roles/guard.md
+  [create] .waggle/config.yaml
+  [create] .waggle/local.yaml
+  [create] .waggle/roster.json
+  [create] .waggle/roles/queen.md
+  [create] .waggle/roles/architect.md
+  [update] .gitignore (added waggle local & shim exclusions)
+  [shim]   .claude/agents/architect.md
+  [shim]   .claude/agents/forager.md
+  [shim]   .claude/agents/guard.md
+  [shim]   .claude/agents/queen.md
+  [shim]   .claude/agents/scout.md
+  [shim]   CLAUDE.md -> @WAGGLE.md
+Hive initialized. Next: edit WAGGLE.md and commit.
+exit=0
