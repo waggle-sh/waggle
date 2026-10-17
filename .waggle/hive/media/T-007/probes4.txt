@@ -1,0 +1,4 @@
+ 1 file changed, 19 insertions(+)
+[crlf-new-entry] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 44: expected ""
+[crlf-whole-file] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head line 1 differs from base inside the header; existing entries must be byte-identical
+[cr-in-title] rc=0 :: decisions: ok, appended D-003
