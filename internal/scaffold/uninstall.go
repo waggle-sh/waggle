@@ -14,10 +14,10 @@ import (
 	"github.com/waggle-sh/waggle/internal/runtime"
 )
 
-// ErrRefused reports an uninstall precondition that failed. Nothing was
-// written. The CLI maps it to exit code 1; every other error is a git or I/O
-// failure and maps to exit code 3.
-var ErrRefused = errors.New("scaffold: uninstall refused")
+// ErrRefused reports an uninstall or upgrade precondition that failed.
+// Nothing was written. The CLI maps it to exit code 1; every other error is a
+// git or I/O failure and maps to exit code 3.
+var ErrRefused = errors.New("scaffold: refused, nothing written")
 
 // ManagedLine marks a gate workflow that waggle init installed. uninstall
 // removes the workflow only when a line carries it.
