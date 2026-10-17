@@ -1,0 +1,16 @@
+{
+  "kind": "technical",
+  "title": "The pin moves through a one-line edit of `config.yaml` that requires exactly one `pin:` under `waggle:` and preserves every other byte",
+  "question": "How does `waggle upgrade` change the pin inside the seeded `config.yaml`? (Q-T016-5)",
+  "options": [
+    "Narrow line edit: replace the value on the one `pin:` line under `waggle:`, refuse when there are zero or two, never re-serialize the file",
+    "Parse and re-render through `internal/config`"
+  ],
+  "recommendation": "Narrow line edit",
+  "choice": "`scaffold.WritePin` edits exactly the one `pin:` line under `waggle:`: the value is replaced; the key, indentation and trailing comment stay byte for byte; everything else in the file is untouched. Zero or two `pin:` lines are refused before any write. The file is never re-serialized through `config.Parse`. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected re-rendering through `internal/config`: it drops every comment in a Head Keeper-owned file, and the comments are the documentation of that file.",
+  "tickets": [
+    "T-016"
+  ],
+  "supersedes": []
+}

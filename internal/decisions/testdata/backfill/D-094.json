@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "No hive-only changes to managed files: a step goes into the template or not at all",
+  "question": "May a hive keep a local change to a managed file across `waggle upgrade`? (Q-T016-6)",
+  "options": [
+    "No per-hive exceptions and no exception list in config",
+    "A recorded exception mechanism (an `upgrade.keep:` list in `config.yaml`)"
+  ],
+  "recommendation": "No exceptions",
+  "choice": "No per-hive exceptions and no exception list in config. A step a hive wants in the gate workflow goes into the template or not at all. T-007's `gate decisions` step therefore targets the template or waits for T-018 phase C's CI shim. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected an `upgrade.keep:` list: it reopens the hand-edit door D-042 closed, and every kept file is one the next upgrade cannot reason about.",
+  "tickets": [
+    "T-016",
+    "T-007",
+    "T-018"
+  ],
+  "supersedes": []
+}

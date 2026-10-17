@@ -1,0 +1,16 @@
+{
+  "kind": "scope",
+  "title": "Dispatch cutover: one trial ticket after T-023 phase D, cutover on a Head Keeper card, Claude Code subagents kept as the rollback path",
+  "question": "How does our hive switch from Claude Code subagents to `waggle dispatch`? (Q-T023-10)",
+  "options": [
+    "One trial ticket through dispatch after phase D, cutover on a Keeper card, subagents kept as the rollback path, phase E not a precondition",
+    "Run the trial ticket both ways for comparison"
+  ],
+  "recommendation": "One trial ticket, cutover on a card",
+  "choice": "One trial ticket runs through dispatch after phase D. The cutover is a Head Keeper card, and the subagents stay as the rollback path. Phase E is not a precondition. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected running the trial both ways: about double the tokens for that ticket.",
+  "tickets": [
+    "T-023"
+  ],
+  "supersedes": []
+}

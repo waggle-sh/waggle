@@ -1,0 +1,16 @@
+{
+  "kind": "technical",
+  "title": "T-024 technical defaults: `waggled` copies a per-Cell `Out` dir into hive paths, registries stay closed with `GOPROXY=off`, and the container backend calls docker or podman directly",
+  "question": "How does forager and guard output leave a Cell (Q-T024-3), are package registries reachable under `strict` (Q-T024-6), and does the container backend use the devcontainer CLI (Q-T024-9)?",
+  "options": [
+    "An `Out` dir copied by `waggled`; registries closed with `GOPROXY=off` and a read-only module cache; `docker` or `podman` called directly",
+    "Files over `run.sock`; `proxy.golang.org` and `sum.golang.org` allowed by default; `devcontainer up` required"
+  ],
+  "recommendation": "The three defaults",
+  "choice": "Each Cell gets an `Out` dir outside the repo that `waggled` validates and copies into `.waggle/hive/reviews/` and `.waggle/hive/media/`. `strict` keeps registries closed: Go builds use `GOPROXY=off` with the host module cache mounted read-only, and other hosts go in `cell.egress_allow` by exact name. The container backend calls `docker` or `podman` and reads only `image` and `runArgs` from `devcontainer.json`. Queen default, within authority; approved on the Head Keeper's queen card on 2026-10-17.",
+  "rationale": "Rejected `devcontainer up`: a Node dependency, and it runs lifecycle hook commands Waggle cannot vet.",
+  "tickets": [
+    "T-024"
+  ],
+  "supersedes": []
+}
