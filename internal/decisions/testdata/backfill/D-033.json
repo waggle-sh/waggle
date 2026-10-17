@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "T-008 also protects go.work, go.work.sum and vendor/",
+  "question": "Which Go dependency paths besides go.mod and go.sum are hardcoded Tier 3?",
+  "options": [
+    "go.mod and go.sum only",
+    "Also go.work, go.work.sum and vendor/"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "T-008 also makes go.work, go.work.sum and vendor/ hardcoded Tier 3.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-008"
+  ],
+  "supersedes": []
+}

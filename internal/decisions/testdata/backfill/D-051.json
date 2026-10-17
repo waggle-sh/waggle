@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "CI gating requires forge.remote; local-only hives gate locally",
+  "question": "How does a hive with no forge.remote, whose claims CI cannot see, run the gate?",
+  "options": [
+    "Relax the CI gate for local hives",
+    "Keep the CI gate strict and require forge.remote; local-only hives run waggle gate locally"
+  ],
+  "recommendation": "Keep the gate strict and require forge.remote for CI",
+  "choice": "CI gating requires forge.remote; local-only hives run waggle gate locally.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-014"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "Claim time rejects Tier 3 overlap",
+  "question": "Should AcquireLease refuse leases that touch Tier 3 paths, or leave that to the merge gate?",
+  "options": [
+    "Merge gate only",
+    "Reject at claim time any lease that equals, is inside, or contains a Tier 3 path"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "AcquireLease rejects any lease overlapping a Tier 3 path, compared case-insensitively, including the repo root.",
+  "rationale": "Defense in depth on case-insensitive checkouts; the merge gate stays authoritative.",
+  "tickets": [
+    "T-002",
+    "T-003"
+  ],
+  "supersedes": []
+}

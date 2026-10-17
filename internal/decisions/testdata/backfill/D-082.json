@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "context.profile is hive-wide in config.yaml with default balanced; waggle status shows the runtime's own cost estimate as est. $",
+  "question": "Where does context.profile live, what is its default, and how does waggle status report dollars (Q-T021-1, Q-T021-2, Q-T021-3)?",
+  "options": [
+    "Allow a per-Keeper value in local.yaml, default lean, and a Keeper-maintained price table",
+    "One hive-wide value in config.yaml, default balanced, and the runtime's own estimate labeled est. $ with no price table"
+  ],
+  "recommendation": "Hive-wide in config.yaml, default balanced, runtime estimate labeled est. $",
+  "choice": "context.profile is hive-wide in config.yaml, default balanced. waggle status shows the runtime's own cost estimate labeled est. $ with no price table in Waggle.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-021",
+    "T-022"
+  ],
+  "supersedes": []
+}
