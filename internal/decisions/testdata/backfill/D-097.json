@@ -1,0 +1,19 @@
+{
+  "kind": "policy",
+  "title": "The generated `CLAUDE.md` is tracked like every other init output; the Head Keeper commits ours before T-020 phase C's first upgrade",
+  "question": "What happens to the untracked generated `CLAUDE.md` in our main checkout, which trips every clean-tree check? (Q-T016-9)",
+  "options": [
+    "Track it like all init output, no `git add` inside init or upgrade, Head Keeper commits ours as step 0 of T-020 phase C",
+    "Ignore `CLAUDE.md` in the template `.gitignore` block again",
+    "Let `upgrade` tolerate one untracked import file"
+  ],
+  "recommendation": "Track it",
+  "choice": "`CLAUDE.md` (or `AGENTS.md`) is tracked like every other file init writes; the markers separate generated from hand-written content. Neither `init` nor `upgrade` runs `git add`; init's closing hint gains `commit CLAUDE.md (or AGENTS.md) and .gitignore with the rest`. In our hive the Head Keeper commits `CLAUDE.md` as step 0 of T-020 phase C section 7.2, before the first `upgrade` run. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected ignoring it again: project content outside the markers becomes unignorable. Rejected a tolerance in the clean-tree rule: one special case in a precondition that exists to be absolute.",
+  "tickets": [
+    "T-016",
+    "T-020",
+    "T-011"
+  ],
+  "supersedes": []
+}

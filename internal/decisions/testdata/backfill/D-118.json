@@ -1,0 +1,15 @@
+{
+  "kind": "policy",
+  "title": "`keeper_id` in `local.yaml` is the Keeper's GitHub login; the `local-keeper` placeholder is refused when the Comb has a remote",
+  "question": "How does dispatch identify the Keeper in claims? (Q-T023-11)",
+  "options": [
+    "`keeper_id` from `local.yaml`, set to the GitHub login (D-016), with the `local-keeper` placeholder refused when the Comb has a remote"
+  ],
+  "recommendation": "`keeper_id` from `local.yaml`",
+  "choice": "`keeper_id` comes from `local.yaml` and is the Keeper's GitHub login (D-016). The `local-keeper` placeholder is refused when the Comb has a remote and allowed for local-only hives. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "The placeholder would collide across Keepers sharing a remote.",
+  "tickets": [
+    "T-023"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Until Cells exist, dispatch runs a worker on the host only with `--no-cell` on each invocation, printing and recording what is not enforced",
+  "question": "May dispatch run a worker outside a Cell, and how is that allowed? (Q-T023-2)",
+  "options": [
+    "Allowed only with `--no-cell` on every invocation, the not-enforced list printed and recorded, and `cell: host` in the result",
+    "A config key that allows host runs hive-wide"
+  ],
+  "recommendation": "`--no-cell` on every invocation",
+  "choice": "Host runs need `--no-cell` on every invocation; without it dispatch exits 2. Dispatch prints the not-enforced list of T-023 section 8, records it in the run record, and writes `cell: host` in `result.json`. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected a hive-wide config key: it is a Tier 3 template change, and it is easy to forget it is on.",
+  "tickets": [
+    "T-023"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "scope",
+  "title": "Non-blocking review follow-ups are folded into the brief that next touches the code",
+  "question": "Where do the non-blocking guard follow-ups from T-014 phase A, T-016, T-006 and T-018 phase B go?",
+  "options": [
+    "Not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Each follow-up becomes one line in the brief that next touches the code: T-014 phase B caps `lease.json` size in `loadClaims`; T-018 phase C takes notes N3 and N5 to N10; T-012 phase B (or the next brief leasing `internal/scaffold/`) takes `roster.json` value escaping and the `waggle init` symlink hole; T-006 takes `Parse` accepting a bare CR in a title. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-014",
+    "T-018",
+    "T-012",
+    "T-006"
+  ],
+  "supersedes": []
+}

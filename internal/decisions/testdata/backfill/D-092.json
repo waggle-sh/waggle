@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "`waggle upgrade` prints the `waggle decide` input; a person runs `decide` in the same hive PR",
+  "question": "Who writes the upgrade decision into `DECISIONS.md`? (Q-T016-4)",
+  "options": [
+    "`upgrade` prints the `waggle decide` input and the Head Keeper, or the queen after an explicit Keeper answer, runs `waggle decide` in the same PR",
+    "`upgrade --apply` calls `decisions.Append` itself"
+  ],
+  "recommendation": "Print the input; a person runs `decide`",
+  "choice": "`upgrade` prints the `waggle decide` input (T-016 section 3.7) in both modes. The Head Keeper, or the queen after an explicit Keeper answer, runs `waggle decide` in the same hive PR (T-006 section 8). `upgrade` never writes `DECISIONS.md`. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected `--apply` calling `decisions.Append`: it turns \"a command ran\" into \"a decision was made\", adds `internal/decisions` as an import, and makes T-006 a code dependency of T-016 instead of a procedural one.",
+  "tickets": [
+    "T-016",
+    "T-006"
+  ],
+  "supersedes": []
+}
