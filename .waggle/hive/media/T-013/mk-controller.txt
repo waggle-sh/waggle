@@ -1,0 +1,3 @@
+CONTRIBUTING.md:46:| Master Keeper | Head Keeper | D-031 |
+CONTRIBUTING.md:47:| Controller | Head Keeper | D-031 |
+README.md:21:- **Head Keeper.** The Keeper with final authority over a hive: approves every Tier 3 change, can force-release a stuck claim, and does the admin merge that repairs a corrupt decision log. Identified in v0.1 by an allow-list in a Tier 3 file; formerly called Master Keeper or Controller.

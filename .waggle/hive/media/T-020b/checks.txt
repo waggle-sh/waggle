@@ -1,0 +1,6 @@
+base == origin/main == merge-base == b4f2221
+diff names: M docs/RFC-0003.md only (both commits)
+AC2: brief script on origin/main RFC vs 2541997 blob: empty diff (ac2-mapping-diff.txt)
+residue grep architect|drone|zzwr: only "Architecture" lines 1 and 40 (residue.txt)
+dash grep (diff + commit messages): none; attribution grep: none
+README.md / CONTRIBUTING.md / docs/tasks / DECISIONS.md: not in diff; origin/main has no old-name hits in README or CONTRIBUTING

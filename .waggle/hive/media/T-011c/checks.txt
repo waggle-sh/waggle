@@ -1,0 +1,6 @@
+ok  	github.com/waggle-sh/waggle/cmd/waggle	1.340s
+ok  	github.com/waggle-sh/waggle/internal/comb	7.426s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.177s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	3.209s
+gofmt:

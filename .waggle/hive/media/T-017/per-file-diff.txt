@@ -1,0 +1,12 @@
+== cmd/waggle/main.go
+identical-plus-one-newline
+00000000: 0a                                       .
+== internal/runtime/claude.go
+identical-plus-one-newline
+00000000: 0a                                       .
+== internal/runtime/runtime.go
+identical-plus-one-newline
+00000000: 0a                                       .
+== internal/scaffold/init.go
+identical-plus-one-newline
+00000000: 0a                                       .

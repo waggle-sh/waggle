@@ -1,0 +1,56 @@
+{
+  "name": "Product CI",
+  "true": {
+    "pull_request": null,
+    "push": {
+      "branches": [
+        "main"
+      ]
+    }
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "product-ci-${{ github.ref }}",
+    "cancel-in-progress": "${{ github.event_name == 'pull_request' }}"
+  },
+  "jobs": {
+    "product-ci": {
+      "name": "product-ci",
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 15,
+      "steps": [
+        {
+          "uses": "actions/checkout@v5",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-go@v6",
+          "with": {
+            "go-version-file": "go.mod",
+            "cache": false
+          }
+        },
+        {
+          "name": "Build",
+          "run": "go build ./..."
+        },
+        {
+          "name": "Vet",
+          "run": "go vet ./..."
+        },
+        {
+          "name": "gofmt (tracked files)",
+          "run": "unformatted=\"$(git ls-files -z '*.go' | xargs -0 gofmt -l)\"\nif [ -n \"$unformatted\" ]; then\n  echo \"::error::gofmt -l reports unformatted files:\"\n  echo \"$unformatted\"\n  exit 1\nfi\n"
+        },
+        {
+          "name": "Test (race)",
+          "run": "go test -race ./..."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,43 @@
+# dirty tree
+dirty-dry: exit=1 nochange | waggle uninstall refused: work tree is not clean (first dirty path: README.md); commit or stash first: scaffold: uninstall refused 
+dirty-apply: exit=1 nochange | waggle uninstall refused: work tree is not clean (first dirty path: README.md); commit or stash first: scaffold: uninstall refused 
+# untracked
+untracked: exit=1 nochange | waggle uninstall refused: work tree is not clean (first dirty path: new.txt); commit or stash first: scaffold: uninstall refused 
+# legacy
+legacy: exit=1 nochange | waggle uninstall refused: found .waggle/config.yaml: scaffold: uninstall refused: scaffold: legacy waggle layout (.waggle/config.yaml or .waggle/roles/); migrate it to .waggle/control/ by hand, nothin
+# no waggle at all
+none: exit=1 nochange | waggle uninstall refused: .waggle/control/config.yaml not found; nothing to uninstall: scaffold: uninstall refused 
+# run.sock
+sock: exit=1 nochange | waggle uninstall refused: .waggle/control/run.sock exists; stop waggled first: scaffold: uninstall refused 
+# unparseable block
+badblock: exit=1 nochange | waggle uninstall refused: .gitignore: scaffold: uninstall refused: two "# --- waggle:start ---" lines: scaffold: malformed waggle marker block 
+# two blocks in CLAUDE.md
+dupblock: exit=1 nochange | waggle uninstall refused: CLAUDE.md: scaffold: uninstall refused: two "<!-- waggle:start -->" lines: scaffold: malformed waggle marker block 
+# subdir
+subdir: exit=1 nochange | waggle uninstall refused: run from the work tree root /private/tmp/claude-501/-Users-paul-code-waggle/56d2a18d-df7f-4cdd-bc5f-42eb57375762/scratchpad/p, not /private/tmp/claude-501/-Users-paul-code-wa
+# not a repo
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+norepo: exit=1 nochange | waggle uninstall refused: git rev-parse: exit status 128: fatal: not a git repository (or any of the parent directories): .git: scaffold: uninstall refused 
+# usage
+bogus exit=2
+stray exit=2
+-h exit=0
+# unmarked workflow + project agent survive
+  [skip]   .github/workflows/waggle-gate.yml (warning: no "# waggle:managed" line, so waggle did not install it; remove it by hand if it should go)
+.claude/agents:
+foo.md
+
+.github/workflows:
+waggle-gate.yml
+ D .gitignore
+ D .waggle/control/WAGGLE.md
+ D .waggle/control/config.yaml
+ D .waggle/control/devcontainer.json
+ D .waggle/control/roles/builder.md
+ D .waggle/control/roles/forager.md
+ D .waggle/control/roles/guard.md
+ D .waggle/control/roles/queen.md
+ D .waggle/control/roles/scout.md
+ D .waggle/control/roster.json
+ D CLAUDE.md

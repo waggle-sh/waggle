@@ -1,0 +1,3 @@
+CONTRIBUTING.md:48:| architect (before T-020) | scout | D-074 |
+CONTRIBUTING.md:51:| drone | none; retired | D-073 |
+CONTRIBUTING.md:53:In records written before T-020, read architect as Scout, scout as Forager, and forager as Builder.

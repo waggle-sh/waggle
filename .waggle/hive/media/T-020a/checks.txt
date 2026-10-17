@@ -1,0 +1,9 @@
+AC1 (worktree detached at 145baaf): go build ./... ok; go vet ./... ok; gofmt -l cmd internal prints nothing;
+go test -race -count=1 ./... : ok comb 8.1s, runtime 1.2s, scaffold 1.3s (cmd, layout have no tests).
+CI (gh pr checks 9): product-ci pass 44s; verify-leases-and-tiers pass 5s; relay-claim skipping.
+Dashes (U+2014, U+2013) in added diff lines: 0. In commit messages: 0.
+AI attribution in commit messages: 0. Added lines matching claude/anthropic: only claude_test.go path/tool strings (claude-code, .claude/agents).
+Files changed under .waggle/, README*, CONTRIBUTING*, docs/, DECISIONS*: 0.
+Commit subjects: all five start with "T-020:". Author paulternate on all.
+AC3: sentinel grep prints nothing. 'architect' whole-word hits on t-020a: .waggle/roles/architect.md, .waggle/roster.json (hive copies, phase C),
+docs/RFC-0003.md lines 32 and 82 (phase B, already merged on main as 1d1f36c; main has none).
