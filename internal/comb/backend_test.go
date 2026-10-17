@@ -152,7 +152,7 @@ func TestDirsOverlap(t *testing.T) {
 }
 
 func TestValidateLeaseFields(t *testing.T) {
-	base := Lease{TicketID: "2", KeeperID: "paul", Role: "forager", Gate: "full", Directories: []string{"internal/comb/"}}
+	base := Lease{TicketID: "2", KeeperID: "paul", Role: "builder", Gate: "full", Directories: []string{"internal/comb/"}}
 	got, err := validateLeaseFields(base, 5)
 	if err != nil {
 		t.Fatal(err)
@@ -185,6 +185,32 @@ func TestValidateLeaseFields(t *testing.T) {
 	for _, tc := range cases {
 		if _, err := validateLeaseFields(tc.l, 5); !errors.Is(err, tc.want) {
 			t.Errorf("%s: got %v; want %v", tc.name, err, tc.want)
+		}
+	}
+}
+
+// Claimable roles are the triage, implementation and review workers. The queen,
+// the scout (planning) and the retired planning name never claim.
+func TestClaimRoles(t *testing.T) {
+	base := Lease{TicketID: "T-002", KeeperID: "paul", Gate: "full", Directories: []string{"internal/comb"}}
+	for _, role := range []string{"forager", "builder", "guard"} {
+		l := base
+		l.Role = role
+		if !isClaimRole(role) {
+			t.Errorf("isClaimRole(%q) = false", role)
+		}
+		if _, err := validateLeaseFields(l, 5); err != nil {
+			t.Errorf("role %q rejected: %v", role, err)
+		}
+	}
+	for _, role := range []string{"scout", "queen", "archi" + "tect", "", "Builder", "builders"} {
+		l := base
+		l.Role = role
+		if isClaimRole(role) {
+			t.Errorf("isClaimRole(%q) = true", role)
+		}
+		if _, err := validateLeaseFields(l, 5); !errors.Is(err, ErrInvalidLease) {
+			t.Errorf("role %q: got %v; want ErrInvalidLease", role, err)
 		}
 	}
 }
@@ -224,7 +250,7 @@ func TestRelayMode(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	l := Lease{TicketID: "T-001", KeeperID: "k", Role: "forager", Gate: "full", Directories: []string{"x"}}
+	l := Lease{TicketID: "T-001", KeeperID: "k", Role: "builder", Gate: "full", Directories: []string{"x"}}
 	if err := b.AcquireLease(ctx, l); !errors.Is(err, ErrRelayNotImplemented) {
 		t.Errorf("AcquireLease: %v", err)
 	}
