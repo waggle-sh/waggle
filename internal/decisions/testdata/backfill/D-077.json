@@ -1,0 +1,19 @@
+{
+  "kind": "technical",
+  "title": "D-068 supersedes D-015 wording; provider none stays; T-012 roster change via waggle upgrade",
+  "question": "How are the D-015 and D-068 overlap, forge.provider none in T-004, and T-012's hive roster edit resolved?",
+  "options": [
+    "Leave as written",
+    "Apply the Queen's defaults"
+  ],
+  "recommendation": "Apply the Queen's defaults",
+  "choice": "D-068 supersedes D-015's implementation wording, and D-068 carries a Supersedes: D-015 line. T-004 keeps accepting forge.provider: none. T-012's roster change reaches our hive through waggle upgrade, not a hand edit (D-042). Defaults applied by the Queen.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-004",
+    "T-005",
+    "T-012",
+    "T-014"
+  ],
+  "supersedes": []
+}

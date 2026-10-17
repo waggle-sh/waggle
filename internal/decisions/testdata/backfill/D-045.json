@@ -1,0 +1,14 @@
+{
+  "kind": "policy",
+  "title": "Product design that users rely on also lands in the RFC or product docs",
+  "question": "Is DECISIONS.md enough to document product design?",
+  "options": [
+    "DECISIONS.md alone",
+    "DECISIONS.md plus the RFC or product docs"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "DECISIONS.md records how the hive decided; any product design users rely on must also land in the RFC or product docs.",
+  "rationale": "Not recorded",
+  "tickets": [],
+  "supersedes": []
+}

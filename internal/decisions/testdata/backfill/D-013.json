@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Humans review intent; 500-line task cap",
+  "question": "What do humans review, and how large may a task be?",
+  "options": [
+    "Humans review intent, never diffs, with a task size cap",
+    "Alternatives not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Humans review intent, never diffs. Every decision reaching the Keeper is concise, self-contained, and carries the hive's recommendation, cost and reversibility. Tasks are capped at about 500 lines of non-test code.",
+  "rationale": "The cap keeps guard review accurate.",
+  "tickets": [
+    "T-002"
+  ],
+  "supersedes": []
+}

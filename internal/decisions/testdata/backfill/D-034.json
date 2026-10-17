@@ -1,0 +1,14 @@
+{
+  "kind": "scope",
+  "title": "Protect internal/scaffold/templates/ with CODEOWNERS",
+  "question": "How is the template source that every new hive receives protected in this repo?",
+  "options": [
+    "Hardcoded tier entry",
+    "CODEOWNERS in this repo, as a separate ticket"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "internal/scaffold/templates/ is protected via CODEOWNERS in this repo, in a separate ticket.",
+  "rationale": "Not recorded",
+  "tickets": [],
+  "supersedes": []
+}

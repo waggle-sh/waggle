@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "\"Own honey\" adopted",
+  "question": "What do we call using Waggle to build Waggle?",
+  "options": [
+    "Dogfooding",
+    "Own honey"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "\"Own honey\" is the term for using Waggle to build Waggle.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-013"
+  ],
+  "supersedes": []
+}

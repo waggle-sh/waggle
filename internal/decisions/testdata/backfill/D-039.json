@@ -1,0 +1,17 @@
+{
+  "kind": "scope",
+  "title": "Template omits the gate decisions step; non-Go manifests and nested modules deferred",
+  "question": "Does the scaffold gate template get the decisions step now, and do non-Go manifests and nested Go modules become Tier 3 now?",
+  "options": [
+    "Add both now",
+    "Defer both"
+  ],
+  "recommendation": "Defer both (Q-T007-1, Q-T008-2)",
+  "choice": "The scaffold template omits the gate decisions step until a release binary exists; non-Go manifests and nested modules are deferred to a later ticket. Defaults applied by the Queen, reversible.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-007",
+    "T-008"
+  ],
+  "supersedes": []
+}

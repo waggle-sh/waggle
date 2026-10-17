@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "Zero Actions runs were caused by the org's billing state; product CI is green and required on main through one ruleset that T-015 extends",
+  "question": "Why did waggle-sh/waggle create no Actions runs, and how is product CI now enforced on main?",
+  "options": [
+    "Fix the org Actions policy, repo setting or workflow registration",
+    "Clear the org's billing hold, then require product-ci in a single main ruleset"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Cause of the zero Actions runs in waggle-sh/waggle: the org Actions policy, repo setting and workflow registration were all correct; runs were not being created because of the org's billing state (declined card on a new org). The first runs appeared on PR #4 within a minute, after the Team upgrade cleared the billing hold. Product CI (ci.yml, T-019) merged at c367ab5 and is green on main. The main ruleset exists (id 25310890): product-ci required, branches up to date, bypass for repository admins only (the Head Keeper). Verified with scratch PR #5, which was reported BLOCKED with product-ci failing, then closed. T-015 adds verify-leases-and-tiers to this same ruleset rather than creating a second one, and waggle doctor (T-018) reports the rule as present. Evidence: docs/media/T-019/.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-019",
+    "T-015",
+    "T-018"
+  ],
+  "supersedes": []
+}
