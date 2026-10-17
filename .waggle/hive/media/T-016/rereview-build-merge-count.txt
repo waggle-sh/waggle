@@ -1,0 +1,4 @@
+merge-tree --write-tree 2dcadfc 87b9dd9: clean, tree be61d99, rc=0 (merge base fedf68e)
+merged tree (commit 67028d0): go build, go vet, gofmt -l empty; go test -race -count=2 ./... all ok (8 packages)
+branch head 87b9dd9: same, all ok
+non-test physical lines net vs fedf68e: 821 added, 84 deleted, net 737 (main.go +5/-1, cmd upgrade.go 68, git.go 90, init.go +16/-5, uninstall.go +7/-78, scaffold upgrade.go 635)
