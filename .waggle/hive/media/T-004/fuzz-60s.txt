@@ -1,0 +1,26 @@
+fuzz: elapsed: 0s, gathering baseline coverage: 0/399 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 399/399 completed, now fuzzing with 14 workers
+fuzz: elapsed: 3s, execs: 1207442 (402468/sec), new interesting: 0 (total: 399)
+fuzz: elapsed: 6s, execs: 2476784 (423082/sec), new interesting: 1 (total: 400)
+fuzz: elapsed: 9s, execs: 3704909 (409413/sec), new interesting: 2 (total: 401)
+fuzz: elapsed: 12s, execs: 4952083 (415718/sec), new interesting: 2 (total: 401)
+fuzz: elapsed: 15s, execs: 6167220 (404957/sec), new interesting: 3 (total: 402)
+fuzz: elapsed: 18s, execs: 7338280 (390447/sec), new interesting: 3 (total: 402)
+fuzz: elapsed: 21s, execs: 8518458 (393259/sec), new interesting: 3 (total: 402)
+fuzz: elapsed: 24s, execs: 9695011 (392306/sec), new interesting: 3 (total: 402)
+fuzz: elapsed: 27s, execs: 10803559 (369446/sec), new interesting: 3 (total: 402)
+fuzz: elapsed: 30s, execs: 11811329 (335985/sec), new interesting: 3 (total: 402)
+fuzz: elapsed: 33s, execs: 12871529 (353374/sec), new interesting: 5 (total: 404)
+fuzz: elapsed: 36s, execs: 13998512 (375637/sec), new interesting: 6 (total: 405)
+fuzz: elapsed: 39s, execs: 15137390 (379644/sec), new interesting: 6 (total: 405)
+fuzz: elapsed: 42s, execs: 16287883 (383498/sec), new interesting: 7 (total: 406)
+fuzz: elapsed: 45s, execs: 17430002 (380734/sec), new interesting: 7 (total: 406)
+fuzz: elapsed: 48s, execs: 18556492 (375506/sec), new interesting: 8 (total: 407)
+fuzz: elapsed: 51s, execs: 19682997 (375465/sec), new interesting: 9 (total: 408)
+fuzz: elapsed: 54s, execs: 20777999 (365015/sec), new interesting: 9 (total: 408)
+fuzz: elapsed: 57s, execs: 21866173 (362697/sec), new interesting: 9 (total: 408)
+fuzz: elapsed: 1m0s, execs: 22963191 (365720/sec), new interesting: 9 (total: 408)
+fuzz: elapsed: 1m0s, execs: 22963191 (0/sec), new interesting: 9 (total: 408)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/config	60.336s
+exit=0

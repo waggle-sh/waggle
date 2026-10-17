@@ -1,0 +1,123 @@
+package forge
+
+import (
+	"context"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"testing"
+)
+
+func TestGuardRace(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	// second feature branch from root, touching a different file
+	root := runGit(t, dir, "rev-list", "--max-parents=0", "main")
+	runGit(t, dir, "branch", "feat2", root)
+	runGit(t, dir, "checkout", "-q", "feat2")
+	writeFile(t, dir, "h2", "x\n")
+	runGit(t, dir, "add", "-A")
+	runGit(t, dir, "commit", "-q", "-m", "feat2")
+	runGit(t, dir, "checkout", "-q", "main")
+	// dirty worktree
+	writeFile(t, dir, "dirty", "uncommitted\n")
+	writeFile(t, dir, "f", "modified tracked\n")
+	runGit(t, dir, "add", "f")
+	writeFile(t, dir, "f", "modified tracked again\n")
+	statusBefore := runGit(t, dir, "status", "--porcelain")
+	idxBefore := runGit(t, dir, "ls-files", "-s")
+	base0 := runGit(t, dir, "rev-parse", "main")
+
+	for round := 0; round < 20; round++ {
+		runGit(t, dir, "update-ref", "refs/heads/main", base0)
+		var wg sync.WaitGroup
+		errs := make([]error, 2)
+		for i, b := range []string{"feat", "feat2"} {
+			oid := runGit(t, dir, "rev-parse", b)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				n := newNone(t, dir, "")
+				errs[i] = n.Merge(context.Background(), Change{Head: b, Base: "main"}, MergeRequest{Subject: "m " + b, ExpectedHeadOID: oid})
+			}()
+		}
+		wg.Wait()
+		ok := 0
+		for _, e := range errs {
+			if e == nil {
+				ok++
+			} else if !errors.Is(e, ErrHeadMoved) {
+				t.Fatalf("round %d unexpected err %v", round, e)
+			}
+		}
+		if ok < 1 {
+			t.Fatalf("round %d no winner %v", round, errs)
+		}
+		tip := runGit(t, dir, "rev-parse", "main")
+		parents := strings.Fields(runGit(t, dir, "log", "-1", "--format=%P", tip))
+		if len(parents) != 2 {
+			t.Fatalf("tip parents %v", parents)
+		}
+		if ok == 2 { // legit only if second saw first's tip (sequential), then tip has parent = winner
+			t.Logf("round %d: both succeeded (serialised)", round)
+		}
+	}
+	if s := runGit(t, dir, "status", "--porcelain"); !strings.Contains(s, "dirty") {
+		t.Errorf("status changed %q", s)
+	}
+	_ = statusBefore
+	if idx := runGit(t, dir, "ls-files", "-s"); idx != idxBefore {
+		t.Errorf("index changed")
+	}
+	b, _ := os.ReadFile(filepath.Join(dir, "f"))
+	if string(b) != "modified tracked again\n" {
+		t.Errorf("file changed %q", b)
+	}
+}
+
+func TestGuardRejectedPushRollsBack(t *testing.T) {
+	requireGit(t)
+	dir, bare := newRepo(t, false), t.TempDir()
+	runGit(t, bare, "init", "-q", "--bare")
+	runGit(t, dir, "remote", "add", "origin", bare)
+	runGit(t, dir, "push", "-q", "origin", "main", "feat")
+	hook := filepath.Join(bare, "hooks", "pre-receive")
+	os.WriteFile(hook, []byte("#!/bin/sh\necho no >&2\nexit 1\n"), 0o755)
+	base, head := runGit(t, dir, "rev-parse", "main"), runGit(t, dir, "rev-parse", "feat")
+	err := newNone(t, dir, "origin").Merge(context.Background(), Change{Head: "feat", Base: "main"}, MergeRequest{Subject: "s", ExpectedHeadOID: head})
+	t.Logf("err: %v", err)
+	if !errors.Is(err, ErrHeadMoved) {
+		t.Errorf("want ErrHeadMoved got %v", err)
+	}
+	if got := runGit(t, dir, "rev-parse", "main"); got != base {
+		t.Errorf("local not rolled back: %s vs %s", got, base)
+	}
+	if got := runGit(t, bare, "rev-parse", "main"); got != base {
+		t.Errorf("remote changed")
+	}
+}
+
+func TestGuardUnreachableRemote(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	runGit(t, dir, "remote", "add", "origin", "/nonexistent/path")
+	base, head := runGit(t, dir, "rev-parse", "main"), runGit(t, dir, "rev-parse", "feat")
+	err := newNone(t, dir, "origin").Merge(context.Background(), Change{Head: "feat", Base: "main"}, MergeRequest{Subject: "s", ExpectedHeadOID: head})
+	t.Logf("err: %v", err)
+	t.Logf("local main moved: %v", runGit(t, dir, "rev-parse", "main") != base)
+}
+
+func TestGuardInheritedGitDir(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	other := newRepo(t, false)
+	head := runGit(t, dir, "rev-parse", "feat")
+	t.Setenv("GIT_DIR", filepath.Join(other, ".git"))
+	err := newNone(t, dir, "").Merge(context.Background(), Change{Head: "feat", Base: "main"}, MergeRequest{Subject: "s", ExpectedHeadOID: head})
+	t.Logf("with GIT_DIR pointing at another repo: err=%v", err)
+	t.Setenv("GIT_DIR", "")
+	os.Unsetenv("GIT_DIR")
+	t.Logf("other main moved: %s", runGit(t, other, "log", "-1", "--format=%P", "main"))
+}
