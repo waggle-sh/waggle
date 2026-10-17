@@ -1,0 +1,238 @@
+package forge
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"testing"
+	"time"
+)
+
+const gtok = "ghp_GUARDSECRET0123456789abcdefghij"
+
+func leak(t *testing.T, label string, err error) {
+	t.Helper()
+	if err == nil {
+		t.Logf("%-28s err=nil", label)
+		return
+	}
+	s := err.Error()
+	if len(s) > 160 {
+		s = s[:160] + "..."
+	}
+	t.Logf("%-28s leak=%v err=%q", label, strings.Contains(err.Error(), gtok), s)
+	if strings.Contains(err.Error(), gtok) {
+		t.Errorf("TOKEN LEAK in %s", label)
+	}
+}
+
+func tt(base string) *tokenTransport {
+	return &tokenTransport{base: base, token: gtok, client: &http.Client{Timeout: githubTimeout}}
+}
+
+func TestGuardTokenPaths(t *testing.T) {
+	ctx := context.Background()
+	cases := map[string]http.HandlerFunc{
+		"400-body-echo": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(400)
+			fmt.Fprintf(w, `{"message":"bad %s","errors":["%s",{"message":"x %s"}]}`, r.Header.Get("Authorization"), gtok, gtok)
+		},
+		"500-header-echo": func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Echo", gtok)
+			w.WriteHeader(500)
+			fmt.Fprintf(w, `{"message":"boom Bearer %s"}`, gtok)
+		},
+		"500-nonjson-echo": func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(502); fmt.Fprint(w, "bad gw "+gtok) },
+		"200-malformed-json": func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, `{"number": `+gtok) },
+		"200-garbage-echo":   func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, gtok) },
+		"200-oversized": func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprint(w, `{"x":"`+strings.Repeat("a", 2<<20)+gtok+`"}`)
+		},
+		"422-already": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(422)
+			fmt.Fprintf(w, `{"message":"Validation Failed","errors":[{"message":"A pull request already exists for %s"}]}`, gtok)
+		},
+	}
+	for name, h := range cases {
+		srv := httptest.NewServer(h)
+		var out pull
+		st, err := tt(srv.URL).do(ctx, "POST", "/x", map[string]string{"a": "b"}, &out)
+		leak(t, name+fmt.Sprintf("(%d)", st), err)
+		srv.Close()
+	}
+	// timeout via ctx against a hanging server
+	hang := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { <-r.Context().Done() }))
+	defer hang.Close()
+	c, cancel := context.WithTimeout(ctx, 300*time.Millisecond)
+	defer cancel()
+	t0 := time.Now()
+	_, err := tt(hang.URL).do(c, "GET", "/x", nil, nil)
+	leak(t, "ctx-timeout", err)
+	t.Logf("ctx timeout returned after %v", time.Since(t0))
+	// client timeout configured by pickTransport
+	d, label, err := pickTransport(func(k string) string { return map[string]string{"GITHUB_TOKEN": gtok}[k] },
+		func(string) (string, error) { return "", exec.ErrNotFound }, "http://x")
+	tr := d.(*tokenTransport)
+	t.Logf("pickTransport label=%s err=%v client.Timeout=%v", label, err, tr.client.Timeout)
+	// transport error echoing URL: connection refused
+	_, err = tt("http://127.0.0.1:1").do(ctx, "GET", "/x", nil, nil)
+	leak(t, "conn-refused", err)
+}
+
+func TestGuardRedirect(t *testing.T) {
+	var gotAuth string
+	evil := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		fmt.Fprint(w, `{}`)
+	}))
+	defer evil.Close()
+	// different host name: 127.0.0.1 vs localhost
+	good := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, strings.Replace(evil.URL, "127.0.0.1", "localhost", 1)+"/steal", 307)
+	}))
+	defer good.Close()
+	_, err := tt(good.URL).do(context.Background(), "POST", "/x", map[string]string{"a": "b"}, nil)
+	t.Logf("cross-host redirect: err=%v evil saw Authorization=%q", err, gotAuth)
+	if gotAuth != "" {
+		t.Errorf("Authorization forwarded cross-host")
+	}
+	// same hostname, other port (same-host redirect keeps header: expected Go behavior)
+	gotAuth = "unset"
+	same := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, evil.URL+"/steal", 307)
+	}))
+	defer same.Close()
+	_, _ = tt(same.URL).do(context.Background(), "GET", "/x", nil, nil)
+	t.Logf("same-hostname other-port redirect: evil saw Authorization=%q (Go keeps it for same hostname)", gotAuth)
+}
+
+func fakeBin(t *testing.T, script string) string {
+	d := t.TempDir()
+	p := filepath.Join(d, "gh")
+	os.WriteFile(p, []byte("#!/bin/sh\n"+script), 0o755)
+	return p
+}
+
+func TestGuardGHArgvEnv(t *testing.T) {
+	log := filepath.Join(t.TempDir(), "log")
+	bin := fakeBin(t, `{ for a in "$@"; do printf 'ARG[%s]\n' "$a"; done; env | grep -E '^(GH_|GITHUB_|NO_COLOR)' | sort; echo STDIN[$(cat)]; } >> `+log+`
+printf 'HTTP/2.0 200 OK\r\nContent-Type: application/json\r\n\r\n[]'
+`)
+	t.Setenv("GH_HOST", "evil.example.com")
+	t.Setenv("GH_REPO", "evil/repo")
+	t.Setenv("GH_ENTERPRISE_TOKEN", "ent-secret")
+	t.Setenv("GH_TOKEN", "parent-gh-token")
+	t.Setenv("GITHUB_TOKEN", "parent-github-token")
+	g := &ghTransport{bin: bin}
+	var out []pull
+	for _, br := range []string{"{owner}", "{repo}", "a/{branch}", "x&state=closed", "a%7Bowner%7D", "ünï"} {
+		q := "?head=" + urlEsc("o:"+br) + "&state=open"
+		st, err := g.do(context.Background(), "GET", "/repos/o/r/pulls"+q, nil, &out)
+		t.Logf("branch %q status=%d err=%v", br, st, err)
+	}
+	b, _ := os.ReadFile(log)
+	t.Logf("fake gh log:\n%s", b)
+}
+
+func urlEsc(s string) string { return strings.NewReplacer().Replace(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s, "%", "%25"), "{", "%7B"), "}", "%7D"), "&", "%26"), ":", "%3A"), "ü", "%C3%BC")) }
+
+func TestGuardGHGarbageAndBig(t *testing.T) {
+	ctx := context.Background()
+	for name, script := range map[string]string{
+		"exit0-garbage":     `echo "totally not http"; exit 0`,
+		"exit0-empty":       `exit 0`,
+		"exit0-html":        `printf 'HTTP/2.0 200 OK\r\n\r\n<html>'; exit 0`,
+		"exit0-status-only": `printf 'HTTP/2.0 204 No Content\r\n\r\n'; exit 0`,
+		"exit1-200":         `printf 'HTTP/2.0 200 OK\r\n\r\n{"number":7}'; exit 1`,
+		"exit1-nostatus":    `echo oops >&2; exit 1`,
+		"http-999":          `printf 'HTTP/2.0 999 X\r\n\r\n{}'`,
+	} {
+		g := &ghTransport{bin: fakeBin(t, script+"\n")}
+		var p pull
+		st, err := g.do(ctx, "GET", "/x", nil, &p)
+		t.Logf("%-18s status=%d num=%d err=%v", name, st, p.Number, err)
+	}
+	// 600 MiB of stdout
+	g := &ghTransport{bin: fakeBin(t, `printf 'HTTP/2.0 200 OK\r\n\r\n'; head -c 629145600 /dev/zero | tr '\0' 'a'`+"\n")}
+	var ms0, ms1 runtime.MemStats
+	runtime.GC()
+	runtime.ReadMemStats(&ms0)
+	t0 := time.Now()
+	st, err := g.do(ctx, "GET", "/x", nil, nil)
+	runtime.ReadMemStats(&ms1)
+	t.Logf("600MiB stdout: status=%d err=%v took=%v TotalAlloc delta=%d MiB, Sys=%d MiB", st, err, time.Since(t0), (ms1.TotalAlloc-ms0.TotalAlloc)>>20, ms1.Sys>>20)
+}
+
+func TestGuardGHHang(t *testing.T) {
+	g := &ghTransport{bin: fakeBin(t, "sleep 60\n")}
+	c, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	t0 := time.Now()
+	_, err := g.do(c, "GET", "/x", nil, nil)
+	t.Logf("gh hang ctx 500ms: returned after %v err=%v", time.Since(t0), err)
+	// grandchild keeps stdout pipe open after gh is killed
+	g = &ghTransport{bin: fakeBin(t, "sleep 8 &\nsleep 60\n")}
+	c2, cancel2 := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel2()
+	t0 = time.Now()
+	_, err = g.do(c2, "GET", "/x", nil, nil)
+	t.Logf("gh with orphan grandchild, ctx 500ms: returned after %v err=%v", time.Since(t0), err)
+	// no deadline in the transport itself
+	t.Logf("ghTransport applies own timeout: %v", false)
+}
+
+func TestGuardRemotes(t *testing.T) {
+	for _, r := range []string{
+		"https://github.com/o/r", "https://github.com/o/r.git", "https://github.com/o/r.git/", "https://github.com/o/r/",
+		"https://user:" + gtok + "@github.com/o/r", "https://" + gtok + "@github.com/o/r.git",
+		"git@github.com:o/r.git", "git@github.com:o/r", "ssh://git@github.com/o/r.git", "ssh://git@github.com:22/o/r",
+		"git@evil.com:o/r", "https://github.com.evil.com/o/r", "https://GitHub.com/o/r", "https://GITHUB.COM/o/r",
+		"https://evil.com/github.com/o/r", "https://github.com@evil.com/o/r", "https://github.com/o/r/extra",
+		"https://github.com/ö/r", "https://github.com/o/ré", "https://github.com/o-/r", "https://github.com/-o/r",
+		"https://github.com/o/..", "https://github.com/o/.", "https://github.com/o/.git", "https://github.com/" + strings.Repeat("a", 40) + "/r",
+		"https://github.com/o/r\n", "https://github.com/o/r%0a", "http://github.com/o/r", "ssh://user:" + gtok + "@evil.com/o/r",
+		"https://github.com/o/r?x=1", "https://github.com/o/r#frag", "https://github.com/o/r.git.git", "file:///etc/passwd", "/local/path",
+	} {
+		o, rp, err := parseGitHubURL(r)
+		redacted := strings.ReplaceAll(r, gtok, "<TOK>")
+		msg := ""
+		if err != nil {
+			msg = err.Error()
+			if strings.Contains(msg, gtok) {
+				t.Errorf("TOKEN LEAK for %q", redacted)
+			}
+		}
+		t.Logf("%-60q -> owner=%q repo=%q err=%q", redacted, o, rp, msg)
+	}
+}
+
+func TestGuardOpenChangeInputs(t *testing.T) {
+	dir := t.TempDir()
+	run := func(a ...string) { c := exec.Command("git", a...); c.Dir = dir; c.Run() }
+	run("init", "-q")
+	var bodies []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bodies = append(bodies, r.Method+" "+r.URL.String())
+		w.WriteHeader(201)
+		fmt.Fprint(w, `{"number":3,"html_url":"https://github.com/o/r/pull/3"}`)
+	}))
+	defer srv.Close()
+	g := &github{t: tt(srv.URL), repoDir: dir, owner: "o", repo: "r", repoAPI: "/repos/o/r"}
+	for _, c := range []ChangeRequest{
+		{Head: "{owner}", Base: "main", Title: "t"}, {Head: "{repo}", Base: "main", Title: "t"},
+		{Head: "-X", Base: "main", Title: "t"}, {Head: "a\nb", Base: "main", Title: "t"}, {Head: "a\x00b", Base: "main", Title: "t"},
+		{Head: "../x", Base: "main", Title: "t"}, {Head: "a/../b", Base: "main", Title: "t"}, {Head: "ok", Base: "main", Title: "t\x00u"},
+		{Head: "ok", Base: "main", Title: "{owner} -X\\t"}, {Head: "ok", Base: "main", Title: "a\nb"}, {Head: "ok", Base: "main", Title: "t", Body: "x\x00{repo}"},
+		{Head: "a&state=closed", Base: "main", Title: "t"}, {Head: "a b", Base: "main", Title: "t"}, {Head: "a@{1}", Base: "main", Title: "t"},
+	} {
+		ch, err := g.OpenChange(context.Background(), c)
+		t.Logf("head=%q title=%q -> num=%d err=%v", c.Head, c.Title, ch.Number, err)
+	}
+	t.Logf("requests that reached the server: %q", bodies)
+}

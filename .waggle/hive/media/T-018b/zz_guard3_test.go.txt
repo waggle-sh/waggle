@@ -1,0 +1,16 @@
+package forge
+
+import (
+	"context"
+	"net/http"
+	"strings"
+	"testing"
+)
+
+func TestGuardBadToken(t *testing.T) {
+	for _, tok := range []string{gtok + "\n", gtok + "\r\nX-Evil: 1", "tok\x00" + gtok} {
+		x := &tokenTransport{base: "http://127.0.0.1:1", token: tok, client: &http.Client{}}
+		_, err := x.do(context.Background(), "GET", "/x", nil, nil)
+		t.Logf("token with control chars: leak=%v err=%v", err != nil && strings.Contains(err.Error(), gtok), err)
+	}
+}

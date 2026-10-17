@@ -1,0 +1,86 @@
+=== RUN   TestProbeIDs
+"T-1"                                    -> ticket="T-001" err=<nil>
+"1"                                      -> ticket="T-001" err=<nil>
+"001"                                    -> ticket="T-001" err=<nil>
+"T-001"                                  -> ticket="T-001" err=<nil>
+"T-0001"                                 -> ticket="T-001" err=<nil>
+"t-1"                                    -> ticket="" err=ticket id "t-1": comb: invalid ticket id
+"T-"                                     -> ticket="" err=ticket id "T-": comb: invalid ticket id
+""                                       -> ticket="" err=ticket id "": comb: invalid ticket id
+"../../x"                                -> ticket="" err=ticket id "../../x": comb: invalid ticket id
+"T-1/../2"                               -> ticket="" err=ticket id "T-1/../2": comb: invalid ticket id
+"T-1\n"                                  -> ticket="" err=ticket id "T-1\n": comb: invalid ticket id
+"T-1 "                                   -> ticket="" err=ticket id "T-1 ": comb: invalid ticket id
+" T-1"                                   -> ticket="" err=ticket id " T-1": comb: invalid ticket id
+"T-1234567"                              -> ticket="" err=ticket id "T-1234567": comb: invalid ticket id
+"T-9999999999999999999999999999...(5002 bytes)" -> ticket="" err=ticket id "T-99999999999999999999999999999999999999999999999999999999999999999999999999999
+"T-0"                                    -> ticket="" err=ticket id "T-0": comb: invalid ticket id
+"T-+1"                                   -> ticket="" err=ticket id "T-+1": comb: invalid ticket id
+"T--1"                                   -> ticket="" err=ticket id "T--1": comb: invalid ticket id
+"T-١"                                    -> ticket="" err=ticket id "T-١": comb: invalid ticket id
+"Ｔ-1"                                    -> ticket="" err=ticket id "Ｔ-1": comb: invalid ticket id
+"T-１"                                    -> ticket="" err=ticket id "T-１": comb: invalid ticket id
+"ticket-1"                               -> ticket="" err=ticket id "ticket-1": comb: invalid ticket id
+"T-1\x00"                                -> ticket="" err=ticket id "T-1\x00": comb: invalid ticket id
+"-1"                                     -> ticket="" err=ticket id "-1": comb: invalid ticket id
+"T-1.0"                                  -> ticket="" err=ticket id "T-1.0": comb: invalid ticket id
+"T-0x1"                                  -> ticket="" err=ticket id "T-0x1": comb: invalid ticket id
+"refs/waggle/claims/ticket-1"            -> ticket="" err=ticket id "refs/waggle/claims/ticket-1": comb: invalid ticket id
+"T-*"                                    -> ticket="" err=ticket id "T-*": comb: invalid ticket id
+"T-[1]"                                  -> ticket="" err=ticket id "T-[1]": comb: invalid ticket id
+--- PASS: TestProbeIDs (0.28s)
+=== RUN   TestProbeRefs
+    zz_probe_test.go:41: git [update-ref refs/waggle/claims/ticket-1/sub 7f9494258e01a107272a81b7c3b9d7bb477c5bf3]: exit status 128: fatal: update_ref failed for ref 'refs/waggle/claims/ticket-1/sub': cannot lock ref 'refs/waggle/claims/ticket-1/sub': 'refs/waggle/claims/ticket-1' exists; cannot create 'refs/waggle/claims/ticket-1/sub'
+--- FAIL: TestProbeRefs (0.17s)
+=== RUN   TestProbeTier
+".waggle/hive/tasks/a"                        -> tier 2
+".waggle/hive/"                               -> tier 2
+".waggle/hive"                                -> tier 2
+".waggle/hive/../control/x"                   -> tier 3
+".waggle/hive//../control/x"                  -> tier 3
+".waggle/./hive/x"                            -> tier 2
+".Waggle/hive/x"                              -> tier 3
+".waggle/Hive/x"                              -> tier 3
+".waggle/HIVE"                                -> tier 3
+".WAGGLE/control/"                            -> tier 3
+".WAGGLE/control/WAGGLE.md"                   -> tier 3
+".github/Workflows/x.yml"                     -> tier 3
+".GITHUB/WORKFLOWS"                           -> tier 3
+".github/workflows/"                          -> tier 3
+".github/workflows."                          -> tier 0
+".github/workflows/."                         -> tier 3
+".github/workflows/x/"                        -> tier 3
+".github\\workflows\\x"                       -> tier 0
+"./.github/workflows/x"                       -> tier 3
+"/.github/workflows/x"                        -> tier 0
+".github//workflows/x"                        -> tier 3
+".github/workflows "                          -> tier 0
+".github/workflows\u200b/x"                   -> tier 0
+".gıthub/workflows/x"                         -> tier 0
+".GİTHUB/workflows/x"                         -> tier 3
+".waggle∕control/x"                           -> tier 0
+".waggle/hive∕x"                              -> tier 3
+".waggle/hive/..%2fcontrol"                   -> tier 2
+".waggle/hive/../../.waggle/control/x"        -> tier 3
+"x/../.waggle/control/x"                      -> tier 3
+".waggle."                                    -> tier 0
+".waggle/hive./x"                             -> tier 3
+".wagKle/x"                                   -> tier 0
+".ſ"                                          -> tier 0
+"ﬁle"                                         -> tier 0
+".github/ｗorkflows/x"                         -> tier 0
+"claude.md"                                   -> tier 2
+"CLAUDE.MD/x"                                 -> tier 2
+"claude.mdx"                                  -> tier 2
+".gitlab-ci.yml.bak"                          -> tier 3
+".DEVCONTAINER"                               -> tier 3
+".waggle/hive/x/../../control/y"              -> tier 3
+""                                            -> tier 0
+"."                                           -> tier 0
+".."                                          -> tier 0
+"../.waggle/control/x"                        -> tier 0
+"\x00.waggle/control/x"                       -> tier 0
+--- PASS: TestProbeTier (0.00s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/comb	0.681s
+FAIL
