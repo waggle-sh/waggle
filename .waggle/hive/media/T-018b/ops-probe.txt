@@ -1,0 +1,33 @@
+=== RUN   TestGuardOps
+    zz_guard2_test.go:70: 422 lookup: {Head:{owner}x Base:main Number:9 URL:https://github.com/o/r/pull/9} err=<nil>
+    zz_guard2_test.go:76: merge mode=ok           auto=false err=<nil> | HeadMoved=false NotMergeable=false Unsupported=false
+    zz_guard2_test.go:76: merge mode=merged-false auto=false err=forge: merge pull request 9 (x into main): GitHub did not merge: nope: not mergeable | HeadMoved=false NotMergeable=true Unsupported=false
+    zz_guard2_test.go:76: merge mode=405          auto=false err=forge: merge pull request 9 (x into main): GitHub answered 405: Required status check is expected: not mergeable | HeadMoved=false NotMergeable=true Unsupported=false
+    zz_guard2_test.go:76: merge mode=409          auto=false err=forge: merge pull request 9 (x into main): the head is no longer aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: GitHub answered 409: Head branch was modified. Review and try the merge again.: head moved | HeadMoved=true NotMergeable=false Unsupported=false
+    zz_guard2_test.go:76: merge mode=500          auto=false err=forge: merge pull request 9 (x into main): GitHub answered 500: x | HeadMoved=false NotMergeable=false Unsupported=false
+    zz_guard2_test.go:76: merge mode=moved        auto=true  err=forge: merge pull request 9 (x into main): the head is bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, expected aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: head moved | HeadMoved=true NotMergeable=false Unsupported=false
+    zz_guard2_test.go:76: merge mode=nosha        auto=true  err=<nil> | HeadMoved=false NotMergeable=false Unsupported=false
+    zz_guard2_test.go:76: merge mode=gql-moved    auto=true  err=forge: merge pull request 9 (x into main): enable auto-merge: Head branch was modified. Review and try the merge again. | HeadMoved=false NotMergeable=false Unsupported=false
+    zz_guard2_test.go:76: merge mode=gql-unsup    auto=true  err=forge: merge pull request 9 (x into main): enable auto-merge: Auto merge is not allowed for this repository: not supported by this forge | HeadMoved=false NotMergeable=false Unsupported=true
+    zz_guard2_test.go:80: bad merge req "ABC" -> forge: merge pull request 9 ( into ): ExpectedHeadOID "ABC" is not an object id
+    zz_guard2_test.go:80: bad merge req "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" -> forge: merge pull request 9 ( into ): subject must be one non-empty line
+    zz_guard2_test.go:80: bad merge req "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" -> forge: merge pull request 9 ( into ): subject must be one non-empty line
+    zz_guard2_test.go:80: bad merge req "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" -> forge: merge pull request 9 ( into ): ExpectedHeadOID "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" is not an object id
+    zz_guard2_test.go:82: comment number 0: forge: comment on : no pull request number
+    zz_guard2_test.go:87: REQ POST /repos/o/r/pulls {"base":"main","body":"","head":"{owner}x","title":"t"}
+    zz_guard2_test.go:87: REQ GET /repos/o/r/pulls?head=o%3A%7Bowner%7Dx&state=open 
+    zz_guard2_test.go:87: REQ PUT /repos/o/r/pulls/9/merge {"commit_message":"b","commit_title":"s","merge_method":"merge","sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+    zz_guard2_test.go:87: REQ PUT /repos/o/r/pulls/9/merge {"commit_message":"b","commit_title":"s","merge_method":"merge","sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+    zz_guard2_test.go:87: REQ PUT /repos/o/r/pulls/9/merge {"commit_message":"b","commit_title":"s","merge_method":"merge","sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+    zz_guard2_test.go:87: REQ PUT /repos/o/r/pulls/9/merge {"commit_message":"b","commit_title":"s","merge_method":"merge","sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+    zz_guard2_test.go:87: REQ PUT /repos/o/r/pulls/9/merge {"commit_message":"b","commit_title":"s","merge_method":"merge","sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+    zz_guard2_test.go:87: REQ GET /repos/o/r/pulls/9 
+    zz_guard2_test.go:87: REQ GET /repos/o/r/pulls/9 
+    zz_guard2_test.go:87: REQ POST /graphql {"query":"mutation($id: ID!, $headline: String!, $body: String!, $oid: GitObjectID!) {\n  enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: MERGE,\n    commitHeadline: 
+    zz_guard2_test.go:87: REQ GET /repos/o/r/pulls/9 
+    zz_guard2_test.go:87: REQ POST /graphql {"query":"mutation($id: ID!, $headline: String!, $body: String!, $oid: GitObjectID!) {\n  enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: MERGE,\n    commitHeadline: 
+    zz_guard2_test.go:87: REQ GET /repos/o/r/pulls/9 
+    zz_guard2_test.go:87: REQ POST /graphql {"query":"mutation($id: ID!, $headline: String!, $body: String!, $oid: GitObjectID!) {\n  enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: MERGE,\n    commitHeadline: 
+--- PASS: TestGuardOps (0.06s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/forge	1.384s
