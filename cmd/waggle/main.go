@@ -56,6 +56,9 @@ func main() {
 	case "decide":
 		os.Exit(runDecide(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
 
+	case "gate":
+		os.Exit(runGate(os.Args[2:], os.Stdout, os.Stderr, os.Getenv))
+
 	case "uninstall":
 		os.Exit(runUninstall(os.Args[2:], os.Stdout, os.Stderr))
 
@@ -81,6 +84,7 @@ Usage:
 Commands (v0.1 Bootstrap):
   init      Scaffold .waggle/control/, .waggle/hive/, the gate workflow, and local runtime shims
   decide    Append one decision entry to .waggle/hive/DECISIONS.md from a JSON file (--file)
+  gate      Merge-gate checks (v0.1: 'gate decisions' rejects non-append DECISIONS.md changes)
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, waggled state, and per-ticket token use
   version   Print version`)
