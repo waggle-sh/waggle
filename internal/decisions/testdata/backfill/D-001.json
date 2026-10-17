@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "Claim refs wrap a single lease.json commit",
+  "question": "How is a Comb claim stored at refs/waggle/claims/ticket-<n>?",
+  "options": [
+    "Bare JSON blob at the ref, as RFC-0003 3.1 says",
+    "Commit whose tree holds only lease.json, with renewals and takeovers chained"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "The ref points to a commit wrapping a single lease.json; renewals and takeovers are child commits of the previous claim; release deletes the ref.",
+  "rationale": "Gives an audit chain readable with git log while the claim exists. Needs an RFC-0003 section 3.1 amendment (T-003).",
+  "tickets": [
+    "T-002",
+    "T-003"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "credentials",
+  "title": "waggle-sh GitHub access on the Keeper's machine uses the gh CLI keyring login",
+  "question": "Which credential does the Keeper's machine use for GitHub access to waggle-sh?",
+  "options": [
+    "A new fine-grained token owned by waggle-sh in 1Password (D-059)",
+    "The existing gh CLI keyring login"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Waggle-sh GitHub access on the Keeper's machine uses the existing gh CLI keyring login, the path a typical user takes, so the hive exercises it; no new 1Password token. Repo waggle-sh/waggle created private; main and t-002 pushed; T-002 opened as PR #1 (https://github.com/waggle-sh/waggle/pull/1) with its Intent Packet.",
+  "rationale": "The Keeper's machine is not representative of users (\"not everyone will have 1password ... or want to set up a PAT\").",
+  "tickets": [],
+  "supersedes": [
+    "D-059"
+  ]
+}

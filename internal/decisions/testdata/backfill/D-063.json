@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "The target build runs waggle upgrade and becomes the pin",
+  "question": "D-042 says the upgrade command runs \"from the pinned build\". Which build runs it: the old pin, or the new known-good version?",
+  "options": [
+    "The old pinned build",
+    "The target build (the new known-good version)"
+  ],
+  "recommendation": "The target build",
+  "choice": "Clarifies D-042: the target build (the new known-good version) runs waggle upgrade, renders its templates into a hive PR, and becomes the pin when that PR merges. The old pinned build never renders templates; it is recorded only as the \"from\" value.",
+  "rationale": "The old build cannot render templates it does not contain.",
+  "tickets": [
+    "T-016"
+  ],
+  "supersedes": []
+}
