@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -69,6 +71,39 @@ func TestMaterializeShims(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "CLAUDE.md")); !os.IsNotExist(err) {
 		t.Error("adapter wrote CLAUDE.md")
+	}
+}
+
+func TestRunRefusesUnresolvedSelection(t *testing.T) {
+	a := NewClaudeAdapter(AdapterConfig{})
+	ctx := context.Background()
+	_, err := a.Run(ctx, Invocation{Role: "builder", TaskID: "T-5"})
+	wantErr(t, err, ErrUnresolved, "builder", "T-5")
+
+	guard := mustResolve(t, testPolicy(), "guard", nil, nil)
+	_, err = a.Run(ctx, Invocation{Role: "builder", TaskID: "T-5", Selection: guard})
+	wantErr(t, err, ErrUnresolved, "builder")
+
+	_, err = a.Run(ctx, Invocation{Role: "builder", Selection: Selection{Role: "builder", Model: "opus"}})
+	wantErr(t, err, ErrUnresolved)
+
+	builder := mustResolve(t, testPolicy(), "builder", nil, nil)
+	_, err = a.Run(ctx, Invocation{Role: "builder", Selection: builder})
+	if err == nil || errors.Is(err, ErrUnresolved) {
+		t.Errorf("Run with a resolved selection: %v; want the waggled error only", err)
+	}
+}
+
+func TestClaudeArgs(t *testing.T) {
+	a := NewClaudeAdapter(AdapterConfig{DefaultArgs: []string{"--print", "--verbose"}})
+	sel := mustResolve(t, testPolicy(), "builder", nil, nil)
+	got := a.claudeArgs(Invocation{Role: "builder", Selection: sel})
+	want := []string{"--model", "sonnet", "--print", "--verbose"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Errorf("claudeArgs = %q; want %q", got, want)
+	}
+	if got := NewClaudeAdapter(AdapterConfig{}).claudeArgs(Invocation{Selection: sel}); len(got) != 2 {
+		t.Errorf("claudeArgs without defaults = %q", got)
 	}
 }
 

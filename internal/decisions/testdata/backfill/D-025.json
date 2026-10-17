@@ -1,0 +1,14 @@
+{
+  "kind": "publish",
+  "title": "Repo starts private and goes public at v0.1 launch",
+  "question": "When does the repository become public?",
+  "options": [
+    "Private until the v0.1 launch",
+    "Alternatives not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "The repo starts private and goes public at the v0.1 launch.",
+  "rationale": "Not recorded",
+  "tickets": [],
+  "supersedes": []
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "Queen-applied reversible defaults for T-011 and T-013 open questions",
+  "question": "Which reversible defaults from T-011 (Q-T011-3, -4, -6, -7) and T-013 (Q-T013-1, -2) stand until the Keeper changes them?",
+  "options": [
+    "Apply the briefs' defaults",
+    "Hold each until answered"
+  ],
+  "recommendation": "Apply the defaults",
+  "choice": "Defaults applied by the Queen (reversible): .devcontainer/ stays Tier 3 where present; ROADMAP and specs live in the hive; agent tool config such as .claude/settings.json hooks gets its own classification ticket; Tier3ControlAuth renamed Tier3ControlPlane; docs/GLOSSARY.md is protected in this repo by CODEOWNERS rather than a hardcoded Tier 2 entry (a hardcoded entry would hit every host project's own GLOSSARY, against D-043's no-new-burden rule); CONTRIBUTING.md is not Tier 2.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-011",
+    "T-013"
+  ],
+  "supersedes": []
+}

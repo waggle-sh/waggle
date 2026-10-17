@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Always-on token savings and one context.profile setting that never weakens the Tier 2+ guard",
+  "question": "How does Waggle control token cost without weakening review?",
+  "options": [
+    "No cost controls",
+    "Always-on savings plus a single profile setting with per-role overrides"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Always-on savings: a fresh session per task, lease-scoped context, a cache-friendly prompt order (role prompt, then WAGGLE.md, then the brief), trimmed tool output, and handoff instead of compaction. One Keeper setting, context.profile, takes lean, balanced or thorough, with per-role overrides. No profile may skip or weaken the guard on Tier 2 and above. waggle status reports tokens and dollars per ticket.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-021"
+  ],
+  "supersedes": []
+}

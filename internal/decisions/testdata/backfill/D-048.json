@@ -1,0 +1,19 @@
+{
+  "kind": "policy",
+  "title": "The Waggle GitHub App authors agent PRs; until it exists, PRs use admin bypass",
+  "question": "Which account opens agent PRs and pushes branches, given GitHub never lets a PR author approve their own PR?",
+  "options": [
+    "The Head Keeper's own account with bypass merges",
+    "A separate machine account",
+    "The Waggle GitHub App from D-015"
+  ],
+  "recommendation": "A separate machine account or GitHub App",
+  "choice": "The Waggle GitHub App (from D-015) also authors agent PRs and pushes branches; the Head Keeper reviews. Until the App exists, PRs come from the Keeper's account and protected merges use admin bypass.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-005",
+    "T-014",
+    "T-015"
+  ],
+  "supersedes": []
+}

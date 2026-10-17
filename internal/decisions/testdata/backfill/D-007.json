@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "Comb remote comes from forge.remote",
+  "question": "Where does the Comb remote come from?",
+  "options": [
+    "forge.remote in shared config",
+    "remote in per-Keeper local.yaml",
+    "derive origin from provider and comb mode"
+  ],
+  "recommendation": "forge.remote in shared config, no CLI override",
+  "choice": "New forge.remote key in shared config, added by the Controller to the template and .waggle/config.yaml; absent means local-only; no --remote override.",
+  "rationale": "The remote is hive-wide state; Keepers disagreeing about it would split the Comb.",
+  "tickets": [
+    "T-004"
+  ],
+  "supersedes": []
+}

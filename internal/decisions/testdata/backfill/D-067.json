@@ -1,0 +1,16 @@
+{
+  "kind": "strategy",
+  "title": "Plain-git core with a small Forge interface and a setup check that states what is not enforced",
+  "question": "How does Waggle depend on a code host without building that host's assumptions into the core?",
+  "options": [
+    "Build GitHub behavior directly into the core",
+    "Keep the core plain git, put host operations behind a small Forge interface, and probe each repo's capabilities at setup"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Waggle's core stays plain git: claims, leases, gate logic, decisions, WORKPLAN and Cells. A small Forge interface covers opening, commenting on and merging changes (PRs or MRs), the CI shim file, bot identity, and relay. A setup check (in waggle init and a new waggle doctor command) probes what each repo can enforce (custom ref pushes, required checks, rulesets, merge queue, App or bot support), picks the best mode, and states plainly what is not enforced; it never silently degrades. If a host rejects refs/waggle/* pushes, claims fall back to a dedicated branch. Personal and organization GitHub accounts are handled as capability differences, not account types.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-018"
+  ],
+  "supersedes": []
+}

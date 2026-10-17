@@ -1,0 +1,18 @@
+{
+  "kind": "technical",
+  "title": "Drop the roster mode field",
+  "question": "What is the roster's \"mode\": \"swarm\" field (Q-T013-3)?",
+  "options": [
+    "Drop the field",
+    "Define modes solo and swarm",
+    "Reserve the field for v0.2 operating modes"
+  ],
+  "recommendation": "Drop the field",
+  "choice": "Drop the roster \"mode\" field. The roster loader ignores a leftover mode key for one release. \"Swarm\" stays an informal README term. T-012 phase B's template commit deletes the line.",
+  "rationale": "The field is undefined and nothing reads it.",
+  "tickets": [
+    "T-012",
+    "T-013"
+  ],
+  "supersedes": []
+}

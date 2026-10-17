@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "Bee names only for concepts Waggle invents; standard words for everything users already know",
+  "question": "When does Waggle use a bee-themed name, and when a standard industry word?",
+  "options": [
+    "Bee-themed names throughout",
+    "Bee terms only for concepts Waggle invents, standard words for known things and precise mechanisms"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Bee terms are used only for concepts Waggle invents (Hive, Comb, Cell, roles). Things users already know keep their standard industry words (forge, PR, CI, commit, ref), and so do precise mechanisms (Gate, Lease, Claim, Risk Tier, Intent Packet). The rule is recorded in CONTRIBUTING.md. The v0.2 role name \"drone\" is retired because real drones do no work; studio and assembly get names when they are designed.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-013",
+    "T-020"
+  ],
+  "supersedes": []
+}
