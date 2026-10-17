@@ -10,14 +10,14 @@
       "workspace": "main",
       "purpose": "Single conversational interface for the Keeper; surfaces AskUserQuestion decision cards.",
       "owns": [],
-      "never": ["wait on workers", "write feature code or specs", "edit DECISIONS.md", "lower a gate"]
+      "never": ["wait on workers", "write feature code or specs", "edit .waggle/hive/DECISIONS.md", "lower a gate"]
     },
     {
       "id": "architect",
       "runs": "worker",
       "workspace": "main",
       "purpose": "Breaks down goals into <400-line task briefs with directory leases and Light/Full gate tags.",
-      "owns": ["ROADMAP.md", "docs/specs/**", "docs/tasks/**"],
+      "owns": [".waggle/hive/ROADMAP.md", ".waggle/hive/specs/**", ".waggle/hive/tasks/**"],
       "never": ["write feature implementation code", "talk directly to the Keeper"]
     },
     {
@@ -34,9 +34,9 @@
       "runs": "worker",
       "workspace": "cell-rw-lease",
       "allow_unattended": false,
-      "purpose": "Implements one task from its brief (docs/tasks/T-<id>.md) inside leased directories.",
+      "purpose": "Implements one task from its brief (.waggle/hive/tasks/T-<id>.md) inside leased directories.",
       "owns": ["<leased-directories>"],
-      "never": ["touch files outside lease", "read full WORKPLAN.md or backlog", "hold host credentials"]
+      "never": ["touch files outside lease", "read full .waggle/hive/WORKPLAN.md or backlog", "hold host credentials"]
     },
     {
       "id": "guard",
@@ -44,7 +44,7 @@
       "workspace": "cell-ro",
       "require_cross_model": true,
       "purpose": "Verifies acceptance criteria, records evidence, and outputs Verdict + Intent Packet + Risk Tier.",
-      "owns": ["docs/reviews/**", "docs/media/**"],
+      "owns": [".waggle/hive/reviews/**", ".waggle/hive/media/**"],
       "never": ["fix bugs itself", "invent hypothetical nitpicks"]
     }
   ]

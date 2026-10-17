@@ -2,12 +2,19 @@ package scaffold
 
 import (
 	"embed"
+	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
+	"regexp"
+	"runtime/debug"
+	"sort"
 	"strings"
 
+	"github.com/waggle-sh/waggle/internal/layout"
 	"github.com/waggle-sh/waggle/internal/runtime"
 )
 
@@ -25,45 +32,138 @@ type InitOptions struct {
 	Forge     string // v0.1 supports "github"
 	CombMode  string // "direct" (push refs) or "relay" (OSS issue_comment Action)
 	Runtime   string // Keeper's local runtime preference (default: "claude-code")
-	Force     bool
+	Force     bool   // rewrite managed files; seeded files are never overwritten
+
+	// BuildInfo supplies the build stamp used for waggle.pin. Nil means debug.ReadBuildInfo.
+	BuildInfo func() (*debug.BuildInfo, bool)
+	// Out receives progress lines. Nil means os.Stdout.
+	Out io.Writer
 }
 
-var fileMappings = map[string]string{
-	"templates/WAGGLE.md.tmpl":         "WAGGLE.md",
-	"templates/config.yaml.tmpl":       ".waggle/config.yaml",
-	"templates/local.yaml.tmpl":        ".waggle/local.yaml",
-	"templates/roster.json.tmpl":       ".waggle/roster.json",
-	"templates/devcontainer.json.tmpl": ".devcontainer/devcontainer.json",
-	"templates/waggle-gate.yml.tmpl":   ".github/workflows/waggle-gate.yml",
-	"templates/roles/queen.md":         ".waggle/roles/queen.md",
-	"templates/roles/architect.md":     ".waggle/roles/architect.md",
-	"templates/roles/scout.md":         ".waggle/roles/scout.md",
-	"templates/roles/forager.md":       ".waggle/roles/forager.md",
-	"templates/roles/guard.md":         ".waggle/roles/guard.md",
+// ErrLegacyLayout reports a hive that still uses the pre-T-011 layout.
+var ErrLegacyLayout = errors.New("scaffold: legacy waggle layout (.waggle/config.yaml or .waggle/roles/); migrate it to .waggle/control/ by hand, nothing was written")
+
+// Unpinned is the waggle.pin value written when the build has no usable stamp.
+const Unpinned = "unpinned"
+
+type templateFile struct {
+	src    string // path inside templateFS
+	dst    string // repo-relative, slash-separated
+	seeded bool   // rendered once, then owned by the hive
 }
 
-const gitignoreMarker = "# --- waggle:start ---"
+// templateFiles lists every file init renders, in a stable order.
+func templateFiles() ([]templateFile, error) {
+	files := []templateFile{
+		{"templates/config.yaml.tmpl", layout.Config, true},
+		{"templates/WAGGLE.md.tmpl", layout.WaggleMD, true},
+		{"templates/local.yaml.tmpl", layout.Local, true},
+		{"templates/roster.json.tmpl", layout.Roster, false},
+		{"templates/devcontainer.json.tmpl", layout.Devcontainer, false},
+		{"templates/waggle-gate.yml.tmpl", layout.GateWorkflow, false},
+	}
+	roles, err := fs.ReadDir(templateFS, "templates/roles")
+	if err != nil {
+		return nil, fmt.Errorf("reading embedded roles: %w", err)
+	}
+	sort.Slice(roles, func(i, j int) bool { return roles[i].Name() < roles[j].Name() })
+	for _, r := range roles {
+		files = append(files, templateFile{"templates/roles/" + r.Name(), path.Join(layout.RolesDir, r.Name()), false})
+	}
+	return files, nil
+}
 
-const gitignoreBlock = `
-# --- waggle:start ---
-# Local Keeper preferences & runtime daemon state
-.waggle/local.yaml
-.waggle/run.sock
-.waggle/worktrees/
-.dashboard/
+// gitignoreBody lists only Waggle runtime state; project-owned files are never ignored.
+var gitignoreBody = strings.Join([]string{
+	layout.Local,
+	layout.Socket,
+	layout.Worktrees + "/",
+	layout.ShimPrefix + "*.md",
+}, "\n") + "\n"
 
-# Materialized vendor/IDE shims (generated from .waggle/roles/ and WAGGLE.md)
-.claude/
-CLAUDE.md
-AGENTS.md
-GEMINI.md
-.cursor/
-.aider*
-# --- waggle:end ---
-`
+var pseudoVersion = regexp.MustCompile(`[0-9]{14}-[0-9a-f]{12}`)
+var commitHash = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
-// InitRepo writes the MIT-0 Waggle files into opts.TargetDir, configures .gitignore,
-// and materializes the Keeper's local runtime shims.
+// resolvePin returns the release tag of the main module, else a clean
+// vcs.revision, else Unpinned with ok false.
+func resolvePin(read func() (*debug.BuildInfo, bool)) (pin string, ok bool) {
+	bi, found := read()
+	if !found || bi == nil {
+		return Unpinned, false
+	}
+	if v := bi.Main.Version; strings.HasPrefix(v, "v") && !strings.Contains(v, "+") && !pseudoVersion.MatchString(v) {
+		return v, true
+	}
+	var rev, modified string
+	for _, s := range bi.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			rev = s.Value
+		case "vcs.modified":
+			modified = s.Value
+		}
+	}
+	if commitHash.MatchString(rev) && modified == "false" {
+		return rev, true
+	}
+	return Unpinned, false
+}
+
+// pendingEdit is a project file whose new content was computed before any write.
+type pendingEdit struct {
+	rel, old, new string
+	existed       bool
+}
+
+func readOptional(p string) (string, bool, error) {
+	b, err := os.ReadFile(p)
+	if errors.Is(err, fs.ErrNotExist) {
+		return "", false, nil
+	}
+	return string(b), err == nil, err
+}
+
+// planBlock computes the edit that upserts one marked block in a project file.
+func planBlock(root, rel, start, end, body string) (pendingEdit, error) {
+	old, existed, err := readOptional(filepath.Join(root, filepath.FromSlash(rel)))
+	if err != nil {
+		return pendingEdit{}, fmt.Errorf("reading %s: %w", rel, err)
+	}
+	updated, err := UpsertBlock(old, start, end, body)
+	if err != nil {
+		return pendingEdit{}, fmt.Errorf("%s: %w", rel, err)
+	}
+	return pendingEdit{rel: rel, old: old, new: updated, existed: existed}, nil
+}
+
+func exists(root, rel string) bool {
+	_, err := os.Stat(filepath.Join(root, filepath.FromSlash(rel)))
+	return err == nil
+}
+
+// importTarget picks CLAUDE.md or AGENTS.md (never both) and the import line for it.
+func importTarget(root, rt string) (rel, body string) {
+	switch {
+	case exists(root, "CLAUDE.md"):
+		rel = "CLAUDE.md"
+	case exists(root, "AGENTS.md"):
+		rel = "AGENTS.md"
+	case rt == "claude-code":
+		rel = "CLAUDE.md"
+	default:
+		rel = "AGENTS.md"
+	}
+	if rel == "CLAUDE.md" {
+		return rel, "@" + layout.WaggleMD + "\n"
+	}
+	return rel, "Read " + layout.WaggleMD + " before working in this repo.\n"
+}
+
+// InitRepo scaffolds the single-folder footprint into opts.TargetDir: the
+// .waggle/control/ and .waggle/hive/ trees, the gate workflow, one marked block
+// in .gitignore and in CLAUDE.md or AGENTS.md, and the runtime shims. Project
+// files are edited only between Waggle markers. Marker problems and a legacy
+// layout are detected before anything is written.
 func InitRepo(opts InitOptions) error {
 	if opts.Profile != "cli" {
 		return fmt.Errorf("unsupported profile %q in v0.1 (only 'cli' is supported; others arrive in v0.2)", opts.Profile)
@@ -74,83 +174,109 @@ func InitRepo(opts InitOptions) error {
 	if opts.CombMode != "direct" && opts.CombMode != "relay" {
 		return fmt.Errorf("invalid --comb-mode=%q (must be 'direct' or 'relay')", opts.CombMode)
 	}
+	if opts.Runtime != "claude-code" && opts.Runtime != "none" {
+		return fmt.Errorf("unsupported --runtime=%q in v0.1 (supported: 'claude-code', 'none')", opts.Runtime)
+	}
+	out := opts.Out
+	if out == nil {
+		out = os.Stdout
+	}
+	root := opts.TargetDir
 
-	for src, dstRel := range fileMappings {
-		dstPath := filepath.Join(opts.TargetDir, filepath.FromSlash(dstRel))
-
-		if !opts.Force {
-			if _, err := os.Stat(dstPath); err == nil {
-				fmt.Printf("  [skip]   %s (already exists)\n", dstRel)
-				continue
-			}
+	for _, legacy := range []string{layout.Root + "/config.yaml", layout.Root + "/roles"} {
+		if exists(root, legacy) {
+			return fmt.Errorf("found %s: %w", legacy, ErrLegacyLayout)
 		}
-
-		rawBytes, err := fs.ReadFile(templateFS, src)
-		if err != nil {
-			return fmt.Errorf("reading embedded template %s: %w", src, err)
-		}
-
-		rendered := strings.NewReplacer(
-			"{{PROFILE}}", opts.Profile,
-			"{{DELIVERY}}", opts.Delivery,
-			"{{FORGE}}", opts.Forge,
-			"{{COMB_MODE}}", opts.CombMode,
-			"{{RUNTIME}}", opts.Runtime,
-		).Replace(string(rawBytes))
-
-		if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
-			return fmt.Errorf("creating directory for %s: %w", dstRel, err)
-		}
-
-		if err := os.WriteFile(dstPath, []byte(rendered), 0o644); err != nil {
-			return fmt.Errorf("writing %s: %w", dstRel, err)
-		}
-		fmt.Printf("  [create] %s\n", dstRel)
 	}
 
-	// Ensure .gitignore excludes local Keeper state and vendor shims.
-	if err := ensureGitignore(opts.TargetDir); err != nil {
+	importRel, importBody := importTarget(root, opts.Runtime)
+	var edits []pendingEdit
+	for _, b := range []struct{ rel, start, end, body string }{
+		{".gitignore", GitignoreStart, GitignoreEnd, gitignoreBody},
+		{importRel, MarkdownStart, MarkdownEnd, importBody},
+	} {
+		e, err := planBlock(root, b.rel, b.start, b.end, b.body)
+		if err != nil {
+			return err
+		}
+		edits = append(edits, e)
+	}
+
+	files, err := templateFiles()
+	if err != nil {
 		return err
 	}
 
-	// Materialize vendor-specific shims for the Keeper's selected runtime.
-	switch opts.Runtime {
-	case "claude-code":
+	read := opts.BuildInfo
+	if read == nil {
+		read = debug.ReadBuildInfo
+	}
+	pin, pinned := resolvePin(read)
+	if !pinned {
+		fmt.Fprintln(out, "  [warn]   built from a modified or unstamped tree; set waggle.pin by hand")
+	}
+	replacer := strings.NewReplacer(
+		"{{PROFILE}}", opts.Profile,
+		"{{DELIVERY}}", opts.Delivery,
+		"{{FORGE}}", opts.Forge,
+		"{{COMB_MODE}}", opts.CombMode,
+		"{{RUNTIME}}", opts.Runtime,
+		"{{PIN}}", pin,
+	)
+
+	for _, f := range files {
+		dstPath := filepath.Join(root, filepath.FromSlash(f.dst))
+		present := exists(root, f.dst)
+		switch {
+		case present && f.seeded:
+			fmt.Fprintf(out, "  [skip]   %s (seeded)\n", f.dst)
+			continue
+		case present && !opts.Force:
+			fmt.Fprintf(out, "  [skip]   %s (already exists)\n", f.dst)
+			continue
+		}
+		raw, err := fs.ReadFile(templateFS, f.src)
+		if err != nil {
+			return fmt.Errorf("reading embedded template %s: %w", f.src, err)
+		}
+		if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
+			return fmt.Errorf("creating directory for %s: %w", f.dst, err)
+		}
+		if err := os.WriteFile(dstPath, []byte(replacer.Replace(string(raw))), 0o644); err != nil {
+			return fmt.Errorf("writing %s: %w", f.dst, err)
+		}
+		verb := "create"
+		if present {
+			verb = "update"
+		}
+		fmt.Fprintf(out, "  [%s] %s\n", verb, f.dst)
+	}
+
+	for _, d := range []string{layout.TasksDir, layout.ReviewsDir, layout.MediaDir} {
+		if err := os.MkdirAll(filepath.Join(root, filepath.FromSlash(d)), 0o755); err != nil {
+			return fmt.Errorf("creating %s: %w", d, err)
+		}
+	}
+
+	for _, e := range edits {
+		if e.existed && e.new == e.old {
+			fmt.Fprintf(out, "  [skip]   %s (waggle block up to date)\n", e.rel)
+			continue
+		}
+		if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(e.rel)), []byte(e.new), 0o644); err != nil {
+			return fmt.Errorf("writing %s: %w", e.rel, err)
+		}
+		fmt.Fprintf(out, "  [edit]   %s (waggle block)\n", e.rel)
+	}
+	if importRel == "AGENTS.md" && opts.Runtime == "claude-code" {
+		fmt.Fprintf(out, "  [note]   Claude Code reads CLAUDE.md, not AGENTS.md; import %s there if you use it\n", layout.WaggleMD)
+	}
+
+	if opts.Runtime == "claude-code" {
 		adapter := runtime.NewClaudeAdapter(runtime.AdapterConfig{Binary: "claude"})
-		if err := adapter.Materialize(opts.TargetDir); err != nil {
+		if err := adapter.Materialize(root); err != nil {
 			return fmt.Errorf("materializing claude-code shims: %w", err)
 		}
-	case "none":
-		// Skip vendor shim generation if requested.
-	default:
-		return fmt.Errorf("unsupported --runtime=%q in v0.1 (supported: 'claude-code', 'none')", opts.Runtime)
 	}
-
-	return nil
-}
-
-// ensureGitignore appends Waggle's ignore block to the repo's .gitignore if not already present.
-func ensureGitignore(targetDir string) error {
-	gitignorePath := filepath.Join(targetDir, ".gitignore")
-	existing, err := os.ReadFile(gitignorePath)
-	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("reading .gitignore: %w", err)
-	}
-
-	if strings.Contains(string(existing), gitignoreMarker) {
-		fmt.Println("  [skip]   .gitignore (waggle block already present)")
-		return nil
-	}
-
-	f, err := os.OpenFile(gitignorePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
-	if err != nil {
-		return fmt.Errorf("opening .gitignore: %w", err)
-	}
-	defer f.Close()
-
-	if _, err := f.WriteString(gitignoreBlock); err != nil {
-		return fmt.Errorf("writing .gitignore block: %w", err)
-	}
-	fmt.Println("  [update] .gitignore (added waggle local & shim exclusions)")
 	return nil
 }

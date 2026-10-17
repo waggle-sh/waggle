@@ -179,8 +179,8 @@ func TestValidateLeaseFields(t *testing.T) {
 		{"bad role", mut(func(l *Lease) { l.Role = "queen" }), ErrInvalidLease},
 		{"bad gate", mut(func(l *Lease) { l.Gate = "none" }), ErrInvalidLease},
 		{"tier3", mut(func(l *Lease) { l.Directories = []string{".github"} }), ErrTier3Path},
-		{"tier2 light", mut(func(l *Lease) { l.Gate = "light"; l.Directories = []string{"docs/tasks"} }), ErrGateTooLow},
-		{"tier2 file light", mut(func(l *Lease) { l.Gate = "light"; l.Directories = []string{"ROADMAP.md"} }), ErrGateTooLow},
+		{"tier2 light", mut(func(l *Lease) { l.Gate = "light"; l.Directories = []string{"CLAUDE.md"} }), ErrGateTooLow},
+		{"tier2 file light", mut(func(l *Lease) { l.Gate = "light"; l.Directories = []string{"agents.md"} }), ErrGateTooLow},
 	}
 	for _, tc := range cases {
 		if _, err := validateLeaseFields(tc.l, 5); !errors.Is(err, tc.want) {
@@ -191,8 +191,8 @@ func TestValidateLeaseFields(t *testing.T) {
 
 func TestTier3Detection(t *testing.T) {
 	tier3 := []string{
-		".waggle", ".waggle/roles", "WAGGLE.md", ".devcontainer", ".github", ".github/workflows",
-		".github/workflows/x", ".gitlab-ci.yml", ".WAGGLE", "waggle.md", ".GitHub/Workflows", ".DevContainer/x",
+		".waggle", ".waggle/roles", ".devcontainer", ".github", ".github/workflows",
+		".github/workflows/x", ".gitlab-ci.yml", ".WAGGLE", ".GitHub/Workflows", ".DevContainer/x",
 	}
 	for _, d := range tier3 {
 		if !isTier3Dir(d) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/waggle-sh/waggle/internal/layout"
 	"github.com/waggle-sh/waggle/internal/scaffold"
 )
 
@@ -25,7 +26,7 @@ func main() {
 		forge := initCmd.String("forge", "github", "Forge adapter (v0.1: 'github')")
 		combMode := initCmd.String("comb-mode", "direct", "Comb ref mode: 'direct' or 'relay'")
 		rt := initCmd.String("runtime", "claude-code", "Local Keeper agent runtime ('claude-code' or 'none')")
-		force := initCmd.Bool("force", false, "Overwrite existing Waggle files")
+		force := initCmd.Bool("force", false, "Rewrite managed Waggle files (seeded files are never overwritten)")
 		_ = initCmd.Parse(os.Args[2:])
 
 		cwd, err := os.Getwd()
@@ -50,10 +51,10 @@ func main() {
 			fmt.Fprintf(os.Stderr, "waggle init failed: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println("Hive initialized. Next: edit WAGGLE.md and commit.")
+		fmt.Printf("Hive initialized. Next: edit %s and commit.\n", layout.WaggleMD)
 
 	case "status":
-		// Stubbed for Commit #2 (reads refs/waggle/claims/* and .waggle/run.sock)
+		// Stubbed for Commit #2 (reads refs/waggle/claims/* and .waggle/control/run.sock)
 		fmt.Println("Hive Status: 0 active leases on refs/waggle/claims/* (waggled: stopped)")
 
 	case "version":
@@ -73,7 +74,7 @@ Usage:
   waggle <command> [flags]
 
 Commands (v0.1 Bootstrap):
-  init      Initialize .waggle/, .devcontainer/, WAGGLE.md, and local runtime shims
+  init      Scaffold .waggle/control/, .waggle/hive/, the gate workflow, and local runtime shims
   status    Plain-text report of active Comb leases and waggled daemon state
   version   Print version`)
 }

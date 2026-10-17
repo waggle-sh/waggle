@@ -121,8 +121,8 @@ func TestAcquireTier3Rejected(t *testing.T) {
 	b := newBackend(t, dir, "", newClock())
 	ctx := context.Background()
 	for _, d := range []string{
-		".waggle", ".waggle/roles", "WAGGLE.md", ".devcontainer", ".github", ".github/workflows",
-		".github/workflows/x", ".gitlab-ci.yml", ".WAGGLE", "waggle.md", ".", "./", "a/..",
+		".waggle", ".waggle/roles", ".devcontainer", ".github", ".github/workflows",
+		".github/workflows/x", ".gitlab-ci.yml", ".WAGGLE", ".", "./", "a/..",
 	} {
 		err := b.AcquireLease(ctx, mkLease("T-001", "k1", "internal/ok", d))
 		if !errors.Is(err, ErrTier3Path) {
@@ -143,21 +143,21 @@ func TestAcquireTier2Floor(t *testing.T) {
 	dir := newRepo(t, false)
 	b := newBackend(t, dir, "", newClock())
 	ctx := context.Background()
-	light := mkLease("T-001", "k1", "docs/specs")
+	light := mkLease("T-001", "k1", "CLAUDE.md")
 	light.Gate = "light"
 	if err := b.AcquireLease(ctx, light); !errors.Is(err, ErrGateTooLow) {
-		t.Errorf("docs/specs light: %v", err)
+		t.Errorf("CLAUDE.md light: %v", err)
 	}
-	docs := mkLease("T-001", "k1", "docs")
-	docs.Gate = "light"
-	if err := b.AcquireLease(ctx, docs); !errors.Is(err, ErrGateTooLow) {
-		t.Errorf("docs light: %v", err)
+	agents := mkLease("T-001", "k1", "agents.md")
+	agents.Gate = "light"
+	if err := b.AcquireLease(ctx, agents); !errors.Is(err, ErrGateTooLow) {
+		t.Errorf("agents.md light: %v", err)
 	}
 	if refs := claimRefs(t, dir); refs != "" {
 		t.Fatalf("refs created after rejection: %s", refs)
 	}
-	if err := b.AcquireLease(ctx, mkLease("T-001", "k1", "docs/specs")); err != nil {
-		t.Errorf("docs/specs full: %v", err)
+	if err := b.AcquireLease(ctx, mkLease("T-001", "k1", "CLAUDE.md")); err != nil {
+		t.Errorf("CLAUDE.md full: %v", err)
 	}
 }
 
