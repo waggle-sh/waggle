@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "WAGGLE.md section 2 adds internal/config and internal/decisions",
+  "question": "How do the new internal/config/ and internal/decisions/ packages become leasable modules?",
+  "options": [
+    "One Controller commit adding both to WAGGLE.md section 2",
+    "Alternatives not recorded"
+  ],
+  "recommendation": "One Controller commit adding both",
+  "choice": "WAGGLE.md section 2 gains internal/config/ (T-004) and internal/decisions/ (T-006), committed on branch controller/waggle-md-modules (0056ad9) with Master Keeper approval.",
+  "rationale": "WAGGLE.md is Tier 3, so module boundaries change only through a Controller commit the Master Keeper approves.",
+  "tickets": [
+    "T-004",
+    "T-006"
+  ],
+  "supersedes": []
+}

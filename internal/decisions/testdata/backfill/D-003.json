@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "Ticket ID canonical forms",
+  "question": "How are ticket IDs accepted, displayed, and mapped to refs?",
+  "options": [
+    "Zero-padded refs",
+    "Display T-%03d with unpadded refs"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Display T-%03d, ref ticket-<n> unpadded, input ^(T-)?[0-9]{1,6}$, value >= 1.",
+  "rationale": "Leading zeros can never create two refs for one ticket, and strict input blocks ref-name injection.",
+  "tickets": [
+    "T-002",
+    "T-003"
+  ],
+  "supersedes": []
+}

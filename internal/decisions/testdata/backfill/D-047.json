@@ -1,0 +1,17 @@
+{
+  "kind": "spend",
+  "title": "The waggle-sh org runs GitHub Team with one seat",
+  "question": "Which GitHub plan does the waggle-sh organization use while the repo is private?",
+  "options": [
+    "GitHub Free with advisory-only CODEOWNERS",
+    "Make the repo public earlier",
+    "GitHub Team, one seat"
+  ],
+  "recommendation": "GitHub Team, one seat",
+  "choice": "The org runs GitHub Team (1 seat, about $4 per month, Keeper-approved spend) so branch rulesets, required checks and code-owner review are enforced on the private repo before launch.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-015"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "The hive runs a pinned, known-good Waggle build",
+  "question": "Which Waggle build does our own hive run while Waggle is under construction?",
+  "options": [
+    "The current working tree or main",
+    "A pinned known-good build recorded in hive config"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "The hive never runs on code under construction. It runs a pinned, known-good Waggle build recorded in hive config (commit or tag). Upgrades are deliberate and logged with waggle decide. Extends T-007's rule of building the checker from the base.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-011",
+    "T-007"
+  ],
+  "supersedes": []
+}

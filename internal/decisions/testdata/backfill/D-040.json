@@ -1,0 +1,18 @@
+{
+  "kind": "scope",
+  "title": "Ticket order T-002, T-010, T-011, then everything else",
+  "question": "In what order do the queued tickets merge?",
+  "options": [
+    "Merge in ticket number order",
+    "T-002, then T-010, then T-011, with all other tickets rebasing after T-011"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "T-002 merges first, then T-010, then T-011; all other tickets rebase after T-011.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-002",
+    "T-010",
+    "T-011"
+  ],
+  "supersedes": []
+}
