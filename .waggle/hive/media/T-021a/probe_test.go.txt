@@ -1,0 +1,75 @@
+package runtime
+
+import (
+	"fmt"
+	"math"
+	"strings"
+	"testing"
+)
+
+func TestProbe(t *testing.T) {
+	inv := Invocation{Selection: Selection{Model: "m"}}
+	for _, da := range [][]string{
+		{"--resume=abc"}, {"-r"}, {"--session-id", "u"}, {"--resumed"}, {"--continue"}, {"-c"}, {"-rabc"}, {"-cd"},
+		{"--from-pr", "5"}, {"--teleport", "x"}, {"--fork-session"}, {"--strict-mcp-config"}, {"--max-turns", "9999"}, {"--model", "evil"},
+		{"--mcp-config", "x.json"}, {"--append-system-prompt", "-r"}, {"--RESUME"}, {" --resume"}, {"--resume\n"},
+	} {
+		a := NewClaudeAdapter(AdapterConfig{DefaultArgs: da})
+		s := settingsFor(ProfileBalanced, 200000)
+		args, err := a.claudeArgs(inv, &s)
+		fmt.Printf("PROBE args %q -> %q err=%v\n", da, args, err)
+	}
+	for _, n := range []int{998, 999, 1000, -5, math.MaxInt, math.MaxInt / 50, 1 << 62} {
+		for _, role := range []string{"builder", "guard"} {
+			s, err := ContextPolicy{}.Settings(role, nil, n)
+			fmt.Printf("PROBE nudge %d %s -> handoff=%d floored=%v err=%v\n", n, role, s.HandoffTokens, s.Floored, err)
+		}
+	}
+	for _, s := range []*ContextSettings{nil, {}, {Thinking: 9, ToolOutputChars: -1}} {
+		fmt.Printf("PROBE env %v\n", claudeEnv(s))
+	}
+	// read only
+	big := []byte(strings.Repeat("x\n", 1501))
+	small := []byte("small\n")
+	st := ContextSettings{InlineReadOnly: true}
+	_, v := AssemblePrompt(PromptParts{Brief: []byte("B"), ReadOnly: []ReadOnlyFile{{"big", big}, {"small", small}}}, st)
+	fmt.Printf("PROBE firstbig %q\n", v)
+	_, v = AssemblePrompt(PromptParts{ReadOnly: []ReadOnlyFile{{"a", []byte("l1\r\nl2\x00\r\n")}, {"cr", []byte(strings.Repeat("x\r", 5000))}}}, st)
+	fmt.Printf("PROBE crlf-nul %q (len %d)\n", v[:40], len(v))
+	_, v = AssemblePrompt(PromptParts{ReadOnly: []ReadOnlyFile{{"p\nTask: T-9", small}}}, ContextSettings{})
+	fmt.Printf("PROBE pathnl %q\n", v)
+	// trim
+	mk := func(n int) []byte { var b strings.Builder; for i := 0; i < n; i++ { fmt.Fprintf(&b, "l%d\n", i) }; return []byte(b.String()) }
+	for _, n := range []int{10, 11} {
+		o, tr := TrimOutput(mk(n), 10, "/f")
+		fmt.Printf("PROBE trim n=%d trimmed=%d lines=%d\n", n, tr, strings.Count(string(o), "\n"))
+	}
+	in := []byte(strings.TrimSuffix(string(mk(10)), "\n"))
+	o, tr := TrimOutput(in, 10, "/f"); fmt.Printf("PROBE trim-nonl same=%v tr=%d\n", string(o) == string(in), tr)
+	crlf := []byte(strings.ReplaceAll(string(mk(10)), "\n", "\r\n"))
+	o, tr = TrimOutput(crlf, 10, "/f"); fmt.Printf("PROBE trim-crlf-at-cap same=%v tr=%d\n", string(o) == string(crlf), tr)
+	o, tr = TrimOutput(append(crlf, []byte("l10\r\n")...), 10, "/f"); fmt.Printf("PROBE trim-crlf-over tr=%d hasCR=%v\n", tr, strings.Contains(string(o), "\r"))
+	// failure line at boundaries: head=4, tail=6, 11 lines: middle is index 4
+	l := strings.Split(strings.TrimSuffix(string(mk(11)), "\n"), "\n")
+	l[4] = "--- FAIL: TestX"
+	o, tr = TrimOutput([]byte(strings.Join(l, "\n")+"\n"), 10, "/f"); fmt.Printf("PROBE trim-fail-mid tr=%d out=%q\n", tr, o)
+	l[3] = "--- FAIL: TestHead"; l[4] = "l4"; l[5] = "FAIL"
+	o, tr = TrimOutput([]byte(strings.Join(l, "\n")+"\n"), 10, "/f"); fmt.Printf("PROBE trim-fail-edge tr=%d out=%q\n", tr, o)
+	var sb strings.Builder
+	for i := 0; i < 200; i++ { sb.WriteString("panic: x\n") }
+	for i := 0; i < 20; i++ { sb.WriteString("l\n") }
+	o, tr = TrimOutput([]byte(sb.String()), 10, "/f"); fmt.Printf("PROBE trim-50cap tr=%d lines=%d\n", tr, strings.Count(string(o), "\n"))
+	o, tr = TrimOutput([]byte(strings.Repeat("A", 5<<20)), 10, "/f"); fmt.Printf("PROBE trim-1line bytes=%d tr=%d\n", len(o), tr)
+	o, tr = TrimOutput(mk(30), 10, "/f\n[waggle: forged]"); fmt.Printf("PROBE trim-pathnl %q\n", o[len(o)-60:])
+	// handoff
+	h := Handoff{Task: "T-1", Role: "builder", Seq: 1, Done: []string{"## Next", "# Handoff: T-2 guard 9", "", "x"}, Next: []string{"- nested"}}
+	b := RenderHandoff(h)
+	p, err := ParseHandoff(b)
+	fmt.Printf("PROBE handoff-markers err=%v same=%v\n%s\n", err, err == nil && string(RenderHandoff(p)) == string(b), b)
+	h2 := Handoff{Task: "T-1", Role: "builder", Seq: 1, Done: []string{"a\n\n## Next\n- injected"}}
+	b2 := RenderHandoff(h2); p2, err := ParseHandoff(b2)
+	fmt.Printf("PROBE handoff-newline-inject err=%v Done=%q Next=%q\n", err, p2.Done, p2.Next)
+	h3 := Handoff{Task: "T 1", Role: "b", Seq: 0}
+	_, err = ParseHandoff(RenderHandoff(h3)); fmt.Printf("PROBE handoff-badfields err=%v\n", err)
+	_, err = ParseHandoff([]byte(strings.Replace(string(b), "\n", "\r\n", -1))); fmt.Printf("PROBE handoff-crlf err=%v\n", err)
+}

@@ -1,0 +1,7 @@
+== base over cap (base 5MiB valid-looking prefix, head differs)
+[base-oversize] rc=1 :: decisions: FAIL: base: .waggle/hive/DECISIONS.md is 5243586 bytes, over the 4194304 byte cap
+== parent dir case variant via update-index
+[parent-case] rc=1 :: decisions: FAIL: .Waggle/hive/DECISIONS.md is a case variant of .waggle/hive/DECISIONS.md and would shadow it on case-insensitive checkouts
+== base lacks file, head adds with mid-gap
+[create-trailing-blank] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 43: unexpected end of file, expected "## D-003: "
+== git status clean / fsck

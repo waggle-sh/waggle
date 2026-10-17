@@ -1,0 +1,31 @@
+ .waggle/control/config.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
++++ b/.waggle/control/config.yaml
+@@ -9 +9 @@ waggle:
+-  pin: b4f222166f4a824e34414e205544fb17397ccfa1 # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
++  pin: fa85121f60c3846be294b03b5e8ec4a799abdaa1 # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
+### rerun after commit
+  [pin]     fa85121f60c3846be294b03b5e8ec4a799abdaa1 (unchanged)
+  [same]    .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+  [same]    .github/workflows/waggle-gate.yml
+  [same]    .waggle/control/roles/builder.md
+  [same]    .waggle/control/roles/forager.md
+  [same]    .waggle/control/roles/guard.md
+  [same]    .waggle/control/roles/queen.md
+  [same]    .waggle/control/roles/scout.md
+  [skip]    .waggle/control/config.yaml (seeded)
+  [skip]    .waggle/control/WAGGLE.md (seeded)
+  [skip]    .waggle/control/local.yaml (seeded)
+  [same]    .gitignore (waggle block)
+  [same]    CLAUDE.md (waggle block)
+  [shims]   regenerate .claude/agents/waggle-*.md
+  [keep]    refs/waggle/* and .waggle/hive/**
+total 40
+drwxr-xr-x@ 7 paul  wheel   224 Oct 17 14:25 .
+drwxr-xr-x@ 5 paul  wheel   160 Oct 17 14:25 ..
+-rw-r--r--@ 1 paul  wheel   985 Oct 17 14:25 waggle-builder.md
+-rw-r--r--@ 1 paul  wheel   606 Oct 17 14:25 waggle-forager.md
+-rw-r--r--@ 1 paul  wheel   933 Oct 17 14:25 waggle-guard.md
+-rw-r--r--@ 1 paul  wheel   870 Oct 17 14:25 waggle-queen.md
+-rw-r--r--@ 1 paul  wheel  1126 Oct 17 14:25 waggle-scout.md

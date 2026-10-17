@@ -1,0 +1,124 @@
+  [pin]     b4f222166f4a824e34414e205544fb17397ccfa1 -> fa85121f60c3846be294b03b5e8ec4a799abdaa1
+  [rewrite] .waggle/control/roster.json
+diff --git a/.waggle/control/roster.json b/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/waggle-upgrade-181751121/roster.json
+index 117647a..71e3446 100644
+--- a/.waggle/control/roster.json
++++ b/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/waggle-upgrade-181751121/roster.json
+@@ -13,7 +13,7 @@
+       "never": ["wait on workers", "write feature code or specs", "edit .waggle/hive/DECISIONS.md", "lower a gate"]
+     },
+     {
+-      "id": "architect",
++      "id": "scout",
+       "runs": "worker",
+       "workspace": "main",
+       "purpose": "Breaks down goals into <400-line task briefs with directory leases and Light/Full gate tags.",
+@@ -21,7 +21,7 @@
+       "never": ["write feature implementation code", "talk directly to the Keeper"]
+     },
+     {
+-      "id": "scout",
++      "id": "forager",
+       "runs": "worker",
+       "workspace": "cell-ro",
+       "allow_unattended": true,
+@@ -30,7 +30,7 @@
+       "never": ["write feature implementation code", "modify files outside test repro"]
+     },
+     {
+-      "id": "forager",
++      "id": "builder",
+       "runs": "worker",
+       "workspace": "cell-rw-lease",
+       "allow_unattended": false,
+  [same]    .waggle/control/devcontainer.json
+  [same]    .github/workflows/waggle-gate.yml
+  [create]  .waggle/control/roles/builder.md
+  [rewrite] .waggle/control/roles/forager.md
+diff --git a/.waggle/control/roles/forager.md b/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/waggle-upgrade-42091055/forager.md
+index f26e51e..5b66f73 100644
+--- a/.waggle/control/roles/forager.md
++++ b/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/waggle-upgrade-42091055/forager.md
+@@ -1,11 +1,7 @@
+ <!-- SPDX-License-Identifier: MIT-0 -->
+-# Role: Forager (Implementation Worker)
++# Role: Forager (Triage & Repro Worker)
++Bee job: foragers bring material back from outside; this role reproduces bugs, writes failing tests, and maps leases.
+ 
+-- **Runs As:** `worker` (Cell with `ro` root and `rw` bind mounts on leased directories)
+-- **Owns:** Implementing exactly one task from `.waggle/hive/tasks/T-<id>.md` within its leased directories, running local tests, and self-reviewing its diff.
+-- **Never:** Touch files outside its lease, read `.waggle/hive/WORKPLAN.md` or the full backlog, or hold host credentials.
+-
+-## Completion Contract
+-1. Read only `.waggle/control/WAGGLE.md`, your assigned `.waggle/hive/tasks/T-<id>.md` brief, and caller interfaces needed for your lease.
+-2. Prefix all commit subjects with `T-<id>:`.
+-3. Verify all criteria in the brief pass locally before emitting `worker_done`.
++- **Runs As:** `worker` (Read-only Cell + test runner)
++- **Owns:** Bug reproduction, failing unit test generation, and mapping required directory leases for unclaimed tickets.
++- **Never:** Write feature implementation code or modify production logic.
+  [rewrite] .waggle/control/roles/guard.md
+diff --git a/.waggle/control/roles/guard.md b/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/waggle-upgrade-6329820/guard.md
+index d1b61a5..a75dcc7 100644
+--- a/.waggle/control/roles/guard.md
++++ b/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/waggle-upgrade-6329820/guard.md
+@@ -3,7 +3,7 @@
+ 
+ - **Runs As:** `worker` (Read-only verification Cell, cross-model)
+ - **Owns:** `.waggle/hive/reviews/T-<id>.md`, verification evidence in `.waggle/hive/media/T-<id>/`, and the Intent Packet.
+-- **Never:** Fix bugs itself (route `must-fix` back to the Forager) or invent hypothetical over-engineering requirements.
++- **Never:** Fix bugs itself (route `must-fix` back to the Builder) or invent hypothetical over-engineering requirements.
+ 
+ ## Output Contract (`.waggle/hive/reviews/T-<id>.md`)
+ 1. `Verdict: pass` or `Verdict: must-fix`
+  [same]    .waggle/control/roles/queen.md
+  [rewrite] .waggle/control/roles/scout.md
+diff --git a/.waggle/control/roles/scout.md b/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/waggle-upgrade-1156333345/scout.md
+index 3ac0d29..b600d69 100644
+--- a/.waggle/control/roles/scout.md
++++ b/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/waggle-upgrade-1156333345/scout.md
+@@ -1,6 +1,12 @@
+ <!-- SPDX-License-Identifier: MIT-0 -->
+-# Role: Scout (Triage & Repro Worker)
++# Role: Scout (Planning Worker)
++Bee job: scouts search ahead and dance directions to the hive; this role plans tasks, writes briefs, and owns the roadmap and specs.
+ 
+-- **Runs As:** `worker` (Read-only Cell + test runner)
+-- **Owns:** Bug reproduction, failing unit test generation, and mapping required directory leases for unclaimed tickets.
+-- **Never:** Write feature implementation code or modify production logic.
++- **Runs As:** `worker` (Main checkout)
++- **Owns:** `.waggle/hive/ROADMAP.md`, `.waggle/hive/specs/**`, `.waggle/hive/tasks/T-<id>.md`, Light vs. Full gate classification.
++- **Never:** Write feature implementation code, talk directly to the Keeper, or downgrade Tier 2/Tier 3 protected paths to Light gates.
++
++## Task Brief Contract
++1. Every task gets one standalone brief at `.waggle/hive/tasks/T-<id>.md` under 400 lines.
++2. Specify explicit directory leases (or function/line-range regions within a single local batch).
++3. Classify as `full` gate if the task exceeds ~150 lines or touches schemas, auth, shared modules, dependencies, or steering docs (`.waggle/hive/DECISIONS.md`, `.waggle/hive/ROADMAP.md`, `.waggle/hive/WORKPLAN.md`). Otherwise classify as `light`.
+  [remove]  .waggle/control/roles/architect.md
+  [skip]    .waggle/control/config.yaml (seeded)
+  [skip]    .waggle/control/WAGGLE.md (seeded)
+  [skip]    .waggle/control/local.yaml (seeded)
+  [same]    .gitignore (waggle block)
+  [same]    CLAUDE.md (waggle block)
+  [shims]   regenerate .claude/agents/waggle-*.md
+  [keep]    refs/waggle/* and .waggle/hive/**
+--- waggle decide input (save as upgrade-decision.json) ---
+{
+  "kind": "technical",
+  "title": "Upgrade hive pin to fa85121f60c3846be294b03b5e8ec4a799abdaa1",
+  "question": "Which Waggle build does this hive run?",
+  "options": [
+    "Stay on b4f222166f4a824e34414e205544fb17397ccfa1",
+    "Move to fa85121f60c3846be294b03b5e8ec4a799abdaa1"
+  ],
+  "recommendation": "Move to fa85121f60c3846be294b03b5e8ec4a799abdaa1",
+  "choice": "Move the pin from b4f222166f4a824e34414e205544fb17397ccfa1 to fa85121f60c3846be294b03b5e8ec4a799abdaa1; managed files re-rendered by waggle upgrade from the target build",
+  "rationale": "fa85121f60c3846be294b03b5e8ec4a799abdaa1 is the known-good build chosen by the Head Keeper (D-041).",
+  "tickets": [
+    "T-016"
+  ],
+  "supersedes": []
+}
+--- end ---
+Run: waggle decide --file upgrade-decision.json (same hive PR, Head Keeper or queen after an explicit Keeper answer, T-006 section 8).
+Dry run: nothing changed. Rerun with --apply to execute the plan above.
+Review with git status, then open a hive PR. This changes .waggle/control/ (Tier 3) and needs Head Keeper approval.
