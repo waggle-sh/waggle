@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "Config parser is a hand-written YAML subset",
+  "question": "Which parser reads .waggle/config.yaml?",
+  "options": [
+    "A: add a YAML library dependency",
+    "B: hand-written YAML subset parser",
+    "C: switch config to JSON"
+  ],
+  "recommendation": "B",
+  "choice": "B: hand-written YAML subset parser, stdlib only, fuzz tested.",
+  "rationale": "Config is machine-written by waggle init and small; a zero-dependency control-plane binary is worth more than YAML completeness.",
+  "tickets": [
+    "T-004"
+  ],
+  "supersedes": []
+}

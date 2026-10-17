@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Hardcoded tier lists drop root steering files Waggle no longer reads",
+  "question": "Should root WAGGLE.md, DECISIONS.md, ROADMAP.md, WORKPLAN.md, docs/specs/ and docs/tasks/ stay in the hardcoded tier lists?",
+  "options": [
+    "Keep them",
+    "Drop them"
+  ],
+  "recommendation": "Drop them",
+  "choice": "Hardcoded tier lists drop root WAGGLE.md, DECISIONS.md, ROADMAP.md, WORKPLAN.md, docs/specs/ and docs/tasks/.",
+  "rationale": "Waggle no longer reads them post T-011.",
+  "tickets": [
+    "T-011"
+  ],
+  "supersedes": []
+}

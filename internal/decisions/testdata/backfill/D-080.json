@@ -1,0 +1,16 @@
+{
+  "kind": "technical",
+  "title": "Claims written after the role rename are lease version 2; version 1 roles are mapped on read",
+  "question": "How does an upgraded binary read a stored claim whose role name was written before the rename, when forager and scout both exist before and after with different meanings (Q-T020-1)?",
+  "options": [
+    "Drain claims only, no code",
+    "New claims are lease version 2 with the new role names; version 1 claims have their role names mapped old to new on read"
+  ],
+  "recommendation": "Lease version 2 with the version 1 mapping",
+  "choice": "Claims written after the role rename are lease version 2 and carry the new role names. Version 1 claims have their role names mapped on read (scout to forager, forager to builder, guard unchanged).",
+  "rationale": "Without the mapping an upgraded binary silently reads an old implementation claim as a triage claim.",
+  "tickets": [
+    "T-020"
+  ],
+  "supersedes": []
+}

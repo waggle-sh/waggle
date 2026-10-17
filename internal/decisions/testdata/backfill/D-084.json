@@ -1,0 +1,17 @@
+{
+  "kind": "spend",
+  "title": "The waggle-sh organization is on GitHub Team, one seat, paid through a personal PayPal account with the invoice in the LLC's name",
+  "question": "How was the GitHub Team upgrade approved in D-047 paid for, given the LLC card was declined?",
+  "options": [
+    "Wait for the LLC card to clear",
+    "Pay through a personal PayPal account with the invoice in the LLC's name"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "The Keeper upgraded the waggle-sh organization to GitHub Team (1 seat, about $4 per month) on 2026-10-17, paid through a personal PayPal account with the invoice in the LLC's name, after the LLC card was declined by the processor.",
+  "rationale": "Team is needed only for rulesets and required checks on the private repo before launch (D-047, D-079); it can be dropped after the repo goes public.",
+  "tickets": [
+    "T-019",
+    "T-015"
+  ],
+  "supersedes": []
+}
