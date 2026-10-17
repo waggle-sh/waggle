@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode/utf8"
 )
 
 // Status is the outcome of one probe finding.
@@ -105,7 +106,8 @@ func Render(w io.Writer, r Report) error {
 	} else {
 		fmt.Fprintf(&b, "\nNot enforced on this repo (%d):\n", len(ne))
 		for _, f := range ne {
-			wrap(&b, "  - ", "    ", strings.ToUpper(f.NotEnforced[:1])+f.NotEnforced[1:])
+			first, size := utf8.DecodeRuneInString(f.NotEnforced)
+			wrap(&b, "  - ", "    ", strings.ToUpper(string(first))+f.NotEnforced[size:])
 		}
 		b.WriteString("Waggle runs here, but it cannot stop the merges listed above.\n")
 	}

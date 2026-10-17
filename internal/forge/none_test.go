@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -234,6 +235,53 @@ func TestNoneMergePushesWithLease(t *testing.T) {
 	}
 	if got := runGit(t, dir, "rev-parse", "main"); got != base {
 		t.Errorf("local main not restored: %s", got)
+	}
+}
+
+func TestNoneMergeUnreachableRemote(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	runGit(t, dir, "remote", "add", "origin", filepath.Join(t.TempDir(), "gone"))
+	base, head := runGit(t, dir, "rev-parse", "main"), runGit(t, dir, "rev-parse", "feat")
+	n := newNone(t, dir, "origin")
+	err := n.Merge(context.Background(), Change{Head: "feat", Base: "main"}, MergeRequest{Subject: "s", ExpectedHeadOID: head})
+	if err == nil || errors.Is(err, ErrHeadMoved) {
+		t.Fatalf("unreachable remote: got %v, want a plain push error", err)
+	}
+	merged := runGit(t, dir, "rev-parse", "main")
+	if merged == base {
+		t.Fatal("local main was not advanced")
+	}
+	if want := "local refs/heads/main advanced to " + merged + " but the push to origin did not: git push:"; !strings.Contains(err.Error(), want) {
+		t.Errorf("got %q, want it to contain %q", err, want)
+	}
+}
+
+// TestNoneMergeIgnoresInheritedGitDir proves an inherited GIT_DIR (a git hook
+// starting waggled) cannot redirect the merge into another repository.
+func TestNoneMergeIgnoresInheritedGitDir(t *testing.T) {
+	requireGit(t)
+	dir, decoy := newRepo(t, false), newRepo(t, false)
+	runGit(t, decoy, "commit", "-q", "--allow-empty", "-m", "decoy") // distinct OIDs from dir
+	decoyBase, base, head := runGit(t, decoy, "rev-parse", "main"), runGit(t, dir, "rev-parse", "main"), runGit(t, dir, "rev-parse", "feat")
+	t.Setenv("GIT_DIR", filepath.Join(decoy, ".git"))
+	t.Setenv("git_work_tree", decoy)
+	n := newNone(t, dir, "")
+	if err := n.Merge(context.Background(), Change{Head: "feat", Base: "main"}, MergeRequest{Subject: "s", ExpectedHeadOID: head}); err != nil {
+		t.Fatal(err)
+	}
+	os.Unsetenv("GIT_DIR")
+	os.Unsetenv("git_work_tree")
+	if got := runGit(t, decoy, "rev-parse", "main"); got != decoyBase {
+		t.Errorf("decoy main moved to %s", got)
+	}
+	merged := runGit(t, dir, "rev-parse", "main")
+	if got, want := runGit(t, dir, "rev-list", "--parents", "-n1", "main"), merged+" "+base+" "+head; got != want {
+		t.Errorf("parents: got %q, want %q", got, want)
+	}
+	env := childEnv([]string{"GIT_DIR=x", "Git_Namespace=y", "GIT_CONFIG_GLOBAL=z", "PATH=p", "GIT_NO_REPLACE_OBJECTS=0"})
+	if want := []string{"GIT_CONFIG_GLOBAL=z", "PATH=p", "GIT_TERMINAL_PROMPT=0", "LC_ALL=C", "GIT_NO_REPLACE_OBJECTS=1"}; !slices.Equal(env, want) {
+		t.Errorf("childEnv: got %q, want %q", env, want)
 	}
 }
 

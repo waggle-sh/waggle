@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -111,13 +112,45 @@ func checkBranch(ctx context.Context, dir, name string) error {
 	return nil
 }
 
+// scrubbedGitEnv lists the parent environment variables dropped from every
+// git child, compared case-insensitively. Each one redirects which repository
+// git operates on, overriding "-C dir", so an inherited GIT_DIR (a git hook,
+// or a "git -C other" wrapper starting waggled) would merge into another
+// repository. This is a copy of scrubbedGitEnv in internal/comb/git.go
+// (T-009, F3); core packages never import forge, so forge does not import
+// comb. Keep the two lists identical. Credential, GIT_CONFIG*, trace and PATH
+// variables are kept: they are the user's own and the remote push needs them.
+var scrubbedGitEnv = []string{
+	"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_PREFIX",
+	"GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_QUARANTINE_PATH",
+	"GIT_NAMESPACE",
+	"GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+	"GIT_REPLACE_REF_BASE", "GIT_NO_REPLACE_OBJECTS", "GIT_GRAFT_FILE", "GIT_SHALLOW_FILE",
+}
+
+// childEnv is parent minus scrubbedGitEnv, then GIT_TERMINAL_PROMPT=0,
+// LC_ALL=C (stable messages for parsing) and GIT_NO_REPLACE_OBJECTS=1 (a
+// refs/replace entry can never substitute a commit or tree being merged).
+func childEnv(parent []string) []string {
+	out := make([]string, 0, len(parent)+3)
+	for _, kv := range parent {
+		key, _, _ := strings.Cut(kv, "=")
+		if slices.ContainsFunc(scrubbedGitEnv, func(s string) bool { return strings.EqualFold(key, s) }) {
+			continue
+		}
+		out = append(out, kv)
+	}
+	return append(out, "GIT_TERMINAL_PROMPT=0", "LC_ALL=C", "GIT_NO_REPLACE_OBJECTS=1")
+}
+
 // gitRun is the only place this package starts git: exec.CommandContext with
-// "-C dir" and separate argv entries, no shell. Stdout is returned even on
-// failure (push --porcelain and merge-tree report there); the error carries
-// the subcommand and trimmed stderr.
+// "-C dir" and separate argv entries, no shell, and the environment from
+// childEnv. Stdout is returned even on failure (push --porcelain and
+// merge-tree report there); the error carries the subcommand and trimmed
+// stderr.
 func gitRun(ctx context.Context, dir string, stdin []byte, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...)
-	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0", "LC_ALL=C")
+	cmd.Env = childEnv(os.Environ())
 	if stdin != nil {
 		cmd.Stdin = bytes.NewReader(stdin)
 	}
