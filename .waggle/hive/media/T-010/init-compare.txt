@@ -1,0 +1,1 @@
+init: file contents identical (diff -r, excluding log); log line order varies run to run on base too; sorted logs identical

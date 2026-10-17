@@ -1,0 +1,16 @@
+  [shim]   .claude/agents/waggle-guard.md
+  [shim]   .claude/agents/waggle-queen.md
+  [shim]   .claude/agents/waggle-scout.md
+--- PASS: TestUninstallApplyRestoresProjectFiles (0.22s)
+=== RUN   TestVariantNoLegacy
+  [shim]   .claude/agents/waggle-builder.md
+  [shim]   .claude/agents/waggle-forager.md
+  [shim]   .claude/agents/waggle-guard.md
+  [shim]   .claude/agents/waggle-queen.md
+  [shim]   .claude/agents/waggle-scout.md
+    variant_test.go:23: status: "D .github/workflows/waggle-gate.yml\n M .gitignore\n D .waggle/control/WAGGLE.md\n D .waggle/control/config.yaml\n D .waggle/control/devcontainer.json\n D .waggle/control/roles/builder.md\n D .waggle/control/roles/forager.md\n D .waggle/control/roles/guard.md\n D .waggle/control/roles/queen.md\n D .waggle/control/roles/scout.md\n D .waggle/control/roster.json\n M CLAUDE.md"
+--- FAIL: TestVariantNoLegacy (0.18s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/scaffold	0.576s
+FAIL
+NOTE: only the status assertion in my variant failed (expected: ' D'/' M' vs the hive record commit, uninstall never commits). The diff-vs-pre-init assertion passed (empty).

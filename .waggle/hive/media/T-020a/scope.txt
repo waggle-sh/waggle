@@ -1,0 +1,17 @@
+ internal/comb/backend.go                       |  37 +++++++-
+ internal/comb/backend_test.go                  |  30 +++++-
+ internal/comb/git.go                           |  44 +++++++--
+ internal/comb/git_test.go                      | 126 +++++++++++++++++++++++--
+ internal/comb/testdata/workplan.golden         |   6 +-
+ internal/comb/workplan_test.go                 |   8 +-
+ internal/runtime/claude_test.go                |  20 ++--
+ internal/scaffold/init_test.go                 |  87 ++++++++++++++++-
+ internal/scaffold/templates/WAGGLE.md.tmpl     |   2 +-
+ internal/scaffold/templates/local.yaml.tmpl    |   4 +-
+ internal/scaffold/templates/roles/architect.md |  11 ---
+ internal/scaffold/templates/roles/builder.md   |  12 +++
+ internal/scaffold/templates/roles/forager.md   |  14 +--
+ internal/scaffold/templates/roles/guard.md     |   2 +-
+ internal/scaffold/templates/roles/scout.md     |  14 ++-
+ internal/scaffold/templates/roster.json.tmpl   |   6 +-
+ 16 files changed, 350 insertions(+), 73 deletions(-)

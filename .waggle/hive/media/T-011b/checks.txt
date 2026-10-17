@@ -1,0 +1,1 @@
+go build ./... ok; go vet ./... ok; gofmt -l cmd internal empty; go test -race ./... all ok (cmd/waggle, comb, runtime, scaffold)

@@ -1,0 +1,20 @@
+== head
+93dcc92a32d326c5bf2f548aec900ad346a82e2f
+== diff names
+internal/scaffold/uninstall_test.go
+== build
+ok
+== vet
+ok
+== gofmt
+(end gofmt)
+== test
+ok  	github.com/waggle-sh/waggle/internal/scaffold	7.691s
+ok  	github.com/waggle-sh/waggle/cmd/waggle	1.607s
+== dashes
+(end dashes)
+T-011: keep uninstall tests out of .git internals
+== pr
+product-ci	pending	0	https://github.com/waggle-sh/waggle/actions/runs/39064121033/job/117488046195	
+verify-leases-and-tiers	pass	5s	https://github.com/waggle-sh/waggle/actions/runs/39064120991/job/117488045965	
+relay-claim	skipping	0	https://github.com/waggle-sh/waggle/actions/runs/39064120991/job/117488047614	

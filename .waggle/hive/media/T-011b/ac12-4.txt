@@ -1,0 +1,99 @@
+Initializing Waggle Hive (profile=cli, delivery=installed, comb=direct, runtime=claude-code)...
+  [create] .waggle/control/config.yaml
+  [create] .waggle/control/WAGGLE.md
+  [create] .waggle/control/local.yaml
+  [create] .waggle/control/roster.json
+  [create] .waggle/control/devcontainer.json
+  [create] .github/workflows/waggle-gate.yml
+  [create] .waggle/control/roles/builder.md
+  [create] .waggle/control/roles/forager.md
+  [create] .waggle/control/roles/guard.md
+  [create] .waggle/control/roles/queen.md
+  [create] .waggle/control/roles/scout.md
+  [edit]   .gitignore (waggle block)
+  [edit]   CLAUDE.md (waggle block)
+  [shim]   .claude/agents/waggle-builder.md
+  [shim]   .claude/agents/waggle-forager.md
+  [shim]   .claude/agents/waggle-guard.md
+  [shim]   .claude/agents/waggle-queen.md
+  [shim]   .claude/agents/waggle-scout.md
+Hive initialized. Next: edit .waggle/control/WAGGLE.md and commit.
+== status after init commit
+== dry run
+  [remove] .waggle/ (10 files, 0 of them under .waggle/hive/)
+  [remove] .github/workflows/waggle-gate.yml
+  [remove] .github/workflows/ (empty after uninstall)
+  [remove] .github/ (empty after uninstall)
+  [edit]   .gitignore (waggle block removed)
+  [edit]   CLAUDE.md (waggle block removed)
+  [remove] .claude/agents/waggle-builder.md
+  [remove] .claude/agents/waggle-forager.md
+  [remove] .claude/agents/waggle-guard.md
+  [remove] .claude/agents/waggle-queen.md
+  [remove] .claude/agents/waggle-scout.md
+  [keep]   refs/waggle/* (list with: git for-each-ref --format='%(refname)' refs/waggle/)
+Dry run: nothing changed. Rerun with --apply to execute the plan above.
+Review with git status, then commit. Removing .waggle/control/ is Tier 3 and needs Head Keeper approval.
+exit=0
+       0
+== apply
+  [remove] .waggle/ (10 files, 0 of them under .waggle/hive/)
+  [remove] .github/workflows/waggle-gate.yml
+  [remove] .github/workflows/ (empty after uninstall)
+  [remove] .github/ (empty after uninstall)
+  [edit]   .gitignore (waggle block removed)
+  [edit]   CLAUDE.md (waggle block removed)
+  [remove] .claude/agents/waggle-builder.md
+  [remove] .claude/agents/waggle-forager.md
+  [remove] .claude/agents/waggle-guard.md
+  [remove] .claude/agents/waggle-queen.md
+  [remove] .claude/agents/waggle-scout.md
+  [keep]   refs/waggle/* (list with: git for-each-ref --format='%(refname)' refs/waggle/)
+Review with git status, then commit. Removing .waggle/control/ is Tier 3 and needs Head Keeper approval.
+exit=0
+== status
+ D .github/workflows/waggle-gate.yml
+ M .gitignore
+ D .waggle/control/WAGGLE.md
+ D .waggle/control/config.yaml
+ D .waggle/control/devcontainer.json
+ D .waggle/control/roles/builder.md
+ D .waggle/control/roles/forager.md
+ D .waggle/control/roles/guard.md
+ D .waggle/control/roles/queen.md
+ D .waggle/control/roles/scout.md
+ D .waggle/control/roster.json
+ M CLAUDE.md
+== diff vs base (stat)
+diffexit=0
+== status ignored
+ D .github/workflows/waggle-gate.yml
+ M .gitignore
+ D .waggle/control/WAGGLE.md
+ D .waggle/control/config.yaml
+ D .waggle/control/devcontainer.json
+ D .waggle/control/roles/builder.md
+ D .waggle/control/roles/forager.md
+ D .waggle/control/roles/guard.md
+ D .waggle/control/roles/queen.md
+ D .waggle/control/roles/scout.md
+ D .waggle/control/roster.json
+ M CLAUDE.md
+.:
+.
+..
+.claude
+.git
+.gitignore
+CLAUDE.md
+README.md
+
+.claude:
+.
+..
+agents
+== refs
+1c1
+< ed4441e3c98267ddef6e78550c5398a8e1f44511 commit	refs/heads/master
+---
+> 2caee45b92b8466503f34cd0769ae391bdfdbe5d commit	refs/heads/master

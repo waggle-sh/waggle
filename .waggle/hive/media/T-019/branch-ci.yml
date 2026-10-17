@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT-0
+# Product CI for the waggle repo (T-019, D-072). Not part of the hive gate
+# (waggle-gate.yml) and not scaffolded into other hives.
+name: Product CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  product-ci:
+    name: product-ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: gofmt (tracked files)
+        run: |
+          unformatted="$(git ls-files -z '*.go' | xargs -0 gofmt -l)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt -l reports unformatted files:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Test (race)
+        run: go test -race ./...
