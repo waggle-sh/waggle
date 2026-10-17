@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "Default merge strategy is an up-to-date check; native merge queue is opt-in",
+  "question": "How does a hive serialize merges to main by default?",
+  "options": [
+    "GitHub native merge queue (merge_strategy: native_queue)",
+    "Up-to-date check: branches must be up to date with main and pass waggle gate, with the gate re-run after each rebase"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "The default merge strategy is \"up-to-date check\": a branch must be up to date with main and pass waggle gate before merge, and waggle re-runs the gate after each rebase. Native merge queue becomes opt-in where the forge plan supports it. The config template default changes from merge_strategy: native_queue to merge_strategy: up_to_date in T-011 phase A, which already edits config.yaml.tmpl; T-004 accepts both values and treats an absent key as up_to_date; T-015's ruleset requires branches to be up to date.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-004",
+    "T-011",
+    "T-015"
+  ],
+  "supersedes": []
+}

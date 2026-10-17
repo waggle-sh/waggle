@@ -1,0 +1,17 @@
+{
+  "kind": "scope",
+  "title": "Product CI runs as its own workflow, required on main, before T-011 merges",
+  "question": "Where do the product's build, vet, format and test checks run?",
+  "options": [
+    "Inside the hive gate workflow",
+    "A separate product CI workflow required on main"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Product CI (go build, go vet, gofmt on tracked files, go test -race) runs as its own workflow, separate from the hive gate, required on main, and must exist before T-011 merges.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-011",
+    "T-019"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,14 @@
+{
+  "kind": "policy",
+  "title": "Product credential policy: git push access plus the agent CLI, no secret managers",
+  "question": "What credentials does Waggle require of Keepers, contributors, and cells?",
+  "options": [
+    "Require PATs or a secret manager",
+    "Minimum of git push access plus the agent CLI, with an optional per-hive GitHub App for team mode"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Waggle's minimum requirement is git with push access plus the agent CLI. Claims use plain git push with whatever git auth the Keeper already has. PRs and checks use gh if logged in, else a GITHUB_TOKEN env var. No secret-manager integrations (users wrap commands themselves, e.g. op run). Team mode adds a per-hive GitHub App created in one click via the App manifest flow, with its private key stored only in the repo's Actions secrets; Keepers never hold it and no Waggle-hosted service is needed. Relay-mode contributors need only a GitHub account. Cells hold zero credentials. PATs and 1Password are never required.",
+  "rationale": "The Keeper's machine is not representative of users (\"not everyone will have 1password ... or want to set up a PAT\").",
+  "tickets": [],
+  "supersedes": []
+}

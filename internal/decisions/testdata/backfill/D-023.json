@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "Decision entries carry no approver field; backfill uses recording date",
+  "question": "Should waggle decide entries record who approved them, and how are backfilled dates and missing history handled?",
+  "options": [
+    "No approver field; PR approval ties each decision to a GitHub login",
+    "Self-asserted keeper field on each entry",
+    "A flag to set the original decision date"
+  ],
+  "recommendation": "No approver field; backfill with the recording date and \"Not recorded\" where history is missing",
+  "choice": "In v0.1 waggle decide entries carry no approver field; PR approval ties decisions to a GitHub login. Backfilled entries use the recording date and \"Not recorded\" where history is missing. Defaults applied by the Queen, reversible.",
+  "rationale": "A self-asserted field would look like identity without being one, and a date override would let anyone backdate an entry.",
+  "tickets": [
+    "T-006"
+  ],
+  "supersedes": []
+}
