@@ -1,0 +1,47 @@
+1,4c1,12
+< // git runs one git command in root and returns its stdout. A non-zero exit
+< // returns an error wrapping *exec.ExitError and carrying git's stderr.
+< func (o UninstallOptions) git(root string, args ...string) (string, error) {
+< 	bin := o.GitBinary
+---
+> // gitRunner runs git for the commands that inspect the host repository
+> // (uninstall, upgrade). Neither command runs a git write command.
+> type gitRunner struct {
+> 	bin string   // git executable; empty means "git"
+> 	env []string // appended to the child environment (tests use this)
+> }
+> 
+> // run runs one git command in root and returns its stdout. A non-zero exit
+> // returns the stdout so far and an error wrapping *exec.ExitError and
+> // carrying git's stderr (git diff reports "differs" through exit status 1).
+> func (g gitRunner) run(root string, args ...string) (string, error) {
+> 	bin := g.bin
+9c17
+< 	cmd.Env = append(append(os.Environ(), "LC_ALL=C", "GIT_TERMINAL_PROMPT=0"), o.GitEnv...)
+---
+> 	cmd.Env = append(append(os.Environ(), "LC_ALL=C", "GIT_TERMINAL_PROMPT=0"), g.env...)
+12,13c20,22
+< 	if err := cmd.Run(); err != nil {
+< 		return "", fmt.Errorf("git %s: %w: %s", args[0], err, strings.TrimSpace(stderr.String()))
+---
+> 	err := cmd.Run()
+> 	if err != nil {
+> 		err = fmt.Errorf("git %s: %w: %s", args[0], err, strings.TrimSpace(stderr.String()))
+17c26
+< 	return strings.TrimRight(stdout.String(), "\r\n"), nil
+---
+> 	return strings.TrimRight(stdout.String(), "\r\n"), err
+23,24c32,33
+< func checkWorktreeRoot(opts UninstallOptions, root string) error {
+< 	top, err := opts.git(root, "rev-parse", "--show-toplevel")
+---
+> func checkWorktreeRoot(g gitRunner, root string) error {
+> 	top, err := g.run(root, "rev-parse", "--show-toplevel")
+55,56c64,65
+< func checkCleanTree(opts UninstallOptions, root string) error {
+< 	status, err := opts.git(root, "status", "--porcelain=v1", "--untracked-files=normal")
+---
+> func checkCleanTree(g gitRunner, root string) error {
+> 	status, err := g.run(root, "status", "--porcelain=v1", "--untracked-files=normal")
+70d78
+< 

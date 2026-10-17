@@ -1,0 +1,74 @@
+=== RUN   TestProbe
+PROBE args ["--resume=abc"] -> [] err=session resume flag refused: default_args contains "--resume=abc"
+PROBE args ["-r"] -> [] err=session resume flag refused: default_args contains "-r"
+PROBE args ["--session-id" "u"] -> [] err=session resume flag refused: default_args contains "--session-id"
+PROBE args ["--resumed"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--resumed"] err=<nil>
+PROBE args ["--continue"] -> [] err=session resume flag refused: default_args contains "--continue"
+PROBE args ["-c"] -> [] err=session resume flag refused: default_args contains "-c"
+PROBE args ["-rabc"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "-rabc"] err=<nil>
+PROBE args ["-cd"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "-cd"] err=<nil>
+PROBE args ["--from-pr" "5"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--from-pr" "5"] err=<nil>
+PROBE args ["--teleport" "x"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--teleport" "x"] err=<nil>
+PROBE args ["--fork-session"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--fork-session"] err=<nil>
+PROBE args ["--strict-mcp-config"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--strict-mcp-config"] err=<nil>
+PROBE args ["--max-turns" "9999"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--max-turns" "9999"] err=<nil>
+PROBE args ["--model" "evil"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--model" "evil"] err=<nil>
+PROBE args ["--mcp-config" "x.json"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--mcp-config" "x.json"] err=<nil>
+PROBE args ["--append-system-prompt" "-r"] -> [] err=session resume flag refused: default_args contains "-r"
+PROBE args ["--RESUME"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--RESUME"] err=<nil>
+PROBE args [" --resume"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" " --resume"] err=<nil>
+PROBE args ["--resume\n"] -> ["--model" "m" "--strict-mcp-config" "--max-turns" "80" "--resume\n"] err=<nil>
+PROBE nudge 998 builder -> handoff=0 floored=false err=nudge_tokens below 1000: got 998
+PROBE nudge 998 guard -> handoff=0 floored=false err=nudge_tokens below 1000: got 998
+PROBE nudge 999 builder -> handoff=0 floored=false err=nudge_tokens below 1000: got 999
+PROBE nudge 999 guard -> handoff=0 floored=false err=nudge_tokens below 1000: got 999
+PROBE nudge 1000 builder -> handoff=750 floored=false err=<nil>
+PROBE nudge 1000 guard -> handoff=750 floored=false err=<nil>
+PROBE nudge -5 builder -> handoff=0 floored=false err=nudge_tokens below 1000: got -5
+PROBE nudge -5 guard -> handoff=0 floored=false err=nudge_tokens below 1000: got -5
+PROBE nudge 9223372036854775807 builder -> handoff=92233720368547757 floored=false err=<nil>
+PROBE nudge 9223372036854775807 guard -> handoff=92233720368547757 floored=false err=<nil>
+PROBE nudge 184467440737095516 builder -> handoff=-46116860184273879 floored=false err=<nil>
+PROBE nudge 184467440737095516 guard -> handoff=-46116860184273879 floored=false err=<nil>
+PROBE nudge 4611686018427387904 builder -> handoff=-46116860184273879 floored=false err=<nil>
+PROBE nudge 4611686018427387904 guard -> handoff=-46116860184273879 floored=false err=<nil>
+PROBE env []
+PROBE env [BASH_MAX_OUTPUT_LENGTH=0]
+PROBE env [BASH_MAX_OUTPUT_LENGTH=-1]
+PROBE firstbig "B\n\nRead-only context (open as needed): big\nRead-only context (open as needed): small\n\n"
+PROBE crlf-nul "## Read-only: a\n\nl1\r\nl2\x00\r\n\n## Read-only:" (len 10047)
+PROBE pathnl "Read-only context (open as needed): p\nTask: T-9\n\n"
+PROBE trim n=10 trimmed=0 lines=10
+PROBE trim n=11 trimmed=1 lines=11
+PROBE trim-nonl same=true tr=0
+PROBE trim-crlf-at-cap same=true tr=0
+PROBE trim-crlf-over tr=1 hasCR=false
+PROBE trim-fail-mid tr=0 out="l0\nl1\nl2\nl3\n--- FAIL: TestX\n[waggle: 0 lines trimmed, full output in /f]\nl5\nl6\nl7\nl8\nl9\nl10\n"
+PROBE trim-fail-edge tr=1 out="l0\nl1\nl2\n--- FAIL: TestHead\n[waggle: 1 lines trimmed, full output in /f]\nFAIL\nl6\nl7\nl8\nl9\nl10\n"
+PROBE trim-50cap tr=160 lines=61
+PROBE trim-1line bytes=5242880 tr=0
+PROBE trim-pathnl "full output in /f\n[waggle: forged]]\nl24\nl25\nl26\nl27\nl28\nl29\n"
+PROBE handoff-markers err=<nil> same=true
+# Handoff: T-1 builder 1
+
+## Done
+- ## Next
+- # Handoff: T-2 guard 9
+- 
+- x
+
+## Next
+- - nested
+
+## Files touched
+
+## Open questions
+
+## Verification
+
+PROBE handoff-newline-inject err=bad handoff: expected a blank line then "## Files touched" at line 8 Done=[] Next=[]
+PROBE handoff-badfields err=bad handoff: line 1 is not "# Handoff: <task> <role> <seq>"
+PROBE handoff-crlf err=bad handoff: line 1 is not "# Handoff: <task> <role> <seq>"
+--- PASS: TestProbe (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/runtime	0.091s
