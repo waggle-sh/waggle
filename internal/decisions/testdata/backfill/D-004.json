@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "Malformed claim handling",
+  "question": "How do claim operations treat malformed claim refs?",
+  "options": [
+    "Fail every operation",
+    "Skip malformed refs on other tickets and report them, refuse a malformed target"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Malformed claims on other tickets are skipped in the overlap check and reported via a typed error; a malformed target ticket returns ErrMalformedClaim.",
+  "rationale": "One bad ref must not block the hive; the merge gate is authoritative for overlap anyway. Clearing stuck refs is T-005.",
+  "tickets": [
+    "T-002",
+    "T-005"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "A corrupt DECISIONS.md on main blocks PRs until a Head Keeper repair",
+  "question": "What happens when DECISIONS.md on main fails the integrity check?",
+  "options": [
+    "A skip flag on the gate check",
+    "Fail every PR touching it until a Head Keeper admin-merges a repair"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "A corrupt DECISIONS.md on main fails every PR touching it until a Head Keeper admin-merges a repair. There is no skip flag.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-007"
+  ],
+  "supersedes": []
+}

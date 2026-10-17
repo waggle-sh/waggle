@@ -53,12 +53,14 @@ func main() {
 		}
 		fmt.Printf("Hive initialized. Next: edit %s and commit.\n", layout.WaggleMD)
 
+	case "decide":
+		os.Exit(runDecide(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
+
 	case "uninstall":
 		os.Exit(runUninstall(os.Args[2:], os.Stdout, os.Stderr))
 
 	case "status":
-		// Stubbed for Commit #2 (reads refs/waggle/claims/* and .waggle/control/run.sock)
-		fmt.Println("Hive Status: 0 active leases on refs/waggle/claims/* (waggled: stopped)")
+		os.Exit(runStatus(os.Args[2:], os.Stdout, os.Stderr))
 
 	case "version":
 		fmt.Printf("waggle v%s\n", version)
@@ -78,7 +80,8 @@ Usage:
 
 Commands (v0.1 Bootstrap):
   init      Scaffold .waggle/control/, .waggle/hive/, the gate workflow, and local runtime shims
+  decide    Append one decision entry to .waggle/hive/DECISIONS.md from a JSON file (--file)
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
-  status   Plain-text report of active Comb leases and waggled daemon state
+  status    Active claims, waggled state, and per-ticket token use
   version   Print version`)
 }

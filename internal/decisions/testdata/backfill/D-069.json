@@ -1,0 +1,16 @@
+{
+  "kind": "strategy",
+  "title": "No second forge before v0.1 ships, and no GitHub assumption in the core",
+  "question": "Which forge comes after GitHub, and when?",
+  "options": [
+    "Pick the next forge now",
+    "No forge order until after v0.1 ships"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "No forge order after GitHub until after v0.1 ships. Nothing forge-specific beyond GitHub is built now, but no GitHub assumption may enter the core.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-018"
+  ],
+  "supersedes": []
+}

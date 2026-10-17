@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "The Queen commits architect and guard output until waggled exists",
+  "question": "How do architect briefs and guard reviews reach .waggle/hive/ when worker leases never include .waggle/?",
+  "options": [
+    "The Queen commits their output as Head Keeper-approved hive commits",
+    "Workers lease the hive directory"
+  ],
+  "recommendation": "The Queen commits their output",
+  "choice": "Until waggled exists, the Queen commits architect and guard output into .waggle/hive/ as Head Keeper-approved hive commits.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-011"
+  ],
+  "supersedes": []
+}

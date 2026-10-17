@@ -50,6 +50,10 @@ type Options struct {
 	DefaultTTL             time.Duration    // <= 0 means default 120m (leases.default_ttl_minutes)
 	Now                    func() time.Time // nil means time.Now
 	GitBinary              string           // "" means "git"
+	// HeadKeeper authorizes ForceRelease callers. nil means no one is a Head
+	// Keeper: every ForceRelease returns ErrNotHeadKeeper. It never defaults
+	// to allow.
+	HeadKeeper HeadKeeperAuthorizer
 	// ExtraEnv is appended to the git child environment after the scrubbed
 	// parent environment and the fixed settings (see childEnv), so it may set
 	// any variable, including the scrubbed GIT_DIR family. It is explicit
@@ -84,6 +88,8 @@ type GitBackend struct {
 	now      func() time.Time
 	gitBin   string
 	extraEnv []string
+	// headKeeper is Options.HeadKeeper; nil denies every ForceRelease.
+	headKeeper HeadKeeperAuthorizer
 
 	mu     sync.Mutex
 	oidLen int
@@ -104,13 +110,14 @@ func NewGitBackend(opts Options) (*GitBackend, error) {
 		return nil, errors.New("comb: Options.RepoDir is required")
 	}
 	b := &GitBackend{
-		repoDir:  opts.RepoDir,
-		remote:   opts.Remote,
-		maxDirs:  opts.MaxDirectoriesPerClaim,
-		ttl:      opts.DefaultTTL,
-		now:      opts.Now,
-		gitBin:   opts.GitBinary,
-		extraEnv: append([]string(nil), opts.ExtraEnv...),
+		repoDir:    opts.RepoDir,
+		remote:     opts.Remote,
+		maxDirs:    opts.MaxDirectoriesPerClaim,
+		ttl:        opts.DefaultTTL,
+		now:        opts.Now,
+		gitBin:     opts.GitBinary,
+		extraEnv:   append([]string(nil), opts.ExtraEnv...),
+		headKeeper: opts.HeadKeeper,
 	}
 	switch opts.CombMode {
 	case "", CombModeDirect:
@@ -321,11 +328,12 @@ func (b *GitBackend) readRefOID(ctx context.Context, ref, zero string) (string, 
 
 // claim is a decoded claim ref. A non-empty reason marks it malformed.
 type claim struct {
-	ref    string
-	oid    string
-	num    int
-	lease  Lease
-	reason string
+	ref     string
+	oid     string
+	objType string // git object type of oid, as reported by for-each-ref
+	num     int
+	lease   Lease
+	reason  string
 }
 
 // loadClaims decodes the lease.json of each ref with one cat-file --batch call.
@@ -334,7 +342,7 @@ func (b *GitBackend) loadClaims(ctx context.Context, refs []refEntry) ([]claim, 
 	var batch bytes.Buffer
 	var pending []int
 	for i, r := range refs {
-		c := claim{ref: r.ref, oid: r.oid}
+		c := claim{ref: r.ref, oid: r.oid, objType: r.objType}
 		n, ok := parseClaimRef(r.ref)
 		switch {
 		case !ok:
@@ -589,9 +597,23 @@ func (b *GitBackend) buildCommit(ctx context.Context, l Lease, parent, msg strin
 	if err != nil {
 		return "", err
 	}
-	args := []string{"commit-tree", "--no-gpg-sign", tree}
+	var parents []string
 	if parent != "" {
-		args = append(args, "-p", parent)
+		parents = append(parents, parent)
+	}
+	return b.commitTree(ctx, tree, parents, msg, now)
+}
+
+// commitTree is the signing seam (T-005 section 2.1, D-068): the only place
+// that creates a commit object, for claim and audit commits alike. Identity
+// is fixed (waggle <waggle@localhost>), both dates come from now (Options.Now)
+// and the commit is unsigned. Team mode replaces --no-gpg-sign with -S plus
+// the bot's SSH signing config here; tree, parents, message, identity and
+// dates never depend on whether the commit is signed.
+func (b *GitBackend) commitTree(ctx context.Context, tree string, parents []string, msg string, now time.Time) (string, error) {
+	args := []string{"commit-tree", "--no-gpg-sign", tree}
+	for _, p := range parents {
+		args = append(args, "-p", p)
 	}
 	args = append(args, "-m", msg)
 	date := fmt.Sprintf("@%d +0000", now.Unix())

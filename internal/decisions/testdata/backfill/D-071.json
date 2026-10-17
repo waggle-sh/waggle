@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "The default merge_strategy value is named up_to_date; native_queue is opt-in",
+  "question": "What config value names D-064's default merge strategy?",
+  "options": [
+    "Keep native_queue as the default value",
+    "up_to_date as the default value, with native_queue opt-in"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "The default merge setting value is named up_to_date; native_queue is opt-in.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-004",
+    "T-011"
+  ],
+  "supersedes": []
+}
