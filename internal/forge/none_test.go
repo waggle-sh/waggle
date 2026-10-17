@@ -301,8 +301,8 @@ func TestNew(t *testing.T) {
 	if _, err := New("none", Options{RepoDir: "."}); err != nil {
 		t.Errorf("none: %v", err)
 	}
-	if _, err := New("github", Options{RepoDir: "."}); !errors.Is(err, ErrUnsupported) {
-		t.Errorf("github: got %v, want ErrUnsupported", err)
+	if f, err := New("github", Options{RepoDir: "."}); !errors.Is(err, ErrForgeRemote) || f != nil {
+		t.Errorf("github without a remote: got %v, %v, want a nil Forge and ErrForgeRemote", f, err)
 	}
 	for _, o := range []struct{ provider, dir, remote string }{{"gitlab", ".", ""}, {"none", "", ""}, {"none", ".", "-bad"}} {
 		if _, err := New(o.provider, Options{RepoDir: o.dir, Remote: o.remote}); err == nil {
