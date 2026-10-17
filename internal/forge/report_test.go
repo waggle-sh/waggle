@@ -114,6 +114,17 @@ func TestRenderRefusesSilentFindings(t *testing.T) {
 	}
 }
 
+func TestRenderUppercasesFirstRune(t *testing.T) {
+	var b bytes.Buffer
+	f := Finding{ID: "x", Status: StatusMissing, Summary: "s", NotEnforced: "état is not checked.", Fix: "f"}
+	if err := Render(&b, Report{Provider: "none", Findings: []Finding{f}}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(b.String(), "\n  - État is not checked.\n") {
+		t.Errorf("first rune not uppercased:\n%s", b.String())
+	}
+}
+
 func TestEnforcementNativeQueue(t *testing.T) {
 	fs := githubFindings(true)
 	r := Report{MergeStrategy: "native_queue", Findings: fs}
