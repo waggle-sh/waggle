@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Tier 3 or Head Keeper PRs always fail the gate and merge by Head Keeper bypass",
+  "question": "How does the gate treat a PR that touches Tier 3 or carries a Head Keeper commit?",
+  "options": [
+    "Fail the gate and merge only by Head Keeper bypass",
+    "Pass when the PR has an approval from a listed login, read through the GitHub API"
+  ],
+  "recommendation": "Fail the gate and merge only by Head Keeper bypass",
+  "choice": "Any PR touching Tier 3 or containing a Head Keeper commit fails the automatic gate and merges only via Head Keeper bypass.",
+  "rationale": "Commit text can be forged.",
+  "tickets": [
+    "T-014"
+  ],
+  "supersedes": []
+}

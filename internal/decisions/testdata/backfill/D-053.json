@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "Queen-applied reversible defaults for model levels, gate checks, branches and CODEOWNERS",
+  "question": "Which reversible defaults from T-012, T-014 and T-015 stand until the Keeper changes them?",
+  "options": [
+    "Apply the briefs' defaults",
+    "Hold each until answered"
+  ],
+  "recommendation": "Apply the briefs' defaults",
+  "choice": "Defaults applied by the Queen (reversible): different model means a different model string; forager steps up once; model overrides go in a brief header line; templates ship opus/sonnet/haiku aliases; expired claims pass the gate with a warning; PR branches must be rebased with no merge commits inside the branch, while the final merge into main remains a real merge commit carrying the Intent Packet (D-017 unchanged); CODEOWNERS initial owner @paulternate.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-012",
+    "T-014",
+    "T-015"
+  ],
+  "supersedes": []
+}

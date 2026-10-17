@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "T-011 phase C is drafted by a worker in an isolated worktree, reviewed cross-model, and merged on Head Keeper approval; C-5 stays with the Head Keeper",
+  "question": "Who runs T-011 phase C (the hive PR), given that hive files are never leasable (D-043)?",
+  "options": [
+    "The Head Keeper runs the section 10 commands himself",
+    "Wait for T-016 (`waggle upgrade`) and let it move the control plane",
+    "A worker (architect subagent, isolated worktree) drafts the phase C hive PR verbatim from T-011 section 10 (C-1 to C-4), guard reviews cross-model, the Head Keeper approves the merge"
+  ],
+  "recommendation": "Worker drafts C-1 to C-4 in an isolated worktree, cross-model guard review, Head Keeper approves the merge",
+  "choice": "A worker (architect subagent, isolated worktree) drafts the phase C hive PR verbatim from T-011 section 10 (C-1 to C-4). Commit subjects end \"(Head Keeper)\" as the brief writes them. Guard reviews cross-model. The Head Keeper approves the merge. C-5 stays with the Head Keeper in the main checkout after merge. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected the Keeper running the commands himself and waiting for T-016. The brief already spells out every command, so a worker can execute it verbatim without touching the main checkout, and the Head Keeper keeps the merge approval and the post-merge step that only makes sense in the main checkout.",
+  "tickets": [
+    "T-011",
+    "T-016"
+  ],
+  "supersedes": []
+}

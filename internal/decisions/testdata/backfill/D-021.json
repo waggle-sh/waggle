@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "waggle gate rejects non-append DECISIONS.md changes",
+  "question": "Should waggle gate reject any DECISIONS.md change that is not a pure append?",
+  "options": [
+    "Yes, a gate check using VerifyAppendOnly",
+    "No, rely on review and the integrity parser"
+  ],
+  "recommendation": "Yes, as a follow-up task once the gate exists",
+  "choice": "waggle gate rejects any DECISIONS.md change that is not a pure append (T-007).",
+  "rationale": "The integrity parser cannot catch a hand edit that keeps the format valid; only a diff against the previous version can.",
+  "tickets": [
+    "T-007"
+  ],
+  "supersedes": []
+}

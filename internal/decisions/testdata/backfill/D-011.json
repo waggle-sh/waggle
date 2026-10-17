@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "RFCs get a Tier 2 floor via docs/specs",
+  "question": "How does the frozen RFC get an enforced Tier 2 floor?",
+  "options": [
+    "Move RFCs into docs/specs/",
+    "Add a docs/RFC- prefix to the Tier 2 list",
+    "Policy only"
+  ],
+  "recommendation": "Move RFCs into docs/specs/",
+  "choice": "A later task moves RFCs into docs/specs/.",
+  "rationale": "Inherits the existing Tier 2 floor with no code change.",
+  "tickets": [
+    "T-003"
+  ],
+  "supersedes": []
+}

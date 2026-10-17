@@ -1,0 +1,16 @@
+{
+  "kind": "scope",
+  "title": "T-003 amendment scope widened",
+  "question": "What does the RFC-0003 Amendment 1 cover, and where is its approval recorded?",
+  "options": [
+    "Three approved items only",
+    "Also all T-002 claim-time rules and docs/tasks/** in the RFC 3.3 Tier 2 list"
+  ],
+  "recommendation": "Widen the scope; record approval in the PR plus RFC Appendix A",
+  "choice": "Record all T-002 claim-time rules and add docs/tasks/** to the RFC 3.3 Tier 2 list; approval is recorded in the PR plus RFC Appendix A.",
+  "rationale": "Agents planning leases need the rules, and code and CI already enforce docs/tasks/** at Tier 2.",
+  "tickets": [
+    "T-003"
+  ],
+  "supersedes": []
+}
