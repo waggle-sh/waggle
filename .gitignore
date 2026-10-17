@@ -1,0 +1,17 @@
+bin/
+
+# --- waggle:start ---
+# Local Keeper preferences & runtime daemon state
+.waggle/local.yaml
+.waggle/run.sock
+.waggle/worktrees/
+.dashboard/
+
+# Materialized vendor/IDE shims (generated from .waggle/roles/ and WAGGLE.md)
+.claude/
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.cursor/
+.aider*
+# --- waggle:end ---
