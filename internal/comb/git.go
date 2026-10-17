@@ -91,6 +91,9 @@ type GitBackend struct {
 	// hookBeforeWrite, when set by tests, runs after the claim ref is read and
 	// before the CAS write, to force deterministic races.
 	hookBeforeWrite func()
+	// hookBeforeRetry, when set by tests, runs before each backoff in a CAS retry
+	// loop (local acquire, local release, remote push) with the 0-based attempt.
+	hookBeforeRetry func(attempt int)
 }
 
 var _ Backend = (*GitBackend)(nil)
@@ -602,8 +605,20 @@ func (b *GitBackend) buildCommit(ctx context.Context, l Lease, parent, msg strin
 // casLocal writes ref from expected to newOID with update-ref, classifying a
 // lost race as ErrAlreadyClaimed and retrying transient lock contention.
 func (b *GitBackend) casLocal(ctx context.Context, ref, newOID, expected, zero, msg, ticket string) error {
-	for attempt := 0; ; attempt++ {
+	return b.casLoop(ctx, ref, expected, zero, func() error {
 		_, err := b.git(ctx, nil, nil, "update-ref", "-m", msg, ref, newOID, expected)
+		return err
+	}, fmt.Errorf("%s: lost claim race: %w", ticket, ErrAlreadyClaimed))
+}
+
+// casLoop runs write, a local update-ref compare-and-swap on ref, until it
+// succeeds. After a failure it re-reads ref: when the ref no longer holds
+// expected (changed or gone) it returns lost; when git reported lock
+// contention it backs off and retries up to maxCASRetries times; otherwise it
+// returns the git error.
+func (b *GitBackend) casLoop(ctx context.Context, ref, expected, zero string, write func() error, lost error) error {
+	for attempt := 0; ; attempt++ {
+		err := write()
 		if err == nil {
 			return nil
 		}
@@ -615,15 +630,17 @@ func (b *GitBackend) casLocal(ctx context.Context, ref, newOID, expected, zero, 
 			return err
 		}
 		if cur != expected {
-			return fmt.Errorf("%s: lost claim race: %w", ticket, ErrAlreadyClaimed)
+			return lost
 		}
-		if isLockContention(err) && attempt < maxCASRetries {
-			if serr := sleepBackoff(ctx); serr != nil {
-				return serr
-			}
-			continue
+		if !isLockContention(err) || attempt >= maxCASRetries {
+			return err
 		}
-		return err
+		if b.hookBeforeRetry != nil {
+			b.hookBeforeRetry(attempt)
+		}
+		if serr := sleepBackoff(ctx); serr != nil {
+			return serr
+		}
 	}
 }
 
@@ -692,6 +709,9 @@ func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero,
 			return fmt.Errorf("comb: %s: push rejected %d times with remote ref unchanged: %w",
 				ticket, attempt+1, err)
 		}
+		if b.hookBeforeRetry != nil {
+			b.hookBeforeRetry(attempt)
+		}
 		if serr := sleepBackoff(ctx); serr != nil {
 			return serr
 		}
@@ -702,7 +722,8 @@ func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero,
 // compare-and-swap delete against the OID that was read. It returns ErrNotFound
 // when no claim exists, ErrNotOwner when another Keeper owns it (expired or not;
 // a non-owner takes over with AcquireLease instead), and ErrConcurrentUpdate when
-// the ref changed between read and delete.
+// the ref changed between read and delete. In local mode transient lock
+// contention is retried like AcquireLease does.
 func (b *GitBackend) ReleaseLease(ctx context.Context, ticketID string, keeperID string) error {
 	if b.relay {
 		return ErrRelayNotImplemented
@@ -756,21 +777,14 @@ func (b *GitBackend) ReleaseLease(ctx context.Context, ticketID string, keeperID
 		_, _ = b.git(ctx, nil, nil, "update-ref", "-d", ref, c.oid)
 		return nil
 	}
-	if _, err := b.git(ctx, nil, nil, "update-ref", "-d", ref, c.oid); err != nil {
-		if ctx.Err() != nil {
-			return err
-		}
-		zero, zerr := b.zeroOID(ctx)
-		if zerr != nil {
-			return err
-		}
-		cur, rerr := b.readRefOID(ctx, ref, zero)
-		if rerr == nil && cur != c.oid {
-			return fmt.Errorf("%s: %w", c.lease.TicketID, ErrConcurrentUpdate)
-		}
+	zero, err := b.zeroOID(ctx)
+	if err != nil {
 		return err
 	}
-	return nil
+	return b.casLoop(ctx, ref, c.oid, zero, func() error {
+		_, err := b.git(ctx, nil, nil, "update-ref", "-d", ref, c.oid)
+		return err
+	}, fmt.Errorf("%s: %w", c.lease.TicketID, ErrConcurrentUpdate))
 }
 
 // ListActiveLeases returns every unexpired, well-formed claim sorted by numeric
