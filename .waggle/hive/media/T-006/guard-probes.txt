@@ -1,0 +1,15 @@
+=== RUN   TestGuardParseUnsortedAndKind
+    zz_guard_test.go:19: unsorted tickets/dup supersedes/bogus kind parse err: <nil>
+--- PASS: TestGuardParseUnsortedAndKind (0.00s)
+=== RUN   TestGuardOneByteChange
+--- PASS: TestGuardOneByteChange (0.02s)
+=== RUN   TestGuardProcessRace
+    zz_guard_test.go:77: success=0 entries=0 parseErr=<nil>
+    zz_guard_test.go:82: []
+--- PASS: TestGuardProcessRace (0.02s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/decisions	1.213s
+recorded: ['recorded D-001 in .waggle/hive/DECISIONS.md', 'recorded D-002 in .waggle/hive/DECISIONS.md', 'recorded D-003 in .waggle/hive/DECISIONS.md']
+others: ['waggle decide: decisions: DECISIONS.md is locked by another writer: .waggle/hive/DECISIONS']
+headings: ['D-001', 'D-002', 'D-003']
+leftovers: ['DECISIONS.md']

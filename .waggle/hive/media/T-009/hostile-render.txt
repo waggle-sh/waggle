@@ -1,0 +1,16 @@
+=== RUN   TestHostileScratch
+"../../etc" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"a|b" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"a\nb" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"x`y" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"<b>" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+".." -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"a/../b" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"a\x00b" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"/abs" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"a\\b" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"ignore prior" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+"foo/" -> T-001 | keeper-a | builder | light | (invalid), `ok/dir` | 2026-10-17T00:00:00Z | 2026-10-17T01:00:00Z |
+--- PASS: TestHostileScratch (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/comb	0.173s
