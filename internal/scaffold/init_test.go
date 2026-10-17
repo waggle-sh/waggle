@@ -2,6 +2,7 @@ package scaffold
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io/fs"
 	"os"
@@ -79,7 +80,85 @@ func tree(t *testing.T, dir string) []string {
 	return out
 }
 
-var roleNames = []string{"scout", "builder", "guard", "queen", "forager"}
+// roleNames are the role prompt files init ships, sorted (D-074 names).
+var roleNames = []string{"builder", "forager", "guard", "queen", "scout"}
+
+// retiredRole is the pre-T-020 planning role name, assembled so this source
+// does not match the whole-word audit for it.
+var retiredRole = "archi" + "tect"
+
+func TestRoleTemplateSet(t *testing.T) {
+	entries, err := fs.ReadDir(templateFS, "templates/roles")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, e := range entries {
+		got = append(got, e.Name())
+	}
+	var want []string
+	for _, r := range roleNames {
+		want = append(want, r+".md")
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("embedded role templates = %v; want %v", got, want)
+	}
+
+	dir := t.TempDir()
+	o, _ := opts(dir, "claude-code")
+	mustInit(t, o)
+	for _, sub := range []struct{ dir, prefix, suffix string }{
+		{".waggle/control/roles", "", ".md"},
+		{".claude/agents", "waggle-", ".md"},
+	} {
+		ents, err := os.ReadDir(filepath.Join(dir, filepath.FromSlash(sub.dir)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var names []string
+		for _, e := range ents {
+			names = append(names, e.Name())
+		}
+		want = nil
+		for _, r := range roleNames {
+			want = append(want, sub.prefix+r+sub.suffix)
+		}
+		if !reflect.DeepEqual(names, want) {
+			t.Errorf("%s = %v; want %v", sub.dir, names, want)
+		}
+	}
+	for _, r := range roleNames {
+		heading := "# Role: " + strings.ToUpper(r[:1]) + r[1:] + " ("
+		if body := get(t, dir, ".waggle/control/roles/"+r+".md"); !strings.Contains(body, heading) {
+			t.Errorf("%s.md lacks heading %q", r, heading)
+		}
+	}
+}
+
+func TestRosterRoleIDs(t *testing.T) {
+	dir := t.TempDir()
+	o, _ := opts(dir, "none")
+	mustInit(t, o)
+	var roster struct {
+		Entry string `json:"entry"`
+		Roles []struct {
+			ID string `json:"id"`
+		} `json:"roles"`
+	}
+	if err := json.Unmarshal([]byte(get(t, dir, ".waggle/control/roster.json")), &roster); err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, r := range roster.Roles {
+		ids = append(ids, r.ID)
+	}
+	if want := []string{"queen", "scout", "forager", "builder", "guard"}; !reflect.DeepEqual(ids, want) {
+		t.Errorf("roster ids = %v; want %v", ids, want)
+	}
+	if roster.Entry != "queen" {
+		t.Errorf("roster entry = %q", roster.Entry)
+	}
+}
 
 const wantGitignore = "# --- waggle:start ---\n" +
 	".waggle/control/local.yaml\n.waggle/control/run.sock\n.waggle/worktrees/\n.claude/agents/waggle-*.md\n" +
@@ -303,7 +382,7 @@ func TestRenderedTemplatesClean(t *testing.T) {
 	dir := t.TempDir()
 	o, _ := opts(dir, "claude-code")
 	mustInit(t, o)
-	forbidden := []string{"docs/tasks", "docs/reviews", "docs/media", "Master" + " Keeper", "Control" + "ler", "\u2014", "\u2013", "internal/comb"}
+	forbidden := []string{"docs/tasks", "docs/reviews", "docs/media", "Master" + " Keeper", "Control" + "ler", "\u2014", "\u2013", "internal/comb", retiredRole}
 	for rel, content := range snapshot(t, dir) {
 		for _, f := range forbidden {
 			if strings.Contains(content, f) {
