@@ -1,0 +1,7 @@
+=== RUN   TestGuardBadToken
+    zz_guard3_test.go:14: token with control chars: leak=false err=github GET /x: Get "http://127.0.0.1:1/x": net/http: invalid header field value for "Authorization"
+    zz_guard3_test.go:14: token with control chars: leak=false err=github GET /x: Get "http://127.0.0.1:1/x": net/http: invalid header field value for "Authorization"
+    zz_guard3_test.go:14: token with control chars: leak=false err=github GET /x: Get "http://127.0.0.1:1/x": net/http: invalid header field value for "Authorization"
+--- PASS: TestGuardBadToken (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/forge	0.207s

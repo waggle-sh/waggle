@@ -1,0 +1,21 @@
+=== RUN   TestProbeRefs
+collision ticket-1: T-001 <nil>
+T-2 with only ticket-01 forged: refs/waggle/claims/ticket-2: comb: claim not found
+tree: refs/waggle/claims/ticket-7: comb: malformed claim ref: points to a tree, not a commit
+lease.json dir: refs/waggle/claims/ticket-8: comb: malformed claim ref: lease.json is a tree, not a blob
+no lease.json: refs/waggle/claims/ticket-9: comb: malformed claim ref: tree has no lease.json
+symlink lease.json: refs/waggle/claims/ticket-11: comb: malformed claim ref: lease.json is not valid JSON: invalid character '/' looking for beginning of value
+64MB blob: <nil> (112.293708ms)
+8MB braces: refs/waggle/claims/ticket-13: comb: malformed claim ref: lease.json is not valid JSON: invalid character '{' looking for (28.891792ms)
+ctrl: "refs/waggle/claims/ticket-14: comb: malformed claim ref: keeper id \"evil\\x1b[31m\": comb: invalid lease"
+dir "../x" -> [] refs/waggle/claims/ticket-20: comb: malformed claim ref: directory "../x" escapes the repo: comb: invalid lease
+dir "/abs" -> [] refs/waggle/claims/ticket-21: comb: malformed claim ref: directory "/abs" is absolute: comb: invalid lease
+dir ".WAGGLE/x" -> [] refs/waggle/claims/ticket-22: comb: malformed claim ref: directory ".WAGGLE/x": comb: worker leases never include .waggle/; hive files change only through waggle commands or the Head Keeper: comb: lease covers a Tier 3 control-plane path
+dir "go.mod" -> [go.mod] <nil>
+dir ".github/Workflows" -> [] refs/waggle/claims/ticket-24: comb: malformed claim ref: directory ".github/Workflows": comb: lease covers a Tier 3 control-plane path
+dir "a/../.waggle" -> [] refs/waggle/claims/ticket-25: comb: malformed claim ref: directory ".waggle": comb: worker leases never include .waggle/; hive files change only through waggle commands or the Head Keeper: comb: lease covers a Tier 3 control-plane path
+dir "pkg\\u202e" -> [] refs/waggle/claims/ticket-26: comb: malformed claim ref: directory "pkg\\u202e" contains a character outside [A-Za-z0-9._/-]: comb: invalid lease
+dir "ok/" -> [ok] <nil>
+--- PASS: TestProbeRefs (1.66s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/comb	1.830s

@@ -1,0 +1,146 @@
+package forge
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+const gtok2 = "ghp_GUARDSECRET0123456789abcdefghij"
+
+func fb(t *testing.T, script string) *ghTransport {
+	p := filepath.Join(t.TempDir(), "gh")
+	os.WriteFile(p, []byte("#!/bin/sh\n"+script+"\n"), 0o755)
+	return &ghTransport{bin: p}
+}
+
+func rep(t *testing.T, label string, st int, err error, d time.Duration) {
+	s := fmt.Sprint(err)
+	if len(s) > 200 {
+		s = s[:200] + "..."
+	}
+	t.Logf("%-34s status=%d took=%v leak=%v err=%q", label, st, d.Round(time.Millisecond), strings.Contains(fmt.Sprint(err), gtok2), s)
+}
+
+func TestRRCap(t *testing.T) {
+	hdr := "HTTP/2.0 200 OK\r\n\r\n"
+	total := maxBody + ghHeaderRoom
+	cases := map[string]string{
+		"total exactly at cap, body in budget? (garbage json)": fmt.Sprintf(`printf 'HTTP/2.0 200 OK\r\n\r\n'; head -c %d /dev/zero | tr '\0' 'a'`, total-len(hdr)),
+		"total cap+1":                  fmt.Sprintf(`printf 'HTTP/2.0 200 OK\r\n\r\n'; head -c %d /dev/zero | tr '\0' 'a'`, total-len(hdr)+1),
+		"body exactly 1MiB":            fmt.Sprintf(`printf 'HTTP/2.0 200 OK\r\n\r\n'; head -c %d /dev/zero | tr '\0' ' '`, maxBody),
+		"body 1MiB+1":                  fmt.Sprintf(`printf 'HTTP/2.0 200 OK\r\n\r\n'; head -c %d /dev/zero | tr '\0' ' '`, maxBody+1),
+		"stderr 10MiB, valid response": `head -c 10485760 /dev/zero >&2; printf 'HTTP/2.0 200 OK\r\n\r\n{}'`,
+		"stderr 10MiB, no status":      `head -c 10485760 /dev/zero | tr '\0' 'e' >&2; exit 1`,
+	}
+	for n, s := range cases {
+		var out map[string]any
+		t0 := time.Now()
+		st, err := fb(t, s).do(context.Background(), "GET", "/x", nil, &out)
+		rep(t, n, st, err, time.Since(t0))
+		if strings.Contains(n, "stderr 10MiB, no") && len(fmt.Sprint(err)) > 70000 {
+			t.Errorf("stderr in error is %d bytes", len(fmt.Sprint(err)))
+		}
+	}
+}
+
+func TestRRGrandchild(t *testing.T) {
+	for n, s := range map[string]string{
+		"grandchild holds stdout 30s, gh exits": `sleep 30 &` + "\n" + `printf 'HTTP/2.0 200 OK\r\n\r\n{}'`,
+		"grandchild + gh sleeps":                "sleep 30 &\nsleep 60",
+	} {
+		ctx, c := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		t0 := time.Now()
+		st, err := fb(t, s).do(ctx, "GET", "/x", nil, nil)
+		c()
+		rep(t, n+" ctx500ms", st, err, time.Since(t0))
+		if time.Since(t0) > 6*time.Second {
+			t.Errorf("%s hung", n)
+		}
+	}
+	// no caller deadline: own 30s must bound
+	t.Log("(own 30s bound is covered by the Forager's constant; checked by code read)")
+}
+
+func TestRRCancelled(t *testing.T) {
+	ctx, c := context.WithCancel(context.Background())
+	c()
+	t0 := time.Now()
+	st, err := fb(t, `printf 'HTTP/2.0 200 OK\r\n\r\n{}'`).do(ctx, "GET", "/x", nil, nil)
+	rep(t, "gh pre-cancelled", st, err, time.Since(t0))
+	if err == nil {
+		t.Error("no error")
+	}
+	tt := &tokenTransport{base: "https://api.github.com", token: gtok2, client: tokenClient()}
+	t0 = time.Now()
+	st, err = tt.do(ctx, "GET", "/x", nil, nil)
+	rep(t, "token pre-cancelled", st, err, time.Since(t0))
+	if err == nil {
+		t.Error("no error")
+	}
+}
+
+type rtf func(*http.Request) (*http.Response, error)
+
+func (f rtf) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestRRRedirects(t *testing.T) {
+	for _, tc := range []struct {
+		loc    string
+		follow bool
+	}{
+		{"https://api.github.com/other/path", true},
+		{"/relative/path", true},
+		{"https://API.GITHUB.COM/x", false},
+		{"https://api.github.com./x", false},
+		{"https://api.github.com:443/x", false},
+		{"https://api.github.com:8443/x", false},
+		{"http://api.github.com/x", false},
+		{"https://api.github.com@evil.example/x", false},
+		{"https://evil.example/x", false},
+		{"https://uploads.github.com/x", false},
+	} {
+		var seen []string
+		c := tokenClient()
+		c.Transport = rtf(func(r *http.Request) (*http.Response, error) {
+			seen = append(seen, r.URL.String()+" auth="+r.Header.Get("Authorization"))
+			h := http.Header{}
+			if len(seen) == 1 {
+				h.Set("Location", tc.loc)
+				return &http.Response{StatusCode: 307, Header: h, Body: io.NopCloser(strings.NewReader("")), Request: r}, nil
+			}
+			return &http.Response{StatusCode: 200, Header: h, Body: io.NopCloser(strings.NewReader("{}")), Request: r}, nil
+		})
+		tt := &tokenTransport{base: "https://api.github.com", token: gtok2, client: c}
+		st, err := tt.do(context.Background(), "POST", "/a", map[string]string{"k": "v"}, nil)
+		followed := len(seen) == 2
+		t.Logf("redirect %-42s followed=%v want=%v status=%d err=%v seen=%q", tc.loc, followed, tc.follow, st, err, seen)
+		if followed != tc.follow {
+			t.Errorf("redirect %s: followed=%v", tc.loc, followed)
+		}
+		if err != nil && strings.Contains(err.Error(), gtok2) {
+			t.Errorf("leak")
+		}
+	}
+	// 10 hops
+	n := 0
+	c := tokenClient()
+	c.Transport = rtf(func(r *http.Request) (*http.Response, error) {
+		n++
+		h := http.Header{}
+		h.Set("Location", fmt.Sprintf("/hop%d", n))
+		return &http.Response{StatusCode: 307, Header: h, Body: io.NopCloser(strings.NewReader("")), Request: r}, nil
+	})
+	tt := &tokenTransport{base: "https://api.github.com", token: gtok2, client: c}
+	_, err := tt.do(context.Background(), "GET", "/a", nil, nil)
+	t.Logf("redirect loop: requests=%d err=%v", n, err)
+	if n > 10 {
+		t.Errorf("too many hops %d", n)
+	}
+}
