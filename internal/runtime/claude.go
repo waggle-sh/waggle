@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/waggle-sh/waggle/internal/layout"
@@ -100,9 +101,48 @@ func (c *ClaudeAdapter) Run(ctx context.Context, inv Invocation) (UsageStats, er
 	return UsageStats{}, fmt.Errorf("runtime execution requires waggled (Commit #2)")
 }
 
-// claudeArgs assembles the launch argv: the resolved model, then DefaultArgs.
-// The waggled launch path uses it so the model always comes from a Selection.
-func (c *ClaudeAdapter) claudeArgs(inv Invocation) []string {
-	args := []string{"--model", inv.Selection.Model}
-	return append(args, c.cfg.DefaultArgs...)
+// ErrResumeFlag reports a configured default argument that would continue an
+// earlier session. Every launch is a fresh session (T-021 S1).
+var ErrResumeFlag = errors.New("session resume flag refused")
+
+// resumeFlags are the Claude Code flags that continue an earlier session.
+var resumeFlags = map[string]bool{"--continue": true, "-c": true, "--resume": true, "-r": true, "--session-id": true}
+
+// thinkingTokens maps the Thinking step to Claude Code's MAX_THINKING_TOKENS.
+var thinkingTokens = map[Profile]int{ProfileLean: 4000, ProfileBalanced: 12000, ProfileThorough: 32000}
+
+// claudeArgs assembles the launch argv: the resolved model, --strict-mcp-config
+// (S6: a worker sees only the MCP servers Waggle passes, none in v0.1),
+// --max-turns from settings when given, then DefaultArgs. The waggled launch
+// path uses it so the model always comes from a Selection. It never emits a
+// resume flag and refuses DefaultArgs that carry one, so a session can never
+// continue an earlier one. Which Claude Code settings files the launch
+// bypasses (plugins, connectors) is the launcher's to decide and document.
+func (c *ClaudeAdapter) claudeArgs(inv Invocation, s *ContextSettings) ([]string, error) {
+	args := []string{"--model", inv.Selection.Model, "--strict-mcp-config"}
+	if s != nil {
+		args = append(args, "--max-turns", strconv.Itoa(s.MaxTurns))
+	}
+	for _, a := range c.cfg.DefaultArgs {
+		if flag, _, _ := strings.Cut(a, "="); resumeFlags[flag] {
+			return nil, fmt.Errorf("%w: default_args contains %q", ErrResumeFlag, a)
+		}
+	}
+	return append(args, c.cfg.DefaultArgs...), nil
+}
+
+// claudeEnv returns the environment entries that carry settings into Claude
+// Code: BASH_MAX_OUTPUT_LENGTH from ToolOutputChars and MAX_THINKING_TOKENS
+// from Thinking (omitted for an unknown step). Nil settings add nothing. The
+// adapter does not turn off Claude Code's automatic compaction; the launcher
+// keeps the handoff threshold below the compaction point instead (S5).
+func claudeEnv(s *ContextSettings) []string {
+	if s == nil {
+		return nil
+	}
+	env := []string{"BASH_MAX_OUTPUT_LENGTH=" + strconv.Itoa(s.ToolOutputChars)}
+	if n := thinkingTokens[s.Thinking]; n > 0 {
+		env = append(env, "MAX_THINKING_TOKENS="+strconv.Itoa(n))
+	}
+	return env
 }
