@@ -1,0 +1,2 @@
+::error::gofmt -l reports unformatted files:
+bad.go

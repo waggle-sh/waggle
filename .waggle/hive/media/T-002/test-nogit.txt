@@ -1,0 +1,81 @@
+=== RUN   TestParseTicketID
+--- PASS: TestParseTicketID (0.00s)
+=== RUN   TestParseClaimRef
+--- PASS: TestParseClaimRef (0.00s)
+=== RUN   TestNormalizeDirectories
+--- PASS: TestNormalizeDirectories (0.00s)
+=== RUN   TestDirsOverlap
+--- PASS: TestDirsOverlap (0.00s)
+=== RUN   TestValidateLeaseFields
+--- PASS: TestValidateLeaseFields (0.00s)
+=== RUN   TestTier3Detection
+--- PASS: TestTier3Detection (0.00s)
+=== RUN   TestMalformedClaimsError
+--- PASS: TestMalformedClaimsError (0.00s)
+=== RUN   TestRelayMode
+--- PASS: TestRelayMode (0.00s)
+=== RUN   TestNewGitBackendOptions
+--- PASS: TestNewGitBackendOptions (0.00s)
+=== RUN   TestAcquireTier3Rejected
+    git_test.go:119: git not found
+--- SKIP: TestAcquireTier3Rejected (0.00s)
+=== RUN   TestAcquireTier2Floor
+    git_test.go:142: git not found
+--- SKIP: TestAcquireTier2Floor (0.00s)
+=== RUN   TestAcquireInvalidLease
+    git_test.go:165: git not found
+--- SKIP: TestAcquireInvalidLease (0.00s)
+=== RUN   TestAcquireOverlap
+    git_test.go:202: git not found
+--- SKIP: TestAcquireOverlap (0.00s)
+=== RUN   TestAcquireCommitShape
+    git_test.go:228: git not found
+--- SKIP: TestAcquireCommitShape (0.00s)
+=== RUN   TestAcquireClaimRenewTakeover
+    git_test.go:288: git not found
+--- SKIP: TestAcquireClaimRenewTakeover (0.00s)
+=== RUN   TestExpiryTakeoverLog
+    git_test.go:334: git not found
+--- SKIP: TestExpiryTakeoverLog (0.00s)
+=== RUN   TestRelease
+    git_test.go:372: git not found
+--- SKIP: TestRelease (0.00s)
+=== RUN   TestReleaseConcurrentUpdateLocal
+    git_test.go:412: git not found
+--- SKIP: TestReleaseConcurrentUpdateLocal (0.00s)
+=== RUN   TestAcquireLostRaceLocalDeterministic
+    git_test.go:436: git not found
+--- SKIP: TestAcquireLostRaceLocalDeterministic (0.00s)
+=== RUN   TestMalformedClaims
+    git_test.go:457: git not found
+--- SKIP: TestMalformedClaims (0.00s)
+=== RUN   TestLocalConcurrency
+    git_test.go:538: git not found
+--- SKIP: TestLocalConcurrency (0.00s)
+=== RUN   TestRemoteConcurrency
+    git_test.go:596: git not found
+--- SKIP: TestRemoteConcurrency (0.00s)
+=== RUN   TestRemoteLostRaceDeterministic
+    git_test.go:630: git not found
+--- SKIP: TestRemoteLostRaceDeterministic (0.00s)
+=== RUN   TestRemoteVisibility
+    git_test.go:664: git not found
+--- SKIP: TestRemoteVisibility (0.00s)
+=== RUN   TestRemoteExpiryTakeover
+    git_test.go:713: git not found
+--- SKIP: TestRemoteExpiryTakeover (0.00s)
+=== RUN   TestRemoteTransportFailure
+    git_test.go:747: git not found
+--- SKIP: TestRemoteTransportFailure (0.00s)
+=== RUN   TestContextCanceled
+    git_test.go:762: git not found
+--- SKIP: TestContextCanceled (0.00s)
+=== RUN   TestRenderWorkplanGolden
+--- PASS: TestRenderWorkplanGolden (0.00s)
+=== RUN   TestRenderWorkplanEmpty
+--- PASS: TestRenderWorkplanEmpty (0.00s)
+=== RUN   TestWriteWorkplan
+--- PASS: TestWriteWorkplan (0.01s)
+PASS
+ok  	github.com/waggle-dev/waggle/internal/comb	0.181s
+exit 0

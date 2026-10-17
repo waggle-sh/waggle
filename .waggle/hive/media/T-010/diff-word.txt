@@ -1,0 +1,32 @@
+diff --git a/cmd/waggle/main.go b/cmd/waggle/main.go
+index fed4eb8..03e5eed 100644
+--- a/cmd/waggle/main.go
++++ b/cmd/waggle/main.go
+@@ -5,7 +5,7 @@ import (
+	"fmt"
+	"os"
+
+	[-"github.com/waggle-dev/waggle/internal/scaffold"-]{+"github.com/waggle-sh/waggle/internal/scaffold"+}
+)
+
+const version = "0.1.0-bootstrap"
+diff --git a/go.mod b/go.mod
+index 391257a..fc7e4af 100644
+--- a/go.mod
++++ b/go.mod
+@@ -1,3 +1,3 @@
+module [-github.com/waggle-dev/waggle-]{+github.com/waggle-sh/waggle+}
+
+go 1.23
+diff --git a/internal/scaffold/init.go b/internal/scaffold/init.go
+index d7d6c26..1cb68e9 100644
+--- a/internal/scaffold/init.go
++++ b/internal/scaffold/init.go
+@@ -8,7 +8,7 @@ import (
+	"path/filepath"
+	"strings"
+
+	[-"github.com/waggle-dev/waggle/internal/runtime"-]{+"github.com/waggle-sh/waggle/internal/runtime"+}
+)
+
+// Embed all template files directly into the static Go binary so `waggle init`

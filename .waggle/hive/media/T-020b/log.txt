@@ -1,0 +1,6 @@
+afc6cde paulternate <27632860+paulternate@users.noreply.github.com>
+T-020: retire the drone role name from RFC-0003 (D-073)
+---
+2541997 paulternate <27632860+paulternate@users.noreply.github.com>
+T-020: rename roles in RFC-0003 (architect to scout, scout to forager, forager to builder)
+---

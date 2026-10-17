@@ -1,0 +1,4 @@
+HEAD:docs/RFC-0003.md:32:| **Planning** | PM / Tech Lead | **`scout`** | Main Checkout (`worker`) | Proposes task breakdowns, classifies Lig
+HEAD:docs/RFC-0003.md:33:| **Build: Triage** | Issue Triage / Repro | **`forager`** | **Cell** (`ro` repo + test runner) | Safe for unattend
+HEAD:docs/RFC-0003.md:34:| **Build: Code** | Developer | **`builder`** | **Cell** (`ro` root + `rw` leased paths) | Reads *only* its task br
+HEAD:docs/RFC-0003.md:82:1. **`waggle init` (Flags Only):** Scaffolds `.waggle/config.yaml`, `.waggle/roster.json` (`cli` profile), core rol

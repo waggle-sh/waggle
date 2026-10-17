@@ -1,0 +1,30 @@
+diff --git a/docs/RFC-0003.md b/docs/RFC-0003.md
+index 2059875..7d22035 100644
+--- a/docs/RFC-0003.md
++++ b/docs/RFC-0003.md
+@@ -22,7 +22,7 @@ Coding velocity is no longer the bottleneck in software engineering; human-scale
+ - **Nectar & Quorum (v0.2):** Reputation earned from merged commits surviving 30 days on `main` without revert, powering Quadratic Voting ($\text{Weight} = \sqrt{\text{Nectar}}$) + Master Keeper veto.
+ 
+ ### 2.2 The Roster (`.waggle/roster.json`)
+-The roster is data-driven in `.waggle/roster.json`. v0.1 ships with the `cli` profile and core build roles; specialized roles (`weaver`, `drone`, `studio`, `assembly`, `nurse`) are deferred to v0.2 to be built by Waggle itself.
++The roster is data-driven in `.waggle/roster.json`. v0.1 ships with the `cli` profile and core build roles; specialized roles (`weaver`, `studio`, `assembly`, `nurse`) are deferred to v0.2 to be built by Waggle itself.
+ 
+ | Role / Pack | Traditional Equivalent | Bee Identity | Runs In | Core Function & Hard "Never" Boundaries |
+ | :--- | :--- | :--- | :--- | :--- |
+@@ -33,7 +33,7 @@ The roster is data-driven in `.waggle/roster.json`. v0.1 ships with the `cli` pr
+ | **Build: Triage** | Issue Triage / Repro | **`forager`** | **Cell** (`ro` repo + test runner) | Safe for unattended/Full-Auto mode. Reproduces bugs, writes failing unit tests, maps exact directory leases needed for a ticket, and estimates complexity. **Never** writes implementation code. |
+ | **Build: Code** | Developer | **`builder`** | **Cell** (`ro` root + `rw` leased paths) | Reads *only* its task brief (`T-<id>.md`) and leased files, implements the change, runs local tests + self-review checklist, and emits `worker_done`. **Never** touches unleased paths or reads the full backlog. |
+ | **Build: Review** | Reviewer / QA | **`guard`** | **Cell** (Cross-model sandbox) | Cross-model reviewer & acceptance verifier. Checks every criterion, saves evidence in `docs/media/T-<id>/`, outputs `Verdict:` (`pass` / `must-fix`) + **Intent Packet & Risk Tier**. **Never** fixes bugs itself or invents hypothetical nitpicks. |
+-| **v0.2 Roles** | UX, Visuals, Hygiene, Deliberation | **`weaver`**, **`drone`**, **`nurse`**, **`studio`**, **`assembly`** | *(Deferred to v0.2)* | Built via dogfooding once v0.1 is live. |
++| **v0.2 Roles** | UX, Visuals, Hygiene, Deliberation | **`weaver`**, **`nurse`**, **`studio`**, **`assembly`** | *(Deferred to v0.2)* | Built via dogfooding once v0.1 is live. |
+ 
+ ---
+ 
+@@ -89,6 +89,6 @@ Every line of v0.1 is built manually to reach self-hosting as fast as possible:
+ 
+ ### Deferred to v0.2 (Built by Waggle Dogfooding)
+ - Static HTML dashboard (`waggle dash`) and brand-aware interactive init
+-- Extended roles & modes (`weaver`, `drone`, `studio`, `assembly`, `nurse`)
++- Extended roles & modes (`weaver`, `studio`, `assembly`, `nurse`)
+ - Guard false-flag calibration, Nectar scoring, and Quorum quadratic voting
+ - Platform profiles beyond `cli` (`web`, `api`, `desktop`, `mobile`, `docs`) and GitLab Forge adapter
