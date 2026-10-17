@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT-0
+# Head Keeper review required (T-015). Scaffold templates become control-plane
+# code in every downstream hive, and README.md defines every Waggle term, so a
+# PR touching them needs the Head Keeper as a code owner reviewer. Enforced only
+# by the main-branch ruleset with "Require review from Code Owners" on.
+# This file is a Head Keeper commit, not a Forager task. Last matching pattern wins.
+
+/internal/scaffold/templates/   @paulternate
+/README.md                      @paulternate
+/.github/CODEOWNERS             @paulternate
