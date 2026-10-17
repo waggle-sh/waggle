@@ -16,48 +16,63 @@ import (
 type RiskTier int
 
 const (
-	Tier0Trivial     RiskTier = 0 // Comments, formatting, non-steering typo fixes
-	Tier1Isolated    RiskTier = 1 // Light Gate: <150 lines, isolated unit tests, lane-eligible
-	Tier2Logic       RiskTier = 2 // Full Gate: standard logic within lease, or steering docs
-	Tier3ControlAuth RiskTier = 3 // Control plane, security, cross-module, dependencies (Controller-only)
+	Tier0Trivial      RiskTier = 0 // Comments, formatting, non-steering typo fixes
+	Tier1Isolated     RiskTier = 1 // Light Gate: <150 lines, isolated unit tests, lane-eligible
+	Tier2Logic        RiskTier = 2 // Full Gate: standard logic within lease, or steering docs
+	Tier3ControlPlane RiskTier = 3 // Control plane, security, cross-module, dependencies (Head Keeper only)
 )
 
-// HardcodedTier3Prefixes define the hive's control plane and execution sandbox.
+// HardcodedTier3Prefixes define the hive's control plane, execution sandbox and CI.
 // Any modification is a potential prompt-injection or sandbox-escape vector and
-// MUST require Master Keeper (Controller) approval. Not configurable.
+// MUST require Head Keeper approval. Not configurable. Matched case-insensitively.
+// ".waggle/" covers every current and future subfolder except HiveCarveOut.
 var HardcodedTier3Prefixes = []string{
 	".waggle/",
-	"WAGGLE.md",
-	".devcontainer/",
 	".github/workflows/",
 	".gitlab-ci.yml",
+	".devcontainer/",
 }
 
+// HiveCarveOut is the only part of .waggle/ classified below Tier 3. It matches
+// exact case only, so a case variant such as ".waggle/HIVE/" resolves upward to Tier 3.
+const HiveCarveOut = ".waggle/hive/"
+
 // HardcodedTier2MinPrefixes define agent-read steering context.
-// Because an injected roadmap or decision log steers downstream Foragers,
-// these paths can never be downgraded to Tier 0 or Tier 1 (Light Gate).
+// Because an injected brief, decision log or agent instruction file steers
+// downstream Foragers, these paths can never be downgraded to Tier 0 or Tier 1
+// (Light Gate). Matched case-insensitively.
 var HardcodedTier2MinPrefixes = []string{
-	"DECISIONS.md",
-	"ROADMAP.md",
-	"WORKPLAN.md",
-	"docs/specs/",
-	"docs/tasks/",
+	".waggle/hive/",
+	"CLAUDE.md",
+	"AGENTS.md",
+}
+
+// matchesPrefix applies the equal-or-prefix rule to an already lowercased path.
+func matchesPrefix(lower string, prefixes []string) bool {
+	for _, p := range prefixes {
+		lp := strings.ToLower(p)
+		if lower == strings.TrimSuffix(lp, "/") || strings.HasPrefix(lower, lp) {
+			return true
+		}
+	}
+	return false
 }
 
 // RequiredMinTier returns the minimum allowable RiskTier for a given repo-relative path.
-// We normalize via filepath.Clean and ToSlash to prevent "../" traversal bypasses.
+// The path is normalized via filepath.Clean and ToSlash to prevent "../" traversal
+// bypasses. A path inside HiveCarveOut (exact case) is Tier 2; otherwise the
+// lowercased path is compared against the lowercased tier lists.
 func RequiredMinTier(relPath string) RiskTier {
 	cleaned := filepath.ToSlash(filepath.Clean(relPath))
-
-	for _, prefix := range HardcodedTier3Prefixes {
-		if cleaned == strings.TrimSuffix(prefix, "/") || strings.HasPrefix(cleaned, prefix) {
-			return Tier3ControlAuth
-		}
+	if cleaned == strings.TrimSuffix(HiveCarveOut, "/") || strings.HasPrefix(cleaned, HiveCarveOut) {
+		return Tier2Logic
 	}
-	for _, prefix := range HardcodedTier2MinPrefixes {
-		if cleaned == strings.TrimSuffix(prefix, "/") || strings.HasPrefix(cleaned, prefix) {
-			return Tier2Logic
-		}
+	lower := strings.ToLower(cleaned)
+	if matchesPrefix(lower, HardcodedTier3Prefixes) {
+		return Tier3ControlPlane
+	}
+	if matchesPrefix(lower, HardcodedTier2MinPrefixes) {
+		return Tier2Logic
 	}
 	return Tier0Trivial
 }
@@ -108,6 +123,9 @@ var (
 	ErrInvalidLease = errors.New("comb: invalid lease")
 	// ErrTier3Path reports a lease directory that equals, is contained by, or contains a Tier 3 path.
 	ErrTier3Path = errors.New("comb: lease covers a Tier 3 control-plane path")
+	// ErrWaggleDir reports a lease directory that equals, is inside, or contains
+	// .waggle (any case, hive included). Returned errors also wrap ErrTier3Path.
+	ErrWaggleDir = errors.New("comb: worker leases never include .waggle/; hive files change only through waggle commands or the Head Keeper")
 	// ErrGateTooLow reports a Light gate lease that touches a Tier 2 steering path.
 	ErrGateTooLow = errors.New("comb: light gate cannot lease a Tier 2 steering path")
 	// ErrLeaseOverlap reports that requested directories overlap another active lease.
@@ -281,7 +299,7 @@ func DirsOverlap(a, b string) bool {
 
 // touchesPrefixes reports whether a normalized directory equals, is contained by,
 // or contains any of the given prefixes, comparing case-insensitively. Prefix
-// matching mirrors RequiredMinTier, so "WAGGLE.md.bak" also matches "WAGGLE.md".
+// matching mirrors RequiredMinTier, so "CLAUDE.md.bak" also matches "CLAUDE.md".
 func touchesPrefixes(dir string, prefixes []string) bool {
 	ld := strings.ToLower(dir)
 	for _, p := range prefixes {
@@ -297,7 +315,14 @@ func touchesPrefixes(dir string, prefixes []string) bool {
 // isTier3Dir reports whether a normalized directory equals, is contained by, or
 // contains a Tier 3 control-plane path.
 func isTier3Dir(dir string) bool {
-	return RequiredMinTier(dir) == Tier3ControlAuth || touchesPrefixes(dir, HardcodedTier3Prefixes)
+	return RequiredMinTier(dir) == Tier3ControlPlane || touchesPrefixes(dir, HardcodedTier3Prefixes)
+}
+
+// isWaggleDir reports whether a normalized directory equals, is inside, or
+// contains .waggle, comparing case-insensitively (D-043). The hive carve-out
+// does not apply: worker leases never include any part of .waggle/.
+func isWaggleDir(dir string) bool {
+	return touchesPrefixes(dir, []string{".waggle/"})
 }
 
 // isTier2Dir reports whether a normalized directory equals, is contained by, or
@@ -330,6 +355,11 @@ func validateLeaseFields(l Lease, maxDirs int) (Lease, error) {
 	dirs, err := NormalizeDirectories(l.Directories, maxDirs)
 	if err != nil {
 		return Lease{}, err
+	}
+	for _, d := range dirs {
+		if isWaggleDir(d) {
+			return Lease{}, fmt.Errorf("directory %q: %w: %w", d, ErrWaggleDir, ErrTier3Path)
+		}
 	}
 	for _, d := range dirs {
 		if isTier3Dir(d) {
