@@ -1,0 +1,23 @@
+=== RUN   TestGuardForcedRace
+    guard2_test.go:36: winner err=<nil> loser err=forge: merge feat into main: refs/heads/main moved from 8bd804bbfbbe01c44f820668de9a40e5c9fb560b to 994e35013caccaf288c22a857459a08028ca95e4: head moved
+    guard2_test.go:41: parents of winner: 8bd804bbfbbe01c44f820668de9a40e5c9fb560b bd5be9f7a246956905dc7965427189c8e02a711d (base 8bd804bbfbbe01c44f820668de9a40e5c9fb560b feat2 bd5be9f7a246956905dc7965427189c8e02a711d)
+--- PASS: TestGuardForcedRace (0.76s)
+=== RUN   TestGuardRace
+--- PASS: TestGuardRace (5.16s)
+=== RUN   TestGuardRejectedPushRollsBack
+    guard_test.go:90: err: forge: merge feat into main: origin rejected the push, refs/heads/main moved on the remote: head moved
+--- PASS: TestGuardRejectedPushRollsBack (0.75s)
+=== RUN   TestGuardUnreachableRemote
+    guard_test.go:108: err: forge: merge feat into main: git push: exit status 128: fatal: '/nonexistent/path' does not appear to be a git repository
+        fatal: Could not read from remote repository.
+        
+        Please make sure you have the correct access rights
+        and the repository exists.
+    guard_test.go:109: local main moved: true
+--- PASS: TestGuardUnreachableRemote (0.50s)
+=== RUN   TestGuardInheritedGitDir
+    guard_test.go:119: with GIT_DIR pointing at another repo: err=forge: merge feat into main: refs/heads/feat is at 4560726f6ba3db43957e0b5ffced52c6b5a28b89, expected ae3a6824d85d3323ca292d8a680d25594942f1b1: head moved
+    guard_test.go:122: other main moved: c30cb95da9a90028d46a623a7fb83313a003cd78
+--- PASS: TestGuardInheritedGitDir (0.60s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/forge	8.868s

@@ -1,0 +1,61 @@
+package runtime
+
+import (
+	"testing"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+func TestZZExhaustive(t *testing.T) {
+	t1, t2 := comb.Tier1Isolated, comb.Tier2Logic
+	tiers := []*comb.RiskTier{nil, &t1, &t2}
+	ok := func(int) bool { return true }
+	lv := []Level{0, 1, 2, 3, 4}
+	alts := []map[Level]string{nil, {3: "alt3"}, {2: "alt2"}, {1: "alt1", 2: "alt2", 3: "alt3"}, {1: "x"}}
+	prims := []map[Level]string{{1: "h", 2: "s", 3: "o"}, {1: "m", 2: "m", 3: "m"}, {1: "h", 2: "s", 3: "s"}}
+	n, ref, okc := 0, 0, 0
+	for _, pr := range prims {
+		for _, al := range alts {
+			for _, mf := range []int{0, 1, 2, 5} {
+				for _, bo := range lv {
+					for _, go_ := range lv {
+						for _, tr := range tiers {
+							p := Policy{Models: Models{Adapter: "a", Primary: pr, Alternate: al}, Minimums: map[string]Level{"builder": 2, "guard": 2, "queen": 3}}
+							tc := &TaskContext{TaskID: "T", Tier: tr, GuardMustFix: mf, Overrides: map[string]Override{}}
+							if bo != 0 {
+								tc.Overrides["builder"] = Override{bo, 1}
+							}
+							if go_ != 0 {
+								tc.Overrides["guard"] = Override{go_, 1}
+							}
+							b, be := p.Resolve("builder", tc, ok)
+							g, ge := p.Resolve("guard", tc, ok)
+							n++
+							if ge != nil {
+								ref++
+								continue
+							}
+							okc++
+							if be != nil {
+								t.Fatalf("guard ok builder err %v", be)
+							}
+							if g.Model == b.Model {
+								t.Fatalf("SAME MODEL %+v %+v %v %v", b, g, pr, al)
+							}
+							if g.Level < b.Level && (tr == nil || *tr == t2) {
+								t.Fatalf("floor violated %+v %+v", b, g)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	t.Logf("combos %d refused %d resolved %d", n, ref, okc)
+	p := Policy{Models: Models{Adapter: "a", Primary: prims[0]}, Minimums: map[string]Level{"builder": 2, "guard": 2}}
+	for _, mf := range []int{0, 1, 2, 3, 9} {
+		s, _ := p.Resolve("builder", &TaskContext{GuardMustFix: mf}, nil)
+		t.Logf("mf=%d level=%s stepped=%v", mf, s.Level, s.SteppedUp)
+	}
+	t.Log(CountMustFix([]byte("Verdict: must-fix\nVerdict: pass\nVerdict: must-fix")))
+}
