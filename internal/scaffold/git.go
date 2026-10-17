@@ -18,7 +18,8 @@ type gitRunner struct {
 }
 
 // run runs one git command in root and returns its stdout. A non-zero exit
-// returns an error wrapping *exec.ExitError and carrying git's stderr.
+// returns the stdout so far and an error wrapping *exec.ExitError and
+// carrying git's stderr (git diff reports "differs" through exit status 1).
 func (g gitRunner) run(root string, args ...string) (string, error) {
 	bin := g.bin
 	if bin == "" {
@@ -28,12 +29,13 @@ func (g gitRunner) run(root string, args ...string) (string, error) {
 	cmd.Env = append(append(os.Environ(), "LC_ALL=C", "GIT_TERMINAL_PROMPT=0"), g.env...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("git %s: %w: %s", args[0], err, strings.TrimSpace(stderr.String()))
+	err := cmd.Run()
+	if err != nil {
+		err = fmt.Errorf("git %s: %w: %s", args[0], err, strings.TrimSpace(stderr.String()))
 	}
 	// Only trailing newlines go: porcelain status lines start with a
 	// significant space.
-	return strings.TrimRight(stdout.String(), "\r\n"), nil
+	return strings.TrimRight(stdout.String(), "\r\n"), err
 }
 
 // checkWorktreeRoot refuses unless root is the git work tree root. git exiting
