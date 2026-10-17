@@ -1,0 +1,123 @@
+=== RUN   TestParseTicketID
+--- PASS: TestParseTicketID (0.00s)
+=== RUN   TestParseClaimRef
+--- PASS: TestParseClaimRef (0.00s)
+=== RUN   TestNormalizeDirectories
+--- PASS: TestNormalizeDirectories (0.00s)
+=== RUN   TestDirsOverlap
+--- PASS: TestDirsOverlap (0.00s)
+=== RUN   TestValidateLeaseFields
+--- PASS: TestValidateLeaseFields (0.00s)
+=== RUN   TestClaimRoles
+--- PASS: TestClaimRoles (0.00s)
+=== RUN   TestTier3Detection
+--- PASS: TestTier3Detection (0.00s)
+=== RUN   TestMalformedClaimsError
+--- PASS: TestMalformedClaimsError (0.00s)
+=== RUN   TestRelayMode
+--- PASS: TestRelayMode (0.00s)
+=== RUN   TestNewGitBackendOptions
+--- PASS: TestNewGitBackendOptions (0.00s)
+=== RUN   TestAcquireTier3Rejected
+    git_test.go:121: git not found
+--- SKIP: TestAcquireTier3Rejected (0.00s)
+=== RUN   TestAcquireTier2Floor
+    git_test.go:152: git not found
+--- SKIP: TestAcquireTier2Floor (0.00s)
+=== RUN   TestAcquireInvalidLease
+    git_test.go:175: git not found
+--- SKIP: TestAcquireInvalidLease (0.00s)
+=== RUN   TestAcquireOverlap
+    git_test.go:215: git not found
+--- SKIP: TestAcquireOverlap (0.00s)
+=== RUN   TestAcquireCommitShape
+    git_test.go:241: git not found
+--- SKIP: TestAcquireCommitShape (0.00s)
+=== RUN   TestAcquireClaimRenewTakeover
+    git_test.go:301: git not found
+--- SKIP: TestAcquireClaimRenewTakeover (0.00s)
+=== RUN   TestExpiryTakeoverLog
+    git_test.go:347: git not found
+--- SKIP: TestExpiryTakeoverLog (0.00s)
+=== RUN   TestRelease
+    git_test.go:385: git not found
+--- SKIP: TestRelease (0.00s)
+=== RUN   TestReleaseConcurrentUpdateLocal
+    git_test.go:425: git not found
+--- SKIP: TestReleaseConcurrentUpdateLocal (0.00s)
+=== RUN   TestAcquireLostRaceLocalDeterministic
+    git_test.go:449: git not found
+--- SKIP: TestAcquireLostRaceLocalDeterministic (0.00s)
+=== RUN   TestMalformedClaims
+    git_test.go:470: git not found
+--- SKIP: TestMalformedClaims (0.00s)
+=== RUN   TestParseLeaseVersions
+--- PASS: TestParseLeaseVersions (0.00s)
+=== RUN   TestLegacyClaimsReadBack
+    git_test.go:595: git not found
+--- SKIP: TestLegacyClaimsReadBack (0.00s)
+=== RUN   TestLocalConcurrency
+    git_test.go:660: git not found
+--- SKIP: TestLocalConcurrency (0.00s)
+=== RUN   TestRemoteConcurrency
+    git_test.go:718: git not found
+--- SKIP: TestRemoteConcurrency (0.00s)
+=== RUN   TestRemoteLostRaceDeterministic
+    git_test.go:752: git not found
+--- SKIP: TestRemoteLostRaceDeterministic (0.00s)
+=== RUN   TestRemoteVisibility
+    git_test.go:786: git not found
+--- SKIP: TestRemoteVisibility (0.00s)
+=== RUN   TestRemoteExpiryTakeover
+    git_test.go:835: git not found
+--- SKIP: TestRemoteExpiryTakeover (0.00s)
+=== RUN   TestRemoteTransportFailure
+    git_test.go:869: git not found
+--- SKIP: TestRemoteTransportFailure (0.00s)
+=== RUN   TestContextCanceled
+    git_test.go:884: git not found
+--- SKIP: TestContextCanceled (0.00s)
+=== RUN   TestForgedUnnormalizedClaimBlocksOverlap
+    git_test.go:909: git not found
+--- SKIP: TestForgedUnnormalizedClaimBlocksOverlap (0.00s)
+=== RUN   TestForgedInvalidClaimsMalformed
+    git_test.go:928: git not found
+--- SKIP: TestForgedInvalidClaimsMalformed (0.00s)
+=== RUN   TestChildEnv
+--- PASS: TestChildEnv (0.00s)
+=== RUN   TestInheritedGitDirIgnored
+    git_test.go:1041: git not found
+--- SKIP: TestInheritedGitDirIgnored (0.00s)
+=== RUN   TestLocalLockContentionRecovers
+    git_test.go:1121: git not found
+--- SKIP: TestLocalLockContentionRecovers (0.00s)
+=== RUN   TestLocalLockContentionExhausts
+    git_test.go:1138: git not found
+--- SKIP: TestLocalLockContentionExhausts (0.00s)
+=== RUN   TestLocalReleaseLockContention
+    git_test.go:1159: git not found
+--- SKIP: TestLocalReleaseLockContention (0.00s)
+=== RUN   TestRemoteRejectedUnchangedRecovers
+    git_test.go:1212: git not found
+--- SKIP: TestRemoteRejectedUnchangedRecovers (0.00s)
+=== RUN   TestRemoteRejectedUnchangedExhausts
+    git_test.go:1229: git not found
+--- SKIP: TestRemoteRejectedUnchangedExhausts (0.00s)
+=== RUN   TestRequiredMinTierFootprint
+--- PASS: TestRequiredMinTierFootprint (0.00s)
+=== RUN   TestLayoutPathsClassify
+--- PASS: TestLayoutPathsClassify (0.00s)
+=== RUN   TestNoTier3InsideCarveOut
+--- PASS: TestNoTier3InsideCarveOut (0.00s)
+=== RUN   TestAcquireLeaseRejectsWaggleDir
+    tier_test.go:83: git not found
+--- SKIP: TestAcquireLeaseRejectsWaggleDir (0.00s)
+=== RUN   TestRenderWorkplanGolden
+--- PASS: TestRenderWorkplanGolden (0.00s)
+=== RUN   TestRenderWorkplanInjection
+--- PASS: TestRenderWorkplanInjection (0.00s)
+=== RUN   TestRenderWorkplanEmpty
+--- PASS: TestRenderWorkplanEmpty (0.00s)
+=== RUN   TestWriteWorkplan
+--- PASS: TestWriteWorkplan (0.01s)
+PASS

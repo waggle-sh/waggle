@@ -160,6 +160,11 @@ var (
 	ErrMalformedClaim = errors.New("comb: malformed claim ref")
 	// ErrRelayNotImplemented is returned by every Backend method in relay comb mode.
 	ErrRelayNotImplemented = errors.New("comb: relay comb mode not implemented in v0.1")
+	// ErrNotHeadKeeper reports a ForceRelease by a caller Options.HeadKeeper did
+	// not authorize, including every call when no authorizer is configured.
+	ErrNotHeadKeeper = errors.New("comb: caller is not an authorized head keeper")
+	// ErrInvalidForceRelease reports a ForceRelease request that fails field validation.
+	ErrInvalidForceRelease = errors.New("comb: invalid force-release request")
 )
 
 // ClaimRefPrefix is the ref namespace holding one claim ref per ticket.

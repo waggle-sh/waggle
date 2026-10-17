@@ -1,0 +1,25 @@
+clean github.com/waggle-sh/waggle/cmd/waggle
+clean github.com/waggle-sh/waggle/internal/comb
+clean github.com/waggle-sh/waggle/internal/layout
+clean github.com/waggle-sh/waggle/internal/runtime
+clean github.com/waggle-sh/waggle/internal/scaffold
+--- AC6 grep (non-test)
+internal/forge/testdata/github_enforced.golden:2:Auth: GITHUB_TOKEN as paulternate (admin)
+internal/forge/forge.go:71:// Options configures New. Getenv and LookPath serve the github adapter and
+internal/forge/forge.go:75:	Getenv          func(string) string
+internal/forge/forge.go:76:	LookPath        func(string) (string, error)
+internal/forge/forge.go:120:	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0", "LC_ALL=C")
+internal/forge/annotate.go:18:// "true", else a plain "level: file: msg" one. A nil getenv means os.Getenv.
+internal/forge/annotate.go:21:		getenv = os.Getenv
+--- forge imports outside forge
+--- merge_strategy elsewhere
+./internal/scaffold/init_test.go:413:	for _, s := range []string{"socket_path: .waggle/control/run.sock", "derived_workplan: .waggle/hive/WORKPLAN.md", "merge_strategy: up_to_date"} {
+./internal/scaffold/templates/config.yaml.tmpl:18:  merge_strategy: up_to_date # "up_to_date" (branch must be current with main before merge) | "native_queue" (opt in where the plan supports a merge queue)
+./.waggle/hive/tasks/T-004.md:35:- `forge.merge_strategy` is a known key with two values (D-064, D-071): `up_to_date` (the default: a branch must be up to date with main and pass `waggle gate` before merge) and `native_queue` (opt-in, the forge's own merge queue). Today's template and our hive's config still say `native_queue`; T-011 phase A (or its follow-up) changes the template default to `up_to_date`. Parse and accept both, do not map either.
+./.waggle/hive/tasks/T-004.md:52:    MergeStrategy string // "up_to_date" (default) or "native_queue"; parsed, not mapped
+./.waggle/hive/tasks/T-004.md:80:- `forge.merge_strategy`: absent means `up_to_date` (D-064, D-071). Present must be exactly `up_to_date` or `native_queue`; any other value, including a case variant, is an error.
+./.waggle/hive/tasks/T-004.md:110:3. **Defaults:** a minimal file `version: 1` maps to `direct`, 120m, 5, remote `""`, and parses `MergeStrategy` as `up_to_date` and `Provider` as `github`. A file with `forge.remote: origin` maps `Remote` to `origin`; `forge.merge_strategy: up_to_date` and `forge.merge_strategy: native_queue` are each accepted and parsed as written; `forge.provider: none` is accepted.
+./.waggle/hive/tasks/T-004.md:112:5. **Rejections table (each asserts `errors.Is(err, ErrInvalidConfig)` and that the message names the key):** missing `version`; `version: 2`; `comb_mode: Direct`; `comb_mode: push`; `provider: gitlab`; TTL `0`, `-5`, `10081`, `1.5`, `"120"` (quoted string), `abc`; max dirs `0`, `65`; remote `-oops`, `origin;rm`, a 65-char name; `merge_strategy: squash`; `merge_strategy: Up_To_Date`; `merge_strategy: ""`; unknown key `leases.default_ttl_minute`; duplicate `leases:` section; duplicate key inside `leases`; file over 64 KiB.
+./.waggle/hive/tasks/T-004.md:138:- **Q-T004-6 (merge strategy values): resolved by D-064 and D-071.** `up_to_date` is the default and the value an absent key means; `native_queue` is opt-in. Both are accepted.
+./.waggle/hive/tasks/T-011.md:249:- **Merge strategy default (D-064, D-071).** D-064 assigns the `config.yaml.tmpl` change `merge_strategy: native_queue` to `merge_strategy: up_to_date` to phase A, but section 8 does not list it and `t-011a` does not have it yet. It is one line inside the phase A lease; add it before review if possible. If phase A merges without it, T-012 phase B's Head Keeper template commit carries it. T-004 accepts both values, so the order does not matter for parsing. Our hive's seeded `config.yaml` changes in C-2.
+./.waggle/hive/tasks/T-006-backfill.md:518:- Options: GitHub native merge queue (merge_strategy: native_queue) || Up-to-date check: branches must be up to date with main and pass waggle gate, with the gate re-run after each rebase
