@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Keeper identity is the GitHub login",
+  "question": "What identifies a Keeper?",
+  "options": [
+    "GitHub login now, commit signing later",
+    "Alternatives not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "GitHub login first; commit signing enabled later and possibly enforced.",
+  "rationale": "Uses an identity the forge already verifies.",
+  "tickets": [
+    "T-005"
+  ],
+  "supersedes": []
+}

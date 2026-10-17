@@ -1,0 +1,16 @@
+{
+  "kind": "scope",
+  "title": "Hive records are committed under .waggle/hive/",
+  "question": "Are our hive's tasks, reviews and media committed?",
+  "options": [
+    "Commit them",
+    "Keep them untracked"
+  ],
+  "recommendation": "Commit them",
+  "choice": "Hive records (tasks, reviews, media) are committed under .waggle/hive/.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-011"
+  ],
+  "supersedes": []
+}

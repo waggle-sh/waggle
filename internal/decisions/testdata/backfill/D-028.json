@@ -1,0 +1,14 @@
+{
+  "kind": "policy",
+  "title": "Roles declare minimum capability levels, never model names",
+  "question": "How does a hive choose which model runs each role?",
+  "options": [
+    "Roles name concrete models",
+    "Roles declare a minimum capability level (frontier, standard, fast) and hive config maps levels to models per runtime"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Roles declare minimum capability levels, never model names. Levels are frontier, standard and fast; hive config maps each level to a concrete model per runtime. Minimums: architect frontier, queen frontier, guard at or above the forager's level and on a different model, forager standard, scout fast; waggled uses no model. The guard minimum cannot be lowered on Tier 2 and above; other overrides are allowed and logged as decisions. A forager steps up one level after two must-fix verdicts on a task. In v0.1 the Keeper assigns models to levels by hand; later, Waggle eval data (guard pass rates) does.",
+  "rationale": "Not recorded",
+  "tickets": [],
+  "supersedes": []
+}

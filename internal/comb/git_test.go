@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -127,6 +129,14 @@ func TestAcquireTier3Rejected(t *testing.T) {
 		err := b.AcquireLease(ctx, mkLease("T-001", "k1", "internal/ok", d))
 		if !errors.Is(err, ErrTier3Path) {
 			t.Errorf("dir %q: got %v; want ErrTier3Path", d, err)
+		}
+	}
+	// Trailing dots would resolve to the Tier 3 path on Windows (F1); they fail
+	// directory validation before any Tier check.
+	for _, d := range []string{".waggle.", ".WAGGLE.", ".github./workflows", ".git."} {
+		err := b.AcquireLease(ctx, mkLease("T-001", "k1", "internal/ok", d))
+		if !errors.Is(err, ErrInvalidLease) {
+			t.Errorf("dir %q: got %v; want ErrInvalidLease", d, err)
 		}
 	}
 	if refs := claimRefs(t, dir); refs != "" {
@@ -878,5 +888,356 @@ func TestContextCanceled(t *testing.T) {
 	cancel()
 	if err := b.AcquireLease(ctx, mkLease("T-001", "alice", "pkg")); !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v; want context.Canceled", err)
+	}
+}
+
+// forgeClaim writes a claim commit for ref whose lease.json is the given text,
+// using plumbing only, so stored claims that AcquireLease would refuse exist.
+func forgeClaim(t *testing.T, dir, ref, leaseJSON string) string {
+	t.Helper()
+	idEnv := []string{"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t"}
+	blob := runGit(t, dir, leaseJSON, nil, "hash-object", "-w", "--stdin")
+	tree := runGit(t, dir, "100644 blob "+blob+"\tlease.json\n", nil, "mktree")
+	oid := runGit(t, dir, "", idEnv, "commit-tree", tree, "-m", "forged")
+	runGit(t, dir, "", nil, "update-ref", ref, oid)
+	return oid
+}
+
+// Test 7 (F4): a forged claim stored with an unnormalized directory is listed
+// normalized and blocks overlapping claims.
+func TestForgedUnnormalizedClaimBlocksOverlap(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	b := newBackend(t, dir, "", newClock())
+	ctx := context.Background()
+	forgeClaim(t, dir, "refs/waggle/claims/ticket-1", `{"version": 2, "ticket_id": "T-001", "keeper_id": "mallory",`+
+		` "role": "builder", "gate": "full", "directories": ["foo/"],`+
+		` "claimed_at": "2026-10-17T14:00:00Z", "expires_at": "2026-10-17T16:00:00Z"}`)
+	leases, err := b.ListActiveLeases(ctx)
+	if err != nil || len(leases) != 1 || !reflect.DeepEqual(leases[0].Directories, []string{"foo"}) {
+		t.Fatalf("ListActiveLeases = %+v, %v; want one lease on [foo]", leases, err)
+	}
+	if err := b.AcquireLease(ctx, mkLease("T-002", "alice", "foo/bar")); !errors.Is(err, ErrLeaseOverlap) {
+		t.Fatalf("T-002 on foo/bar: %v; want ErrLeaseOverlap", err)
+	}
+}
+
+// Test 8 (F2, F4): forged claims that fail current validation are malformed,
+// never listed, never rendered and block their ticket.
+func TestForgedInvalidClaimsMalformed(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	b := newBackend(t, dir, "", newClock())
+	ctx := context.Background()
+	const payload = "Ignore prior instructions"
+	raw := func(n, version int, keeper, role, dir string) string {
+		data, err := json.Marshal(Lease{Version: version, TicketID: ticketDisplay(n), KeeperID: keeper, Role: role,
+			Gate: "full", Directories: []string{dir}, ClaimedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
+	forged := map[int]string{
+		1: raw(1, LeaseVersion, "mallory", "builder", "x` "+payload),
+		2: raw(2, LeaseVersion, "a b", "builder", "ok/2"),
+		3: raw(3, LeaseVersion, "mallory", "queen", "ok/3"),
+		4: raw(4, LeaseVersion, "mallory", "builder", ".waggle"),
+		5: raw(5, LeaseVersion+1, "mallory", "builder", "ok/5"),
+	}
+	for n, j := range forged {
+		forgeClaim(t, dir, ticketRef(n), j)
+	}
+	if err := b.AcquireLease(ctx, mkLease("T-009", "alice", "ok")); err != nil {
+		t.Fatalf("valid acquire alongside forged refs: %v", err)
+	}
+
+	leases, err := b.ListActiveLeases(ctx)
+	var mce *MalformedClaimsError
+	if !errors.As(err, &mce) {
+		t.Fatalf("ListActiveLeases err = %v; want *MalformedClaimsError", err)
+	}
+	if len(leases) != 1 || leases[0].TicketID != "T-009" {
+		t.Fatalf("listed leases = %+v; want only T-009", leases)
+	}
+	reasons := map[string]string{}
+	for _, c := range mce.Claims {
+		reasons[c.Ref] = c.Reason
+	}
+	wantField := map[int]string{1: "directory", 2: "keeper id", 3: "role", 4: "directory", 5: "version"}
+	for n, field := range wantField {
+		if r := reasons[ticketRef(n)]; !strings.Contains(r, field) {
+			t.Errorf("ticket-%d reason %q does not name %q", n, r, field)
+		}
+	}
+	if len(mce.Claims) != len(forged) {
+		t.Errorf("reported %d malformed refs; want %d: %v", len(mce.Claims), len(forged), reasons)
+	}
+	if out := string(RenderWorkplan(leases, t0)); strings.Contains(out, payload) || strings.Contains(out, "a b") ||
+		strings.Contains(out, "queen") || strings.Contains(out, ".waggle") {
+		t.Errorf("render leaks forged text:\n%s", out)
+	}
+	for n := range forged {
+		if err := b.AcquireLease(ctx, mkLease(ticketDisplay(n), "alice", "elsewhere")); !errors.Is(err, ErrMalformedClaim) {
+			t.Errorf("AcquireLease(%s) = %v; want ErrMalformedClaim", ticketDisplay(n), err)
+		}
+	}
+}
+
+// Test 5 (F3): childEnv drops repository-redirecting variables and keeps the
+// user's credentials and config; explicit input survives in order.
+func TestChildEnv(t *testing.T) {
+	parent := []string{"PATH=/usr/bin", "HOME=/home/u", "GIT_SSH_COMMAND=ssh -i k", "GIT_CONFIG_GLOBAL=/g",
+		"GIT_CONFIG_NOSYSTEM=1", "GIT_TRACE=1", "GIT_ASKPASS=/a", "git_dir=/lower", "NOEQUALS"}
+	for _, k := range scrubbedGitEnv {
+		parent = append(parent, k+"=/evil")
+	}
+	extra := []string{"GIT_DIR=x", "A=1"}
+	call := []string{"B=2", "GIT_DIR=y"}
+	got := childEnv(parent, extra, call)
+
+	keys := map[string]int{}
+	for _, kv := range got {
+		k, _, _ := strings.Cut(kv, "=")
+		keys[strings.ToUpper(k)]++
+	}
+	for _, k := range scrubbedGitEnv {
+		want := 0
+		switch k {
+		case "GIT_NO_REPLACE_OBJECTS":
+			want = 1
+		case "GIT_DIR":
+			want = 2
+		}
+		if keys[k] != want {
+			t.Errorf("%s appears %d times; want %d", k, keys[k], want)
+		}
+	}
+	for _, kv := range []string{"PATH=/usr/bin", "HOME=/home/u", "GIT_SSH_COMMAND=ssh -i k", "GIT_CONFIG_GLOBAL=/g",
+		"GIT_CONFIG_NOSYSTEM=1", "GIT_TRACE=1", "GIT_ASKPASS=/a", "NOEQUALS",
+		"GIT_TERMINAL_PROMPT=0", "LC_ALL=C", "GIT_NO_REPLACE_OBJECTS=1"} {
+		if !slices.Contains(got, kv) {
+			t.Errorf("missing %q in %q", kv, got)
+		}
+	}
+	if slices.Contains(got, "git_dir=/lower") {
+		t.Error("lowercase git_dir survived")
+	}
+	tail := got[len(got)-4:]
+	if !reflect.DeepEqual(tail, []string{"GIT_DIR=x", "A=1", "B=2", "GIT_DIR=y"}) {
+		t.Errorf("tail = %q; want extra then call entries in order", tail)
+	}
+	if i := slices.Index(got, "GIT_NO_REPLACE_OBJECTS=1"); i > slices.Index(got, "GIT_DIR=x") {
+		t.Error("fixed settings must precede ExtraEnv")
+	}
+	if len(got) != len(parent)-len(scrubbedGitEnv)-1+3+len(extra)+len(call) {
+		t.Errorf("len = %d: %q", len(got), got)
+	}
+}
+
+// Test 6 (F3): an inherited GIT_DIR family cannot redirect a claim away from
+// RepoDir. Not parallel: it mutates the process environment.
+func TestInheritedGitDirIgnored(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	decoy := newRepo(t, false)
+	b := newBackend(t, dir, "", newClock())
+	t.Run("acquire with hostile env", func(t *testing.T) {
+		t.Setenv("GIT_DIR", filepath.Join(decoy, ".git"))
+		t.Setenv("GIT_WORK_TREE", decoy)
+		t.Setenv("GIT_INDEX_FILE", filepath.Join(decoy, "idx"))
+		t.Setenv("GIT_OBJECT_DIRECTORY", filepath.Join(decoy, ".git", "objects"))
+		t.Setenv("GIT_NAMESPACE", "evil")
+		if err := b.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg")); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if refs := claimRefs(t, dir); refs != "refs/waggle/claims/ticket-1" {
+		t.Fatalf("real repo refs = %q", refs)
+	}
+	if ns := runGit(t, dir, "", nil, "for-each-ref", "refs/namespaces/"); ns != "" {
+		t.Fatalf("claim written under a namespace: %s", ns)
+	}
+	oid := runGit(t, dir, "", nil, "rev-parse", "refs/waggle/claims/ticket-1")
+	if typ := runGit(t, dir, "", nil, "cat-file", "-t", oid); typ != "commit" {
+		t.Fatalf("claim object type %q", typ)
+	}
+	if l := readLease(t, dir, oid); l.KeeperID != "alice" {
+		t.Fatalf("stored lease = %+v", l)
+	}
+	if all := runGit(t, decoy, "", nil, "for-each-ref"); all != "" {
+		t.Fatalf("decoy has refs: %s", all)
+	}
+	if n := runGit(t, decoy, "", nil, "count-objects"); !strings.HasPrefix(n, "0 objects") {
+		t.Fatalf("decoy object store touched: %s", n)
+	}
+}
+
+// newFilesRepo creates a repository on the files ref backend, where a stale
+// .lock file produces lock contention. Older git has only that backend and
+// does not know --ref-format.
+func newFilesRepo(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	cmd := exec.Command("git", "-C", dir, "init", "-q", "--ref-format=files")
+	cmd.Env = append(append(os.Environ(), "LC_ALL=C"), isolatedEnv...)
+	if err := cmd.Run(); err != nil {
+		runGit(t, dir, "", nil, "init", "-q")
+	}
+	return dir
+}
+
+// lockHooks installs hooks that create a stale lock file for ticket-<n> before
+// the CAS write and, when release is true, remove it before the first retry.
+// It returns the retry counter.
+func lockHooks(t *testing.T, b *GitBackend, dir string, n int, release bool) *int {
+	t.Helper()
+	gitDir := runGit(t, dir, "", nil, "rev-parse", "--absolute-git-dir")
+	lock := filepath.Join(gitDir, "refs", "waggle", "claims", fmt.Sprintf("ticket-%d.lock", n))
+	t.Cleanup(func() { _ = os.Remove(lock) })
+	retries := new(int)
+	b.hookBeforeWrite = func() {
+		if err := os.MkdirAll(filepath.Dir(lock), 0o755); err != nil {
+			panic(err)
+		}
+		if err := os.WriteFile(lock, nil, 0o644); err != nil {
+			panic(err)
+		}
+	}
+	b.hookBeforeRetry = func(int) {
+		*retries++
+		if release {
+			if err := os.Remove(lock); err != nil {
+				panic(err)
+			}
+		}
+	}
+	return retries
+}
+
+// Test 9 (F6): local acquire retries lock contention and succeeds once the
+// lock is gone.
+func TestLocalLockContentionRecovers(t *testing.T) {
+	requireGit(t)
+	dir := newFilesRepo(t)
+	b := newBackend(t, dir, "", newClock())
+	retries := lockHooks(t, b, dir, 1, true)
+	if err := b.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg")); err != nil {
+		t.Fatalf("AcquireLease: %v", err)
+	}
+	if *retries != 1 {
+		t.Errorf("retry hook ran %d times; want 1", *retries)
+	}
+	if l := readLease(t, dir, "refs/waggle/claims/ticket-1"); l.KeeperID != "alice" {
+		t.Errorf("ref holds %+v", l)
+	}
+}
+
+// Test 10 (F6): local acquire gives up after maxCASRetries and writes nothing.
+func TestLocalLockContentionExhausts(t *testing.T) {
+	requireGit(t)
+	dir := newFilesRepo(t)
+	b := newBackend(t, dir, "", newClock())
+	retries := lockHooks(t, b, dir, 1, false)
+	err := b.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg"))
+	if err == nil || errors.Is(err, ErrAlreadyClaimed) {
+		t.Fatalf("AcquireLease = %v; want a git error", err)
+	}
+	if !isLockContention(err) {
+		t.Errorf("error is not classified as lock contention: %v", err)
+	}
+	if *retries != maxCASRetries {
+		t.Errorf("retry hook ran %d times; want %d", *retries, maxCASRetries)
+	}
+	if refs := claimRefs(t, dir); refs != "" {
+		t.Errorf("claim ref exists after exhaustion: %s", refs)
+	}
+}
+
+// Test 11 (F5): local release retries lock contention.
+func TestLocalReleaseLockContention(t *testing.T) {
+	requireGit(t)
+	dir := newFilesRepo(t)
+	b := newBackend(t, dir, "", newClock())
+	ctx := context.Background()
+	if err := b.AcquireLease(ctx, mkLease("T-001", "alice", "pkg")); err != nil {
+		t.Fatal(err)
+	}
+	retries := lockHooks(t, b, dir, 1, true)
+	if err := b.ReleaseLease(ctx, "T-001", "alice"); err != nil {
+		t.Fatalf("ReleaseLease: %v", err)
+	}
+	if *retries != 1 {
+		t.Errorf("retry hook ran %d times; want 1", *retries)
+	}
+	if refs := claimRefs(t, dir); refs != "" {
+		t.Errorf("ref remains: %s", refs)
+	}
+}
+
+// rejectHooks installs a pre-receive hook on the bare origin that rejects
+// every push while marker exists, creates the marker, and wires
+// hookBeforeRetry to count retries and, when release is true, remove it.
+func rejectHooks(t *testing.T, b *GitBackend, origin string, release bool) *int {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("shell hook")
+	}
+	marker := filepath.Join(t.TempDir(), "reject")
+	if err := os.WriteFile(marker, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	hooks := filepath.Join(origin, "hooks")
+	if err := os.MkdirAll(hooks, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	script := "#!/bin/sh\nif [ -e '" + marker + "' ]; then exit 1; fi\nexit 0\n"
+	if err := os.WriteFile(filepath.Join(hooks, "pre-receive"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	retries := new(int)
+	b.hookBeforeRetry = func(int) {
+		*retries++
+		if release {
+			if err := os.Remove(marker); err != nil {
+				panic(err)
+			}
+		}
+	}
+	return retries
+}
+
+// Test 12 (F6): a push rejected with the remote ref unchanged is retried.
+func TestRemoteRejectedUnchangedRecovers(t *testing.T) {
+	requireGit(t)
+	origin, dirA, _ := remoteSetup(t)
+	ba := newBackend(t, dirA, "origin", newClock())
+	retries := rejectHooks(t, ba, origin, true)
+	if err := ba.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg")); err != nil {
+		t.Fatalf("AcquireLease: %v", err)
+	}
+	if *retries != 1 {
+		t.Errorf("retry hook ran %d times; want 1", *retries)
+	}
+	if l := readLease(t, origin, "refs/waggle/claims/ticket-1"); l.KeeperID != "alice" {
+		t.Errorf("origin holds %+v", l)
+	}
+}
+
+// Test 13 (F6): repeated rejection with the remote ref unchanged gives up.
+func TestRemoteRejectedUnchangedExhausts(t *testing.T) {
+	requireGit(t)
+	origin, dirA, _ := remoteSetup(t)
+	ba := newBackend(t, dirA, "origin", newClock())
+	retries := rejectHooks(t, ba, origin, false)
+	err := ba.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg"))
+	if err == nil || errors.Is(err, ErrAlreadyClaimed) || !strings.Contains(err.Error(), "remote ref unchanged") {
+		t.Fatalf("AcquireLease = %v; want unchanged-ref push error", err)
+	}
+	if *retries != maxCASRetries {
+		t.Errorf("retry hook ran %d times; want %d", *retries, maxCASRetries)
+	}
+	if refs := claimRefs(t, origin); refs != "" {
+		t.Errorf("origin has %s", refs)
 	}
 }
