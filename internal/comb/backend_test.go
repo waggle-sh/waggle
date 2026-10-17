@@ -189,6 +189,32 @@ func TestValidateLeaseFields(t *testing.T) {
 	}
 }
 
+// Claimable roles are the triage, implementation and review workers. The queen,
+// the scout (planning) and the retired planning name never claim.
+func TestClaimRoles(t *testing.T) {
+	base := Lease{TicketID: "T-002", KeeperID: "paul", Gate: "full", Directories: []string{"internal/comb"}}
+	for _, role := range []string{"forager", "builder", "guard"} {
+		l := base
+		l.Role = role
+		if !isClaimRole(role) {
+			t.Errorf("isClaimRole(%q) = false", role)
+		}
+		if _, err := validateLeaseFields(l, 5); err != nil {
+			t.Errorf("role %q rejected: %v", role, err)
+		}
+	}
+	for _, role := range []string{"scout", "queen", "archi" + "tect", "", "Builder", "builders"} {
+		l := base
+		l.Role = role
+		if isClaimRole(role) {
+			t.Errorf("isClaimRole(%q) = true", role)
+		}
+		if _, err := validateLeaseFields(l, 5); !errors.Is(err, ErrInvalidLease) {
+			t.Errorf("role %q: got %v; want ErrInvalidLease", role, err)
+		}
+	}
+}
+
 func TestTier3Detection(t *testing.T) {
 	tier3 := []string{
 		".waggle", ".waggle/roles", ".devcontainer", ".github", ".github/workflows",

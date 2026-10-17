@@ -90,7 +90,7 @@ type Lease struct {
 	Version     int       `json:"version"`
 	TicketID    string    `json:"ticket_id"`
 	KeeperID    string    `json:"keeper_id"`
-	Role        string    `json:"role"` // "forager" | "builder" | "guard"
+	Role        string    `json:"role"` // "forager" | "builder" | "guard" (see isClaimRole)
 	Gate        string    `json:"gate"` // "light" | "full"
 	Directories []string  `json:"directories"`
 	ClaimedAt   time.Time `json:"claimed_at"`
@@ -331,6 +331,17 @@ func isTier2Dir(dir string) bool {
 	return RequiredMinTier(dir) == Tier2Logic || touchesPrefixes(dir, HardcodedTier2MinPrefixes)
 }
 
+// isClaimRole reports whether role may hold a claim. The claimable roles are the
+// three worker roles that act on a ticket: forager (triage and repro), builder
+// (implementation) and guard (review). The queen and the scout never claim.
+func isClaimRole(role string) bool {
+	switch role {
+	case "forager", "builder", "guard":
+		return true
+	}
+	return false
+}
+
 // validateLeaseFields checks every non-time field of a lease and returns a copy
 // with the canonical ticket ID and normalized directories.
 func validateLeaseFields(l Lease, maxDirs int) (Lease, error) {
@@ -342,9 +353,7 @@ func validateLeaseFields(l Lease, maxDirs int) (Lease, error) {
 	if !keeperIDPattern.MatchString(l.KeeperID) {
 		return Lease{}, fmt.Errorf("keeper id %q: %w", l.KeeperID, ErrInvalidLease)
 	}
-	switch l.Role {
-	case "forager", "builder", "guard":
-	default:
+	if !isClaimRole(l.Role) {
 		return Lease{}, fmt.Errorf("role %q: %w", l.Role, ErrInvalidLease)
 	}
 	switch l.Gate {
