@@ -1,0 +1,64 @@
+=== RUN   TestProbe
+LIVE err=<nil> cfg=&{Version:1 Forge:{Provider:github CombMode:direct Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}}
+LIVE pin line:   pin: b4f222166f4a824e34414e205544fb17397ccfa1 # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
+TMPL err=<nil> cfg=&{Version:1 Forge:{Provider:github CombMode:direct Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}} placeholders_left=false
+missing: config: open /nonexistent/x.yaml: no such file or directory isInvalid= false isNotExist= true
+dir: config: read ../config: read ../config: is a directory
+bad merge                inv=true dur=17µs err=config: invalid .waggle/control/config.yaml: line 3: forge.merge_strategy: must be "up_to_date" or "native_queue", got "squash"
+bad remote               inv=true dur=4µs err=config: invalid .waggle/control/config.yaml: line 3: forge.remote: must match ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$, got "-oops"
+wrong type ttl           inv=true dur=2µs err=config: invalid .waggle/control/config.yaml: line 3: leases.default_ttl_minutes: must be a plain integer, not the quoted string "120"
+ttl map                  inv=true dur=4µs err=config: invalid .waggle/control/config.yaml: line 3: leases.default_ttl_minutes: must be an integer, not a mapping
+dup key                  inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 4: leases.default_ttl_minutes: duplicate key
+dup top                  inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 4: leases: duplicate key
+tab                      inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 3: tab in indentation
+unknown top              OK dur=1µs {Version:1 Forge:{Provider:github CombMode:direct Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}}
+unknown top scalar       OK dur=0s {Version:1 Forge:{Provider:github CombMode:direct Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}}
+unknown forge            inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 3: forge.bogus: unknown key
+empty                    inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: version: missing; must be 1
+ttl huge                 inv=true dur=2µs err=config: invalid .waggle/control/config.yaml: line 3: leases.default_ttl_minutes: integer out of range: "99999999999999999999999"
+ttl -0                   inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 3: leases.default_ttl_minutes: must be an integer in 1..10080, got 0
+ver quoted               inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 1: version: must be a plain integer, not the quoted string "1"
+ver 01                   inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 1: version: must be a base-10 integer, got "01"
+crlf ok                  OK dur=1µs {Version:1 Forge:{Provider:github CombMode:relay Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}}
+stray CR                 inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 1: control character in line
+NUL                      inv=true dur=0s err=config: invalid .waggle/control/config.yaml: line 1: control character in line
+BOM                      inv=true dur=0s err=config: invalid .waggle/control/config.yaml: line 1: UTF-8 byte order mark is not allowed
+bad utf8                 inv=true dur=0s err=config: invalid .waggle/control/config.yaml: file is not valid UTF-8
+seq                      inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 3: sequences are not supported
+flow                     inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 2: x: flow mappings are not supported
+anchor                   inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 2: x: anchors are not supported
+alias                    inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 2: x: aliases are not supported
+tag                      inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 2: x: tags are not supported
+block                    inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 2: x: block scalars are not supported
+docmark                  inv=true dur=0s err=config: invalid .waggle/control/config.yaml: line 1: multi-document markers are not supported
+docend                   inv=true dur=0s err=config: invalid .waggle/control/config.yaml: line 2: multi-document markers are not supported
+merge                    inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 2: merge keys are not supported
+nochild                  inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 2: forge: key has no value and no children
+bad dedent               inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 4: indentation does not match an open mapping
+indent root              inv=true dur=0s err=config: invalid .waggle/control/config.yaml: line 1: indentation does not match an open mapping
+child overindent         inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 4: indentation does not match an open mapping
+comment/quote            inv=true dur=2µs err=config: invalid .waggle/control/config.yaml: line 3: forge.remote: must match ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$, got "a#b"
+unterminated             inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 3: forge.remote: unterminated double-quoted scalar
+bad escape               inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 3: forge.remote: unsupported escape \x in double-quoted scalar
+key colon                inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 3: forge.remote: plain scalar must not contain a mapping indicator
+order err                inv=true dur=2µs err=config: invalid .waggle/control/config.yaml: line 4: forge.alpha: unknown key
+trailing no nl           inv=true dur=2µs err=config: invalid .waggle/control/config.yaml: line 3: forge.remote: key has no value and no children
+remote 65                inv=true dur=4µs err=config: invalid .waggle/control/config.yaml: line 3: forge.remote: must match ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$, got "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+remote nl                inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 3: forge.remote: must match ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$, got "origin\n"
+remote empty q           OK dur=1µs {Version:1 Forge:{Provider:github CombMode:direct Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}}
+remote blank             inv=true dur=1µs err=config: invalid .waggle/control/config.yaml: line 3: forge.remote: key has no value and no children
+deep 5000                inv=true dur=1.397ms err=config: invalid .waggle/control/config.yaml: line 2: indentation does not match an open mapping
+deep 20000               inv=true dur=107.633ms err=config: invalid .waggle/control/config.yaml: version: missing; must be 1
+long line                OK dur=134µs {Version:1 Forge:{Provider:github CombMode:direct Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}}
+long key                 OK dur=60µs {Version:1 Forge:{Provider:github CombMode:direct Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}}
+many dq esc              inv=true dur=141µs err=config: invalid .waggle/control/config.yaml: line 2: x: unterminated double-quoted scalar
+many sq                  OK dur=170µs {Version:1 Forge:{Provider:github CombMode:direct Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}}
+many keys                OK dur=810µs {Version:1 Forge:{Provider:github CombMode:direct Remote: MergeStrategy:up_to_date} Leases:{DefaultTTLMinutes:120 MaxDirectoriesPerClaim:5}}
+many #                   inv=true dur=41µs err=config: invalid .waggle/control/config.yaml: line 2: x: key has no value and no children
+Load over cap: config: invalid .waggle/control/config.yaml: file is larger than 65536 bytes true
+Load exact cap: 65536 <nil>
+zero cfg CombOptions: config: invalid .waggle/control/config.yaml: version: must be 1, got 0 true
+nil cfg recover: runtime error: invalid memory address or nil pointer dereference
+--- PASS: TestProbe (0.23s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/config	0.459s

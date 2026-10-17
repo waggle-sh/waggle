@@ -1,0 +1,11 @@
+=== RUN   TestZZExhaustive
+    zz_guard_test.go:54: combos 4500 refused 3114 resolved 1386
+    zz_guard_test.go:58: mf=0 level=standard stepped=false
+    zz_guard_test.go:58: mf=1 level=standard stepped=false
+    zz_guard_test.go:58: mf=2 level=frontier stepped=true
+    zz_guard_test.go:58: mf=3 level=frontier stepped=true
+    zz_guard_test.go:58: mf=9 level=frontier stepped=true
+    zz_guard_test.go:60: 2
+--- PASS: TestZZExhaustive (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/runtime	0.162s
