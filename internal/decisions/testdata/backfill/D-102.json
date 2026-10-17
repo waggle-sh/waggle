@@ -1,0 +1,15 @@
+{
+  "kind": "policy",
+  "title": "Licensing: Apache-2.0 for the CLI and daemon, MIT-0 for templates, DCO sign-off, SPDX headers, copyright Level 19 Enterprises, LLC",
+  "question": "Which licenses, contributor rule and file headers does Waggle ship with?",
+  "options": [
+    "Not recorded"
+  ],
+  "recommendation": "Apache-2.0 for the CLI and daemon, MIT-0 for templates, plus DCO and SPDX headers",
+  "choice": "The CLI and daemon are Apache-2.0 and the templates are MIT-0. Contributions carry a DCO sign-off, files carry SPDX headers, and the copyright holder is Level 19 Enterprises, LLC (D-046), stated in NOTICE. T-025 builds it. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-025"
+  ],
+  "supersedes": []
+}

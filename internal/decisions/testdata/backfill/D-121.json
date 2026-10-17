@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "Cells never write `.git`; `waggled` commits on the host after checking the diff against the lease",
+  "question": "Who commits a Cell worker's changes? (Q-T024-2)",
+  "options": [
+    "Cells never write `.git`; `waggled` commits on the host after checking the diff against the lease, with the `T-<id>:` subject",
+    "Give the Cell write access to `.git`"
+  ],
+  "recommendation": "`waggled` commits on the host",
+  "choice": "`.git` is read-only inside every Cell. `waggled` commits on the host after checking the diff against the lease, with the `T-<id>:` subject. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected `.git` write access: a worker could write any ref, including `refs/heads/main` and `refs/waggle/claims/*`, from inside the sandbox.",
+  "tickets": [
+    "T-024",
+    "T-025"
+  ],
+  "supersedes": []
+}

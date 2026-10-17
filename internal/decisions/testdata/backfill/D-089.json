@@ -1,0 +1,25 @@
+{
+  "kind": "policy",
+  "title": "Size figures in briefs are physical non-test lines (`wc -l` of non-test Go files); T-018 phase A accepted at 527 against a 350 cap, and the architect re-estimates phases B and C",
+  "question": "What does a brief's \"non-test lines\" figure count, and does T-018 phase A merge at 527 lines against its 350 cap?",
+  "options": [
+    "Count code lines only (blanks and comments excluded)",
+    "Count physical lines, `wc -l` of non-test Go files touched",
+    "Trim phase A to fit the 350 cap",
+    "Accept phase A as built and re-estimate phases B and C with the same metric"
+  ],
+  "recommendation": "Physical non-test lines; accept phase A; architect re-estimates B and C",
+  "choice": "Every size figure in a brief (estimate, target, cap, stop value) counts physical non-test lines: `wc -l` over the non-test Go files the phase touches, blanks and comments included. T-018 phase A merges as built at 527 lines (PR #15). The architect re-estimates T-018 phases B and C in this metric before phase B is dispatched. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected code-only counting: it needs a tool and an argument at every review, while `wc -l` is one command whose answer nobody disputes. Rejected trimming required behavior to fit a cap: the cap is a signal that the estimate was wrong, not a reason to drop the merge CAS or the report lines the brief requires. The fix is to estimate honestly against the metric the guard uses.",
+  "tickets": [
+    "T-018",
+    "T-006",
+    "T-016",
+    "T-012",
+    "T-014",
+    "T-007",
+    "T-021",
+    "T-022"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "T-006 phase 1 merges at 708 non-test lines (D-013 budget waived for this ticket) with a 200-byte title limit so the backfill titles transcribe verbatim",
+  "question": "Does T-006 phase 1 merge as built (708 non-test lines against the D-013 450-line budget), and does the decision title limit rise from 100 to 200 bytes?",
+  "options": [
+    "Split `internal/decisions` into two packages or two PRs to fit the budget",
+    "Waive the budget for this ticket and merge phase 1 as built",
+    "Keep the 100-byte title limit and shorten the seven backfill titles that exceed it",
+    "Raise the title limit to 200 bytes so every backfill title transcribes verbatim"
+  ],
+  "recommendation": "Waive the budget for phase 1; raise the title limit to 200 bytes",
+  "choice": "The D-013 450-line budget is waived for T-006 phase 1, which merges as built at 708 non-test lines (PR #14). The title limit in T-006 section 4.2 is 200 bytes (was 100), so phase 2 transcribes all 87 backfill titles verbatim. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected splitting the package: parser, validator, renderer and append-only verifier are one round-trip contract and a split would add an import seam with no second consumer. Rejected shortening seven titles: the backfill is a transcription, and edited titles would make the record disagree with its source. The budget stays in force for every other ticket; this is a waiver, not a new limit.",
+  "tickets": [
+    "T-006"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "DCO is enforced by a `dco` job in product CI, required in the `main` ruleset; no third-party app",
+  "question": "How is DCO sign-off enforced? (Q-T025-4)",
+  "options": [
+    "A `dco` job in product CI plus a required check in the ruleset",
+    "The DCO GitHub App",
+    "A `waggle gate` step"
+  ],
+  "recommendation": "`dco` job plus required check",
+  "choice": "A `dco` job in product CI, added as a required check in the `main` ruleset. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "No third-party app gets access to a private repo, and the rule lives in a file the hive reviews. Rejected a `waggle gate` step: it would impose DCO on every hive.",
+  "tickets": [
+    "T-025",
+    "T-015"
+  ],
+  "supersedes": []
+}
