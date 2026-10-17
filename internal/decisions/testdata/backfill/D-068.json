@@ -1,0 +1,19 @@
+{
+  "kind": "policy",
+  "title": "The hive bot SSH-signs claim and audit commits; the gate verifies against an allowed-signers file",
+  "question": "How is D-015's rule that the gate rejects claim chains not written by the hive's bot implemented?",
+  "options": [
+    "GitHub's verified-commit badge on commits written through the GitHub API",
+    "Git's built-in SSH commit signing by the bot, verified by the gate against an allowed-signers file in the Tier 3 control folder"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Implements D-015: the hive's bot signs claim and audit commits with its own SSH key using git's built-in commit signing, and the gate verifies them against an allowed-signers file in the Tier 3 control folder. GitHub's verified-commit badge is not used. The bot's key lives where the bot runs (Actions secrets on GitHub). Compatible with D-016's later Keeper commit signing.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-005",
+    "T-014"
+  ],
+  "supersedes": [
+    "D-015"
+  ]
+}

@@ -1,0 +1,15 @@
+Waggle setup check: none (remote origin)
+Claims: refs/waggle/claims/* on origin
+Merge strategy: up_to_date
+Enforcement: advisory (required-gate is not checked)
+
+  missing   code-host       No code host.
+                            Not enforced: nothing outside Waggle runs the gate or blocks a merge;
+                            anyone with git access to main can merge anything.
+                            Fix: none needed for a solo local hive; use provider github to get
+                            enforced checks.
+
+Not enforced on this repo (1):
+  - Nothing outside Waggle runs the gate or blocks a merge; anyone with git access to main can
+    merge anything.
+Waggle runs here, but it cannot stop the merges listed above.

@@ -1,0 +1,14 @@
+{
+  "kind": "policy",
+  "title": "Guard runs on a different model than the forager",
+  "question": "Which model runs the guard?",
+  "options": [
+    "A different Claude model than the forager, configurable per hive",
+    "Alternatives not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Guard runs on a different Claude model than the forager, configurable per hive; cross-provider later via config.",
+  "rationale": "Reduces correlated blind spots between author and reviewer.",
+  "tickets": [],
+  "supersedes": []
+}

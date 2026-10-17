@@ -1,0 +1,19 @@
+{
+  "kind": "scope",
+  "title": "T-020 phases A and B run right after T-011, before T-012 and T-016",
+  "question": "When do the product phases of the role rename run (Q-T020-2)?",
+  "options": [
+    "Right after T-011, before T-012, T-016 and other tickets write more code with the old names",
+    "After T-012 merges, sweeping its role table and tests afterwards"
+  ],
+  "recommendation": "Right after T-011",
+  "choice": "T-020 (role rename) phases A and B run right after T-011, before T-012, T-016 and other tickets write more code with the old names.",
+  "rationale": "Code written after the rename is born with the new names, so nothing has to be swept twice. \"Right after T-011\" means after T-011 phase A only: the order is merge T-011 phase A, then T-020 phases A and B, then T-011 phases B and C.",
+  "tickets": [
+    "T-020",
+    "T-011",
+    "T-012",
+    "T-016"
+  ],
+  "supersedes": []
+}

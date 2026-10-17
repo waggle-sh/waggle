@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "Waggle never requires a paid forge plan; the gate is enforced by Waggle itself and server-side where the plan allows",
+  "question": "Does Waggle depend on a paid forge plan (rulesets, required checks) to enforce the gate, and why does our own repo pay for GitHub Team?",
+  "options": [
+    "Require a plan that supports rulesets and required checks",
+    "Never require a paid plan: Waggle-driven merges run waggle gate first and refuse on failure, server-side enforcement is added wherever the plan allows, and waggle doctor reports when the gate is advisory"
+  ],
+  "recommendation": "Never require a paid plan",
+  "choice": "Waggle never requires a paid forge plan. Waggle-driven merges always run waggle gate first and refuse on failure, whatever the plan. Server-side enforcement (rulesets, required checks) is used wherever the plan allows, and waggle doctor says plainly when the gate is advisory. Our own repo uses GitHub Team only because it is private before launch; Team can be dropped after the repo goes public.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-004",
+    "T-018",
+    "T-019"
+  ],
+  "supersedes": []
+}

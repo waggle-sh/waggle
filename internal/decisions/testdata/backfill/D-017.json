@@ -1,0 +1,14 @@
+{
+  "kind": "policy",
+  "title": "PR merge flow with Intent Packet merge commits",
+  "question": "How does work merge, solo or team?",
+  "options": [
+    "PR flow with real merge commits",
+    "Alternatives not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "PR flow always, solo or team: t-<id> branch, PR, waggle gate (same Go code locally and in CI), real merge commit (no squash) whose message carries the Intent Packet with trailers for ticket, risk tier and guard verdict; auto-merge on pass.",
+  "rationale": "One path for every hive size, with the review record kept in history.",
+  "tickets": [],
+  "supersedes": []
+}

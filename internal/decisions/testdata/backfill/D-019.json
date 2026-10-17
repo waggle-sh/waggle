@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "T-002 reviewed split by file instead of re-cut",
+  "question": "T-002 has 1,160 non-test lines, over the D-013 cap. Re-cut the branch or review it as one PR?",
+  "options": [
+    "Re-cut T-002 into tasks under the cap",
+    "Keep one PR and have the guard review it split by file in 5 units"
+  ],
+  "recommendation": "Keep one PR and review it split by file",
+  "choice": "T-002 is reviewed split by file by the guard in 5 units rather than re-cut to meet the ~500 line cap.",
+  "rationale": "Re-cutting costs a Forager rerun for no correctness gain, and each review unit stays near the cap.",
+  "tickets": [
+    "T-002"
+  ],
+  "supersedes": []
+}
