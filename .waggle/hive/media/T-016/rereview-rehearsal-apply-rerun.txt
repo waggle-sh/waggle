@@ -1,0 +1,80 @@
+  [pin]     b4f222166f4a824e34414e205544fb17397ccfa1 -> 67028d05911d339ce7fa0caa41f035d11e2162a7
+  [rewrite] .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+  [same]    .github/workflows/waggle-gate.yml
+  [create]  .waggle/control/roles/builder.md
+  [rewrite] .waggle/control/roles/forager.md
+  [rewrite] .waggle/control/roles/guard.md
+  [same]    .waggle/control/roles/queen.md
+  [rewrite] .waggle/control/roles/scout.md
+  [remove]  .waggle/control/roles/architect.md
+  [skip]    .waggle/control/config.yaml (seeded)
+  [skip]    .waggle/control/WAGGLE.md (seeded)
+  [skip]    .waggle/control/local.yaml (seeded)
+  [same]    .gitignore (waggle block)
+  [same]    CLAUDE.md (waggle block)
+  [remove]  .claude/agents/waggle-architect.md
+  [shims]   regenerate .claude/agents/waggle-*.md
+  [keep]    refs/waggle/* and .waggle/hive/**
+--- waggle decide input (save as upgrade-decision.json) ---
+{
+  "kind": "technical",
+  "title": "Upgrade hive pin to 67028d05911d339ce7fa0caa41f035d11e2162a7",
+  "question": "Which Waggle build does this hive run?",
+  "options": [
+    "Stay on b4f222166f4a824e34414e205544fb17397ccfa1",
+    "Move to 67028d05911d339ce7fa0caa41f035d11e2162a7"
+  ],
+  "recommendation": "Move to 67028d05911d339ce7fa0caa41f035d11e2162a7",
+  "choice": "Move the pin from b4f222166f4a824e34414e205544fb17397ccfa1 to 67028d05911d339ce7fa0caa41f035d11e2162a7; managed files re-rendered by waggle upgrade from the target build",
+  "rationale": "67028d05911d339ce7fa0caa41f035d11e2162a7 is the known-good build chosen by the Head Keeper (D-041).",
+  "tickets": [
+    "T-016"
+  ],
+  "supersedes": []
+}
+--- end ---
+Run: waggle decide --file upgrade-decision.json (same hive PR, Head Keeper or queen after an explicit Keeper answer, T-006 section 8).
+  [shim]   .claude/agents/waggle-builder.md
+  [shim]   .claude/agents/waggle-forager.md
+  [shim]   .claude/agents/waggle-guard.md
+  [shim]   .claude/agents/waggle-queen.md
+  [shim]   .claude/agents/waggle-scout.md
+Review with git status, then open a hive PR. This changes .waggle/control/ (Tier 3) and needs Head Keeper approval.
+  [pin]     67028d05911d339ce7fa0caa41f035d11e2162a7 (unchanged)
+  [same]    .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+  [same]    .github/workflows/waggle-gate.yml
+  [same]    .waggle/control/roles/builder.md
+  [same]    .waggle/control/roles/forager.md
+  [same]    .waggle/control/roles/guard.md
+  [same]    .waggle/control/roles/queen.md
+  [same]    .waggle/control/roles/scout.md
+  [skip]    .waggle/control/config.yaml (seeded)
+  [skip]    .waggle/control/WAGGLE.md (seeded)
+  [skip]    .waggle/control/local.yaml (seeded)
+  [same]    .gitignore (waggle block)
+  [same]    CLAUDE.md (waggle block)
+  [shims]   regenerate .claude/agents/waggle-*.md
+  [keep]    refs/waggle/* and .waggle/hive/**
+--- waggle decide input (save as upgrade-decision.json) ---
+{
+  "kind": "technical",
+  "title": "Upgrade hive pin to 67028d05911d339ce7fa0caa41f035d11e2162a7",
+  "question": "Which Waggle build does this hive run?",
+  "options": [
+    "Stay on 67028d05911d339ce7fa0caa41f035d11e2162a7",
+    "Move to 67028d05911d339ce7fa0caa41f035d11e2162a7"
+  ],
+  "recommendation": "Move to 67028d05911d339ce7fa0caa41f035d11e2162a7",
+  "choice": "Move the pin from 67028d05911d339ce7fa0caa41f035d11e2162a7 to 67028d05911d339ce7fa0caa41f035d11e2162a7; managed files re-rendered by waggle upgrade from the target build",
+  "rationale": "67028d05911d339ce7fa0caa41f035d11e2162a7 is the known-good build chosen by the Head Keeper (D-041).",
+  "tickets": [
+    "T-016"
+  ],
+  "supersedes": []
+}
+--- end ---
+Run: waggle decide --file upgrade-decision.json (same hive PR, Head Keeper or queen after an explicit Keeper answer, T-006 section 8).
+Dry run: nothing changed. Rerun with --apply to execute the plan above.
+Review with git status, then open a hive PR. This changes .waggle/control/ (Tier 3) and needs Head Keeper approval.
