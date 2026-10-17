@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "CODEOWNERS gains `/internal/cell/ @paulternate` by Head Keeper commit; `internal/cell/` is not a hardcoded Tier 3 path",
+  "question": "How is `internal/cell/` protected? (Q-T024-8)",
+  "options": [
+    "Add `/internal/cell/ @paulternate` to CODEOWNERS, not a hardcoded Tier 3 entry",
+    "Rely on guard Tier classification alone"
+  ],
+  "recommendation": "CODEOWNERS entry",
+  "choice": "The Head Keeper adds `/internal/cell/ @paulternate` to CODEOWNERS before T-024 phase A, as in T-015. It is not a hardcoded Tier 3 entry. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "A hardcoded Tier 3 path would apply to every host repo's own `internal/cell/` (the D-043 reasoning used for `docs/GLOSSARY.md`).",
+  "tickets": [
+    "T-024",
+    "T-015"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "GitHub merge queue is treated as unavailable on the Team plan; the org stays on Team, the admin-merge loop stays, and `native_queue` stays opt-in",
+  "question": "Is GitHub's native merge queue available to waggle-sh/waggle (an organization repo, D-024) on the Team plan (D-047), and what follows if it is not?",
+  "options": [
+    "Not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Treat the native merge queue as unavailable on GitHub Team and stay on Team. Merges keep the admin-merge polling loop (D-098). `merge_strategy: native_queue` stays opt-in (D-064, D-071), and `waggle doctor` reports queue availability per repo (T-018 phase C). Revisit when the repo goes public. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-018",
+    "T-015"
+  ],
+  "supersedes": []
+}

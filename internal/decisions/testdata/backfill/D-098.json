@@ -1,0 +1,15 @@
+{
+  "kind": "policy",
+  "title": "The `main` ruleset requires product-ci and verify-leases-and-tiers plus one code owner review; every merge uses a logged admin bypass",
+  "question": "What does the `main` ruleset enforce after T-015, and how do PRs merge when GitHub never counts the author's own approval?",
+  "options": [
+    "Not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Ruleset `main` (id 25310890) requires `product-ci` and `verify-leases-and-tiers`, up-to-date branches, blocks force-push, restricts deletion, and requires one code owner review with stale reviews dismissed; admin bypass is set to always. Because GitHub never counts the PR author's own approval, every merge uses `gh pr merge <n> --merge --admin` (a logged bypass). Auto-merge is disabled at the repo level. Applied and read back by the Head Keeper on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-015"
+  ],
+  "supersedes": []
+}

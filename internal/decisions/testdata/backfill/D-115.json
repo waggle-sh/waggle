@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Dispatch pushes the worker branch from the host after every check passes; it never force-pushes and never opens a PR, and `--no-push` skips the push",
+  "question": "Who pushes a dispatched worker's branch? (Q-T023-8)",
+  "options": [
+    "Dispatch pushes from the host with the Keeper's git auth after every check passes; never force; never opens a PR; `--no-push` skips it"
+  ],
+  "recommendation": "Dispatch pushes from the host after the checks",
+  "choice": "Dispatch pushes the branch from the host with the Keeper's git auth, only after every post-run check passes. It never force-pushes and never opens a PR; `--no-push` skips the push. The worker never pushes. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-023",
+    "T-018"
+  ],
+  "supersedes": []
+}

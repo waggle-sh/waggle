@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Files carry only the SPDX identifier; the copyright line lives in NOTICE and `LICENSES/MIT-0.txt`",
+  "question": "Does each file carry a copyright line? (Q-T025-1)",
+  "options": [
+    "No: SPDX identifier only, copyright in `NOTICE` and `LICENSES/MIT-0.txt`",
+    "`SPDX-FileCopyrightText: 2026 Level 19 Enterprises, LLC` on product files only"
+  ],
+  "recommendation": "SPDX identifier only",
+  "choice": "Files carry only the SPDX identifier. The copyright line lives in `NOTICE` and `LICENSES/MIT-0.txt`. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "A per-file line adds year churn, and in MIT-0 templates it would stamp our copyright into every host repo's own files.",
+  "tickets": [
+    "T-025"
+  ],
+  "supersedes": []
+}

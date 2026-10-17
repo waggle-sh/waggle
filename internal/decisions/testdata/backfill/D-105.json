@@ -1,0 +1,15 @@
+{
+  "kind": "policy",
+  "title": "T-018 phase B accepted at 687 physical non-test lines against the 650 stop after the Keeper-requested N1, N2 and N4 hardening",
+  "question": "Does T-018 phase B merge at 687 physical non-test lines (D-089 metric) against its 650 stop, after hardening commit `c85c783` closed guard notes N1, N2 and N4?",
+  "options": [
+    "Not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Accept. T-018 phase B merges at 687 physical non-test lines (PR #28, merged at `b1e4a3a`). Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "The lines over the stop are the hardening the Keeper asked for (gh stdout and stderr caps, a per-call gh deadline with `WaitDelay`, token redirects pinned to the same https origin), as with D-099.",
+  "tickets": [
+    "T-018"
+  ],
+  "supersedes": []
+}
