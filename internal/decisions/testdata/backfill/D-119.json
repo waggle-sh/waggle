@@ -1,0 +1,15 @@
+{
+  "kind": "policy",
+  "title": "T-023 phase F sets `forge.remote: origin` in our hive's `config.yaml`, so claims reach the remote and the CI gate can verify them",
+  "question": "Does our hive set `forge.remote`? (Q-T023-12)",
+  "options": [
+    "Phase F sets `forge.remote: origin` in our `config.yaml`"
+  ],
+  "recommendation": "Set it in phase F",
+  "choice": "Phase F sets `forge.remote: origin` in our hive's `config.yaml`, so claims are pushed and the CI gate can verify them (D-051). Every claim write then needs network access and the Keeper's git push auth. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-023"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "technical",
+  "title": "`waggle upgrade` refuses a release-tag downgrade unless `--allow-downgrade`; commit pins are unordered",
+  "question": "Does `waggle upgrade` check the direction of a pin move? (Q-T016-3)",
+  "options": [
+    "Refuse when both pins are release tags and the target is lower, unless `--allow-downgrade`; print from and to for commit pins with no ordering check",
+    "No downgrade check at all"
+  ],
+  "recommendation": "Refuse tag downgrades unless `--allow-downgrade`",
+  "choice": "When both pins are release tags and the target is lower, `upgrade` refuses unless `--allow-downgrade`. Commit pins print from and to with no ordering check (a host repo does not contain Waggle's history). The semver compare is a hand-written numeric compare; a prerelease sorts below the same release. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected no check at all: the Keeper picks the target on purpose, but a stale binary on `PATH` is the common way to run the wrong build, and one flag is cheaper than a reverted hive PR.",
+  "tickets": [
+    "T-016"
+  ],
+  "supersedes": []
+}
