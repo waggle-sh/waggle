@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "go.mod and go.sum become hardcoded Tier 3",
+  "question": "What tier protects go.mod and go.sum?",
+  "options": [
+    "Hardcoded Tier 3",
+    "Alternatives not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "go.mod and go.sum become hardcoded Tier 3 (T-008).",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-008"
+  ],
+  "supersedes": []
+}

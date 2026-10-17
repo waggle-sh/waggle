@@ -1,0 +1,16 @@
+{
+  "kind": "scope",
+  "title": "Case-insensitive directory overlap deferred",
+  "question": "Does T-009 also make lease overlap checks case-insensitive?",
+  "options": [
+    "Fold into T-009",
+    "Defer to the next Comb ticket"
+  ],
+  "recommendation": "Keep T-009 to the guard findings (Q-T009-3)",
+  "choice": "Case-insensitive directory overlap is deferred to the next Comb ticket.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-009"
+  ],
+  "supersedes": []
+}

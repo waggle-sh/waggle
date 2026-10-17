@@ -1,0 +1,16 @@
+{
+  "kind": "strategy",
+  "title": "GitHub home is the waggle-sh organization",
+  "question": "Where does the project live on GitHub, and what is its Go module path?",
+  "options": [
+    "waggle-dev (taken by an unrelated user account)",
+    "New organization waggle-sh"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "New organization waggle-sh; repo waggle-sh/waggle; the Go module path becomes github.com/waggle-sh/waggle via a rename ticket (T-010) after T-002 merges.",
+  "rationale": "waggle-dev is taken by an unrelated user account, and the module path must match the repo for go install to work.",
+  "tickets": [
+    "T-010"
+  ],
+  "supersedes": []
+}

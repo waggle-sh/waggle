@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Product template changes reach the hive only through an upgrade command",
+  "question": "How do changes to product templates reach our hive's installed copies?",
+  "options": [
+    "Hand edits to hive copies",
+    "An upgrade command run from the pinned build, in a hive PR"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Product template changes reach our hive only through an upgrade command run from the pinned build, in a hive PR. Hand edits to hive copies of templates are not allowed. A waggle upgrade ticket is queued.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-011"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "technical",
+  "title": "Config loader lives in internal/config",
+  "question": "Where does the config loader live?",
+  "options": [
+    "New internal/config/ package",
+    "internal/comb/config.go"
+  ],
+  "recommendation": "New internal/config/ package",
+  "choice": "New internal/config/ package; the Controller adds it to WAGGLE.md section 2.",
+  "rationale": "Config also feeds internal/runtime later and should not couple to comb.",
+  "tickets": [
+    "T-004"
+  ],
+  "supersedes": []
+}

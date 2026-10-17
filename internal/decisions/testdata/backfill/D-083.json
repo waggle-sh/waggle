@@ -1,0 +1,20 @@
+{
+  "kind": "scope",
+  "title": "Approved follow-ups from T-020 and T-021: T-016 deletes dropped managed files, T-013 seed renamed, T-022 now and T-023 after the Cell runtime decision, T-006 module path fixed",
+  "question": "Which follow-ups raised by T-020 (Q-T020-3, Q-T020-4) and T-021 (Q-T021-5) are approved, and is the stale module path in T-006 fixed?",
+  "options": [
+    "Leave the briefs as written",
+    "Apply the follow-ups"
+  ],
+  "recommendation": "Apply the follow-ups",
+  "choice": "Approved follow-ups: T-016 must delete managed files the new templates no longer ship. The T-013 README seed is updated for the new role names, drone is dropped, and the D-073 rule is added. T-022 (waggle status with token and cost reporting) is written now and T-023 (worker session launcher) after the Cell runtime decision. The old module path on T-006 line 18 is fixed.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-016",
+    "T-013",
+    "T-022",
+    "T-023",
+    "T-006"
+  ],
+  "supersedes": []
+}

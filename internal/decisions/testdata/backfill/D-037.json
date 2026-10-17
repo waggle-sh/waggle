@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "v0.1 lease directories are ASCII safe-set only",
+  "question": "May leased directory names contain spaces or non-ASCII characters?",
+  "options": [
+    "ASCII safe set only, no spaces",
+    "Allow spaces and non-ASCII"
+  ],
+  "recommendation": "ASCII safe set for v0.1 (Q-T009-2)",
+  "choice": "v0.1 lease directories use the ASCII safe set only, with no spaces.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-009"
+  ],
+  "supersedes": []
+}
