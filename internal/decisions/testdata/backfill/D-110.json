@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Headless workers get an explicit tool allowlist and a deny list (no git push, gh, curl, wget, ssh, web fetch or web search)",
+  "question": "Which tools may a headless dispatch worker use? (Q-T023-3)",
+  "options": [
+    "An explicit allowlist in the generated settings file plus a deny list",
+    "Skip permission prompts entirely"
+  ],
+  "recommendation": "Allowlist plus deny list",
+  "choice": "The generated settings file allows the read, edit and write tools, and Bash only for the build, test, vet and format commands in `WAGGLE.md` section 3 plus `git add`, `git commit`, `git status`, `git diff`, `git log` and `git show`. It denies `git push`, `gh`, `curl`, `wget`, `ssh`, web fetch and web search. Dispatch never passes `--dangerously-skip-permissions` by default. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Accepted that some runs end on a denied tool and need a rerun. Rejected skipping permission prompts: the post-run check would become the only guard.",
+  "tickets": [
+    "T-023"
+  ],
+  "supersedes": []
+}

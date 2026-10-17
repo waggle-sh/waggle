@@ -1,0 +1,18 @@
+{
+  "kind": "technical",
+  "title": "Pins are full 40-hex commits or release tags, validated on both ends; `scaffold.ReadPin` is the shared reader and `internal/config/` stays read-only",
+  "question": "What is a valid pin, and which package owns the reader? (Q-T016-8)",
+  "options": [
+    "Full 40-hex or release tag, validated on both ends, `scaffold.ReadPin` shared, `internal/config/` read-only",
+    "Widen the T-016 lease to `internal/config/` and add `config.Config.Pin`"
+  ],
+  "recommendation": "`scaffold.ReadPin`, `internal/config/` read-only",
+  "choice": "A pin is a full 40-hex commit, a release tag (`vMAJOR.MINOR.PATCH` with optional prerelease), or the literal `unpinned`; never a short hash. `upgrade` validates both the \"from\" and the \"to\" value. `scaffold.ReadPin` in `internal/scaffold/upgrade.go` is the shared reader; `waggle status` switches to it in T-022 phase B. `internal/config/` stays read-only for T-016. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected widening the lease to `internal/config/`: `config.Config.Pin` is the cleaner long-term home, but a lease change on a package three tickets consume costs more now than a one-line switch in `status` later. Moving the reader into `internal/config` stays listed as a follow-up.",
+  "tickets": [
+    "T-016",
+    "T-022",
+    "T-004"
+  ],
+  "supersedes": []
+}

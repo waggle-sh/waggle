@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "The SPDX header check is a Go test in `internal/license/` that product-ci already runs",
+  "question": "Where does the header check run? (Q-T025-3)",
+  "options": [
+    "A Go test in `internal/license/` run by `product-ci`",
+    "A shell step in `ci.yml`",
+    "A `waggle gate` step"
+  ],
+  "recommendation": "Go test in `internal/license/`",
+  "choice": "A Go test in `internal/license/`, run by the existing `product-ci` job. Queen default, within authority; approved on the Head Keeper's queen card on 2026-10-17.",
+  "rationale": "Rejected a shell step: a Tier 3 edit that does not run locally. Rejected `waggle gate`: it would impose our license map on every hive (D-043).",
+  "tickets": [
+    "T-025"
+  ],
+  "supersedes": []
+}
