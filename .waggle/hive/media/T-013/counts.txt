@@ -1,0 +1,32 @@
+roles:
+      12
+terms:
+      15
+sentences per entry (count of '. ' + final):
+2 Keeper.
+2 Head Keeper.
+2 queen.
+2 scout.
+2 forager.
+2 builder.
+2 guard.
+2 waggled.
+1 weaver.
+1 nurse.
+1 studio.
+1 assembly.
+2 Hive.
+2 Comb.
+1 Cell.
+2 Swarm.
+2 Claim.
+2 Lease.
+2 Gate.
+2 Risk Tier.
+2 Intent Packet.
+2 Decision card.
+2 Lane.
+1 Nectar.
+1 Quorum.
+2 Capability level.
+1 Own honey.

@@ -1,0 +1,174 @@
+=== A: existing CLAUDE.md, no trailing newline, plus .gitignore
+Initializing Waggle Hive (profile=cli, delivery=installed, comb=direct, runtime=claude-code)...
+  [create] .waggle/control/config.yaml
+  [create] .waggle/control/WAGGLE.md
+  [create] .waggle/control/local.yaml
+  [create] .waggle/control/roster.json
+  [create] .waggle/control/devcontainer.json
+  [create] .github/workflows/waggle-gate.yml
+  [create] .waggle/control/roles/architect.md
+  [create] .waggle/control/roles/forager.md
+  [create] .waggle/control/roles/guard.md
+  [create] .waggle/control/roles/queen.md
+  [create] .waggle/control/roles/scout.md
+  [edit]   .gitignore (waggle block)
+  [edit]   CLAUDE.md (waggle block)
+  [shim]   .claude/agents/waggle-architect.md
+  [shim]   .claude/agents/waggle-forager.md
+  [shim]   .claude/agents/waggle-guard.md
+  [shim]   .claude/agents/waggle-queen.md
+  [shim]   .claude/agents/waggle-scout.md
+Hive initialized. Next: edit .waggle/control/WAGGLE.md and commit.
+---
+cat: illegal option -- A
+usage: cat [-belnstuv] [file ...]
+
+node_modules
+.claude/
+CLAUDE.md
+# --- waggle:start ---
+.waggle/control/local.yaml
+.waggle/control/run.sock
+.waggle/worktrees/
+.claude/agents/waggle-*.md
+# --- waggle:end ---
+-- rerun
+  [skip]   .gitignore (waggle block up to date)
+  [skip]   CLAUDE.md (waggle block up to date)
+  [shim]   .claude/agents/waggle-architect.md
+  [shim]   .claude/agents/waggle-forager.md
+  [shim]   .claude/agents/waggle-guard.md
+  [shim]   .claude/agents/waggle-queen.md
+  [shim]   .claude/agents/waggle-scout.md
+Hive initialized. Next: edit .waggle/control/WAGGLE.md and commit.
+aa6760417e53844299a5a537aa24e296
+f33e6e750e51d17f4e30d39aef68d6ac
+-- force
+Initializing Waggle Hive (profile=cli, delivery=installed, comb=direct, runtime=claude-code)...
+  [skip]   .waggle/control/config.yaml (seeded)
+  [skip]   .waggle/control/WAGGLE.md (seeded)
+  [skip]   .waggle/control/local.yaml (seeded)
+  [update] .waggle/control/roster.json
+  [update] .waggle/control/devcontainer.json
+  [update] .github/workflows/waggle-gate.yml
+  [update] .waggle/control/roles/architect.md
+  [update] .waggle/control/roles/forager.md
+  [update] .waggle/control/roles/guard.md
+  [update] .waggle/control/roles/queen.md
+  [update] .waggle/control/roles/scout.md
+  [skip]   .gitignore (waggle block up to date)
+  [skip]   CLAUDE.md (waggle block up to date)
+  [shim]   .claude/agents/waggle-architect.md
+  [shim]   .claude/agents/waggle-forager.md
+  [shim]   .claude/agents/waggle-guard.md
+  [shim]   .claude/agents/waggle-queen.md
+  [shim]   .claude/agents/waggle-scout.md
+Hive initialized. Next: edit .waggle/control/WAGGLE.md and commit.
+aa6760417e53844299a5a537aa24e296
+f33e6e750e51d17f4e30d39aef68d6ac
+./.claude/agents/waggle-architect.md
+./.claude/agents/waggle-forager.md
+./.claude/agents/waggle-guard.md
+./.claude/agents/waggle-queen.md
+./.claude/agents/waggle-scout.md
+./.github/workflows/waggle-gate.yml
+./.gitignore
+./.waggle/control/config.yaml
+./.waggle/control/devcontainer.json
+./.waggle/control/local.yaml
+./.waggle/control/roles/architect.md
+./.waggle/control/roles/forager.md
+./.waggle/control/roles/guard.md
+./.waggle/control/roles/queen.md
+./.waggle/control/roles/scout.md
+./.waggle/control/roster.json
+./.waggle/control/WAGGLE.md
+./CLAUDE.md
+?? .github/
+?? .gitignore
+?? .waggle/
+!! .claude/
+!! .waggle/control/local.yaml
+!! CLAUDE.md
+9:  pin: 6a9a5dc5965c786e3c9ba568f9bfc549ee8ae46b # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
+10-
+=== B: CRLF
+cat: illegal option -- A
+usage: cat [-belnstuv] [file ...]
+cat: illegal option -- A
+usage: cat [-belnstuv] [file ...]
+  [skip]   .gitignore (waggle block up to date)
+  [skip]   CLAUDE.md (waggle block up to date)
+=== C: empty
+Initializing Waggle Hive (profile=cli, delivery=installed, comb=direct, runtime=claude-code)...
+  [create] .waggle/control/config.yaml
+  [create] .waggle/control/WAGGLE.md
+  [create] .waggle/control/local.yaml
+  [create] .waggle/control/roster.json
+  [create] .waggle/control/devcontainer.json
+  [create] .github/workflows/waggle-gate.yml
+  [create] .waggle/control/roles/architect.md
+  [create] .waggle/control/roles/forager.md
+  [create] .waggle/control/roles/guard.md
+  [create] .waggle/control/roles/queen.md
+  [create] .waggle/control/roles/scout.md
+  [edit]   .gitignore (waggle block)
+  [edit]   CLAUDE.md (waggle block)
+  [shim]   .claude/agents/waggle-architect.md
+  [shim]   .claude/agents/waggle-forager.md
+  [shim]   .claude/agents/waggle-guard.md
+  [shim]   .claude/agents/waggle-queen.md
+  [shim]   .claude/agents/waggle-scout.md
+Hive initialized. Next: edit .waggle/control/WAGGLE.md and commit.
+<!-- waggle:start -->
+@.waggle/control/WAGGLE.md
+<!-- waggle:end -->
+# --- waggle:start ---
+.waggle/control/local.yaml
+.waggle/control/run.sock
+.waggle/worktrees/
+.claude/agents/waggle-*.md
+# --- waggle:end ---
+=== D: AGENTS.md only, runtime claude-code
+  [edit]   .gitignore (waggle block)
+  [edit]   AGENTS.md (waggle block)
+  [note]   Claude Code reads CLAUDE.md, not AGENTS.md; import .waggle/control/WAGGLE.md there if you use it
+Hive initialized. Next: edit .waggle/control/WAGGLE.md and commit.
+AGENTS.md
+=== E: symlink CLAUDE.md -> AGENTS.md
+  [edit]   .gitignore (waggle block)
+  [edit]   CLAUDE.md (waggle block)
+Hive initialized. Next: edit .waggle/control/WAGGLE.md and commit.
+lrwxr-xr-x@ 1 paul  wheel  9 Oct 17 09:33 CLAUDE.md -> AGENTS.md
+hi
+<!-- waggle:start -->
+@.waggle/control/WAGGLE.md
+<!-- waggle:end -->
+=== F: legacy
+Initializing Waggle Hive (profile=cli, delivery=installed, comb=direct, runtime=claude-code)...
+waggle init failed: found .waggle/roles: scaffold: legacy waggle layout (.waggle/config.yaml or .waggle/roles/); migrate it to .waggle/control/ by hand, nothing was written
+exit=1
+=== G: malformed marker
+Initializing Waggle Hive (profile=cli, delivery=installed, comb=direct, runtime=claude-code)...
+waggle init failed: CLAUDE.md: "<!-- waggle:start -->" without "<!-- waggle:end -->": scaffold: malformed waggle marker block
+exit=1
+.git
+CLAUDE.md
+=== H: old-style gitignore block
+x
+# --- waggle:start ---
+.waggle/control/local.yaml
+.waggle/control/run.sock
+.waggle/worktrees/
+.claude/agents/waggle-*.md
+# --- waggle:end ---
+y
+=== I: user edits seeded then force
+  [skip]   .waggle/control/config.yaml (seeded)
+  [skip]   .waggle/control/WAGGLE.md (seeded)
+  [skip]   .waggle/control/local.yaml (seeded)
+  [update] .waggle/control/roles/guard.md
+  [shim]   .claude/agents/waggle-guard.md
+Hive initialized. Next: edit .waggle/control/WAGGLE.md and commit.
+# edit
+4. **Blocking Issues (Must-Fix Only):** Concrete spec violations, regressions, lease boundary violations, or exploitable security flaws.

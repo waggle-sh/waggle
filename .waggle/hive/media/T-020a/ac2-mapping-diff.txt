@@ -1,0 +1,5 @@
+--- diff of scratch result vs mechanical commit 2411ce0 (empty = pass):
+       0
+--- step 3 residue:
+fatal: unable to resolve revision: --cached
+       0

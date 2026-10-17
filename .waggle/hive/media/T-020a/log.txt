@@ -1,0 +1,10 @@
+145baaf T-020: test roster ids, role template set and init shims use the new names
+
+633a2cf T-020: name the bee job under each renamed role heading
+
+d396e17 T-020: write lease version 2 and map version 1 role names on read (D-080)
+
+504ed14 T-020: confirm the claim role set (forager, builder, guard)
+
+2411ce0 T-020: rename roles (architect to scout, scout to forager, forager to builder)
+

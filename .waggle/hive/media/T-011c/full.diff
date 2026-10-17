@@ -1,0 +1,319 @@
+diff --git a/.github/workflows/waggle-gate.yml b/.github/workflows/waggle-gate.yml
+index 669c2a3..6139dd5 100644
+--- a/.github/workflows/waggle-gate.yml
++++ b/.github/workflows/waggle-gate.yml
+@@ -1,4 +1,5 @@
+ # SPDX-License-Identifier: MIT-0
++# waggle:managed: installed by waggle init; removed by waggle uninstall. Do not edit by hand.
+ name: Waggle Gatekeeper
+ 
+ on:
+@@ -41,17 +42,21 @@ jobs:
+           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+         run: |
+-          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
++          CHANGED_FILES=$(git diff --name-only --no-renames "$BASE_SHA" "$HEAD_SHA")
+           echo "Modified files in PR:"
+           echo "$CHANGED_FILES"
+ 
+-          # 1. Hardcoded Tier 3 Control-Plane Gate (RFC-0003 Section 3.3)
++          # 1. Hardcoded tiers (RFC-0003 Section 3.3). Order matters: the hive
++          # carve-out is matched before the rest of .waggle/.
+           for file in $CHANGED_FILES; do
+             case "$file" in
+-              .waggle/*|WAGGLE.md|.devcontainer/*|.github/workflows/*|.gitlab-ci.yml)
+-                echo "::warning file=$file::Tier 3 Control Plane modified ($file). Master Keeper approval required."
++              .waggle/hive|.waggle/hive/*)
++                echo "::notice file=$file::Tier 2 Hive record modified ($file). Full Gate required (ineligible for Light Gate)."
+                 ;;
+-              DECISIONS.md|ROADMAP.md|WORKPLAN.md|docs/specs/*|docs/tasks/*)
++              .waggle|.waggle/*|.github/workflows/*|.gitlab-ci.yml|.devcontainer/*)
++                echo "::warning file=$file::Tier 3 Control Plane modified ($file). Head Keeper approval required."
++                ;;
++              CLAUDE.md|AGENTS.md)
+                 echo "::notice file=$file::Tier 2 Steering Context modified ($file). Full Gate required (ineligible for Light Gate)."
+                 ;;
+             esac
+diff --git a/.gitignore b/.gitignore
+index 058db56..6dc0bfc 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,17 +1,11 @@
+ bin/
+ 
+ # --- waggle:start ---
+-# Local Keeper preferences & runtime daemon state
+-.waggle/local.yaml
+-.waggle/run.sock
++.waggle/control/local.yaml
++.waggle/control/run.sock
+ .waggle/worktrees/
+-.dashboard/
+-
+-# Materialized vendor/IDE shims (generated from .waggle/roles/ and WAGGLE.md)
+-.claude/
+-CLAUDE.md
+-AGENTS.md
+-GEMINI.md
+-.cursor/
+-.aider*
++.claude/agents/waggle-*.md
+ # --- waggle:end ---
++.claude/settings.local.json
++.claude/worktrees/
++.dashboard/
+diff --git a/.waggle/control/WAGGLE.md b/.waggle/control/WAGGLE.md
+new file mode 100644
+index 0000000..f89aefb
+--- /dev/null
++++ b/.waggle/control/WAGGLE.md
+@@ -0,0 +1,26 @@
++<!-- SPDX-License-Identifier: MIT-0 -->
++# WAGGLE.md: Hive Architecture and Boundary Map
++
++> **Hardcoded Tier 3 File:** changes to `.waggle/control/**` need Head Keeper approval.
++
++## 1. Repository Overview
++- **Profile:** `cli`
++- **Delivery Mode:** `installed`
++- **Comb Mode:** `direct`
++
++## 2. Module Boundaries (Directory Leases)
++Define the top-level modules Foragers may lease:
++- `cmd/waggle/`: Operator CLI entrypoint
++- `internal/comb/`: Unified Git ref `CombBackend` implementation
++- `internal/config/`: Parses `.waggle/control/config.yaml` into typed options (T-004)
++- `internal/decisions/`: Append-only `DECISIONS.md` writer behind `waggle decide` (T-006)
++- `internal/forge/`: `Forge` interface, `none` and GitHub adapters, `waggle doctor` probes (T-018)
++- `internal/layout/`: Repo-relative Waggle path constants (T-011)
++- `internal/runtime/`: `AgentRuntime` adapters and token cap monitors
++- `internal/scaffold/`: `waggle init` embedded templates
++- `internal/usage/`: Token and cost ledger reader behind `waggle status` (T-022)
++
++## 3. Build and Verification Commands
++- **Build:** `go build ./...`
++- **Test:** `go test -race ./...`
++- **Vet:** `go vet ./...`
+diff --git a/.waggle/config.yaml b/.waggle/control/config.yaml
+similarity index 50%
+rename from .waggle/config.yaml
+rename to .waggle/control/config.yaml
+index a1b5fd4..a013f4f 100644
+--- a/.waggle/config.yaml
++++ b/.waggle/control/config.yaml
+@@ -1,9 +1,13 @@
+ # SPDX-License-Identifier: MIT-0
+ # Waggle Hive Configuration (RFC-0003 v0.1)
+-# Protected Tier 3 paths (.waggle/**, WAGGLE.md, .devcontainer/**, .github/workflows/**)
+-# and Tier 2 minimum steering paths (DECISIONS.md, ROADMAP.md, WORKPLAN.md) are hardcoded.
++# Protected Tier 3 paths (.waggle/** except .waggle/hive/**, .github/workflows/**,
++# .gitlab-ci.yml, .devcontainer/**) and Tier 2 minimum steering paths
++# (.waggle/hive/**, CLAUDE.md, AGENTS.md) are hardcoded.
+ version: 1
+ 
++waggle:
++  pin: b4f2221 # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
++
+ hive:
+   profile: cli
+   delivery: installed # "installed" (merge to local main) | "hosted" (merge deploys)
+@@ -11,11 +15,11 @@ hive:
+ forge:
+   provider: github
+   comb_mode: direct # "direct" (git push refs) | "relay" (GitHub Action comment relay)
+-  merge_strategy: native_queue
++  merge_strategy: up_to_date # "up_to_date" (branch must be current with main before merge) | "native_queue" (opt in where the plan supports a merge queue)
+ 
+ daemon:
+-  socket_path: .waggle/run.sock
+-  derived_workplan: WORKPLAN.md
++  socket_path: .waggle/control/run.sock
++  derived_workplan: .waggle/hive/WORKPLAN.md
+ 
+ runtimes:
+   default: claude-code
+diff --git a/.devcontainer/devcontainer.json b/.waggle/control/devcontainer.json
+similarity index 78%
+rename from .devcontainer/devcontainer.json
+rename to .waggle/control/devcontainer.json
+index 7a8fae3..e83dc80 100644
+--- a/.devcontainer/devcontainer.json
++++ b/.waggle/control/devcontainer.json
+@@ -7,6 +7,6 @@
+   ],
+   "remoteEnv": {
+     "WAGGLE_CELL": "1",
+-    "WAGGLE_SOCKET": "/workspace/.waggle/run.sock"
++    "WAGGLE_SOCKET": "/workspace/.waggle/control/run.sock"
+   }
+ }
+diff --git a/.waggle/roles/architect.md b/.waggle/control/roles/architect.md
+similarity index 59%
+rename from .waggle/roles/architect.md
+rename to .waggle/control/roles/architect.md
+index b92c1c0..cfdb823 100644
+--- a/.waggle/roles/architect.md
++++ b/.waggle/control/roles/architect.md
+@@ -2,10 +2,10 @@
+ # Role: Architect (Planning Worker)
+ 
+ - **Runs As:** `worker` (Main checkout)
+-- **Owns:** `ROADMAP.md`, `docs/specs/**`, `docs/tasks/T-<id>.md`, Light vs. Full gate classification.
++- **Owns:** `.waggle/hive/ROADMAP.md`, `.waggle/hive/specs/**`, `.waggle/hive/tasks/T-<id>.md`, Light vs. Full gate classification.
+ - **Never:** Write feature implementation code, talk directly to the Keeper, or downgrade Tier 2/Tier 3 protected paths to Light gates.
+ 
+ ## Task Brief Contract
+-1. Every task gets one standalone brief at `docs/tasks/T-<id>.md` under 400 lines.
++1. Every task gets one standalone brief at `.waggle/hive/tasks/T-<id>.md` under 400 lines.
+ 2. Specify explicit directory leases (or function/line-range regions within a single local batch).
+-3. Classify as `full` gate if the task exceeds ~150 lines or touches schemas, auth, shared modules, dependencies, or steering docs (`DECISIONS.md`, `ROADMAP.md`, `WORKPLAN.md`). Otherwise classify as `light`.
++3. Classify as `full` gate if the task exceeds ~150 lines or touches schemas, auth, shared modules, dependencies, or steering docs (`.waggle/hive/DECISIONS.md`, `.waggle/hive/ROADMAP.md`, `.waggle/hive/WORKPLAN.md`). Otherwise classify as `light`.
+diff --git a/.waggle/control/roles/forager.md b/.waggle/control/roles/forager.md
+new file mode 100644
+index 0000000..f26e51e
+--- /dev/null
++++ b/.waggle/control/roles/forager.md
+@@ -0,0 +1,11 @@
++<!-- SPDX-License-Identifier: MIT-0 -->
++# Role: Forager (Implementation Worker)
++
++- **Runs As:** `worker` (Cell with `ro` root and `rw` bind mounts on leased directories)
++- **Owns:** Implementing exactly one task from `.waggle/hive/tasks/T-<id>.md` within its leased directories, running local tests, and self-reviewing its diff.
++- **Never:** Touch files outside its lease, read `.waggle/hive/WORKPLAN.md` or the full backlog, or hold host credentials.
++
++## Completion Contract
++1. Read only `.waggle/control/WAGGLE.md`, your assigned `.waggle/hive/tasks/T-<id>.md` brief, and caller interfaces needed for your lease.
++2. Prefix all commit subjects with `T-<id>:`.
++3. Verify all criteria in the brief pass locally before emitting `worker_done`.
+diff --git a/.waggle/roles/guard.md b/.waggle/control/roles/guard.md
+similarity index 77%
+rename from .waggle/roles/guard.md
+rename to .waggle/control/roles/guard.md
+index d71fd80..d1b61a5 100644
+--- a/.waggle/roles/guard.md
++++ b/.waggle/control/roles/guard.md
+@@ -2,10 +2,10 @@
+ # Role: Guard (Cross-Model Verification & Review Worker)
+ 
+ - **Runs As:** `worker` (Read-only verification Cell, cross-model)
+-- **Owns:** `docs/reviews/T-<id>.md`, verification evidence in `docs/media/T-<id>/`, and the Intent Packet.
++- **Owns:** `.waggle/hive/reviews/T-<id>.md`, verification evidence in `.waggle/hive/media/T-<id>/`, and the Intent Packet.
+ - **Never:** Fix bugs itself (route `must-fix` back to the Forager) or invent hypothetical over-engineering requirements.
+ 
+-## Output Contract (`docs/reviews/T-<id>.md`)
++## Output Contract (`.waggle/hive/reviews/T-<id>.md`)
+ 1. `Verdict: pass` or `Verdict: must-fix`
+ 2. `Risk-Tier: 0 | 1 | 2 | 3`
+ 3. **Intent Summary:** A concise 1-paragraph summary of what changed, why, and blast radius for the Keeper.
+diff --git a/.waggle/roles/queen.md b/.waggle/control/roles/queen.md
+similarity index 80%
+rename from .waggle/roles/queen.md
+rename to .waggle/control/roles/queen.md
+index d1f17e2..7507e2e 100644
+--- a/.waggle/roles/queen.md
++++ b/.waggle/control/roles/queen.md
+@@ -2,8 +2,8 @@
+ # Role: Queen (Entry Session)
+ 
+ - **Runs As:** `session` (Main checkout)
+-- **Owns:** Talking to the Keeper, surfacing `AskUserQuestion` decision cards, relaying decisions to `waggled` over `.waggle/run.sock`.
+-- **Never:** Wait on workers, write feature code or specs, edit `DECISIONS.md`, or lower a verification gate.
++- **Owns:** Talking to the Keeper, surfacing `AskUserQuestion` decision cards, relaying decisions to `waggled` over `.waggle/control/run.sock`.
++- **Never:** Wait on workers, write feature code or specs, edit `.waggle/hive/DECISIONS.md`, or lower a verification gate.
+ 
+ ## Escalation Rules
+ 1. Only ask the Keeper via structured `AskUserQuestion` cards (max 4 options, recommended option first, explicit cost and reversibility).
+diff --git a/.waggle/roles/scout.md b/.waggle/control/roles/scout.md
+similarity index 100%
+rename from .waggle/roles/scout.md
+rename to .waggle/control/roles/scout.md
+diff --git a/.waggle/roster.json b/.waggle/control/roster.json
+similarity index 76%
+rename from .waggle/roster.json
+rename to .waggle/control/roster.json
+index ba08359..117647a 100644
+--- a/.waggle/roster.json
++++ b/.waggle/control/roster.json
+@@ -10,14 +10,14 @@
+       "workspace": "main",
+       "purpose": "Single conversational interface for the Keeper; surfaces AskUserQuestion decision cards.",
+       "owns": [],
+-      "never": ["wait on workers", "write feature code or specs", "edit DECISIONS.md", "lower a gate"]
++      "never": ["wait on workers", "write feature code or specs", "edit .waggle/hive/DECISIONS.md", "lower a gate"]
+     },
+     {
+       "id": "architect",
+       "runs": "worker",
+       "workspace": "main",
+       "purpose": "Breaks down goals into <400-line task briefs with directory leases and Light/Full gate tags.",
+-      "owns": ["ROADMAP.md", "docs/specs/**", "docs/tasks/**"],
++      "owns": [".waggle/hive/ROADMAP.md", ".waggle/hive/specs/**", ".waggle/hive/tasks/**"],
+       "never": ["write feature implementation code", "talk directly to the Keeper"]
+     },
+     {
+@@ -34,9 +34,9 @@
+       "runs": "worker",
+       "workspace": "cell-rw-lease",
+       "allow_unattended": false,
+-      "purpose": "Implements one task from its brief (docs/tasks/T-<id>.md) inside leased directories.",
++      "purpose": "Implements one task from its brief (.waggle/hive/tasks/T-<id>.md) inside leased directories.",
+       "owns": ["<leased-directories>"],
+-      "never": ["touch files outside lease", "read full WORKPLAN.md or backlog", "hold host credentials"]
++      "never": ["touch files outside lease", "read full .waggle/hive/WORKPLAN.md or backlog", "hold host credentials"]
+     },
+     {
+       "id": "guard",
+@@ -44,7 +44,7 @@
+       "workspace": "cell-ro",
+       "require_cross_model": true,
+       "purpose": "Verifies acceptance criteria, records evidence, and outputs Verdict + Intent Packet + Risk Tier.",
+-      "owns": ["docs/reviews/**", "docs/media/**"],
++      "owns": [".waggle/hive/reviews/**", ".waggle/hive/media/**"],
+       "never": ["fix bugs itself", "invent hypothetical nitpicks"]
+     }
+   ]
+diff --git a/.waggle/roles/forager.md b/.waggle/roles/forager.md
+deleted file mode 100644
+index 274bbb3..0000000
+--- a/.waggle/roles/forager.md
++++ /dev/null
+@@ -1,11 +0,0 @@
+-<!-- SPDX-License-Identifier: MIT-0 -->
+-# Role: Forager (Implementation Worker)
+-
+-- **Runs As:** `worker` (Cell with `ro` root and `rw` bind mounts on leased directories)
+-- **Owns:** Implementing exactly one task from `docs/tasks/T-<id>.md` within its leased directories, running local tests, and self-reviewing its diff.
+-- **Never:** Touch files outside its lease, read `WORKPLAN.md` or the full backlog, or hold host credentials.
+-
+-## Completion Contract
+-1. Read only `WAGGLE.md`, your assigned `docs/tasks/T-<id>.md` brief, and caller interfaces needed for your lease.
+-2. Prefix all commit subjects with `T-<id>:`.
+-3. Verify all criteria in the brief pass locally before emitting `worker_done`.
+diff --git a/WAGGLE.md b/WAGGLE.md
+deleted file mode 100644
+index 9e109ca..0000000
+--- a/WAGGLE.md
++++ /dev/null
+@@ -1,21 +0,0 @@
+-<!-- SPDX-License-Identifier: MIT-0 -->
+-# WAGGLE.md — Hive Architecture & Boundary Map
+-
+-> **Hardcoded Tier 3 File:** Modifications to `WAGGLE.md` or `.waggle/**` require Master Keeper approval.
+-
+-## 1. Repository Overview
+-- **Profile:** `cli`
+-- **Delivery Mode:** `installed`
+-- **Comb Mode:** `direct`
+-
+-## 2. Module Boundaries (Directory Leases)
+-Define the top-level modules Foragers may lease:
+-- `cmd/waggle/` — Operator CLI entrypoint
+-- `internal/comb/` — Unified Git ref `CombBackend` implementation
+-- `internal/runtime/` — `AgentRuntime` adapters and token cap monitors
+-- `internal/scaffold/` — `waggle init` embedded templates
+-
+-## 3. Build & Verification Commands
+-- **Build:** `go build ./...`
+-- **Test:** `go test -race ./...`
+-- **Vet:** `go vet ./...`

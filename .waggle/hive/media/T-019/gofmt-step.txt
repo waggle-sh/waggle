@@ -1,0 +1,1 @@
+gofmt step exit 0, no output
