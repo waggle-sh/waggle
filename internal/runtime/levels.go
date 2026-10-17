@@ -10,7 +10,7 @@ import (
 // a model. The zero value is invalid.
 type Level int
 
-// The three levels, lowest to highest: LevelFast for cheap, quick scouting
+// The three levels, lowest to highest: LevelFast for cheap, quick triage
 // work, LevelStandard for implementation, LevelFrontier for the most capable model.
 const (
 	LevelFast     Level = 1
