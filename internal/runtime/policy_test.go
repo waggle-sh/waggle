@@ -15,11 +15,11 @@ func testPolicy() Policy {
 			Primary: map[Level]string{LevelFrontier: "opus", LevelStandard: "sonnet", LevelFast: "haiku"},
 		},
 		Minimums: map[string]Level{
-			"architect": LevelFrontier,
-			"queen":     LevelFrontier,
-			"forager":   LevelStandard,
-			"guard":     LevelStandard,
-			"scout":     LevelFast,
+			"scout":   LevelFrontier,
+			"queen":   LevelFrontier,
+			"builder": LevelStandard,
+			"guard":   LevelStandard,
+			"forager": LevelFast,
 		},
 	}
 }
@@ -87,11 +87,11 @@ func TestValidate(t *testing.T) {
 		mutate   func(*Policy)
 		sentinel error
 	}{
-		{"bad minimum", func(p *Policy) { p.Minimums["scout"] = 0 }, ErrInvalidLevel},
+		{"bad minimum", func(p *Policy) { p.Minimums["forager"] = 0 }, ErrInvalidLevel},
 		{"missing primary", func(p *Policy) { delete(p.Models.Primary, LevelFast) }, ErrLevelUnmapped},
 		{"alternate equals primary", func(p *Policy) { p.Models.Alternate = map[Level]string{LevelFrontier: "opus"} }, ErrInvalidLevel},
 		{"no guard", func(p *Policy) { delete(p.Minimums, "guard") }, ErrUnknownRole},
-		{"no forager", func(p *Policy) { delete(p.Minimums, "forager") }, ErrUnknownRole},
+		{"no builder", func(p *Policy) { delete(p.Minimums, "builder") }, ErrUnknownRole},
 		{"waggled in roster", func(p *Policy) { p.Minimums["waggled"] = LevelFast }, ErrNoModelRole},
 	}
 	for _, tc := range cases {
@@ -103,7 +103,7 @@ func TestValidate(t *testing.T) {
 
 func TestDefaultMinimums(t *testing.T) {
 	p := testPolicy()
-	for role, want := range map[string]string{"architect": "opus", "queen": "opus", "forager": "sonnet", "scout": "haiku"} {
+	for role, want := range map[string]string{"scout": "opus", "queen": "opus", "builder": "sonnet", "forager": "haiku"} {
 		sel := mustResolve(t, p, role, nil, nil)
 		if sel.Model != want || sel.Level != p.Minimums[role] || sel.SteppedUp {
 			t.Errorf("%s: %+v; want model %s at roster minimum", role, sel, want)
@@ -115,7 +115,7 @@ func TestGuardCrossModel(t *testing.T) {
 	p := testPolicy()
 	sel := mustResolve(t, p, "guard", &TaskContext{TaskID: "T-1"}, nil)
 	if sel.Model != "opus" || sel.Level != LevelStandard {
-		t.Errorf("guard with forager at standard: %+v; want opus (walked up from the shared standard model)", sel)
+		t.Errorf("guard with builder at standard: %+v; want opus (walked up from the shared standard model)", sel)
 	}
 
 	task := &TaskContext{TaskID: "T-1", GuardMustFix: 2}
@@ -125,46 +125,46 @@ func TestGuardCrossModel(t *testing.T) {
 	p.Models.Alternate = map[Level]string{LevelFrontier: "other-frontier"}
 	sel = mustResolve(t, p, "guard", task, nil)
 	if sel.Model != "other-frontier" || sel.Level != LevelFrontier {
-		t.Errorf("guard against stepped-up forager: %+v; want the frontier alternate", sel)
+		t.Errorf("guard against stepped-up builder: %+v; want the frontier alternate", sel)
 	}
 }
 
 func TestForagerStepUp(t *testing.T) {
 	p := testPolicy()
 	for mustFix, want := range map[int]Level{0: LevelStandard, 1: LevelStandard, 2: LevelFrontier, 5: LevelFrontier} {
-		sel := mustResolve(t, p, "forager", &TaskContext{GuardMustFix: mustFix}, nil)
+		sel := mustResolve(t, p, "builder", &TaskContext{GuardMustFix: mustFix}, nil)
 		if sel.Level != want || sel.SteppedUp != (want == LevelFrontier) {
 			t.Errorf("GuardMustFix %d: %+v; want level %s", mustFix, sel, want)
 		}
 	}
-	p.Minimums["forager"] = LevelFrontier
-	sel := mustResolve(t, p, "forager", &TaskContext{GuardMustFix: 4}, nil)
+	p.Minimums["builder"] = LevelFrontier
+	sel := mustResolve(t, p, "builder", &TaskContext{GuardMustFix: 4}, nil)
 	if sel.Level != LevelFrontier || sel.SteppedUp {
-		t.Errorf("forager already at frontier: %+v; want frontier without step-up", sel)
+		t.Errorf("builder already at frontier: %+v; want frontier without step-up", sel)
 	}
 }
 
 func TestForagerOverride(t *testing.T) {
 	p := testPolicy()
 	override := func(id int) *TaskContext {
-		return &TaskContext{TaskID: "T-2", Overrides: map[string]Override{"forager": {Level: LevelFast, DecisionID: id}}}
+		return &TaskContext{TaskID: "T-2", Overrides: map[string]Override{"builder": {Level: LevelFast, DecisionID: id}}}
 	}
-	sel := mustResolve(t, p, "forager", override(31), recorded(31))
+	sel := mustResolve(t, p, "builder", override(31), recorded(31))
 	if sel.Model != "haiku" || sel.Level != LevelFast {
 		t.Errorf("recorded override to fast: %+v", sel)
 	}
-	sel = mustResolve(t, p, "forager", &TaskContext{GuardMustFix: 2, Overrides: override(31).Overrides}, recorded(31))
+	sel = mustResolve(t, p, "builder", &TaskContext{GuardMustFix: 2, Overrides: override(31).Overrides}, recorded(31))
 	if sel.Level != LevelStandard || !sel.SteppedUp {
 		t.Errorf("override then step-up: %+v; want standard, stepped up", sel)
 	}
 
-	_, err := p.Resolve("forager", override(31), nil)
-	wantErr(t, err, ErrOverrideUnrecorded, "forager", "T-2", "fast", "D-31")
-	_, err = p.Resolve("forager", override(0), recorded(31))
+	_, err := p.Resolve("builder", override(31), nil)
+	wantErr(t, err, ErrOverrideUnrecorded, "builder", "T-2", "fast", "D-31")
+	_, err = p.Resolve("builder", override(0), recorded(31))
 	wantErr(t, err, ErrOverrideUnrecorded)
-	_, err = p.Resolve("forager", override(99), recorded(31))
+	_, err = p.Resolve("builder", override(99), recorded(31))
 	wantErr(t, err, ErrOverrideUnrecorded)
-	_, err = p.Resolve("forager", &TaskContext{Overrides: map[string]Override{"forager": {DecisionID: 31}}}, recorded(31))
+	_, err = p.Resolve("builder", &TaskContext{Overrides: map[string]Override{"builder": {DecisionID: 31}}}, recorded(31))
 	wantErr(t, err, ErrInvalidLevel)
 }
 
@@ -178,15 +178,15 @@ func TestGuardFloor(t *testing.T) {
 		wantErr(t, err, ErrGuardFloor, "guard", "T-3", "fast", "standard")
 	}
 	sel := mustResolve(t, p, "guard", task(tier(comb.Tier1Isolated)), recorded(7))
-	forager := mustResolve(t, p, "forager", task(tier(comb.Tier1Isolated)), recorded(7))
-	if sel.Level != LevelFast || sel.Model == forager.Model || sel.Model != "haiku" {
-		t.Errorf("guard override on tier 1: %+v vs forager %+v", sel, forager)
+	builder := mustResolve(t, p, "builder", task(tier(comb.Tier1Isolated)), recorded(7))
+	if sel.Level != LevelFast || sel.Model == builder.Model || sel.Model != "haiku" {
+		t.Errorf("guard override on tier 1: %+v vs builder %+v", sel, builder)
 	}
 	_, err := p.Resolve("guard", task(tier(comb.Tier1Isolated)), nil)
 	wantErr(t, err, ErrOverrideUnrecorded)
 
 	// An override above the floor is fine on any tier, and the guard still
-	// dodges the forager's model.
+	// dodges the builder's model.
 	up := &TaskContext{Tier: tier(comb.Tier3ControlPlane), Overrides: map[string]Override{"guard": {Level: LevelFrontier, DecisionID: 7}}}
 	if sel := mustResolve(t, p, "guard", up, recorded(7)); sel.Model != "opus" {
 		t.Errorf("guard override up: %+v", sel)
@@ -201,10 +201,10 @@ func TestResolveErrors(t *testing.T) {
 	wantErr(t, err, ErrUnknownRole, "weaver")
 
 	delete(p.Models.Primary, LevelFast)
-	_, err = p.Resolve("scout", &TaskContext{TaskID: "T-4"}, nil)
-	wantErr(t, err, ErrLevelUnmapped, "scout", "T-4", "fast", "runtimes.adapters.claude-code.levels.fast")
-	_, err = p.Resolve("guard", &TaskContext{Overrides: map[string]Override{"forager": {Level: LevelFast, DecisionID: 1}}}, recorded(1))
-	wantErr(t, err, ErrLevelUnmapped, "forager")
+	_, err = p.Resolve("forager", &TaskContext{TaskID: "T-4"}, nil)
+	wantErr(t, err, ErrLevelUnmapped, "forager", "T-4", "fast", "runtimes.adapters.claude-code.levels.fast")
+	_, err = p.Resolve("guard", &TaskContext{Overrides: map[string]Override{"builder": {Level: LevelFast, DecisionID: 1}}}, recorded(1))
+	wantErr(t, err, ErrLevelUnmapped, "builder")
 }
 
 func TestCountMustFix(t *testing.T) {
