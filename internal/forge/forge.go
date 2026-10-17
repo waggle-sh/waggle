@@ -83,7 +83,7 @@ var (
 )
 
 // New returns the forge for provider ("github" or "none", from forge.provider
-// in config). The github adapter is not built yet and returns ErrUnsupported.
+// in config). github reads Remote's URL and decides auth here, once.
 func New(provider string, opt Options) (Forge, error) {
 	if strings.TrimSpace(opt.RepoDir) == "" {
 		return nil, errors.New("forge: Options.RepoDir is required")
@@ -95,7 +95,11 @@ func New(provider string, opt Options) (Forge, error) {
 	case "none":
 		return &none{repoDir: opt.RepoDir, remote: opt.Remote}, nil
 	case "github":
-		return nil, fmt.Errorf("forge: new github: not built yet: %w", ErrUnsupported)
+		g, err := newGitHub(opt, githubAPI)
+		if err != nil {
+			return nil, err // not a typed nil in the interface
+		}
+		return g, nil
 	}
 	return nil, fmt.Errorf("forge: unknown provider %q (use github or none)", provider)
 }
