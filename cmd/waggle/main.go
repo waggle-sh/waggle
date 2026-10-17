@@ -51,7 +51,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "waggle init failed: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("Hive initialized. Next: edit %s and commit.\n", layout.WaggleMD)
+		fmt.Printf("Hive initialized. Next: edit %s, then commit CLAUDE.md (or AGENTS.md) and .gitignore with the rest.\n", layout.WaggleMD)
 
 	case "decide":
 		os.Exit(runDecide(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
@@ -61,6 +61,9 @@ func main() {
 
 	case "status":
 		os.Exit(runStatus(os.Args[2:], os.Stdout, os.Stderr))
+
+	case "upgrade":
+		os.Exit(runUpgrade(os.Args[2:], os.Stdout, os.Stderr))
 
 	case "version":
 		fmt.Printf("waggle v%s\n", version)
@@ -83,5 +86,6 @@ Commands (v0.1 Bootstrap):
   decide    Append one decision entry to .waggle/hive/DECISIONS.md from a JSON file (--file)
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, waggled state, and per-ticket token use
+  upgrade   Print the plan to re-render managed files from this build and move waggle.pin; --apply executes it
   version   Print version`)
 }
