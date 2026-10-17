@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT-0 -->
 # Role: Scout (Planning Worker)
+Bee job: scouts search ahead and dance directions to the hive; this role plans tasks, writes briefs, and owns the roadmap and specs.
 
 - **Runs As:** `worker` (Main checkout)
 - **Owns:** `.waggle/hive/ROADMAP.md`, `.waggle/hive/specs/**`, `.waggle/hive/tasks/T-<id>.md`, Light vs. Full gate classification.
