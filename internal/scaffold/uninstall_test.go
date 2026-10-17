@@ -3,6 +3,7 @@ package scaffold
 import (
 	"bytes"
 	"errors"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,6 +40,10 @@ func newRepo(t *testing.T) string {
 	}
 	dir := t.TempDir()
 	git(t, dir, "init", "-q")
+	// No background maintenance: a helper creating and removing
+	// .git/objects/maintenance.lock mid-test races the file walks below.
+	git(t, dir, "config", "gc.auto", "0")
+	git(t, dir, "config", "maintenance.auto", "0")
 	return dir
 }
 
@@ -48,16 +53,43 @@ func commitAll(t *testing.T, dir, msg string) {
 	git(t, dir, "commit", "-q", "--allow-empty", "-m", msg)
 }
 
-// project is snapshot without the .git directory.
+// project snapshots the work tree without descending into .git/, whose
+// contents are git's business and change under its own helpers.
 func project(t *testing.T, dir string) map[string]string {
 	t.Helper()
-	m := snapshot(t, dir)
-	for rel := range m {
-		if rel == ".git/" || strings.HasPrefix(rel, ".git/") {
-			delete(m, rel)
+	m := map[string]string{}
+	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil || p == dir {
+			return err
 		}
+		rel := filepath.ToSlash(p[len(dir)+1:])
+		if d.IsDir() {
+			if rel == ".git" {
+				return fs.SkipDir
+			}
+			if ents, _ := os.ReadDir(p); len(ents) == 0 {
+				m[rel+"/"] = ""
+			}
+			return nil
+		}
+		m[rel] = get(t, dir, rel)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 	return m
+}
+
+// repoState describes the repository through git: HEAD, every ref, and the
+// porcelain status (untracked files listed one per line).
+func repoState(t *testing.T, dir string) string {
+	t.Helper()
+	return strings.Join([]string{
+		git(t, dir, "rev-parse", "HEAD"),
+		git(t, dir, "for-each-ref", "--format=%(refname) %(objectname)"),
+		git(t, dir, "status", "--porcelain=v1", "--untracked-files=all"),
+	}, "\n")
 }
 
 func uninstall(t *testing.T, dir string, apply bool) (string, error) {
@@ -78,14 +110,17 @@ func installed(t *testing.T, dir, rt string) {
 func TestUninstallDryRunChangesNothing(t *testing.T) {
 	dir := newRepo(t)
 	installed(t, dir, "claude-code")
-	before := snapshot(t, dir)
+	before, state := project(t, dir), repoState(t, dir)
 
 	out, err := uninstall(t, dir, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if after := snapshot(t, dir); !reflect.DeepEqual(before, after) {
+	if after := project(t, dir); !reflect.DeepEqual(before, after) {
 		t.Error("dry run changed files")
+	}
+	if got := repoState(t, dir); got != state {
+		t.Errorf("dry run changed the repository:\n got %s\nwant %s", got, state)
 	}
 	for _, want := range []string{
 		"[remove] .waggle/ (",
@@ -144,8 +179,12 @@ func TestUninstallApplyRestoresProjectFiles(t *testing.T) {
 	put(t, dir, ".claude/agents/foo.md", "mine\n")
 	put(t, dir, ".github/workflows/ci.yml", "name: ci\n")
 	put(t, dir, "src/main.go", "package main\n")
-	commitAll(t, dir, "project")
+	// The legacy block ignores CLAUDE.md and .claude/, so force-add to give
+	// the pre-init commit the whole project.
+	git(t, dir, "add", "-A", "-f")
+	git(t, dir, "commit", "-q", "-m", "project")
 	before := project(t, dir)
+	preInit := git(t, dir, "rev-parse", "HEAD")
 
 	installed(t, dir, "claude-code")
 	put(t, dir, ".waggle/hive/tasks/T-1.md", "brief\n")
@@ -161,6 +200,17 @@ func TestUninstallApplyRestoresProjectFiles(t *testing.T) {
 	before[".gitignore"] = "node_modules/\ndist/\n"
 	if after := project(t, dir); !reflect.DeepEqual(before, after) {
 		t.Errorf("project files:\n got %v\nwant %v", after, before)
+	}
+	// Section 12.4: the work tree is back at the pre-init commit (.gitignore
+	// aside, see above) with nothing untracked, and no commit was made.
+	if diff := git(t, dir, "diff", "--no-renames", "--name-only", preInit); diff != ".gitignore" {
+		t.Errorf("work tree differs from the pre-init commit:\n%s", diff)
+	}
+	if status := git(t, dir, "status", "--porcelain=v1", "--untracked-files=all"); strings.Contains(status, "??") {
+		t.Errorf("untracked files left:\n%s", status)
+	}
+	if git(t, dir, "log", "--format=%s", "-1") != "hive record" {
+		t.Error("uninstall committed")
 	}
 	for _, want := range []string{
 		"[edit]   CLAUDE.md (waggle block removed)",
@@ -273,7 +323,7 @@ func TestUninstallRefusesWithoutWriting(t *testing.T) {
 			if name == "subdirectory" {
 				runDir = filepath.Join(dir, "src")
 			}
-			before := snapshot(t, dir)
+			before, state := project(t, dir), repoState(t, dir)
 			var out bytes.Buffer
 			err := Uninstall(UninstallOptions{Dir: runDir, Apply: true, Out: &out, GitEnv: gitEnv})
 			if !errors.Is(err, ErrRefused) {
@@ -285,8 +335,11 @@ func TestUninstallRefusesWithoutWriting(t *testing.T) {
 			if c.wantMsg != "" && !strings.Contains(err.Error(), c.wantMsg) {
 				t.Errorf("err = %v; want substring %q", err, c.wantMsg)
 			}
-			if after := snapshot(t, dir); !reflect.DeepEqual(before, after) {
+			if after := project(t, dir); !reflect.DeepEqual(before, after) {
 				t.Error("refused uninstall changed files")
+			}
+			if got := repoState(t, dir); got != state {
+				t.Errorf("refused uninstall changed the repository:\n got %s\nwant %s", got, state)
 			}
 		})
 	}
