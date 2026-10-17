@@ -66,7 +66,7 @@ type TaskContext struct {
 }
 
 // Selection is a resolved model choice for one role on one task. Only Resolve
-// produces a usable Selection; a zero or hand-built value is refused by Run.
+// produces a usable Selection; a zero or hand-built value is refused by Prepare.
 type Selection struct {
 	Role, Adapter, Model string
 	Level                Level

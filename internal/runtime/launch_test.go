@@ -1,0 +1,279 @@
+package runtime
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+)
+
+// fullHelp lists every token Verify looks for, as the pinned Claude Code does.
+const fullHelp = "--print --output-format stream-json --verbose --model --strict-mcp-config " +
+	"--setting-sources --settings --permission-mode dontAsk --tools --append-system-prompt --restricted"
+
+// fakeClaude installs an executable `claude` shell script on a temp PATH, so
+// no test ever runs the real binary.
+func fakeClaude(t *testing.T, script string) {
+	t.Helper()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "claude"), "#!/bin/sh\n"+script)
+	if err := os.Chmod(filepath.Join(dir, "claude"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+":/usr/bin:/bin")
+}
+
+func verifiedAdapter(t *testing.T, cfg AdapterConfig) *ClaudeAdapter {
+	t.Helper()
+	fakeClaude(t, "echo '"+fullHelp+"'\n")
+	if cfg.NudgeTokens == 0 {
+		cfg.NudgeTokens, cfg.MaxTokens = 200000, 300000
+	}
+	a := NewClaudeAdapter(cfg)
+	if err := a.Verify(context.Background()); err != nil {
+		t.Fatalf("Verify: %v", err)
+	}
+	return a
+}
+
+func testLaunch(t *testing.T, task string) (Invocation, ContextSettings) {
+	t.Helper()
+	s, err := ContextPolicy{Default: ProfileLean}.Settings("builder", &TaskContext{TaskID: task}, 200000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sel := mustResolve(t, testPolicy(), "builder", nil, nil)
+	return Invocation{Role: "builder", TaskID: task, Selection: sel, Commands: []string{"go build", "go test"}}, s
+}
+
+func mustPrepare(t *testing.T, a *ClaudeAdapter, task string, variable []byte) LaunchSpec {
+	t.Helper()
+	inv, s := testLaunch(t, task)
+	spec, err := a.Prepare(inv, s, []byte("# Role\n\n# WAGGLE.md\n"), variable)
+	if err != nil {
+		t.Fatalf("Prepare: %v", err)
+	}
+	return spec
+}
+
+func argValue(argv []string, flag string) (string, bool) {
+	for _, a := range argv {
+		if v, ok := strings.CutPrefix(a, flag+"="); ok {
+			return v, true
+		}
+	}
+	return "", false
+}
+
+// Test 1: print mode, stream-json, model, strict MCP, max turns, isolation
+// flags and settings; never a resume flag; every refused default arg fails.
+func TestPrepareArgv(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug", "-d"}})
+	argv := mustPrepare(t, a, "T-5", []byte("brief")).Argv
+	if argv[0] != "claude" || argv[len(argv)-1] != "-d" {
+		t.Errorf("argv must start with the binary and end with default_args: %q", argv)
+	}
+	for _, want := range []string{"--print", "--output-format=stream-json", "--verbose", "--model=sonnet",
+		"--setting-sources=", "--strict-mcp-config", "--restricted", "--permission-mode=dontAsk", "--max-turns=40",
+		"--tools=Bash,Edit,Glob,Grep,Read,Write"} {
+		if !slices.Contains(argv, want) {
+			t.Errorf("argv lacks %q: %q", want, argv)
+		}
+	}
+	for _, arg := range argv {
+		flag, _, _ := strings.Cut(arg, "=")
+		if slices.Contains([]string{"--continue", "-c", "--resume", "-r", "--session-id", "--dangerously-skip-permissions"}, flag) {
+			t.Errorf("argv carries %q", arg)
+		}
+	}
+	raw, _ := argValue(argv, "--settings")
+	var settings map[string]map[string]any
+	if err := json.Unmarshal([]byte(raw), &settings); err != nil {
+		t.Fatalf("settings JSON: %v", err)
+	}
+	if len(settings) != 1 || settings["permissions"]["defaultMode"] != "dontAsk" {
+		t.Errorf("settings must hold only permissions (no hooks): %s", raw)
+	}
+	for _, want := range []string{`"Bash(go test *)"`, `"Bash(git commit *)"`, `"Edit(./**)"`, `"Write(./**)"`} {
+		if !strings.Contains(raw, want) {
+			t.Errorf("settings lacks allow %s: %s", want, raw)
+		}
+	}
+	// Bare Edit and Write rules would allow writes outside the working directory.
+	for _, bare := range []string{`"Edit"`, `"Write"`} {
+		if strings.Contains(raw, bare) {
+			t.Errorf("settings carries unscoped %s: %s", bare, raw)
+		}
+	}
+	for _, want := range []string{`"Bash(git push *)"`, `"Bash(gh *)"`, `"Bash(curl *)"`, `"Bash(wget *)"`, `"Bash(ssh *)"`, `"WebFetch"`, `"WebSearch"`} {
+		if !strings.Contains(raw[strings.Index(raw, `"deny"`):], want) {
+			t.Errorf("settings lacks deny %s: %s", want, raw)
+		}
+	}
+
+	inv, s := testLaunch(t, "T-5")
+	for _, bad := range []string{"--continue", "-c", "--resume", "-r", "-rabc", "-pc", "-w", "--session-id=1",
+		"--fork-session", "--from-pr", "--teleport", "--max-turns=9999", "--model", "--mcp-config", "--print",
+		"-p", "--output-format", "--settings", "--setting-sources=user", "--permission-mode",
+		"--dangerously-skip-permissions", "--allowedTools", "--allowed-tools", "--disallowedTools",
+		"--tools", "--append-system-prompt", "--system-prompt", "--add-dir", "--plugin-dir", "--agents", "--",
+		"--effort=high", "--effort", "--fallback-model=opus", "--remote-control", "--environment=x", "--chrome",
+		"--ide", "high", "fix the bug", ""} {
+		a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug", bad}})
+		if _, err := a.Prepare(inv, s, nil, nil); !errors.Is(err, ErrRefusedArg) || !strings.Contains(err.Error(), bad) {
+			t.Errorf("default arg %q: err = %v; want ErrRefusedArg", bad, err)
+		}
+	}
+}
+
+func TestPrepareRefusesBadInputs(t *testing.T) {
+	inv, s := testLaunch(t, "T-5")
+	if _, err := NewClaudeAdapter(AdapterConfig{NudgeTokens: 200000, MaxTokens: 300000}).Prepare(inv, s, nil, nil); !errors.Is(err, ErrUnverified) {
+		t.Errorf("Prepare before Verify: %v; want ErrUnverified", err)
+	}
+	for _, cfg := range []AdapterConfig{{NudgeTokens: 300000, MaxTokens: 300000}, {NudgeTokens: 999, MaxTokens: 300000},
+		{NudgeTokens: 200000, MaxTokens: MaxNudgeTokens + 1}} {
+		if _, err := verifiedAdapter(t, cfg).Prepare(inv, s, nil, nil); !errors.Is(err, ErrAdapterConfig) {
+			t.Errorf("config %+v: %v; want ErrAdapterConfig", cfg, err)
+		}
+	}
+	a := verifiedAdapter(t, AdapterConfig{})
+	if _, err := a.Prepare(inv, ContextSettings{}, nil, nil); !errors.Is(err, ErrAdapterConfig) {
+		t.Errorf("zero settings: %v; want ErrAdapterConfig", err)
+	}
+	if _, err := a.Prepare(inv, s, bytes.Repeat([]byte("x"), MaxStablePrompt+1), nil); !errors.Is(err, ErrAdapterConfig) {
+		t.Errorf("oversized stable prompt: %v; want ErrAdapterConfig", err)
+	}
+	for _, cmd := range []string{"", " go test", "go  test", "go test *", "go test; rm -rf /", "go test && curl x",
+		"gh pr list", "curl", "wget x", "ssh host", "git push origin", "go test\nrm", "go $(id)", "Bash(x)"} {
+		bad := inv
+		bad.Commands = []string{cmd}
+		if _, err := a.Prepare(bad, s, nil, nil); !errors.Is(err, ErrAdapterConfig) {
+			t.Errorf("command %q: %v; want ErrAdapterConfig", cmd, err)
+		}
+	}
+	if _, err := (ContextPolicy{}).Settings("builder", nil, MaxNudgeTokens+1); !errors.Is(err, ErrInvalidNudgeTokens) {
+		t.Errorf("Settings over the nudge cap: %v", err)
+	}
+}
+
+// Test 2: a zero, hand-built or other-role Selection is ErrUnresolved.
+func TestPrepareRefusesUnresolvedSelection(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{})
+	_, s := testLaunch(t, "T-5")
+	guard := mustResolve(t, testPolicy(), "guard", nil, nil)
+	invs := []Invocation{
+		{Role: "builder", TaskID: "T-5"},
+		{Role: "builder", TaskID: "T-5", Selection: guard},
+		{Role: "builder", TaskID: "T-5", Selection: Selection{Role: "builder", Model: "opus"}},
+	}
+	for _, inv := range invs {
+		_, err := a.Prepare(inv, s, nil, nil)
+		wantErr(t, err, ErrUnresolved, "builder", "T-5")
+	}
+}
+
+func TestVerify(t *testing.T) {
+	fakeClaude(t, "echo '--print --output-format stream-json --verbose --model'\n")
+	err := NewClaudeAdapter(AdapterConfig{}).Verify(context.Background())
+	wantErr(t, err, ErrUnverified, "--setting-sources", "--strict-mcp-config", "dontAsk", "--restricted")
+
+	fakeClaude(t, "exit 3\n")
+	wantErr(t, NewClaudeAdapter(AdapterConfig{}).Verify(context.Background()), ErrUnverified)
+}
+
+// Test 3: dropped variables never reach the worker; allowlisted ones and the
+// push tripwire do.
+func TestPrepareEnv(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{})
+	for _, k := range []string{"GITHUB_TOKEN", "GH_TOKEN", "SSH_AUTH_SOCK", "GIT_ASKPASS", "OP_SERVICE_ACCOUNT_TOKEN",
+		"AWS_SECRET_ACCESS_KEY", "FOO", "GIT_CONFIG_COUNT", "CLAUDE_CODE_DISABLE_CLAUDE_MDS"} {
+		t.Setenv(k, "secret-"+k)
+	}
+	t.Setenv("HOME", "/home/keeper")
+	t.Setenv("ANTHROPIC_API_KEY", "model-key")
+	env := mustPrepare(t, a, "T-5", nil).Env
+	joined := strings.Join(env, "\n")
+	if strings.Contains(joined, "secret-") {
+		t.Errorf("env carries a dropped variable:\n%s", joined)
+	}
+	for _, want := range []string{"HOME=/home/keeper", "ANTHROPIC_API_KEY=model-key", "GIT_TERMINAL_PROMPT=0",
+		"GIT_CONFIG_COUNT=3", "GIT_CONFIG_KEY_0=url.waggle-push-blocked:.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
+		"GIT_CONFIG_VALUE_1=ssh://", "GIT_CONFIG_VALUE_2=git@", "CLAUDE_CODE_DISABLE_CLAUDE_MDS=1",
+		"DISABLE_AUTO_COMPACT=1", "BASH_MAX_OUTPUT_LENGTH=10000", "MAX_THINKING_TOKENS=4000"} {
+		if !slices.Contains(env, want) {
+			t.Errorf("env lacks %q", want)
+		}
+	}
+	seen := map[string]bool{}
+	for _, kv := range env {
+		k, _, _ := strings.Cut(kv, "=")
+		if seen[k] {
+			t.Errorf("env sets %s twice", k)
+		}
+		seen[k] = true
+	}
+}
+
+// Test 4: argv and env do not depend on the task; the variable prompt is on stdin only.
+func TestPrepareStableAcrossTasks(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{})
+	one := mustPrepare(t, a, "T-5", []byte("brief five VARIABLE-5"))
+	two := mustPrepare(t, a, "T-6", []byte("brief six VARIABLE-6"))
+	if !slices.Equal(one.Argv, two.Argv) || !slices.Equal(one.Env, two.Env) {
+		t.Errorf("argv or env differ across tasks:\n%q\n%q", one.Argv, two.Argv)
+	}
+	if string(one.Stdin) != "brief five VARIABLE-5" || strings.Contains(strings.Join(one.Argv, " "), "VARIABLE") {
+		t.Errorf("variable prompt must be on stdin only: stdin %q", one.Stdin)
+	}
+	if v, _ := argValue(one.Argv, "--append-system-prompt"); v != "# Role\n\n# WAGGLE.md\n" {
+		t.Errorf("stable prompt = %q", v)
+	}
+}
+
+// AC7: the repo's Stop hook never runs in a worker. The fake binary follows
+// Claude Code's documented rule: project settings (and their hooks) load
+// unless --setting-sources leaves "project" out. The control run without the
+// flag proves the fake would have fired the hook.
+func TestLaunchSkipsRepoHooks(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{})
+	repo := t.TempDir()
+	marker := filepath.Join(t.TempDir(), "hook-ran")
+	writeFile(t, filepath.Join(repo, ".claude", "settings.json"),
+		`{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"sh .claude/hooks/handoff-check.sh"}]}]}}`)
+	writeFile(t, filepath.Join(repo, ".claude", "hooks", "handoff-check.sh"), "echo ran > \""+marker+"\"\n")
+	fakeClaude(t, `src=user,project,local
+for a in "$@"; do case "$a" in --setting-sources=*) src="${a#--setting-sources=}";; esac; done
+cat > /dev/null
+echo '{"type":"result","subtype":"success","is_error":false,"result":"ok","session_id":"s1"}'
+case ",$src," in *,project,*) [ -f .claude/settings.json ] && sh .claude/hooks/handoff-check.sh;; esac
+`)
+	spec := mustPrepare(t, a, "T-5", []byte("go"))
+	run := func(argv []string) RunResult {
+		cmd := exec.Command(argv[0], argv[1:]...)
+		cmd.Dir, cmd.Env, cmd.Stdin = repo, spec.Env, bytes.NewReader(spec.Stdin)
+		out, err := cmd.Output()
+		if err != nil {
+			t.Fatalf("fake claude: %v", err)
+		}
+		res, err := a.Collect(context.Background(), bytes.NewReader(out), Limits{MaxTokens: 300000}, func() {})
+		if err != nil || res.End != EndDone {
+			t.Fatalf("Collect = %+v, %v", res, err)
+		}
+		return res
+	}
+	run(spec.Argv)
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Fatal("repo Stop hook ran under the worker argv")
+	}
+	run(slices.DeleteFunc(slices.Clone(spec.Argv), func(s string) bool { return s == "--setting-sources=" }))
+	if _, err := os.Stat(marker); err != nil {
+		t.Fatal("control run without --setting-sources did not fire the hook; the test proves nothing")
+	}
+}

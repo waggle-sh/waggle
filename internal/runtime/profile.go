@@ -24,8 +24,8 @@ const InlineReadOnlyLines = 1500
 var (
 	// ErrInvalidProfile reports a profile word or value outside lean, balanced, thorough.
 	ErrInvalidProfile = errors.New("invalid context profile")
-	// ErrInvalidNudgeTokens reports an adapter nudge_tokens value under 1000.
-	ErrInvalidNudgeTokens = errors.New("nudge_tokens below 1000")
+	// ErrInvalidNudgeTokens reports an adapter nudge_tokens value under 1000 or over MaxNudgeTokens.
+	ErrInvalidNudgeTokens = errors.New("nudge_tokens out of range")
 )
 
 var profileNames = map[Profile]string{
@@ -90,8 +90,8 @@ type ContextPolicy struct {
 }
 
 // Settings resolves one role's settings for one task. A nil task means an
-// unknown tier. nudgeTokens is the adapter's nudge_tokens and must be at least
-// 1000. For the guard on a Tier 2, Tier 3 or unknown-tier task every value is
+// unknown tier. nudgeTokens is the adapter's nudge_tokens, from 1000 to
+// MaxNudgeTokens. For the guard on a Tier 2, Tier 3 or unknown-tier task every value is
 // raised to at least the balanced value and Floored records whether any was.
 func (c ContextPolicy) Settings(role string, task *TaskContext, nudgeTokens int) (ContextSettings, error) {
 	if task == nil {
@@ -100,7 +100,7 @@ func (c ContextPolicy) Settings(role string, task *TaskContext, nudgeTokens int)
 	if role == roleDaemon {
 		return ContextSettings{}, fmt.Errorf("%w: role %s task %q", ErrNoModelRole, role, task.TaskID)
 	}
-	if nudgeTokens < 1000 {
+	if nudgeTokens < 1000 || nudgeTokens > MaxNudgeTokens {
 		return ContextSettings{}, fmt.Errorf("%w: got %d", ErrInvalidNudgeTokens, nudgeTokens)
 	}
 	p := c.Default
