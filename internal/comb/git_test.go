@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -1069,5 +1070,174 @@ func TestInheritedGitDirIgnored(t *testing.T) {
 	}
 	if n := runGit(t, decoy, "", nil, "count-objects"); !strings.HasPrefix(n, "0 objects") {
 		t.Fatalf("decoy object store touched: %s", n)
+	}
+}
+
+// newFilesRepo creates a repository on the files ref backend, where a stale
+// .lock file produces lock contention. Older git has only that backend and
+// does not know --ref-format.
+func newFilesRepo(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	cmd := exec.Command("git", "-C", dir, "init", "-q", "--ref-format=files")
+	cmd.Env = append(append(os.Environ(), "LC_ALL=C"), isolatedEnv...)
+	if err := cmd.Run(); err != nil {
+		runGit(t, dir, "", nil, "init", "-q")
+	}
+	return dir
+}
+
+// lockHooks installs hooks that create a stale lock file for ticket-<n> before
+// the CAS write and, when release is true, remove it before the first retry.
+// It returns the retry counter.
+func lockHooks(t *testing.T, b *GitBackend, dir string, n int, release bool) *int {
+	t.Helper()
+	gitDir := runGit(t, dir, "", nil, "rev-parse", "--absolute-git-dir")
+	lock := filepath.Join(gitDir, "refs", "waggle", "claims", fmt.Sprintf("ticket-%d.lock", n))
+	t.Cleanup(func() { _ = os.Remove(lock) })
+	retries := new(int)
+	b.hookBeforeWrite = func() {
+		if err := os.MkdirAll(filepath.Dir(lock), 0o755); err != nil {
+			panic(err)
+		}
+		if err := os.WriteFile(lock, nil, 0o644); err != nil {
+			panic(err)
+		}
+	}
+	b.hookBeforeRetry = func(int) {
+		*retries++
+		if release {
+			if err := os.Remove(lock); err != nil {
+				panic(err)
+			}
+		}
+	}
+	return retries
+}
+
+// Test 9 (F6): local acquire retries lock contention and succeeds once the
+// lock is gone.
+func TestLocalLockContentionRecovers(t *testing.T) {
+	requireGit(t)
+	dir := newFilesRepo(t)
+	b := newBackend(t, dir, "", newClock())
+	retries := lockHooks(t, b, dir, 1, true)
+	if err := b.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg")); err != nil {
+		t.Fatalf("AcquireLease: %v", err)
+	}
+	if *retries != 1 {
+		t.Errorf("retry hook ran %d times; want 1", *retries)
+	}
+	if l := readLease(t, dir, "refs/waggle/claims/ticket-1"); l.KeeperID != "alice" {
+		t.Errorf("ref holds %+v", l)
+	}
+}
+
+// Test 10 (F6): local acquire gives up after maxCASRetries and writes nothing.
+func TestLocalLockContentionExhausts(t *testing.T) {
+	requireGit(t)
+	dir := newFilesRepo(t)
+	b := newBackend(t, dir, "", newClock())
+	retries := lockHooks(t, b, dir, 1, false)
+	err := b.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg"))
+	if err == nil || errors.Is(err, ErrAlreadyClaimed) {
+		t.Fatalf("AcquireLease = %v; want a git error", err)
+	}
+	if !isLockContention(err) {
+		t.Errorf("error is not classified as lock contention: %v", err)
+	}
+	if *retries != maxCASRetries {
+		t.Errorf("retry hook ran %d times; want %d", *retries, maxCASRetries)
+	}
+	if refs := claimRefs(t, dir); refs != "" {
+		t.Errorf("claim ref exists after exhaustion: %s", refs)
+	}
+}
+
+// Test 11 (F5): local release retries lock contention.
+func TestLocalReleaseLockContention(t *testing.T) {
+	requireGit(t)
+	dir := newFilesRepo(t)
+	b := newBackend(t, dir, "", newClock())
+	ctx := context.Background()
+	if err := b.AcquireLease(ctx, mkLease("T-001", "alice", "pkg")); err != nil {
+		t.Fatal(err)
+	}
+	retries := lockHooks(t, b, dir, 1, true)
+	if err := b.ReleaseLease(ctx, "T-001", "alice"); err != nil {
+		t.Fatalf("ReleaseLease: %v", err)
+	}
+	if *retries != 1 {
+		t.Errorf("retry hook ran %d times; want 1", *retries)
+	}
+	if refs := claimRefs(t, dir); refs != "" {
+		t.Errorf("ref remains: %s", refs)
+	}
+}
+
+// rejectHooks installs a pre-receive hook on the bare origin that rejects
+// every push while marker exists, creates the marker, and wires
+// hookBeforeRetry to count retries and, when release is true, remove it.
+func rejectHooks(t *testing.T, b *GitBackend, origin string, release bool) *int {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("shell hook")
+	}
+	marker := filepath.Join(t.TempDir(), "reject")
+	if err := os.WriteFile(marker, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	hooks := filepath.Join(origin, "hooks")
+	if err := os.MkdirAll(hooks, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	script := "#!/bin/sh\nif [ -e '" + marker + "' ]; then exit 1; fi\nexit 0\n"
+	if err := os.WriteFile(filepath.Join(hooks, "pre-receive"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	retries := new(int)
+	b.hookBeforeRetry = func(int) {
+		*retries++
+		if release {
+			if err := os.Remove(marker); err != nil {
+				panic(err)
+			}
+		}
+	}
+	return retries
+}
+
+// Test 12 (F6): a push rejected with the remote ref unchanged is retried.
+func TestRemoteRejectedUnchangedRecovers(t *testing.T) {
+	requireGit(t)
+	origin, dirA, _ := remoteSetup(t)
+	ba := newBackend(t, dirA, "origin", newClock())
+	retries := rejectHooks(t, ba, origin, true)
+	if err := ba.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg")); err != nil {
+		t.Fatalf("AcquireLease: %v", err)
+	}
+	if *retries != 1 {
+		t.Errorf("retry hook ran %d times; want 1", *retries)
+	}
+	if l := readLease(t, origin, "refs/waggle/claims/ticket-1"); l.KeeperID != "alice" {
+		t.Errorf("origin holds %+v", l)
+	}
+}
+
+// Test 13 (F6): repeated rejection with the remote ref unchanged gives up.
+func TestRemoteRejectedUnchangedExhausts(t *testing.T) {
+	requireGit(t)
+	origin, dirA, _ := remoteSetup(t)
+	ba := newBackend(t, dirA, "origin", newClock())
+	retries := rejectHooks(t, ba, origin, false)
+	err := ba.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg"))
+	if err == nil || errors.Is(err, ErrAlreadyClaimed) || !strings.Contains(err.Error(), "remote ref unchanged") {
+		t.Fatalf("AcquireLease = %v; want unchanged-ref push error", err)
+	}
+	if *retries != maxCASRetries {
+		t.Errorf("retry hook ran %d times; want %d", *retries, maxCASRetries)
+	}
+	if refs := claimRefs(t, origin); refs != "" {
+		t.Errorf("origin has %s", refs)
 	}
 }
