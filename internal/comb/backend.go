@@ -77,10 +77,28 @@ func RequiredMinTier(relPath string) RiskTier {
 	return Tier0Trivial
 }
 
+// LeaseVersion is the lease.json version written by new claims. Version 1
+// claims predate the role rename (D-080) and carry the old role names; they are
+// still read, with their roles mapped through legacyRoles (see parseLease).
+const LeaseVersion = 2
+
+// legacyRoles maps a version 1 role name to its current name (D-080). Before
+// the rename, "scout" was the triage role and "forager" the implementation
+// role; both words still exist with different meanings, so a version 1 claim
+// is never read with its role name taken literally.
+var legacyRoles = map[string]string{
+	"scout":   "forager",
+	"forager": "builder",
+	"guard":   "guard",
+}
+
 // Lease represents a Keeper's claim on a single ticket and its scoped directories.
 // In v0.1 directories are literal repo-relative paths, never globs (see
 // NormalizeDirectories). TicketID is always stored in canonical display form
 // (T-%03d, see ParseTicketID).
+//
+// Version is the stored lease.json version. A lease read from a version 1
+// claim keeps Version 1 but carries the current role name.
 //
 // CONCURRENCY INVARIANT (RFC-0003 Section 3.1):
 // Updating refs/waggle/claims/ticket-<ID> provides atomic Compare-And-Swap (CAS)
@@ -90,7 +108,7 @@ type Lease struct {
 	Version     int       `json:"version"`
 	TicketID    string    `json:"ticket_id"`
 	KeeperID    string    `json:"keeper_id"`
-	Role        string    `json:"role"` // "forager" | "builder" | "guard" (see isClaimRole)
+	Role        string    `json:"role"` // "forager" | "builder" | "guard" (see isClaimRole); version 1 names are mapped on read
 	Gate        string    `json:"gate"` // "light" | "full"
 	Directories []string  `json:"directories"`
 	ClaimedAt   time.Time `json:"claimed_at"`

@@ -333,11 +333,37 @@ func (b *GitBackend) loadClaims(ctx context.Context, refs []refEntry) ([]claim, 
 	return claims, nil
 }
 
-// decodeLease parses lease.json and checks it against the ref's ticket number.
-func decodeLease(data []byte, num int) (Lease, string) {
+// parseLease decodes lease.json and resolves its role name by version. A
+// version 1 claim was written before the role rename, so its role is mapped
+// through legacyRoles and any other version 1 role is an error. A LeaseVersion
+// claim must already carry a current claim role. Other versions are errors.
+func parseLease(data []byte) (Lease, error) {
 	var l Lease
 	if err := json.Unmarshal(data, &l); err != nil {
-		return Lease{}, "lease.json is not valid JSON: " + err.Error()
+		return Lease{}, fmt.Errorf("lease.json is not valid JSON: %w", err)
+	}
+	switch l.Version {
+	case 1:
+		mapped, ok := legacyRoles[l.Role]
+		if !ok {
+			return Lease{}, fmt.Errorf("unknown version 1 role %q", l.Role)
+		}
+		l.Role = mapped
+	case LeaseVersion:
+		if !isClaimRole(l.Role) {
+			return Lease{}, fmt.Errorf("unknown role %q", l.Role)
+		}
+	default:
+		return Lease{}, fmt.Errorf("unsupported lease version %d", l.Version)
+	}
+	return l, nil
+}
+
+// decodeLease parses lease.json and checks it against the ref's ticket number.
+func decodeLease(data []byte, num int) (Lease, string) {
+	l, err := parseLease(data)
+	if err != nil {
+		return Lease{}, err.Error()
 	}
 	if l.TicketID != ticketDisplay(num) {
 		return Lease{}, fmt.Sprintf("lease ticket_id %q does not match ref", l.TicketID)
@@ -364,8 +390,12 @@ func isActive(l Lease, now time.Time) bool { return l.ExpiresAt.After(now) }
 // (same KeeperID, active claim) or takeover (expired claim, any Keeper) creates
 // a child of the previous claim commit.
 //
-// Zero Version becomes 1, zero ClaimedAt becomes now, and zero ExpiresAt becomes
-// ClaimedAt plus the default TTL. Times are stored in UTC at second precision.
+// Zero Version becomes LeaseVersion, zero ClaimedAt becomes now, and zero
+// ExpiresAt becomes ClaimedAt plus the default TTL. Times are stored in UTC at
+// second precision. Version 1 is rejected: its role names predate the rename,
+// so a caller renewing from a listed version 1 lease sets Version to zero.
+// Renewing or taking over a stored version 1 claim writes a LeaseVersion claim
+// on top of it; the claim commit message always carries the current role name.
 //
 // The directory overlap check is optimistic: CAS is atomic per ticket only, so
 // two different tickets with overlapping directories can both be claimed in a
@@ -454,8 +484,8 @@ func (b *GitBackend) prepareLease(lease Lease, now time.Time) (Lease, error) {
 	}
 	switch l.Version {
 	case 0:
-		l.Version = 1
-	case 1:
+		l.Version = LeaseVersion
+	case LeaseVersion:
 	default:
 		return Lease{}, fmt.Errorf("version %d: %w", l.Version, ErrInvalidLease)
 	}
