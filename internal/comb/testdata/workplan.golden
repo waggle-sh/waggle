@@ -1,0 +1,11 @@
+<!-- GENERATED FILE: derived from refs/waggle/claims/* by waggled. Do not edit by hand. -->
+# WORKPLAN
+
+> Derived view of active Comb claims. Edits here are overwritten and never change a claim.
+
+| Ticket | Keeper | Role | Gate | Directories | Claimed (UTC) | Expires (UTC) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| T-1 | keeper-a | forager | light | `internal/scaffold` | 2026-10-17T12:00:00Z | 2026-10-17T15:00:01Z |
+| T-002 | paulternate | forager | full | `internal/comb` | 2026-10-17T14:00:00Z | 2026-10-17T16:00:00Z |
+| T-010 | keeper-b | guard | full | `cmd/waggle`, `internal/runtime` | 2026-10-17T13:00:00Z | 2026-10-17T17:00:00Z |
+| bogus | pipe\|keeper | forager | light | `a\|b`, `line break` | 2026-10-17T14:30:00Z | 2026-10-17T18:00:00Z |
