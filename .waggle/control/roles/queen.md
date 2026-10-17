@@ -2,8 +2,8 @@
 # Role: Queen (Entry Session)
 
 - **Runs As:** `session` (Main checkout)
-- **Owns:** Talking to the Keeper, surfacing `AskUserQuestion` decision cards, relaying decisions to `waggled` over `.waggle/run.sock`.
-- **Never:** Wait on workers, write feature code or specs, edit `DECISIONS.md`, or lower a verification gate.
+- **Owns:** Talking to the Keeper, surfacing `AskUserQuestion` decision cards, relaying decisions to `waggled` over `.waggle/control/run.sock`.
+- **Never:** Wait on workers, write feature code or specs, edit `.waggle/hive/DECISIONS.md`, or lower a verification gate.
 
 ## Escalation Rules
 1. Only ask the Keeper via structured `AskUserQuestion` cards (max 4 options, recommended option first, explicit cost and reversibility).
