@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -94,16 +95,76 @@ func TestRunRefusesUnresolvedSelection(t *testing.T) {
 	}
 }
 
+func mustArgs(t *testing.T, a *ClaudeAdapter, inv Invocation, s *ContextSettings) []string {
+	t.Helper()
+	got, err := a.claudeArgs(inv, s)
+	if err != nil {
+		t.Fatalf("claudeArgs: %v", err)
+	}
+	for _, arg := range got {
+		if flag, _, _ := strings.Cut(arg, "="); resumeFlags[flag] {
+			t.Errorf("claudeArgs emitted resume flag %q in %q", arg, got)
+		}
+	}
+	if !slices.Contains(got, "--strict-mcp-config") {
+		t.Errorf("claudeArgs = %q; missing --strict-mcp-config", got)
+	}
+	return got
+}
+
 func TestClaudeArgs(t *testing.T) {
 	a := NewClaudeAdapter(AdapterConfig{DefaultArgs: []string{"--print", "--verbose"}})
 	sel := mustResolve(t, testPolicy(), "builder", nil, nil)
-	got := a.claudeArgs(Invocation{Role: "builder", Selection: sel})
-	want := []string{"--model", "sonnet", "--print", "--verbose"}
+	inv := Invocation{Role: "builder", Selection: sel}
+
+	// Without settings: T-012's argv plus the S6 flag.
+	got := mustArgs(t, a, inv, nil)
+	want := []string{"--model", "sonnet", "--strict-mcp-config", "--print", "--verbose"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Errorf("claudeArgs = %q; want %q", got, want)
 	}
-	if got := NewClaudeAdapter(AdapterConfig{}).claudeArgs(Invocation{Selection: sel}); len(got) != 2 {
+	if got := mustArgs(t, NewClaudeAdapter(AdapterConfig{}), Invocation{Selection: sel}, nil); len(got) != 3 {
 		t.Errorf("claudeArgs without defaults = %q", got)
+	}
+
+	s, err := ContextPolicy{Default: ProfileLean}.Settings("builder", nil, 200000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got = mustArgs(t, a, inv, &s)
+	want = []string{"--model", "sonnet", "--strict-mcp-config", "--max-turns", "40", "--print", "--verbose"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Errorf("claudeArgs with settings = %q; want %q", got, want)
+	}
+
+	for _, bad := range []string{"--continue", "-c", "--resume", "-r", "--session-id", "--resume=abc", "--session-id=123"} {
+		a := NewClaudeAdapter(AdapterConfig{DefaultArgs: []string{"--print", bad, "x"}})
+		if _, err := a.claudeArgs(inv, &s); !errors.Is(err, ErrResumeFlag) {
+			t.Errorf("claudeArgs with default arg %q err = %v; want ErrResumeFlag", bad, err)
+		}
+	}
+}
+
+func TestClaudeEnv(t *testing.T) {
+	if env := claudeEnv(nil); env != nil {
+		t.Errorf("claudeEnv(nil) = %q; want nil", env)
+	}
+	want := map[Profile]string{
+		ProfileLean:     "BASH_MAX_OUTPUT_LENGTH=10000 MAX_THINKING_TOKENS=4000",
+		ProfileBalanced: "BASH_MAX_OUTPUT_LENGTH=20000 MAX_THINKING_TOKENS=12000",
+		ProfileThorough: "BASH_MAX_OUTPUT_LENGTH=30000 MAX_THINKING_TOKENS=32000",
+	}
+	for p, w := range want {
+		s, err := ContextPolicy{Default: p}.Settings("builder", nil, 200000)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := strings.Join(claudeEnv(&s), " "); got != w {
+			t.Errorf("claudeEnv(%s) = %q; want %q", p, got, w)
+		}
+	}
+	if got := claudeEnv(&ContextSettings{ToolOutputChars: 5}); len(got) != 1 || got[0] != "BASH_MAX_OUTPUT_LENGTH=5" {
+		t.Errorf("claudeEnv with unknown thinking step = %q", got)
 	}
 }
 

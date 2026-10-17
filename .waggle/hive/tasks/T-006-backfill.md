@@ -706,6 +706,86 @@ Each item maps one to one to `testdata/backfill/D-0NN.json`. `Options` items are
 - Choice: T-011 phase C pins `b4f2221` (the phase A merge commit). Our hive keeps the old role names (queen, architect, scout, forager, guard) until T-020 phase C moves the pin through `waggle upgrade`, which makes that the first real test of managed-file removal (D-083). Confirms the queen default recorded in T-011 section 10 and T-020 section 9. Decided by the Head Keeper via queen card on 2026-10-17.
 - Rationale: Rejected pinning current main `924a59f`: it would need `git rm .waggle/control/roles/architect.md` in C-3 and would pull the T-020 section 7.3 brief sweep into this PR.
 
+**D-088** | kind `policy` | tickets `T-006`
+- Title: T-006 phase 1 merges at 708 non-test lines (D-013 budget waived for this ticket) with a 200-byte title limit so the backfill titles transcribe verbatim
+- Question: Does T-006 phase 1 merge as built (708 non-test lines against the D-013 450-line budget), and does the decision title limit rise from 100 to 200 bytes?
+- Options: Split `internal/decisions` into two packages or two PRs to fit the budget || Waive the budget for this ticket and merge phase 1 as built || Keep the 100-byte title limit and shorten the seven backfill titles that exceed it || Raise the title limit to 200 bytes so every backfill title transcribes verbatim
+- Recommendation: Waive the budget for phase 1; raise the title limit to 200 bytes
+- Choice: The D-013 450-line budget is waived for T-006 phase 1, which merges as built at 708 non-test lines (PR #14). The title limit in T-006 section 4.2 is 200 bytes (was 100), so phase 2 transcribes all 87 backfill titles verbatim. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected splitting the package: parser, validator, renderer and append-only verifier are one round-trip contract and a split would add an import seam with no second consumer. Rejected shortening seven titles: the backfill is a transcription, and edited titles would make the record disagree with its source. The budget stays in force for every other ticket; this is a waiver, not a new limit.
+
+**D-089** | kind `policy` | tickets `T-018, T-006, T-016, T-012, T-014, T-007, T-021, T-022`
+- Title: Size figures in briefs are physical non-test lines (`wc -l` of non-test Go files); T-018 phase A accepted at 527 against a 350 cap, and the architect re-estimates phases B and C
+- Question: What does a brief's "non-test lines" figure count, and does T-018 phase A merge at 527 lines against its 350 cap?
+- Options: Count code lines only (blanks and comments excluded) || Count physical lines, `wc -l` of non-test Go files touched || Trim phase A to fit the 350 cap || Accept phase A as built and re-estimate phases B and C with the same metric
+- Recommendation: Physical non-test lines; accept phase A; architect re-estimates B and C
+- Choice: Every size figure in a brief (estimate, target, cap, stop value) counts physical non-test lines: `wc -l` over the non-test Go files the phase touches, blanks and comments included. T-018 phase A merges as built at 527 lines (PR #15). The architect re-estimates T-018 phases B and C in this metric before phase B is dispatched. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected code-only counting: it needs a tool and an argument at every review, while `wc -l` is one command whose answer nobody disputes. Rejected trimming required behavior to fit a cap: the cap is a signal that the estimate was wrong, not a reason to drop the merge CAS or the report lines the brief requires. The fix is to estimate honestly against the metric the guard uses.
+
+**D-090** | kind `technical` | tickets `T-016`
+- Title: `waggle upgrade` reports seeded-file schema gaps with `[note]` lines; the Head Keeper edits seeded files by hand in the same PR
+- Question: How does `waggle upgrade` handle a seeded file (`config.yaml`, `WAGGLE.md`, `local.yaml`) whose schema has changed between the old and the target build? (Q-T016-2)
+- Options: Report-only: one `[note]` line per top-level key the build's `config.yaml.tmpl` has and the hive file lacks || In-place migration now, re-serializing the file through a comment-preserving parser
+- Recommendation: Report-only
+- Choice: Report-only. `upgrade` prints one `[note]` line per top-level key present in the build's `config.yaml.tmpl` and absent from the hive's `config.yaml`; the Head Keeper edits seeded files by hand in the same hive PR. Versioned migration functions keyed by a `schema` field come later, when a release first changes the schema. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected in-place migration: it re-serializes a Head Keeper-owned file and needs a parser that preserves comments, which nothing on `main` has. No release has changed the schema yet, so the migration machinery would be built against an imagined change.
+
+**D-091** | kind `technical` | tickets `T-016`
+- Title: `waggle upgrade` refuses a release-tag downgrade unless `--allow-downgrade`; commit pins are unordered
+- Question: Does `waggle upgrade` check the direction of a pin move? (Q-T016-3)
+- Options: Refuse when both pins are release tags and the target is lower, unless `--allow-downgrade`; print from and to for commit pins with no ordering check || No downgrade check at all
+- Recommendation: Refuse tag downgrades unless `--allow-downgrade`
+- Choice: When both pins are release tags and the target is lower, `upgrade` refuses unless `--allow-downgrade`. Commit pins print from and to with no ordering check (a host repo does not contain Waggle's history). The semver compare is a hand-written numeric compare; a prerelease sorts below the same release. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected no check at all: the Keeper picks the target on purpose, but a stale binary on `PATH` is the common way to run the wrong build, and one flag is cheaper than a reverted hive PR.
+
+**D-092** | kind `policy` | tickets `T-016, T-006`
+- Title: `waggle upgrade` prints the `waggle decide` input; a person runs `decide` in the same hive PR
+- Question: Who writes the upgrade decision into `DECISIONS.md`? (Q-T016-4)
+- Options: `upgrade` prints the `waggle decide` input and the Head Keeper, or the queen after an explicit Keeper answer, runs `waggle decide` in the same PR || `upgrade --apply` calls `decisions.Append` itself
+- Recommendation: Print the input; a person runs `decide`
+- Choice: `upgrade` prints the `waggle decide` input (T-016 section 3.7) in both modes. The Head Keeper, or the queen after an explicit Keeper answer, runs `waggle decide` in the same hive PR (T-006 section 8). `upgrade` never writes `DECISIONS.md`. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected `--apply` calling `decisions.Append`: it turns "a command ran" into "a decision was made", adds `internal/decisions` as an import, and makes T-006 a code dependency of T-016 instead of a procedural one.
+
+**D-093** | kind `technical` | tickets `T-016`
+- Title: The pin moves through a one-line edit of `config.yaml` that requires exactly one `pin:` under `waggle:` and preserves every other byte
+- Question: How does `waggle upgrade` change the pin inside the seeded `config.yaml`? (Q-T016-5)
+- Options: Narrow line edit: replace the value on the one `pin:` line under `waggle:`, refuse when there are zero or two, never re-serialize the file || Parse and re-render through `internal/config`
+- Recommendation: Narrow line edit
+- Choice: `scaffold.WritePin` edits exactly the one `pin:` line under `waggle:`: the value is replaced; the key, indentation and trailing comment stay byte for byte; everything else in the file is untouched. Zero or two `pin:` lines are refused before any write. The file is never re-serialized through `config.Parse`. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected re-rendering through `internal/config`: it drops every comment in a Head Keeper-owned file, and the comments are the documentation of that file.
+
+**D-094** | kind `policy` | tickets `T-016, T-007, T-018`
+- Title: No hive-only changes to managed files: a step goes into the template or not at all
+- Question: May a hive keep a local change to a managed file across `waggle upgrade`? (Q-T016-6)
+- Options: No per-hive exceptions and no exception list in config || A recorded exception mechanism (an `upgrade.keep:` list in `config.yaml`)
+- Recommendation: No exceptions
+- Choice: No per-hive exceptions and no exception list in config. A step a hive wants in the gate workflow goes into the template or not at all. T-007's `gate decisions` step therefore targets the template or waits for T-018 phase C's CI shim. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected an `upgrade.keep:` list: it reopens the hand-edit door D-042 closed, and every kept file is one the next upgrade cannot reason about.
+
+**D-095** | kind `technical` | tickets `T-016, T-020`
+- Title: `waggle upgrade` regenerates and prunes the running Keeper's shims only; other Keepers rerun `waggle init --force`
+- Question: What does `waggle upgrade` do with the `.claude/agents/waggle-*.md` shims? (Q-T016-7)
+- Options: Regenerate and prune this Keeper's shims through `--runtime`; others rerun `init --force` or a future `waggle shims` || Leave shims alone and tell every Keeper to rerun init
+- Recommendation: Regenerate and prune this Keeper's shims
+- Choice: `upgrade` removes each shim carrying `# waggle:generated` whose role file is gone after the removals, and regenerates `.claude/agents/waggle-*.md` once when `--runtime=claude-code`. A shim without `# waggle:generated` is never touched. Other Keepers rerun `waggle init --force` or a future `waggle shims`. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected leaving shims alone: it makes T-020 section 7.2's "shims regenerated with `waggle-architect.md` removed" a manual step, which is the kind of step that gets skipped.
+
+**D-096** | kind `technical` | tickets `T-016, T-022, T-004`
+- Title: Pins are full 40-hex commits or release tags, validated on both ends; `scaffold.ReadPin` is the shared reader and `internal/config/` stays read-only
+- Question: What is a valid pin, and which package owns the reader? (Q-T016-8)
+- Options: Full 40-hex or release tag, validated on both ends, `scaffold.ReadPin` shared, `internal/config/` read-only || Widen the T-016 lease to `internal/config/` and add `config.Config.Pin`
+- Recommendation: `scaffold.ReadPin`, `internal/config/` read-only
+- Choice: A pin is a full 40-hex commit, a release tag (`vMAJOR.MINOR.PATCH` with optional prerelease), or the literal `unpinned`; never a short hash. `upgrade` validates both the "from" and the "to" value. `scaffold.ReadPin` in `internal/scaffold/upgrade.go` is the shared reader; `waggle status` switches to it in T-022 phase B. `internal/config/` stays read-only for T-016. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected widening the lease to `internal/config/`: `config.Config.Pin` is the cleaner long-term home, but a lease change on a package three tickets consume costs more now than a one-line switch in `status` later. Moving the reader into `internal/config` stays listed as a follow-up.
+
+**D-097** | kind `policy` | tickets `T-016, T-020, T-011`
+- Title: The generated `CLAUDE.md` is tracked like every other init output; the Head Keeper commits ours before T-020 phase C's first upgrade
+- Question: What happens to the untracked generated `CLAUDE.md` in our main checkout, which trips every clean-tree check? (Q-T016-9)
+- Options: Track it like all init output, no `git add` inside init or upgrade, Head Keeper commits ours as step 0 of T-020 phase C || Ignore `CLAUDE.md` in the template `.gitignore` block again || Let `upgrade` tolerate one untracked import file
+- Recommendation: Track it
+- Choice: `CLAUDE.md` (or `AGENTS.md`) is tracked like every other file init writes; the markers separate generated from hand-written content. Neither `init` nor `upgrade` runs `git add`; init's closing hint gains `commit CLAUDE.md (or AGENTS.md) and .gitignore with the rest`. In our hive the Head Keeper commits `CLAUDE.md` as step 0 of T-020 phase C section 7.2, before the first `upgrade` run. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Rejected ignoring it again: project content outside the markers becomes unignorable. Rejected a tolerance in the clean-tree rule: one special case in a precondition that exists to be absolute.
+
 ## Appendix B: Still open (do not record until the Keeper answers)
 
 - **Cell runtime.** Queen recommends a `CellRuntime` interface with an OS-sandbox default (Seatbelt on macOS, bubblewrap on Linux) behind a host egress proxy, plus a Docker-compatible container backend. Requires an RFC amendment.
