@@ -66,10 +66,15 @@ type streamEvent struct {
 	Result    *string      `json:"result"`
 	Cost      *float64     `json:"total_cost_usd"`
 	Usage     *streamUsage `json:"usage"`
-	Message   *struct {
-		ID    string       `json:"id"`
-		Usage *streamUsage `json:"usage"`
-	} `json:"message"`
+	// Message is decoded only for assistant events: other events, such as
+	// system/permission_denied, carry a string there.
+	Message json.RawMessage `json:"message"`
+}
+
+// streamMessage is the message object of an assistant event.
+type streamMessage struct {
+	ID    string       `json:"id"`
+	Usage *streamUsage `json:"usage"`
 }
 
 func clamp(v int64) int { return int(max(0, min(v, tokenClamp))) }
@@ -111,7 +116,9 @@ func (c *ClaudeAdapter) Collect(ctx context.Context, r io.Reader, lim Limits, st
 		line, tooLong, err := readLine(br)
 		if len(line) > 0 || tooLong {
 			var ev streamEvent
-			if tooLong || json.Unmarshal(line, &ev) != nil {
+			var msg streamMessage
+			if tooLong || json.Unmarshal(line, &ev) != nil ||
+				(ev.Type == "assistant" && len(ev.Message) > 0 && json.Unmarshal(ev.Message, &msg) != nil) {
 				res.MalformedLines++
 				ev = streamEvent{}
 			}
@@ -119,10 +126,10 @@ func (c *ClaudeAdapter) Collect(ctx context.Context, r io.Reader, lim Limits, st
 				res.SessionID = ev.SessionID
 			}
 			switch {
-			case ev.Type == "assistant" && ev.Message != nil && ev.Message.Usage != nil:
-				u := ev.Message.Usage.stats()
-				if ev.Message.ID != lastID {
-					sum, lastID = sum.add(last), ev.Message.ID
+			case ev.Type == "assistant" && msg.Usage != nil:
+				u := msg.Usage.stats()
+				if msg.ID != lastID {
+					sum, lastID = sum.add(last), msg.ID
 				}
 				last = u
 				if u.InputTokens+u.CacheReadTokens+u.CacheWriteTokens > lim.MaxTokens && end == "" {
