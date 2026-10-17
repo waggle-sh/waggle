@@ -93,16 +93,20 @@ func scalarLines(lines []string, section, key string) []int {
 }
 
 // valueToken returns the bounds of the scalar on a "key: value # comment"
-// line: after the key and its spaces, up to the next space, tab, or comment.
-// Surrounding quotes are part of the token.
+// line: after the key and its spaces, up to a comment (a # preceded by
+// whitespace) or the end of the line, trailing whitespace excluded. Quotes
+// and inner spaces stay in the token, so "v1.0.0 beta" fails ValidPin whole.
 func valueToken(line, key string) (int, int) {
 	i := strings.Index(line, key+":") + len(key) + 1
 	for i < len(line) && (line[i] == ' ' || line[i] == '\t') {
 		i++
 	}
 	j := i
-	for j < len(line) && !strings.ContainsRune(" \t#\r\n", rune(line[j])) {
+	for j < len(line) && line[j] != '\r' && line[j] != '\n' && !(line[j] == '#' && (j == i || line[j-1] == ' ' || line[j-1] == '\t')) {
 		j++
+	}
+	for j > i && (line[j-1] == ' ' || line[j-1] == '\t') {
+		j--
 	}
 	return i, j
 }
@@ -223,6 +227,52 @@ func (plan *upgradePlan) execute() error {
 	return nil
 }
 
+// checkSymlinks refuses when any path upgrade may write or delete, or a
+// directory on the way to it, is a symlink: a committed link would carry the
+// write outside the repository. A stale entry under a managed directory is
+// not listed, so a hand-added link there is removed and its target survives.
+func checkSymlinks(root string, rels []string) error {
+	for _, rel := range rels {
+		parts := strings.Split(rel, "/")
+		for i := range parts {
+			p := path.Join(parts[:i+1]...)
+			info, err := os.Lstat(filepath.Join(root, filepath.FromSlash(p)))
+			if errors.Is(err, fs.ErrNotExist) {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("reading %s: %w", p, err)
+			}
+			if info.Mode()&fs.ModeSymlink != 0 {
+				return fmt.Errorf("%s is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: %w", p, ErrRefused)
+			}
+		}
+	}
+	return nil
+}
+
+// writePaths lists every path upgrade may write or delete: the block files,
+// the template destinations, the managed entries and this Keeper's shims.
+func writePaths(root string, files []templateFile, rt string) []string {
+	importRel, _ := importTarget(root, rt)
+	rels := []string{".gitignore", importRel}
+	for _, f := range files {
+		rels = append(rels, f.dst)
+	}
+	rels = append(rels, layout.Managed...)
+	if rt == "claude-code" {
+		dir, prefix := path.Dir(layout.ShimPrefix), path.Base(layout.ShimPrefix)
+		rels = append(rels, dir)
+		entries, _ := os.ReadDir(filepath.Join(root, filepath.FromSlash(dir)))
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), prefix) {
+				rels = append(rels, path.Join(dir, e.Name()))
+			}
+		}
+	}
+	return rels
+}
+
 func line(out io.Writer, verb, format string, a ...any) {
 	fmt.Fprintf(out, "  %-10s%s\n", "["+verb+"]", fmt.Sprintf(format, a...))
 }
@@ -284,6 +334,14 @@ func Upgrade(opts UpgradeOptions) error {
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrRefused, err)
 	}
+	tfs := templates(opts.Templates)
+	files, err := templateFiles(tfs)
+	if err != nil {
+		return err
+	}
+	if err := checkSymlinks(root, writePaths(root, files, opts.Runtime)); err != nil {
+		return err
+	}
 	read := opts.BuildInfo
 	if read == nil {
 		read = debug.ReadBuildInfo
@@ -296,7 +354,7 @@ func Upgrade(opts UpgradeOptions) error {
 		return fmt.Errorf("target %s is lower than the hive pin %s; pass --allow-downgrade to move backwards: %w", newPin, oldPin, ErrRefused)
 	}
 
-	plan, err := planUpgrade(opts, g, root, oldPin, newPin, out)
+	plan, err := planUpgrade(opts, g, root, oldPin, newPin, tfs, files, out)
 	if err != nil {
 		return err
 	}
@@ -322,7 +380,7 @@ func Upgrade(opts UpgradeOptions) error {
 
 // planUpgrade computes and prints the plan in the order of T-016 section 3.3.
 // It writes nothing inside root.
-func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, out io.Writer) (*upgradePlan, error) {
+func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, tfs fs.FS, files []templateFile, out io.Writer) (*upgradePlan, error) {
 	plan := &upgradePlan{root: root}
 	cfgContent, _, err := readOptional(plan.abs(layout.Config))
 	if err != nil {
@@ -341,11 +399,6 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 	}
 
 	// 2. Managed files this build ships, rendered with the hive's seeded values.
-	tfs := templates(opts.Templates)
-	files, err := templateFiles(tfs)
-	if err != nil {
-		return nil, err
-	}
 	replacer := strings.NewReplacer(
 		"{{PROFILE}}", scalar(cfgLines, "hive", "profile"),
 		"{{DELIVERY}}", scalar(cfgLines, "hive", "delivery"),
@@ -521,9 +574,10 @@ func topKeys(content string) []string {
 	return keys
 }
 
-// printDiff prints the unified diff from the hive file (repo-relative, so the
-// header reads a/<rel>) to the rendered template through git diff --no-index,
-// whose exit status 1 means "differs".
+// printDiff prints the unified diff from the hive file to the rendered
+// template through git diff --no-index, whose exit status 1 means "differs".
+// Both headers read repo-relative: the a side because the hive file is passed
+// that way, the b side because the temp path is replaced after the fact.
 func printDiff(g gitRunner, out io.Writer, root, rel, want string) error {
 	tmp, err := os.MkdirTemp("", "waggle-upgrade-")
 	if err != nil {
@@ -539,7 +593,7 @@ func printDiff(g gitRunner, out io.Writer, root, rel, want string) error {
 	if err != nil && (!errors.As(err, &exit) || exit.ExitCode() != 1) {
 		return err
 	}
-	fmt.Fprintln(out, diff)
+	fmt.Fprintln(out, strings.ReplaceAll(diff, "b"+render, "b/"+rel))
 	return nil
 }
 

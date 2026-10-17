@@ -219,7 +219,7 @@ func TestUpgradeRestoresHandEditedManagedFile(t *testing.T) {
 	o, _ := upgradeOpts(dir, "none", fixedBuild, false)
 	o.Diff = true
 	out := upgrade(t, o)
-	wantLines(t, out, "[rewrite] "+layout.Roster, "\n--- a/"+layout.Roster+"\n", "\n+++ ", "\n-x\n")
+	wantLines(t, out, "[rewrite] "+layout.Roster, "\n--- a/"+layout.Roster+"\n", "\n+++ b/"+layout.Roster+"\n", "\n-x\n")
 	if got := get(t, dir, layout.Roster); got != want+"x" {
 		t.Error("dry run wrote roster.json")
 	}
@@ -337,6 +337,9 @@ func TestUpgradeRefusesWithoutWriting(t *testing.T) {
 		"short hash": {setup: withConfig(func(c string) string {
 			return strings.Replace(c, pinA, pinA[:7], 1)
 		}), wantMsg: "set waggle.pin to the full 40-hex commit"},
+		"trailing text": {setup: withConfig(func(c string) string {
+			return strings.Replace(c, pinA, "v1.0.0 beta", 1)
+		}), wantMsg: `pin "v1.0.0 beta" is not a full 40-hex commit`},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -365,6 +368,71 @@ func TestUpgradeRefusesWithoutWriting(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpgradeRefusesSymlinks(t *testing.T) {
+	for _, rel := range []string{layout.Roster, layout.RolesDir, layout.Config} {
+		t.Run(rel, func(t *testing.T) {
+			dir := hive(t, "claude-code", commitBuild(pinA), nil)
+			outside := filepath.Join(t.TempDir(), "target")
+			inside := filepath.Join(dir, filepath.FromSlash(rel))
+			if err := os.Rename(inside, outside); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(outside, inside); err != nil {
+				t.Fatal(err)
+			}
+			commitAll(t, dir, "symlink "+rel)
+			state, target := repoState(t, dir), outsideState(t, outside)
+			o, _ := upgradeOpts(dir, "claude-code", commitBuild(pinB), true)
+			err := Upgrade(o)
+			if !errors.Is(err, ErrRefused) || !strings.Contains(err.Error(), rel+" is a symlink") {
+				t.Fatalf("err = %v; want ErrRefused naming %s", err, rel)
+			}
+			if got := repoState(t, dir); got != state {
+				t.Errorf("refused upgrade changed the repository:\n got %s\nwant %s", got, state)
+			}
+			if got := outsideState(t, outside); !reflect.DeepEqual(got, target) {
+				t.Errorf("refused upgrade wrote through the symlink:\n got %v\nwant %v", got, target)
+			}
+		})
+	}
+	t.Run("hand-added link inside roles", func(t *testing.T) {
+		dir := hive(t, "none", commitBuild(pinA), nil)
+		outside := filepath.Join(t.TempDir(), "precious.md")
+		put(t, filepath.Dir(outside), "precious.md", "keep\n")
+		link := filepath.Join(dir, filepath.FromSlash(layout.RolesDir), "evil.md")
+		if err := os.Symlink(outside, link); err != nil {
+			t.Fatal(err)
+		}
+		commitAll(t, dir, "hand-added link")
+		o, _ := upgradeOpts(dir, "none", commitBuild(pinB), true)
+		wantLines(t, upgrade(t, o), "[remove]  "+layout.RolesDir+"/evil.md")
+		if _, err := os.Lstat(link); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("link still present: %v", err)
+		}
+		if got, err := os.ReadFile(outside); err != nil || string(got) != "keep\n" {
+			t.Errorf("link target = %q, %v; want untouched", got, err)
+		}
+	})
+}
+
+// outsideState maps every file under p (or p itself) to its content.
+func outsideState(t *testing.T, p string) map[string]string {
+	t.Helper()
+	m := map[string]string{}
+	err := filepath.WalkDir(p, func(f string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		b, err := os.ReadFile(f)
+		m[f] = string(b)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return m
 }
 
 func TestUpgradeDowngradeRule(t *testing.T) {
@@ -525,5 +593,15 @@ func TestReadWritePin(t *testing.T) {
 	}
 	if _, err := ReadPin(filepath.Join(dir, "missing.yaml")); err == nil {
 		t.Error("ReadPin of a missing file succeeded")
+	}
+	for _, v := range []string{"v1.0.0 beta", "\"" + pinA + "\" beta", pinA + " junk", "v1.0.0#x", "\"v1.0.0 beta\""} {
+		put(t, dir, "bad.yaml", "waggle:\n  pin: "+v+"  # comment\n")
+		if pin, err := ReadPin(filepath.Join(dir, "bad.yaml")); err == nil || !strings.Contains(err.Error(), "line 2") {
+			t.Errorf("ReadPin(pin: %s) = %q, %v; want refusal naming line 2", v, pin, err)
+		}
+	}
+	put(t, dir, "ok.yaml", "waggle:\n  pin: "+pinB+"\t \n")
+	if pin, err := ReadPin(filepath.Join(dir, "ok.yaml")); err != nil || pin != pinB {
+		t.Errorf("ReadPin with trailing whitespace = %q, %v", pin, err)
 	}
 }
