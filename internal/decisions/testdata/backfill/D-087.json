@@ -1,0 +1,18 @@
+{
+  "kind": "technical",
+  "title": "T-011 phase C pins `b4f2221` (the phase A merge commit); the hive keeps the old role names until T-020 phase C moves the pin through `waggle upgrade`",
+  "question": "Which commit does T-011 phase C pin, and when does our hive pick up the renamed roles?",
+  "options": [
+    "Pin current main `924a59f`",
+    "Pin `b4f2221` (the phase A merge commit)"
+  ],
+  "recommendation": "Pin `b4f2221`",
+  "choice": "T-011 phase C pins `b4f2221` (the phase A merge commit). Our hive keeps the old role names (queen, architect, scout, forager, guard) until T-020 phase C moves the pin through `waggle upgrade`, which makes that the first real test of managed-file removal (D-083). Confirms the queen default recorded in T-011 section 10 and T-020 section 9. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected pinning current main `924a59f`: it would need `git rm .waggle/control/roles/architect.md` in C-3 and would pull the T-020 section 7.3 brief sweep into this PR.",
+  "tickets": [
+    "T-011",
+    "T-020",
+    "T-016"
+  ],
+  "supersedes": []
+}

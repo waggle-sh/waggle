@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "Force-release audit is a durable ref",
+  "question": "Where is a Controller force-release audited?",
+  "options": [
+    "Child commit on the claim ref",
+    "DECISIONS.md entry",
+    "Durable append-only audit ref written atomically with the delete"
+  ],
+  "recommendation": "Durable audit ref; the gate does not fetch it in v0.1",
+  "choice": "Durable append-only ref refs/waggle/audit/force-releases written atomically with the delete; the gate does not fetch it in v0.1.",
+  "rationale": "A child commit on a deleted ref is not durable, and DECISIONS.md cannot be written atomically with a ref delete.",
+  "tickets": [
+    "T-005"
+  ],
+  "supersedes": []
+}
