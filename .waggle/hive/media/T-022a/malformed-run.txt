@@ -1,0 +1,10 @@
+Hive: hive  pin v1.0.0  comb direct (local)
+waggled: stopped (no .waggle/control/run.sock)
+
+Claims (1 active):
+  T-012  builder  paul  full  internal/runtime/  expires in 1h30m
+  malformed: 2 (refs/waggle/claims/ticket-7: keeper id "evil\x1b[31m": comb: invalid lease)
+
+Usage: none recorded (.waggle/control/usage.jsonl absent)
+
+STDERR:
