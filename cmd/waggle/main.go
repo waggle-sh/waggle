@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/waggle-dev/waggle/internal/scaffold"
+	"github.com/waggle-sh/waggle/internal/scaffold"
 )
 
 const version = "0.1.0-bootstrap"

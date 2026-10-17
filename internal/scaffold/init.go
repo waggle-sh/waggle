@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/waggle-dev/waggle/internal/runtime"
+	"github.com/waggle-sh/waggle/internal/runtime"
 )
 
 // Embed all template files directly into the static Go binary so `waggle init`
