@@ -12,13 +12,17 @@ import (
 )
 
 // ForceReleaseAuditRef is the append-only audit chain written by ForceRelease
-// (D-010). Each force-release appends one commit whose first parent is the
-// previous audit head and whose second parent, when the released target is a
-// commit, is the released claim commit, so the whole claim chain stays
-// reachable and is pushed with the audit. Review it with
-// git log --first-parent refs/waggle/audit/force-releases. It lives outside
-// ClaimRefPrefix, so ListActiveLeases and the claim sync never see or prune
-// it, and the merge gate does not fetch it in v0.1.
+// (D-010). The chain starts at a root commit with an empty tree and no
+// parents; each force-release then appends one commit whose first parent is
+// the previous audit head and whose second parent, when the released target
+// is a commit, is the released claim commit, so the whole claim chain stays
+// reachable and is pushed with the audit. The first-parent walk therefore
+// holds only commits written here: review it with
+// git log --first-parent refs/waggle/audit/force-releases, and a team-mode
+// verifier (D-068) checks signatures along it without entering claim
+// chains. It lives outside ClaimRefPrefix, so ListActiveLeases and the
+// claim sync never see or prune it, and the merge gate does not fetch it in
+// v0.1.
 const ForceReleaseAuditRef = "refs/waggle/audit/force-releases"
 
 // auditRefPrefix is the namespace ForceRelease mirrors from the remote.
@@ -408,8 +412,9 @@ func (b *GitBackend) inspectTarget(ctx context.Context, req ForceRelease) (claim
 }
 
 // buildAudit writes force-release.json, the audit tree and the audit commit
-// for target, chained on oldAudit (zero for the first entry). A commit
-// target becomes parent 2; a blob target is retained as released-claim.raw.
+// for target, chained on oldAudit (zero for the first entry, which chains on
+// a fresh auditRoot instead). A commit target becomes parent 2; a blob
+// target is retained as released-claim.raw.
 func (b *GitBackend) buildAudit(ctx context.Context, req ForceRelease, target claim, oldAudit, zero string, now time.Time) (string, error) {
 	rec := auditRecord{
 		Version:         auditRecordVersion,
@@ -442,15 +447,29 @@ func (b *GitBackend) buildAudit(ctx context.Context, req ForceRelease, target cl
 	if err != nil {
 		return "", err
 	}
-	var parents []string
-	if oldAudit != zero {
-		parents = append(parents, oldAudit)
+	head := oldAudit
+	if head == zero {
+		if head, err = b.auditRoot(ctx, now); err != nil {
+			return "", err
+		}
 	}
+	parents := []string{head}
 	if target.objType == "commit" {
 		parents = append(parents, target.oid)
 	}
 	msg := "waggle: force-release " + req.Ref + " by " + req.HeadKeeperID + "\n\n" + sanitizeReason(req.Reason)
 	return b.commitTree(ctx, tree, parents, msg, now)
+}
+
+// auditRoot writes the root commit of a new audit chain: an empty tree, no
+// parents. It exists so that a released claim commit is always parent 2 and
+// never enters the chain's first-parent walk.
+func (b *GitBackend) auditRoot(ctx context.Context, now time.Time) (string, error) {
+	tree, err := b.gitOID(ctx, []byte{}, nil, "mktree")
+	if err != nil {
+		return "", err
+	}
+	return b.commitTree(ctx, tree, nil, "waggle: audit root", now)
 }
 
 // refTransaction deletes ref from expected and moves ForceReleaseAuditRef from
