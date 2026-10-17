@@ -86,7 +86,7 @@ func newBackend(t *testing.T, dir, remote string, clock *fakeClock) *GitBackend 
 }
 
 func mkLease(ticket, keeper string, dirs ...string) Lease {
-	return Lease{TicketID: ticket, KeeperID: keeper, Role: "forager", Gate: "full", Directories: dirs}
+	return Lease{TicketID: ticket, KeeperID: keeper, Role: "builder", Gate: "full", Directories: dirs}
 }
 
 func claimRefs(t *testing.T, dir string) string {
@@ -259,12 +259,12 @@ func TestAcquireCommitShape(t *testing.T) {
 	}
 	commit := runGit(t, dir, "", nil, "cat-file", "-p", oid)
 	if !strings.Contains(commit, "author waggle <waggle@localhost> 1792245600 +0000") ||
-		!strings.Contains(commit, "waggle: claim T-001 by paulternate (forager, full)") {
+		!strings.Contains(commit, "waggle: claim T-001 by paulternate (builder, full)") {
 		t.Errorf("unexpected commit:\n%s", commit)
 	}
 
 	stored := readLease(t, dir, oid)
-	want := Lease{Version: 1, TicketID: "T-001", KeeperID: "paulternate", Role: "forager", Gate: "full",
+	want := Lease{Version: 1, TicketID: "T-001", KeeperID: "paulternate", Role: "builder", Gate: "full",
 		Directories: []string{"internal/comb"}, ClaimedAt: t0, ExpiresAt: t0.Add(DefaultLeaseTTL)}
 	if !reflect.DeepEqual(stored, want) {
 		t.Errorf("stored lease = %+v\nwant %+v", stored, want)
@@ -474,7 +474,7 @@ func TestMalformedClaims(t *testing.T) {
 		return string(data)
 	}
 	good := func(ticket string) Lease {
-		return Lease{Version: 1, TicketID: ticket, KeeperID: "mallory", Role: "forager", Gate: "full",
+		return Lease{Version: 1, TicketID: ticket, KeeperID: "mallory", Role: "builder", Gate: "full",
 			Directories: []string{"shared"}, ClaimedAt: t0, ExpiresAt: t0.Add(time.Hour)}
 	}
 	set := func(ref, oid string) { runGit(t, dir, "", nil, "update-ref", ref, oid) }

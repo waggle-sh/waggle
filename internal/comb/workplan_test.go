@@ -21,13 +21,13 @@ func goldenLeases() []Lease {
 	return []Lease{
 		{Version: 1, TicketID: "T-010", KeeperID: "keeper-b", Role: "guard", Gate: "full",
 			Directories: []string{"cmd/waggle", "internal/runtime"}, ClaimedAt: at(13, 0), ExpiresAt: at(17, 0)},
-		{Version: 1, TicketID: "T-002", KeeperID: "paulternate", Role: "forager", Gate: "full",
+		{Version: 1, TicketID: "T-002", KeeperID: "paulternate", Role: "builder", Gate: "full",
 			Directories: []string{"internal/comb"}, ClaimedAt: at(14, 0), ExpiresAt: at(16, 0)},
-		{Version: 1, TicketID: "T-003", KeeperID: "expired", Role: "scout", Gate: "light",
+		{Version: 1, TicketID: "T-003", KeeperID: "expired", Role: "forager", Gate: "light",
 			Directories: []string{"old"}, ClaimedAt: at(10, 0), ExpiresAt: at(15, 0)},
-		{Version: 1, TicketID: "bogus", KeeperID: "pipe|keeper", Role: "forager", Gate: "light",
+		{Version: 1, TicketID: "bogus", KeeperID: "pipe|keeper", Role: "builder", Gate: "light",
 			Directories: []string{"a|b", "line\nbreak"}, ClaimedAt: at(14, 30).In(est), ExpiresAt: at(18, 0).Add(500 * time.Millisecond)},
-		{Version: 1, TicketID: "T-1", KeeperID: "keeper-a", Role: "forager", Gate: "light",
+		{Version: 1, TicketID: "T-1", KeeperID: "keeper-a", Role: "builder", Gate: "light",
 			Directories: []string{"internal/scaffold"}, ClaimedAt: at(12, 0), ExpiresAt: at(15, 0).Add(time.Second)},
 	}
 }
