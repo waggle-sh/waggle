@@ -1,0 +1,58 @@
+5:## D-001: Decision 1
+24:## D-002: Decision 2
+43:## D-003: Decision 3
+== 2 delete last entry (D-003)
+ .waggle/hive/DECISIONS.md | 19 -------------------
+ 1 file changed, 19 deletions(-)
+[delete-last] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head: entries removed or rewritten (base has 3 entries, head has 2)
+== 2c delete last and append a replacement D-003
+[replace-last] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head: entries removed or rewritten (base has 3 entries, head has 3)
+== 2d delete last entry and append two new (net n>o)
+[rewrite-last-plus-append] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head line 60 differs from base inside D-003; existing entries must be byte-identical
+== 3 insert middle (new D-003, old D-003 renumbered D-004)
+ .waggle/hive/DECISIONS.md | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+[insert-middle] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head line 43 differs from base inside D-003; existing entries must be byte-identical
+== 3b insert middle and renumber all subsequent = remove nothing
+== same-length rewrite (D-002 body)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+[same-len-rewrite] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head: entries removed or rewritten (base has 3 entries, head has 3)
+== same-length rewrite plus append
+[same-len-rewrite-plus-append] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head line 41 differs from base inside D-002; existing entries must be byte-identical
+== symlink
+120000 blob ae62b2be0d741b5fd67f24be9ccd2ed07815ac35	.waggle/hive/DECISIONS.md
+[symlink] rc=1 :: decisions: FAIL: head: .waggle/hive/DECISIONS.md is mode 120000 type blob; it must be a regular file (100644 blob)
+== exec bit
+100755 blob 14ca3e7dcd7bd0dd79b72e365c16c6baa17955a0	.waggle/hive/DECISIONS.md
+[exec-bit] rc=1 :: decisions: FAIL: head: .waggle/hive/DECISIONS.md is mode 100755 type blob; it must be a regular file (100644 blob)
+== dir at path
+[tree-at-path] rc=1 :: decisions: FAIL: head: .waggle/hive/DECISIONS.md is mode 040000 type tree; it must be a regular file (100644 blob)
+== parent dir case variant
+cp: .Waggle/hive/DECISIONS.md and .waggle/hive/DECISIONS.md are identical (not copied).
+On branch p17
+nothing to commit, working tree clean
+[parent-case] rc=0 :: decisions: unchanged
+== exactly 4 MiB and 4MiB+1
+ 4194304 .waggle/hive/DECISIONS.md
+[exactly-cap] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 61: missing trailing newline
+== base over cap
+decide-fail
+[base-oversize] rc=0 :: decisions: unchanged
+== duplicate-seq with identical content
+[dup-seq] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 62: expected "## D-004: "
+== lower seq
+[lower-seq] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 62: expected "## D-004: "
+== moved base
+[moved-base] rc=0 :: decisions: unchanged
+== extra blank line in new entry
+[extra-blank] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 62: expected "## D-004: "
+== trailing garbage line
+[trailing-garbage] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 80: expected ""
+== truncated new entry
+[truncated] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 79: unexpected end of file, expected "**Rationale:** "
+== head deleted file but also base-without
+== shellout check: strace-less: grep
+1
+== env GIT_DIR hostile
+rc=3 decisions: error: git: cannot resolve "main" to a commit (git rev-parse: exit status 128: fatal: not a git repository: '/nonexistent')
+== no-write check

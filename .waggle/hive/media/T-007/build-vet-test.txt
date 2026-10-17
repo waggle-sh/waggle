@@ -1,0 +1,22 @@
+BUILD ok
+VET ok
+gofmt:
+ok  	github.com/waggle-sh/waggle/cmd/waggle	9.901s
+ok  	github.com/waggle-sh/waggle/internal/comb	58.158s
+ok  	github.com/waggle-sh/waggle/internal/config	1.275s
+ok  	github.com/waggle-sh/waggle/internal/decisions	4.404s
+ok  	github.com/waggle-sh/waggle/internal/forge	8.109s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.221s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	6.843s
+ok  	github.com/waggle-sh/waggle/internal/decisions	5.651s
+ok  	github.com/waggle-sh/waggle/cmd/waggle	14.212s
+cmd/waggle/gate.go
+cmd/waggle/gate_test.go
+cmd/waggle/main.go
+internal/decisions/gate.go
+internal/decisions/gate_test.go
+dashes:
+imports:
+11:	"os/exec"
+0

@@ -786,6 +786,30 @@ Each item maps one to one to `testdata/backfill/D-0NN.json`. `Options` items are
 - Choice: `CLAUDE.md` (or `AGENTS.md`) is tracked like every other file init writes; the markers separate generated from hand-written content. Neither `init` nor `upgrade` runs `git add`; init's closing hint gains `commit CLAUDE.md (or AGENTS.md) and .gitignore with the rest`. In our hive the Head Keeper commits `CLAUDE.md` as step 0 of T-020 phase C section 7.2, before the first `upgrade` run. Decided by the Head Keeper via queen card on 2026-10-17.
 - Rationale: Rejected ignoring it again: project content outside the markers becomes unignorable. Rejected a tolerance in the clean-tree rule: one special case in a precondition that exists to be absolute.
 
+**D-098** | kind `policy` | tickets `T-015`
+- Title: The `main` ruleset requires product-ci and verify-leases-and-tiers plus one code owner review; every merge uses a logged admin bypass
+- Question: What does the `main` ruleset enforce after T-015, and how do PRs merge when GitHub never counts the author's own approval?
+- Options: Not recorded
+- Recommendation: Not recorded
+- Choice: Ruleset `main` (id 25310890) requires `product-ci` and `verify-leases-and-tiers`, up-to-date branches, blocks force-push, restricts deletion, and requires one code owner review with stale reviews dismissed; admin bypass is set to always. Because GitHub never counts the PR author's own approval, every merge uses `gh pr merge <n> --merge --admin` (a logged bypass). Auto-merge is disabled at the repo level. Applied and read back by the Head Keeper on 2026-10-17.
+- Rationale: Not recorded
+
+**D-099** | kind `policy` | tickets `T-016`
+- Title: T-016 accepted at 737 physical non-test lines against the 700 stop after the guard must-fix round
+- Question: Does T-016 merge at 737 physical non-test lines against the brief's 700 stop, after the guard must-fix round (pin with trailing text refused; symlinked write paths refused)?
+- Options: Accept as built || Split the `git.go` lift into its own PR || Trim to 700
+- Recommendation: Accept
+- Choice: Accept. T-016 merges at 737 physical non-test lines. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: The 54 added lines are the two security fixes and their checks. Splitting costs a forager plus guard pass and delays T-020 phase C. Trimming trades readability on a Tier 3 command for a number.
+
+**D-100** | kind `policy` | tickets `T-020`
+- Title: From T-020 phase C on, every Tier 3 PR gets two guard reviews, one on sonnet and one on a third model; Tier 2 keeps one sonnet guard
+- Question: Should Tier 3 PRs get a second guard review on a different model, and from when?
+- Options: Yes, from T-020 phase C || Sonnet only || A second guard on all PRs
+- Recommendation: Yes, from T-020 phase C
+- Choice: From T-020 phase C on, every Tier 3 PR (T-020 and any later Tier 3 ticket) gets two guard reviews: one on sonnet and one on a third model different from both sonnet and the builder's model (Fable while foragers run on Opus). Tier 2 keeps a single sonnet guard. Decided by the Head Keeper via queen card on 2026-10-17.
+- Rationale: Tier 3 code rewrites the control plane, so a missed defect costs more than about 100k extra tokens per Tier 3 PR. Doubling Tier 2 review spend is not justified by today's record (the sonnet guard found the T-016 symlink escape).
+
 ## Appendix B: Still open (do not record until the Keeper answers)
 
 - **Cell runtime.** Queen recommends a `CellRuntime` interface with an OS-sandbox default (Seatbelt on macOS, bubblewrap on Linux) behind a host egress proxy, plus a Docker-compatible container backend. Requires an RFC amendment.
