@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "profile": "cli",
+  "mode": "swarm",
+  "entry": "queen",
+  "roles": [
+    {
+      "id": "queen",
+      "runs": "session",
+      "workspace": "main",
+      "purpose": "Single conversational interface for the Keeper; surfaces AskUserQuestion decision cards.",
+      "owns": [],
+      "never": ["wait on workers", "write feature code or specs", "edit DECISIONS.md", "lower a gate"]
+    },
+    {
+      "id": "architect",
+      "runs": "worker",
+      "workspace": "main",
+      "purpose": "Breaks down goals into <400-line task briefs with directory leases and Light/Full gate tags.",
+      "owns": ["ROADMAP.md", "docs/specs/**", "docs/tasks/**"],
+      "never": ["write feature implementation code", "talk directly to the Keeper"]
+    },
+    {
+      "id": "scout",
+      "runs": "worker",
+      "workspace": "cell-ro",
+      "allow_unattended": true,
+      "purpose": "Reproduces bugs, writes failing tests, maps required directory leases.",
+      "owns": [],
+      "never": ["write feature implementation code", "modify files outside test repro"]
+    },
+    {
+      "id": "forager",
+      "runs": "worker",
+      "workspace": "cell-rw-lease",
+      "allow_unattended": false,
+      "purpose": "Implements one task from its brief (docs/tasks/T-<id>.md) inside leased directories.",
+      "owns": ["<leased-directories>"],
+      "never": ["touch files outside lease", "read full WORKPLAN.md or backlog", "hold host credentials"]
+    },
+    {
+      "id": "guard",
+      "runs": "worker",
+      "workspace": "cell-ro",
+      "require_cross_model": true,
+      "purpose": "Verifies acceptance criteria, records evidence, and outputs Verdict + Intent Packet + Risk Tier.",
+      "owns": ["docs/reviews/**", "docs/media/**"],
+      "never": ["fix bugs itself", "invent hypothetical nitpicks"]
+    }
+  ]
+}

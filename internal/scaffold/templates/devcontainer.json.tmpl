@@ -1,0 +1,12 @@
+{
+  "name": "Waggle Cell Sandbox",
+  "image": "mcr.microsoft.com/devcontainers/go:1.23",
+  "runArgs": [
+    "--cap-drop=ALL",
+    "--security-opt=no-new-privileges"
+  ],
+  "remoteEnv": {
+    "WAGGLE_CELL": "1",
+    "WAGGLE_SOCKET": "/workspace/.waggle/run.sock"
+  }
+}

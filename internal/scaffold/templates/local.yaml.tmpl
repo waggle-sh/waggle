@@ -1,0 +1,13 @@
+# Local Keeper Preferences (Gitignored — never committed to the repository)
+keeper_id: local-keeper
+runtime: {{RUNTIME}}
+ide: vscode
+
+claude_code:
+  # Personal skills remain in ~/.claude/skills/ on your host and are available
+  # automatically in `queen` sessions without polluting the shared repo.
+  model_overrides:
+    queen: inherit
+    architect: inherit
+    forager: sonnet
+    guard: sonnet

@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: MIT-0
+name: Waggle Gatekeeper
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  relay-claim:
+    if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/waggle claim')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Process Public OSS Relay Claim
+        run: |
+          echo "Relay claim by ${{ github.event.comment.user.login }} on #${{ github.event.issue.number }}"
+          # Invokes: waggle comb relay-claim --issue "${{ github.event.issue.number }}" --keeper "${{ github.event.comment.user.login }}"
+
+  verify-leases-and-tiers:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch Comb Claim Refs
+        run: git fetch origin 'refs/waggle/claims/*:refs/waggle/claims/*' || true
+
+      - name: Check Hardcoded Tiers & Per-Task Leases
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "Modified files in PR:"
+          echo "$CHANGED_FILES"
+
+          # 1. Hardcoded Tier 3 Control-Plane Gate (RFC-0003 Section 3.3)
+          for file in $CHANGED_FILES; do
+            case "$file" in
+              .waggle/*|WAGGLE.md|.devcontainer/*|.github/workflows/*|.gitlab-ci.yml)
+                echo "::warning file=$file::Tier 3 Control Plane modified ($file). Master Keeper approval required."
+                ;;
+              DECISIONS.md|ROADMAP.md|WORKPLAN.md|docs/specs/*|docs/tasks/*)
+                echo "::notice file=$file::Tier 2 Steering Context modified ($file). Full Gate required (ineligible for Light Gate)."
+                ;;
+            esac
+          done
+
+          # 2. Per-Task Lease Verification (RFC-0003 Change #7)
+          # Even when Light-gate tasks merge in a single integration lane, each commit
+          # prefixed `T-<id>:` is verified against its individual refs/waggle/claims/ticket-<id> lease.
+          COMMITS=$(git rev-list "$BASE_SHA..$HEAD_SHA")
+          for sha in $COMMITS; do
+            SUBJECT=$(git log -1 --format="%s" "$sha")
+            echo "Checking commit $sha: $SUBJECT"
+            # Once waggle binary builds in CI: waggle gate verify-commit "$sha"
+          done

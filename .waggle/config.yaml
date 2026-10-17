@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT-0
+# Waggle Hive Configuration (RFC-0003 v0.1)
+# Protected Tier 3 paths (.waggle/**, WAGGLE.md, .devcontainer/**, .github/workflows/**)
+# and Tier 2 minimum steering paths (DECISIONS.md, ROADMAP.md, WORKPLAN.md) are hardcoded.
+version: 1
+
+hive:
+  profile: cli
+  delivery: installed # "installed" (merge to local main) | "hosted" (merge deploys)
+
+forge:
+  provider: github
+  comb_mode: direct # "direct" (git push refs) | "relay" (GitHub Action comment relay)
+  merge_strategy: native_queue
+
+daemon:
+  socket_path: .waggle/run.sock
+  derived_workplan: WORKPLAN.md
+
+runtimes:
+  default: claude-code
+  adapters:
+    claude-code:
+      binary: claude
+      nudge_tokens: 200000
+      max_tokens: 300000
+
+cell:
+  enforce_ro_root: true
+  use_sparse_checkout: false
+  egress_policy: strict
+
+leases:
+  default_ttl_minutes: 120
+  max_directories_per_claim: 5
