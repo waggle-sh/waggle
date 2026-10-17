@@ -1,0 +1,228 @@
+package runtime
+
+import (
+	"errors"
+	"strings"
+	"testing"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+func testPolicy() Policy {
+	return Policy{
+		Models: Models{
+			Adapter: "claude-code",
+			Primary: map[Level]string{LevelFrontier: "opus", LevelStandard: "sonnet", LevelFast: "haiku"},
+		},
+		Minimums: map[string]Level{
+			"architect": LevelFrontier,
+			"queen":     LevelFrontier,
+			"forager":   LevelStandard,
+			"guard":     LevelStandard,
+			"scout":     LevelFast,
+		},
+	}
+}
+
+func tier(t comb.RiskTier) *comb.RiskTier { return &t }
+
+func recorded(ids ...int) func(int) bool {
+	return func(id int) bool {
+		for _, want := range ids {
+			if id == want {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+func mustResolve(t *testing.T, p Policy, role string, task *TaskContext, lookup func(int) bool) Selection {
+	t.Helper()
+	sel, err := p.Resolve(role, task, lookup)
+	if err != nil {
+		t.Fatalf("Resolve(%s): %v", role, err)
+	}
+	if !sel.resolved || sel.Role != role || sel.Adapter != "claude-code" {
+		t.Fatalf("Resolve(%s) = %+v; want resolved for role and adapter", role, sel)
+	}
+	return sel
+}
+
+func wantErr(t *testing.T, err, sentinel error, substrs ...string) {
+	t.Helper()
+	if !errors.Is(err, sentinel) {
+		t.Fatalf("err = %v; want %v", err, sentinel)
+	}
+	for _, s := range substrs {
+		if !strings.Contains(err.Error(), s) {
+			t.Errorf("err %q does not mention %q", err, s)
+		}
+	}
+}
+
+func TestParseLevel(t *testing.T) {
+	for word, want := range map[string]Level{"fast": LevelFast, "standard": LevelStandard, "frontier": LevelFrontier} {
+		got, err := ParseLevel(word)
+		if err != nil || got != want || got.String() != word {
+			t.Errorf("ParseLevel(%q) = %v, %v; want %v", word, got, err, want)
+		}
+	}
+	for _, bad := range []string{"Frontier", "opus", "", " fast"} {
+		if _, err := ParseLevel(bad); !errors.Is(err, ErrInvalidLevel) {
+			t.Errorf("ParseLevel(%q) err = %v; want ErrInvalidLevel", bad, err)
+		}
+	}
+	if s := Level(0).String(); s != "invalid(0)" {
+		t.Errorf("Level(0).String() = %q", s)
+	}
+}
+
+func TestValidate(t *testing.T) {
+	if err := testPolicy().Validate(); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name     string
+		mutate   func(*Policy)
+		sentinel error
+	}{
+		{"bad minimum", func(p *Policy) { p.Minimums["scout"] = 0 }, ErrInvalidLevel},
+		{"missing primary", func(p *Policy) { delete(p.Models.Primary, LevelFast) }, ErrLevelUnmapped},
+		{"alternate equals primary", func(p *Policy) { p.Models.Alternate = map[Level]string{LevelFrontier: "opus"} }, ErrInvalidLevel},
+		{"no guard", func(p *Policy) { delete(p.Minimums, "guard") }, ErrUnknownRole},
+		{"no forager", func(p *Policy) { delete(p.Minimums, "forager") }, ErrUnknownRole},
+		{"waggled in roster", func(p *Policy) { p.Minimums["waggled"] = LevelFast }, ErrNoModelRole},
+	}
+	for _, tc := range cases {
+		p := testPolicy()
+		tc.mutate(&p)
+		wantErr(t, p.Validate(), tc.sentinel)
+	}
+}
+
+func TestDefaultMinimums(t *testing.T) {
+	p := testPolicy()
+	for role, want := range map[string]string{"architect": "opus", "queen": "opus", "forager": "sonnet", "scout": "haiku"} {
+		sel := mustResolve(t, p, role, nil, nil)
+		if sel.Model != want || sel.Level != p.Minimums[role] || sel.SteppedUp {
+			t.Errorf("%s: %+v; want model %s at roster minimum", role, sel, want)
+		}
+	}
+}
+
+func TestGuardCrossModel(t *testing.T) {
+	p := testPolicy()
+	sel := mustResolve(t, p, "guard", &TaskContext{TaskID: "T-1"}, nil)
+	if sel.Model != "opus" || sel.Level != LevelStandard {
+		t.Errorf("guard with forager at standard: %+v; want opus (walked up from the shared standard model)", sel)
+	}
+
+	task := &TaskContext{TaskID: "T-1", GuardMustFix: 2}
+	_, err := p.Resolve("guard", task, nil)
+	wantErr(t, err, ErrNoCrossModel, "guard", "T-1", "frontier", "alternates.frontier")
+
+	p.Models.Alternate = map[Level]string{LevelFrontier: "other-frontier"}
+	sel = mustResolve(t, p, "guard", task, nil)
+	if sel.Model != "other-frontier" || sel.Level != LevelFrontier {
+		t.Errorf("guard against stepped-up forager: %+v; want the frontier alternate", sel)
+	}
+}
+
+func TestForagerStepUp(t *testing.T) {
+	p := testPolicy()
+	for mustFix, want := range map[int]Level{0: LevelStandard, 1: LevelStandard, 2: LevelFrontier, 5: LevelFrontier} {
+		sel := mustResolve(t, p, "forager", &TaskContext{GuardMustFix: mustFix}, nil)
+		if sel.Level != want || sel.SteppedUp != (want == LevelFrontier) {
+			t.Errorf("GuardMustFix %d: %+v; want level %s", mustFix, sel, want)
+		}
+	}
+	p.Minimums["forager"] = LevelFrontier
+	sel := mustResolve(t, p, "forager", &TaskContext{GuardMustFix: 4}, nil)
+	if sel.Level != LevelFrontier || sel.SteppedUp {
+		t.Errorf("forager already at frontier: %+v; want frontier without step-up", sel)
+	}
+}
+
+func TestForagerOverride(t *testing.T) {
+	p := testPolicy()
+	override := func(id int) *TaskContext {
+		return &TaskContext{TaskID: "T-2", Overrides: map[string]Override{"forager": {Level: LevelFast, DecisionID: id}}}
+	}
+	sel := mustResolve(t, p, "forager", override(31), recorded(31))
+	if sel.Model != "haiku" || sel.Level != LevelFast {
+		t.Errorf("recorded override to fast: %+v", sel)
+	}
+	sel = mustResolve(t, p, "forager", &TaskContext{GuardMustFix: 2, Overrides: override(31).Overrides}, recorded(31))
+	if sel.Level != LevelStandard || !sel.SteppedUp {
+		t.Errorf("override then step-up: %+v; want standard, stepped up", sel)
+	}
+
+	_, err := p.Resolve("forager", override(31), nil)
+	wantErr(t, err, ErrOverrideUnrecorded, "forager", "T-2", "fast", "D-31")
+	_, err = p.Resolve("forager", override(0), recorded(31))
+	wantErr(t, err, ErrOverrideUnrecorded)
+	_, err = p.Resolve("forager", override(99), recorded(31))
+	wantErr(t, err, ErrOverrideUnrecorded)
+	_, err = p.Resolve("forager", &TaskContext{Overrides: map[string]Override{"forager": {DecisionID: 31}}}, recorded(31))
+	wantErr(t, err, ErrInvalidLevel)
+}
+
+func TestGuardFloor(t *testing.T) {
+	p := testPolicy()
+	task := func(tier *comb.RiskTier) *TaskContext {
+		return &TaskContext{TaskID: "T-3", Tier: tier, Overrides: map[string]Override{"guard": {Level: LevelFast, DecisionID: 7}}}
+	}
+	for _, tr := range []*comb.RiskTier{tier(comb.Tier2Logic), tier(comb.Tier3ControlPlane), nil} {
+		_, err := p.Resolve("guard", task(tr), recorded(7))
+		wantErr(t, err, ErrGuardFloor, "guard", "T-3", "fast", "standard")
+	}
+	sel := mustResolve(t, p, "guard", task(tier(comb.Tier1Isolated)), recorded(7))
+	forager := mustResolve(t, p, "forager", task(tier(comb.Tier1Isolated)), recorded(7))
+	if sel.Level != LevelFast || sel.Model == forager.Model || sel.Model != "haiku" {
+		t.Errorf("guard override on tier 1: %+v vs forager %+v", sel, forager)
+	}
+	_, err := p.Resolve("guard", task(tier(comb.Tier1Isolated)), nil)
+	wantErr(t, err, ErrOverrideUnrecorded)
+
+	// An override above the floor is fine on any tier, and the guard still
+	// dodges the forager's model.
+	up := &TaskContext{Tier: tier(comb.Tier3ControlPlane), Overrides: map[string]Override{"guard": {Level: LevelFrontier, DecisionID: 7}}}
+	if sel := mustResolve(t, p, "guard", up, recorded(7)); sel.Model != "opus" {
+		t.Errorf("guard override up: %+v", sel)
+	}
+}
+
+func TestResolveErrors(t *testing.T) {
+	p := testPolicy()
+	_, err := p.Resolve("waggled", &TaskContext{TaskID: "T-4"}, nil)
+	wantErr(t, err, ErrNoModelRole, "waggled", "T-4")
+	_, err = p.Resolve("weaver", nil, nil)
+	wantErr(t, err, ErrUnknownRole, "weaver")
+
+	delete(p.Models.Primary, LevelFast)
+	_, err = p.Resolve("scout", &TaskContext{TaskID: "T-4"}, nil)
+	wantErr(t, err, ErrLevelUnmapped, "scout", "T-4", "fast", "runtimes.adapters.claude-code.levels.fast")
+	_, err = p.Resolve("guard", &TaskContext{Overrides: map[string]Override{"forager": {Level: LevelFast, DecisionID: 1}}}, recorded(1))
+	wantErr(t, err, ErrLevelUnmapped, "forager")
+}
+
+func TestCountMustFix(t *testing.T) {
+	review := strings.Join([]string{
+		"# Review T-9 (verdict: must-fix)",
+		"Verdict: must-fix  ",
+		"notes",
+		"Verdict: pass",
+		"## Round 2",
+		"Verdict: must-fix",
+		"verdict: must-fix",
+		" Verdict: must-fix",
+		"",
+	}, "\r\n")
+	if n := CountMustFix([]byte(review)); n != 2 {
+		t.Errorf("CountMustFix = %d; want 2", n)
+	}
+	if n := CountMustFix(nil); n != 0 {
+		t.Errorf("CountMustFix(nil) = %d", n)
+	}
+}
