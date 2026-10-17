@@ -39,7 +39,7 @@ const HiveCarveOut = ".waggle/hive/"
 
 // HardcodedTier2MinPrefixes define agent-read steering context.
 // Because an injected brief, decision log or agent instruction file steers
-// downstream Foragers, these paths can never be downgraded to Tier 0 or Tier 1
+// downstream Builders, these paths can never be downgraded to Tier 0 or Tier 1
 // (Light Gate). Matched case-insensitively.
 var HardcodedTier2MinPrefixes = []string{
 	".waggle/hive/",
@@ -77,10 +77,28 @@ func RequiredMinTier(relPath string) RiskTier {
 	return Tier0Trivial
 }
 
+// LeaseVersion is the lease.json version written by new claims. Version 1
+// claims predate the role rename (D-080) and carry the old role names; they are
+// still read, with their roles mapped through legacyRoles (see parseLease).
+const LeaseVersion = 2
+
+// legacyRoles maps a version 1 role name to its current name (D-080). Before
+// the rename, "scout" was the triage role and "forager" the implementation
+// role; both words still exist with different meanings, so a version 1 claim
+// is never read with its role name taken literally.
+var legacyRoles = map[string]string{
+	"scout":   "forager",
+	"forager": "builder",
+	"guard":   "guard",
+}
+
 // Lease represents a Keeper's claim on a single ticket and its scoped directories.
 // In v0.1 directories are literal repo-relative paths, never globs (see
 // NormalizeDirectories). TicketID is always stored in canonical display form
 // (T-%03d, see ParseTicketID).
+//
+// Version is the stored lease.json version. A lease read from a version 1
+// claim keeps Version 1 but carries the current role name.
 //
 // CONCURRENCY INVARIANT (RFC-0003 Section 3.1):
 // Updating refs/waggle/claims/ticket-<ID> provides atomic Compare-And-Swap (CAS)
@@ -90,7 +108,7 @@ type Lease struct {
 	Version     int       `json:"version"`
 	TicketID    string    `json:"ticket_id"`
 	KeeperID    string    `json:"keeper_id"`
-	Role        string    `json:"role"` // "scout" | "forager" | "guard"
+	Role        string    `json:"role"` // "forager" | "builder" | "guard" (see isClaimRole); version 1 names are mapped on read
 	Gate        string    `json:"gate"` // "light" | "full"
 	Directories []string  `json:"directories"`
 	ClaimedAt   time.Time `json:"claimed_at"`
@@ -331,6 +349,17 @@ func isTier2Dir(dir string) bool {
 	return RequiredMinTier(dir) == Tier2Logic || touchesPrefixes(dir, HardcodedTier2MinPrefixes)
 }
 
+// isClaimRole reports whether role may hold a claim. The claimable roles are the
+// three worker roles that act on a ticket: forager (triage and repro), builder
+// (implementation) and guard (review). The queen and the scout never claim.
+func isClaimRole(role string) bool {
+	switch role {
+	case "forager", "builder", "guard":
+		return true
+	}
+	return false
+}
+
 // validateLeaseFields checks every non-time field of a lease and returns a copy
 // with the canonical ticket ID and normalized directories.
 func validateLeaseFields(l Lease, maxDirs int) (Lease, error) {
@@ -342,9 +371,7 @@ func validateLeaseFields(l Lease, maxDirs int) (Lease, error) {
 	if !keeperIDPattern.MatchString(l.KeeperID) {
 		return Lease{}, fmt.Errorf("keeper id %q: %w", l.KeeperID, ErrInvalidLease)
 	}
-	switch l.Role {
-	case "scout", "forager", "guard":
-	default:
+	if !isClaimRole(l.Role) {
 		return Lease{}, fmt.Errorf("role %q: %w", l.Role, ErrInvalidLease)
 	}
 	switch l.Gate {
