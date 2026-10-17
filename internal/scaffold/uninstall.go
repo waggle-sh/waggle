@@ -1,13 +1,11 @@
 package scaffold
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -16,10 +14,10 @@ import (
 	"github.com/waggle-sh/waggle/internal/runtime"
 )
 
-// ErrRefused reports an uninstall precondition that failed. Nothing was
-// written. The CLI maps it to exit code 1; every other error is a git or I/O
-// failure and maps to exit code 3.
-var ErrRefused = errors.New("scaffold: uninstall refused")
+// ErrRefused reports an uninstall or upgrade precondition that failed.
+// Nothing was written. The CLI maps it to exit code 1; every other error is a
+// git or I/O failure and maps to exit code 3.
+var ErrRefused = errors.New("scaffold: refused, nothing written")
 
 // ManagedLine marks a gate workflow that waggle init installed. uninstall
 // removes the workflow only when a line carries it.
@@ -71,10 +69,11 @@ func Uninstall(opts UninstallOptions) error {
 	}
 
 	// Preconditions, all before any write.
-	if err := checkWorktreeRoot(opts, root); err != nil {
+	g := gitRunner{bin: opts.GitBinary, env: opts.GitEnv}
+	if err := checkWorktreeRoot(g, root); err != nil {
 		return err
 	}
-	if err := checkCleanTree(opts, root); err != nil {
+	if err := checkCleanTree(g, root); err != nil {
 		return err
 	}
 	if !exists(root, layout.Config) {
@@ -133,76 +132,6 @@ func Uninstall(opts UninstallOptions) error {
 	}
 	fmt.Fprintln(out, uninstallLastLine)
 	return nil
-}
-
-// git runs one git command in root and returns its stdout. A non-zero exit
-// returns an error wrapping *exec.ExitError and carrying git's stderr.
-func (o UninstallOptions) git(root string, args ...string) (string, error) {
-	bin := o.GitBinary
-	if bin == "" {
-		bin = "git"
-	}
-	cmd := exec.Command(bin, append([]string{"-C", root}, args...)...)
-	cmd.Env = append(append(os.Environ(), "LC_ALL=C", "GIT_TERMINAL_PROMPT=0"), o.GitEnv...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("git %s: %w: %s", args[0], err, strings.TrimSpace(stderr.String()))
-	}
-	// Only trailing newlines go: porcelain status lines start with a
-	// significant space.
-	return strings.TrimRight(stdout.String(), "\r\n"), nil
-}
-
-// checkWorktreeRoot refuses unless root is the git work tree root. git exiting
-// non-zero (for example outside any repository) is a refusal; failing to start
-// git at all is an I/O error.
-func checkWorktreeRoot(opts UninstallOptions, root string) error {
-	top, err := opts.git(root, "rev-parse", "--show-toplevel")
-	if err != nil {
-		var exit *exec.ExitError
-		if errors.As(err, &exit) {
-			return fmt.Errorf("%v: %w", err, ErrRefused)
-		}
-		return err
-	}
-	same, err := samePath(top, root)
-	if err != nil {
-		return err
-	}
-	if !same {
-		return fmt.Errorf("run from the work tree root %s, not %s: %w", top, root, ErrRefused)
-	}
-	return nil
-}
-
-func samePath(a, b string) (bool, error) {
-	ra, err := filepath.EvalSymlinks(a)
-	if err != nil {
-		return false, fmt.Errorf("resolving %s: %w", a, err)
-	}
-	rb, err := filepath.EvalSymlinks(b)
-	if err != nil {
-		return false, fmt.Errorf("resolving %s: %w", b, err)
-	}
-	return ra == rb, nil
-}
-
-// checkCleanTree refuses when git status reports any change or untracked file.
-func checkCleanTree(opts UninstallOptions, root string) error {
-	status, err := opts.git(root, "status", "--porcelain=v1", "--untracked-files=normal")
-	if err != nil {
-		return err
-	}
-	if status == "" {
-		return nil
-	}
-	first, _, _ := strings.Cut(status, "\n")
-	p := first
-	if len(first) > 3 {
-		p = first[3:]
-	}
-	return fmt.Errorf("work tree is not clean (first dirty path: %s); commit or stash first: %w", p, ErrRefused)
 }
 
 // countFiles returns the number of regular files under dir and, of those, the
