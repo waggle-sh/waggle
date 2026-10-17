@@ -2,7 +2,7 @@ package runtime
 
 import "context"
 
-// AdapterConfig holds model- and runtime-specific thresholds loaded from .waggle/config.yaml.
+// AdapterConfig holds model- and runtime-specific thresholds loaded from .waggle/control/config.yaml.
 // Keeping token limits in config rather than hardcoded in the binary allows operators to
 // tune thresholds as model context windows evolve.
 type AdapterConfig struct {
@@ -19,7 +19,7 @@ type Invocation struct {
 	WorktreeDir string
 	PromptFile  string
 	BriefFile   string
-	SocketPath  string // Path to waggled's .waggle/run.sock
+	SocketPath  string // Path to waggled's .waggle/control/run.sock
 }
 
 // UsageStats reports token consumption back to waggled so the daemon can enforce
@@ -35,8 +35,8 @@ type UsageStats struct {
 type AgentRuntime interface {
 	Name() string
 	Config() AdapterConfig
-	// Materialize generates gitignored vendor-specific files (e.g., .claude/agents/*.md,
-	// CLAUDE.md) from the canonical .waggle/roles/*.md and WAGGLE.md sources of truth.
+	// Materialize generates gitignored vendor-specific files (e.g., .claude/agents/waggle-*.md)
+	// from the canonical .waggle/control/roles/*.md sources. It never writes CLAUDE.md.
 	Materialize(repoDir string) error
 	Run(ctx context.Context, inv Invocation) (UsageStats, error)
 }

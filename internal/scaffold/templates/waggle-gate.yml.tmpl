@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MIT-0
+# waggle:managed: installed by waggle init; removed by waggle uninstall. Do not edit by hand.
 name: Waggle Gatekeeper
 
 on:
@@ -41,17 +42,21 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          CHANGED_FILES=$(git diff --name-only --no-renames "$BASE_SHA" "$HEAD_SHA")
           echo "Modified files in PR:"
           echo "$CHANGED_FILES"
 
-          # 1. Hardcoded Tier 3 Control-Plane Gate (RFC-0003 Section 3.3)
+          # 1. Hardcoded tiers (RFC-0003 Section 3.3). Order matters: the hive
+          # carve-out is matched before the rest of .waggle/.
           for file in $CHANGED_FILES; do
             case "$file" in
-              .waggle/*|WAGGLE.md|.devcontainer/*|.github/workflows/*|.gitlab-ci.yml)
-                echo "::warning file=$file::Tier 3 Control Plane modified ($file). Master Keeper approval required."
+              .waggle/hive|.waggle/hive/*)
+                echo "::notice file=$file::Tier 2 Hive record modified ($file). Full Gate required (ineligible for Light Gate)."
                 ;;
-              DECISIONS.md|ROADMAP.md|WORKPLAN.md|docs/specs/*|docs/tasks/*)
+              .waggle|.waggle/*|.github/workflows/*|.gitlab-ci.yml|.devcontainer/*)
+                echo "::warning file=$file::Tier 3 Control Plane modified ($file). Head Keeper approval required."
+                ;;
+              CLAUDE.md|AGENTS.md)
                 echo "::notice file=$file::Tier 2 Steering Context modified ($file). Full Gate required (ineligible for Light Gate)."
                 ;;
             esac
