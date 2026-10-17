@@ -108,7 +108,10 @@ func (n *none) merge(ctx context.Context, c Change, req MergeRequest) error {
 		_, _ = gitRun(ctx, n.repoDir, nil, "update-ref", "-m", reflog+" (undone)", baseRef, base, merged)
 		return fmt.Errorf("%s rejected the push, %s moved on the remote: %w", n.remote, baseRef, ErrHeadMoved)
 	}
-	return err
+	if err != nil {
+		return fmt.Errorf("local %s advanced to %s but the push to %s did not: %w", baseRef, merged, n.remote, err)
+	}
+	return nil
 }
 
 // mergeTree merges two commits in memory with git merge-tree --write-tree and
