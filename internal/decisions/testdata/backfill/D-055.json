@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Root CLAUDE.md and AGENTS.md are Tier 2 minimum",
+  "question": "Should root CLAUDE.md and AGENTS.md be hardcoded Tier 2 minimum?",
+  "options": [
+    "Yes",
+    "No"
+  ],
+  "recommendation": "Yes",
+  "choice": "Root CLAUDE.md and AGENTS.md are Tier 2 minimum.",
+  "rationale": "They carry the import into the hive instructions.",
+  "tickets": [
+    "T-011"
+  ],
+  "supersedes": []
+}

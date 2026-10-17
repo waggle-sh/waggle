@@ -1,0 +1,14 @@
+{
+  "kind": "strategy",
+  "title": "GitHub home is the waggle-sh organization owned by Level 19 Enterprises, LLC",
+  "question": "Who owns the GitHub organization and holds the copyright for Waggle?",
+  "options": [
+    "Personal account",
+    "Organization waggle-sh owned by Level 19 Enterprises, LLC under the GitHub Corporate Terms"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "GitHub home is the organization waggle-sh, owned by the business Level 19 Enterprises, LLC (GitHub Corporate Terms). Copyright holder for NOTICE and copyright lines will be Level 19 Enterprises, LLC (implementation pending, ties into the open licensing item). The Keeper also owns getwaggle.dev and getwaggle.sh (no use decided yet).",
+  "rationale": "Not recorded",
+  "tickets": [],
+  "supersedes": []
+}

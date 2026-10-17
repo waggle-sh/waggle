@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Glossary at docs/GLOSSARY.md, Tier 2 minimum, owned by the architect",
+  "question": "Where do Waggle's terms get defined, and who keeps them current?",
+  "options": [
+    "Terms defined only in the RFC",
+    "A glossary at docs/GLOSSARY.md, Tier 2 minimum, owned by the architect"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "docs/GLOSSARY.md is Tier 2 minimum, owned by the architect, linked from the README, and updated in the same PR as any brief that introduces a term.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-013"
+  ],
+  "supersedes": []
+}

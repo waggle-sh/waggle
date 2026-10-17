@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "Worker leases never include .waggle/",
+  "question": "How are hive files protected from workers, and how does this repo keep product and hive changes apart?",
+  "options": [
+    "A configurable rule",
+    "A universal rule built into Waggle with no config and no new user-facing terms"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Universal rule built into Waggle with no config and no new user-facing terms: a worker lease can never include .waggle/; hive files change only through waggle commands or the Head Keeper. Enforced at claim time (internal/comb) and at the gate. Waggle-repo-only conventions, not in Waggle's schema: a \"Layer: product | hive\" line in our own briefs, CODEOWNERS on templates, and a CONTRIBUTING.md section explaining product versus hive. Mixed changes split into a product ticket, then a hive upgrade.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-011",
+    "T-013"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "strategy",
+  "title": "Roles are renamed to recognizable bee jobs: Scout plans, Builder codes, Forager triages",
+  "question": "Should every role name match a real bee job that fits what the role does?",
+  "options": [
+    "Keep architect, scout and forager",
+    "Rename so every role is a recognizable bee job"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "All roles become recognizable bee jobs. architect becomes Scout (plans tasks and writes briefs; scouts search ahead and dance directions to the hive). forager becomes Builder (writes code; builder bees make comb). scout becomes Forager (triage: reproduces bugs, writes failing tests, maps leases; foragers bring material back from outside). Queen and guard are unchanged. The rename is done in one rename ticket after T-011 merges.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-020"
+  ],
+  "supersedes": []
+}
