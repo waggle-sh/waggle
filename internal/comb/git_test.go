@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -979,5 +980,94 @@ func TestForgedInvalidClaimsMalformed(t *testing.T) {
 		if err := b.AcquireLease(ctx, mkLease(ticketDisplay(n), "alice", "elsewhere")); !errors.Is(err, ErrMalformedClaim) {
 			t.Errorf("AcquireLease(%s) = %v; want ErrMalformedClaim", ticketDisplay(n), err)
 		}
+	}
+}
+
+// Test 5 (F3): childEnv drops repository-redirecting variables and keeps the
+// user's credentials and config; explicit input survives in order.
+func TestChildEnv(t *testing.T) {
+	parent := []string{"PATH=/usr/bin", "HOME=/home/u", "GIT_SSH_COMMAND=ssh -i k", "GIT_CONFIG_GLOBAL=/g",
+		"GIT_CONFIG_NOSYSTEM=1", "GIT_TRACE=1", "GIT_ASKPASS=/a", "git_dir=/lower", "NOEQUALS"}
+	for _, k := range scrubbedGitEnv {
+		parent = append(parent, k+"=/evil")
+	}
+	extra := []string{"GIT_DIR=x", "A=1"}
+	call := []string{"B=2", "GIT_DIR=y"}
+	got := childEnv(parent, extra, call)
+
+	keys := map[string]int{}
+	for _, kv := range got {
+		k, _, _ := strings.Cut(kv, "=")
+		keys[strings.ToUpper(k)]++
+	}
+	for _, k := range scrubbedGitEnv {
+		want := 0
+		switch k {
+		case "GIT_NO_REPLACE_OBJECTS":
+			want = 1
+		case "GIT_DIR":
+			want = 2
+		}
+		if keys[k] != want {
+			t.Errorf("%s appears %d times; want %d", k, keys[k], want)
+		}
+	}
+	for _, kv := range []string{"PATH=/usr/bin", "HOME=/home/u", "GIT_SSH_COMMAND=ssh -i k", "GIT_CONFIG_GLOBAL=/g",
+		"GIT_CONFIG_NOSYSTEM=1", "GIT_TRACE=1", "GIT_ASKPASS=/a", "NOEQUALS",
+		"GIT_TERMINAL_PROMPT=0", "LC_ALL=C", "GIT_NO_REPLACE_OBJECTS=1"} {
+		if !slices.Contains(got, kv) {
+			t.Errorf("missing %q in %q", kv, got)
+		}
+	}
+	if slices.Contains(got, "git_dir=/lower") {
+		t.Error("lowercase git_dir survived")
+	}
+	tail := got[len(got)-4:]
+	if !reflect.DeepEqual(tail, []string{"GIT_DIR=x", "A=1", "B=2", "GIT_DIR=y"}) {
+		t.Errorf("tail = %q; want extra then call entries in order", tail)
+	}
+	if i := slices.Index(got, "GIT_NO_REPLACE_OBJECTS=1"); i > slices.Index(got, "GIT_DIR=x") {
+		t.Error("fixed settings must precede ExtraEnv")
+	}
+	if len(got) != len(parent)-len(scrubbedGitEnv)-1+3+len(extra)+len(call) {
+		t.Errorf("len = %d: %q", len(got), got)
+	}
+}
+
+// Test 6 (F3): an inherited GIT_DIR family cannot redirect a claim away from
+// RepoDir. Not parallel: it mutates the process environment.
+func TestInheritedGitDirIgnored(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	decoy := newRepo(t, false)
+	b := newBackend(t, dir, "", newClock())
+	t.Run("acquire with hostile env", func(t *testing.T) {
+		t.Setenv("GIT_DIR", filepath.Join(decoy, ".git"))
+		t.Setenv("GIT_WORK_TREE", decoy)
+		t.Setenv("GIT_INDEX_FILE", filepath.Join(decoy, "idx"))
+		t.Setenv("GIT_OBJECT_DIRECTORY", filepath.Join(decoy, ".git", "objects"))
+		t.Setenv("GIT_NAMESPACE", "evil")
+		if err := b.AcquireLease(context.Background(), mkLease("T-001", "alice", "pkg")); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if refs := claimRefs(t, dir); refs != "refs/waggle/claims/ticket-1" {
+		t.Fatalf("real repo refs = %q", refs)
+	}
+	if ns := runGit(t, dir, "", nil, "for-each-ref", "refs/namespaces/"); ns != "" {
+		t.Fatalf("claim written under a namespace: %s", ns)
+	}
+	oid := runGit(t, dir, "", nil, "rev-parse", "refs/waggle/claims/ticket-1")
+	if typ := runGit(t, dir, "", nil, "cat-file", "-t", oid); typ != "commit" {
+		t.Fatalf("claim object type %q", typ)
+	}
+	if l := readLease(t, dir, oid); l.KeeperID != "alice" {
+		t.Fatalf("stored lease = %+v", l)
+	}
+	if all := runGit(t, decoy, "", nil, "for-each-ref"); all != "" {
+		t.Fatalf("decoy has refs: %s", all)
+	}
+	if n := runGit(t, decoy, "", nil, "count-objects"); !strings.HasPrefix(n, "0 objects") {
+		t.Fatalf("decoy object store touched: %s", n)
 	}
 }
