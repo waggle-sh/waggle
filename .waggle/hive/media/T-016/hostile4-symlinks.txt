@@ -1,0 +1,48 @@
+##### a) managed FILE is a committed symlink to a file outside the repo
+  [rewrite] .waggle/control/roster.json
+exit=0
+outside file now:
+{
+  "version": 1,
+  "profile": "cli",
+  "mode": "swarm",
+  "entry": "queen",
+  "roles": [
+    {
+      "id": "queen",
+   
+lrwxr-xr-x@ 1 paul  wheel  114 Oct 17 14:26 .waggle/control/roster.json -> /private/tmp/claude-501/-Users-paul-code-waggle/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/outside/victim.txt
+
+##### b) roles/ is a committed symlink to a dir outside
+  [create]  .waggle/control/roles/builder.md
+  [create]  .waggle/control/roles/forager.md
+  [create]  .waggle/control/roles/guard.md
+  [rewrite] .waggle/control/roles/queen.md
+  [create]  .waggle/control/roles/scout.md
+  [remove]  .waggle/control/roles/extra.md
+exit=0
+builder.md
+forager.md
+guard.md
+queen.md
+scout.md
+ M .waggle/control/config.yaml
+
+##### c) hand-added symlink inside roles/ pointing outside
+  [remove]  .waggle/control/roles/evil.md
+exit=0
+precious.md
+precious
+builder.md
+forager.md
+guard.md
+queen.md
+scout.md
+
+##### d) symlinked pin config.yaml -> outside
+exit=0
+9:  pin: fa85121f60c3846be294b03b5e8ec4a799abdaa1 # the Wagg
+
+##### e) unix socket present
+waggle upgrade refused: .waggle/control/run.sock exists; stop waggled first: scaffold: refused, nothing written
+exit=1

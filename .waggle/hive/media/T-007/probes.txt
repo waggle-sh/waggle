@@ -1,0 +1,85 @@
+== baseline
+[noop] rc=0 :: decisions: unchanged
+[valid-append] rc=0 :: decisions: ok, appended D-004
+== 1 same-length rewrite
+     966 .waggle/hive/DECISIONS.md
+     966 /dev/fd/63
+[same-len-rewrite] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head: entries removed or rewritten (base has 3 entries, head has 3)
+== 2 delete last entry
+0000060    e   n       3  \n  \n   *   *   R   a   t   i   o   n   a   l
+0000100    e   :   *   *       B   e   c   a   u   s   e       3   .  \n
+0000120
+On branch p2
+nothing to commit, working tree clean
+[delete-last] rc=0 :: decisions: unchanged
+== 2b delete last entry and append new D-003 differing
+[rewrite-last-longer] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head: entries removed or rewritten (base has 3 entries, head has 3)
+== 3 insert middle
+On branch p3
+nothing to commit, working tree clean
+[insert-middle] rc=0 :: decisions: unchanged
+== 4 CRLF head
+[crlf-head] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head line 1 differs from base inside the header; existing entries must be byte-identical
+== 4b CRLF only on appended entry
+[crlf-new-entry] rc=0 :: decisions: ok, appended D-004
+== 5 corrupt base
+decide-fail
+[corrupt-base] rc=1 :: decisions: FAIL: base DECISIONS.md fails integrity; repair needs a Head Keeper admin merge: decisions: DECISIONS.md failed integrity check: line 60: missing trailing newline
+== 5b corrupt base, unrelated head change
+[corrupt-base-edit] rc=1 :: decisions: FAIL: base DECISIONS.md fails integrity; repair needs a Head Keeper admin merge: decisions: DECISIONS.md failed integrity check: line 60: missing trailing newline
+== 6 over MaxLogBytes
+[oversize] rc=1 :: decisions: FAIL: head: .waggle/hive/DECISIONS.md is 5243846 bytes, over the 4194304 byte cap
+== 6b exactly at cap+1 head,
+== 7 lower seq
+[lower-seq] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 62: expected "## D-004: "
+== 7b duplicate seq D-003
+[dup-seq] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 62: expected "## D-004: "
+== 7c gap D-005
+[gap-seq] rc=1 :: decisions: FAIL: head DECISIONS.md: decisions: DECISIONS.md failed integrity check: line 62: expected "## D-004: "
+== 8 --repo non-repo / subdir / missing
+[nonrepo] rc=3 :: decisions: error: git: cannot resolve "main" to a commit (git rev-parse: exit status 128: fatal: not a git repository (or any of the parent directories): .git)
+[subdir] rc=0 :: decisions: ok, appended D-004
+[missing-repo] rc=3 :: decisions: error: git: cannot resolve "main" to a commit (git rev-parse: exit status 128: fatal: cannot change to '/tmp/claude-501/probezJdr/nope': No such file or directory)
+== 9 base ref missing
+[nosuchref] rc=3 :: decisions: error: git: cannot resolve "nosuchref" to a commit (git rev-parse: exit status 1: )
+[nosuchhead] rc=3 :: decisions: error: git: cannot resolve "nosuch" to a commit (git rev-parse: exit status 1: )
+[opt-inject] rc=2 :: waggle gate decisions: --base must not start with -
+[opt-inject2] rc=2 :: waggle gate decisions: --base must not start with -
+[ws] rc=2 :: waggle gate decisions: --base must not contain NUL or whitespace
+[empty] rc=2 :: waggle gate decisions: --base is required
+[nohead] rc=2 :: waggle gate decisions: --head is required
+[extra] rc=2 :: waggle gate decisions: unexpected argument "extra"
+[unknown-check] rc=2 :: waggle gate decisions: --base is required
+[frobnicate] rc=2
+[bare] rc=2
+[-h] rc=0
+[--bogus] rc=2
+== other
+[deleted] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head: DECISIONS.md deleted
+ln: .waggle/hive/DECISIONS.md: No such file or directory
+[symlink] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head: DECISIONS.md deleted
+[casevariant] rc=1 :: decisions: FAIL: .waggle/hive/decisions.md is a case variant of .waggle/hive/DECISIONS.md and would shadow it on case-insensitive checkouts
+chmod: .waggle/hive/DECISIONS.md: No such file or directory
+[exec-bit] rc=1 :: decisions: FAIL: decisions: change is not a pure append: head: DECISIONS.md deleted
+[dirty-tree] rc=0 :: decisions: unchanged
+[unrelated] rc=3 :: decisions: error: git: no merge-base; is the clone shallow? use fetch-depth: 0 (git merge-base: exit status 1: )
+[file-created] rc=0 :: decisions: ok, appended D-001, D-002, D-003
+== GITHUB_ACTIONS annotation
+rc=1 ::error file=.waggle/hive/DECISIONS.md::decisions: change is not a pure append: head: entries removed or rewritten (base has 3 entries, head has 3)
+== crash on git missing
+rc=3 decisions: error: git: cannot resolve "main" to a commit (git rev-parse: exec: "git": executable file not found in $PATH: )
+== unborn/ wrong HEAD ref names
+[branchnamedash] rc=0 :: decisions: ok, appended D-004
+== write side effects check
+COMMIT_EDITMSG
+config
+description
+HEAD
+hooks
+index
+info
+logs
+objects
+packed-refs
+refs
+/tmp/claude-501/probezJdr

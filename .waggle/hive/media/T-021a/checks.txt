@@ -1,0 +1,14 @@
+T-021a guard checks, branch t-021a head ce8cb67, worktree .claude/worktrees/agent-acc37d9961dce9fea
+go build ./...            ok
+go vet ./...              ok
+gofmt -l .                (empty)
+go test -race -count=2 ./...  all packages ok (runtime 1.2s)
+Merge on origin/main 6b84500: git merge --no-commit --no-ff ce8cb67 -> "Automatic merge went well"; build, vet, go test -race ./internal/runtime/... ok after merge
+Diff files: 10, all under internal/runtime/; go.mod and go.sum untouched
+Non-test physical lines (wc -l): profile.go 143, prompt.go 85, trim.go 73, handoff.go 97 = 398 new; claude.go +45/-5 (file now 148). Builder figure 443 = 398 + 45 confirmed.
+Grep em/en dash in diff and internal/runtime/*.go: none. Commit messages: no AI attribution, all subjects T-021:
+Grep model names in profile.go (claude-, opus, sonnet, haiku, gemini, gpt): none (AC4)
+t.Skip in new tests: none
+PR #25: draft, mergeable, product-ci success, verify-leases-and-tiers success, relay-claim skipped
+Installed Claude Code 2.1.302: --strict-mcp-config, --resume/-r, --continue/-c, --session-id, --fork-session, --from-pr, --teleport listed in --help; --max-turns present in binary but hidden from --help; strings in binary include MAX_THINKING_TOKENS, BASH_MAX_OUTPUT_LENGTH, DISABLE_AUTO_COMPACT, DISABLE_COMPACT.
+Probes: probes.txt (output) from probe_test.go.txt, run in a scratch copy outside the repo.
