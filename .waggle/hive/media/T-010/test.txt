@@ -1,0 +1,5 @@
+?   	github.com/waggle-sh/waggle/cmd/waggle	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/comb	(cached)
+?   	github.com/waggle-sh/waggle/internal/runtime	[no test files]
+?   	github.com/waggle-sh/waggle/internal/scaffold	[no test files]
+exit=0

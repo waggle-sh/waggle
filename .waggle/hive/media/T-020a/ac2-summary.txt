@@ -1,0 +1,3 @@
+Scratch checkout of b4f2221, lease = git ls-files of cmd, internal/comb, internal/layout, internal/runtime, internal/scaffold (28 files).
+Step 0 sentinel grep: 0 hits. Steps 1 and 2 run verbatim from brief section 2, then the two-step git mv of roles/*.md. 
+git diff --cached 2411ce0 : 0 lines (empty). Lease dirs found by brief grep: comb, layout, runtime, scaffold (4; layout hit is the word "architecture", no change).

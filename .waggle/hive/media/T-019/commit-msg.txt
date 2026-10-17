@@ -1,0 +1,4 @@
+Head Keeper: T-019 product CI workflow
+
+Adds .github/workflows/ci.yml (D-072): build, vet, gofmt check and race tests on every PR and push to main. Product layer, separate from the hive gate. Tier 3 path, Head Keeper commit, no lease. File copied verbatim from docs/tasks/T-019.md section 2.
+
