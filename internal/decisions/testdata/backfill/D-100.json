@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "From T-020 phase C on, every Tier 3 PR gets two guard reviews, one on sonnet and one on a third model; Tier 2 keeps one sonnet guard",
+  "question": "Should Tier 3 PRs get a second guard review on a different model, and from when?",
+  "options": [
+    "Yes, from T-020 phase C",
+    "Sonnet only",
+    "A second guard on all PRs"
+  ],
+  "recommendation": "Yes, from T-020 phase C",
+  "choice": "From T-020 phase C on, every Tier 3 PR (T-020 and any later Tier 3 ticket) gets two guard reviews: one on sonnet and one on a third model different from both sonnet and the builder's model (Fable while foragers run on Opus). Tier 2 keeps a single sonnet guard. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Tier 3 code rewrites the control plane, so a missed defect costs more than about 100k extra tokens per Tier 3 PR. Doubling Tier 2 review spend is not justified by today's record (the sonnet guard found the T-016 symlink escape).",
+  "tickets": [
+    "T-020"
+  ],
+  "supersedes": []
+}

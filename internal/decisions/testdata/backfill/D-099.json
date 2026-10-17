@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "T-016 accepted at 737 physical non-test lines against the 700 stop after the guard must-fix round",
+  "question": "Does T-016 merge at 737 physical non-test lines against the brief's 700 stop, after the guard must-fix round (pin with trailing text refused; symlinked write paths refused)?",
+  "options": [
+    "Accept as built",
+    "Split the `git.go` lift into its own PR",
+    "Trim to 700"
+  ],
+  "recommendation": "Accept",
+  "choice": "Accept. T-016 merges at 737 physical non-test lines. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "The 54 added lines are the two security fixes and their checks. Splitting costs a forager plus guard pass and delays T-020 phase C. Trimming trades readability on a Tier 3 command for a number.",
+  "tickets": [
+    "T-016"
+  ],
+  "supersedes": []
+}

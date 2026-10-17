@@ -1,0 +1,20 @@
+{
+  "kind": "strategy",
+  "title": "T-023 `waggle dispatch` is built now, host-only with a `CellRuntime` seam, ahead of Cells (D-014 order); supersedes D-083's sequencing for T-023 only",
+  "question": "Does T-023 wait for the Cell runtime, or follow D-014 and ship host-only with a Cell seam? (Q-T023-1)",
+  "options": [
+    "Follow D-014: approve T-023 now, host-only with the section 7.3 seam, superseding D-083's \"after the Cell runtime decision\" for T-023 only",
+    "Hold T-023 until the Cell runtime is decided"
+  ],
+  "recommendation": "Follow D-014, host-only with the seam",
+  "choice": "T-023 is approved now and runs workers on the host behind the `CellRuntime` seam of its section 7.3. This supersedes D-083's \"T-023 after the Cell runtime decision\" for T-023 only. Cells (T-024) stay the slice after the `run.sock` loop. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected holding T-023: it delays own honey (D-044) by at least one RFC amendment.",
+  "tickets": [
+    "T-023",
+    "T-021",
+    "T-024"
+  ],
+  "supersedes": [
+    "D-083"
+  ]
+}

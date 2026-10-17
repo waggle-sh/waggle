@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "`waggle upgrade` regenerates and prunes the running Keeper's shims only; other Keepers rerun `waggle init --force`",
+  "question": "What does `waggle upgrade` do with the `.claude/agents/waggle-*.md` shims? (Q-T016-7)",
+  "options": [
+    "Regenerate and prune this Keeper's shims through `--runtime`; others rerun `init --force` or a future `waggle shims`",
+    "Leave shims alone and tell every Keeper to rerun init"
+  ],
+  "recommendation": "Regenerate and prune this Keeper's shims",
+  "choice": "`upgrade` removes each shim carrying `# waggle:generated` whose role file is gone after the removals, and regenerates `.claude/agents/waggle-*.md` once when `--runtime=claude-code`. A shim without `# waggle:generated` is never touched. Other Keepers rerun `waggle init --force` or a future `waggle shims`. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected leaving shims alone: it makes T-020 section 7.2's \"shims regenerated with `waggle-architect.md` removed\" a manual step, which is the kind of step that gets skipped.",
+  "tickets": [
+    "T-016",
+    "T-020"
+  ],
+  "supersedes": []
+}

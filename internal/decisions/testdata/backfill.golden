@@ -1666,3 +1666,874 @@
 **Keeper choice:** T-011 phase C pins `b4f2221` (the phase A merge commit). Our hive keeps the old role names (queen, architect, scout, forager, guard) until T-020 phase C moves the pin through `waggle upgrade`, which makes that the first real test of managed-file removal (D-083). Confirms the queen default recorded in T-011 section 10 and T-020 section 9. Decided by the Head Keeper via queen card on 2026-10-17.
 
 **Rationale:** Rejected pinning current main `924a59f`: it would need `git rm .waggle/control/roles/architect.md` in C-3 and would pull the T-020 section 7.3 brief sweep into this PR.
+
+## D-088: T-006 phase 1 merges at 708 non-test lines (D-013 budget waived for this ticket) with a 200-byte title limit so the backfill titles transcribe verbatim
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-006
+- **Supersedes:** none
+
+**Question:** Does T-006 phase 1 merge as built (708 non-test lines against the D-013 450-line budget), and does the decision title limit rise from 100 to 200 bytes?
+
+**Options considered:**
+1. Split `internal/decisions` into two packages or two PRs to fit the budget
+2. Waive the budget for this ticket and merge phase 1 as built
+3. Keep the 100-byte title limit and shorten the seven backfill titles that exceed it
+4. Raise the title limit to 200 bytes so every backfill title transcribes verbatim
+
+**Hive recommendation:** Waive the budget for phase 1; raise the title limit to 200 bytes
+
+**Keeper choice:** The D-013 450-line budget is waived for T-006 phase 1, which merges as built at 708 non-test lines (PR #14). The title limit in T-006 section 4.2 is 200 bytes (was 100), so phase 2 transcribes all 87 backfill titles verbatim. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected splitting the package: parser, validator, renderer and append-only verifier are one round-trip contract and a split would add an import seam with no second consumer. Rejected shortening seven titles: the backfill is a transcription, and edited titles would make the record disagree with its source. The budget stays in force for every other ticket; this is a waiver, not a new limit.
+
+## D-089: Size figures in briefs are physical non-test lines (`wc -l` of non-test Go files); T-018 phase A accepted at 527 against a 350 cap, and the architect re-estimates phases B and C
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-006, T-007, T-012, T-014, T-016, T-018, T-021, T-022
+- **Supersedes:** none
+
+**Question:** What does a brief's "non-test lines" figure count, and does T-018 phase A merge at 527 lines against its 350 cap?
+
+**Options considered:**
+1. Count code lines only (blanks and comments excluded)
+2. Count physical lines, `wc -l` of non-test Go files touched
+3. Trim phase A to fit the 350 cap
+4. Accept phase A as built and re-estimate phases B and C with the same metric
+
+**Hive recommendation:** Physical non-test lines; accept phase A; architect re-estimates B and C
+
+**Keeper choice:** Every size figure in a brief (estimate, target, cap, stop value) counts physical non-test lines: `wc -l` over the non-test Go files the phase touches, blanks and comments included. T-018 phase A merges as built at 527 lines (PR #15). The architect re-estimates T-018 phases B and C in this metric before phase B is dispatched. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected code-only counting: it needs a tool and an argument at every review, while `wc -l` is one command whose answer nobody disputes. Rejected trimming required behavior to fit a cap: the cap is a signal that the estimate was wrong, not a reason to drop the merge CAS or the report lines the brief requires. The fix is to estimate honestly against the metric the guard uses.
+
+## D-090: `waggle upgrade` reports seeded-file schema gaps with `[note]` lines; the Head Keeper edits seeded files by hand in the same PR
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-016
+- **Supersedes:** none
+
+**Question:** How does `waggle upgrade` handle a seeded file (`config.yaml`, `WAGGLE.md`, `local.yaml`) whose schema has changed between the old and the target build? (Q-T016-2)
+
+**Options considered:**
+1. Report-only: one `[note]` line per top-level key the build's `config.yaml.tmpl` has and the hive file lacks
+2. In-place migration now, re-serializing the file through a comment-preserving parser
+
+**Hive recommendation:** Report-only
+
+**Keeper choice:** Report-only. `upgrade` prints one `[note]` line per top-level key present in the build's `config.yaml.tmpl` and absent from the hive's `config.yaml`; the Head Keeper edits seeded files by hand in the same hive PR. Versioned migration functions keyed by a `schema` field come later, when a release first changes the schema. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected in-place migration: it re-serializes a Head Keeper-owned file and needs a parser that preserves comments, which nothing on `main` has. No release has changed the schema yet, so the migration machinery would be built against an imagined change.
+
+## D-091: `waggle upgrade` refuses a release-tag downgrade unless `--allow-downgrade`; commit pins are unordered
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-016
+- **Supersedes:** none
+
+**Question:** Does `waggle upgrade` check the direction of a pin move? (Q-T016-3)
+
+**Options considered:**
+1. Refuse when both pins are release tags and the target is lower, unless `--allow-downgrade`; print from and to for commit pins with no ordering check
+2. No downgrade check at all
+
+**Hive recommendation:** Refuse tag downgrades unless `--allow-downgrade`
+
+**Keeper choice:** When both pins are release tags and the target is lower, `upgrade` refuses unless `--allow-downgrade`. Commit pins print from and to with no ordering check (a host repo does not contain Waggle's history). The semver compare is a hand-written numeric compare; a prerelease sorts below the same release. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected no check at all: the Keeper picks the target on purpose, but a stale binary on `PATH` is the common way to run the wrong build, and one flag is cheaper than a reverted hive PR.
+
+## D-092: `waggle upgrade` prints the `waggle decide` input; a person runs `decide` in the same hive PR
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-006, T-016
+- **Supersedes:** none
+
+**Question:** Who writes the upgrade decision into `DECISIONS.md`? (Q-T016-4)
+
+**Options considered:**
+1. `upgrade` prints the `waggle decide` input and the Head Keeper, or the queen after an explicit Keeper answer, runs `waggle decide` in the same PR
+2. `upgrade --apply` calls `decisions.Append` itself
+
+**Hive recommendation:** Print the input; a person runs `decide`
+
+**Keeper choice:** `upgrade` prints the `waggle decide` input (T-016 section 3.7) in both modes. The Head Keeper, or the queen after an explicit Keeper answer, runs `waggle decide` in the same hive PR (T-006 section 8). `upgrade` never writes `DECISIONS.md`. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected `--apply` calling `decisions.Append`: it turns "a command ran" into "a decision was made", adds `internal/decisions` as an import, and makes T-006 a code dependency of T-016 instead of a procedural one.
+
+## D-093: The pin moves through a one-line edit of `config.yaml` that requires exactly one `pin:` under `waggle:` and preserves every other byte
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-016
+- **Supersedes:** none
+
+**Question:** How does `waggle upgrade` change the pin inside the seeded `config.yaml`? (Q-T016-5)
+
+**Options considered:**
+1. Narrow line edit: replace the value on the one `pin:` line under `waggle:`, refuse when there are zero or two, never re-serialize the file
+2. Parse and re-render through `internal/config`
+
+**Hive recommendation:** Narrow line edit
+
+**Keeper choice:** `scaffold.WritePin` edits exactly the one `pin:` line under `waggle:`: the value is replaced; the key, indentation and trailing comment stay byte for byte; everything else in the file is untouched. Zero or two `pin:` lines are refused before any write. The file is never re-serialized through `config.Parse`. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected re-rendering through `internal/config`: it drops every comment in a Head Keeper-owned file, and the comments are the documentation of that file.
+
+## D-094: No hive-only changes to managed files: a step goes into the template or not at all
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-007, T-016, T-018
+- **Supersedes:** none
+
+**Question:** May a hive keep a local change to a managed file across `waggle upgrade`? (Q-T016-6)
+
+**Options considered:**
+1. No per-hive exceptions and no exception list in config
+2. A recorded exception mechanism (an `upgrade.keep:` list in `config.yaml`)
+
+**Hive recommendation:** No exceptions
+
+**Keeper choice:** No per-hive exceptions and no exception list in config. A step a hive wants in the gate workflow goes into the template or not at all. T-007's `gate decisions` step therefore targets the template or waits for T-018 phase C's CI shim. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected an `upgrade.keep:` list: it reopens the hand-edit door D-042 closed, and every kept file is one the next upgrade cannot reason about.
+
+## D-095: `waggle upgrade` regenerates and prunes the running Keeper's shims only; other Keepers rerun `waggle init --force`
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-016, T-020
+- **Supersedes:** none
+
+**Question:** What does `waggle upgrade` do with the `.claude/agents/waggle-*.md` shims? (Q-T016-7)
+
+**Options considered:**
+1. Regenerate and prune this Keeper's shims through `--runtime`; others rerun `init --force` or a future `waggle shims`
+2. Leave shims alone and tell every Keeper to rerun init
+
+**Hive recommendation:** Regenerate and prune this Keeper's shims
+
+**Keeper choice:** `upgrade` removes each shim carrying `# waggle:generated` whose role file is gone after the removals, and regenerates `.claude/agents/waggle-*.md` once when `--runtime=claude-code`. A shim without `# waggle:generated` is never touched. Other Keepers rerun `waggle init --force` or a future `waggle shims`. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected leaving shims alone: it makes T-020 section 7.2's "shims regenerated with `waggle-architect.md` removed" a manual step, which is the kind of step that gets skipped.
+
+## D-096: Pins are full 40-hex commits or release tags, validated on both ends; `scaffold.ReadPin` is the shared reader and `internal/config/` stays read-only
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-004, T-016, T-022
+- **Supersedes:** none
+
+**Question:** What is a valid pin, and which package owns the reader? (Q-T016-8)
+
+**Options considered:**
+1. Full 40-hex or release tag, validated on both ends, `scaffold.ReadPin` shared, `internal/config/` read-only
+2. Widen the T-016 lease to `internal/config/` and add `config.Config.Pin`
+
+**Hive recommendation:** `scaffold.ReadPin`, `internal/config/` read-only
+
+**Keeper choice:** A pin is a full 40-hex commit, a release tag (`vMAJOR.MINOR.PATCH` with optional prerelease), or the literal `unpinned`; never a short hash. `upgrade` validates both the "from" and the "to" value. `scaffold.ReadPin` in `internal/scaffold/upgrade.go` is the shared reader; `waggle status` switches to it in T-022 phase B. `internal/config/` stays read-only for T-016. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected widening the lease to `internal/config/`: `config.Config.Pin` is the cleaner long-term home, but a lease change on a package three tickets consume costs more now than a one-line switch in `status` later. Moving the reader into `internal/config` stays listed as a follow-up.
+
+## D-097: The generated `CLAUDE.md` is tracked like every other init output; the Head Keeper commits ours before T-020 phase C's first upgrade
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-011, T-016, T-020
+- **Supersedes:** none
+
+**Question:** What happens to the untracked generated `CLAUDE.md` in our main checkout, which trips every clean-tree check? (Q-T016-9)
+
+**Options considered:**
+1. Track it like all init output, no `git add` inside init or upgrade, Head Keeper commits ours as step 0 of T-020 phase C
+2. Ignore `CLAUDE.md` in the template `.gitignore` block again
+3. Let `upgrade` tolerate one untracked import file
+
+**Hive recommendation:** Track it
+
+**Keeper choice:** `CLAUDE.md` (or `AGENTS.md`) is tracked like every other file init writes; the markers separate generated from hand-written content. Neither `init` nor `upgrade` runs `git add`; init's closing hint gains `commit CLAUDE.md (or AGENTS.md) and .gitignore with the rest`. In our hive the Head Keeper commits `CLAUDE.md` as step 0 of T-020 phase C section 7.2, before the first `upgrade` run. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected ignoring it again: project content outside the markers becomes unignorable. Rejected a tolerance in the clean-tree rule: one special case in a precondition that exists to be absolute.
+
+## D-098: The `main` ruleset requires product-ci and verify-leases-and-tiers plus one code owner review; every merge uses a logged admin bypass
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-015
+- **Supersedes:** none
+
+**Question:** What does the `main` ruleset enforce after T-015, and how do PRs merge when GitHub never counts the author's own approval?
+
+**Options considered:**
+1. Not recorded
+
+**Hive recommendation:** Not recorded
+
+**Keeper choice:** Ruleset `main` (id 25310890) requires `product-ci` and `verify-leases-and-tiers`, up-to-date branches, blocks force-push, restricts deletion, and requires one code owner review with stale reviews dismissed; admin bypass is set to always. Because GitHub never counts the PR author's own approval, every merge uses `gh pr merge <n> --merge --admin` (a logged bypass). Auto-merge is disabled at the repo level. Applied and read back by the Head Keeper on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-099: T-016 accepted at 737 physical non-test lines against the 700 stop after the guard must-fix round
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-016
+- **Supersedes:** none
+
+**Question:** Does T-016 merge at 737 physical non-test lines against the brief's 700 stop, after the guard must-fix round (pin with trailing text refused; symlinked write paths refused)?
+
+**Options considered:**
+1. Accept as built
+2. Split the `git.go` lift into its own PR
+3. Trim to 700
+
+**Hive recommendation:** Accept
+
+**Keeper choice:** Accept. T-016 merges at 737 physical non-test lines. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** The 54 added lines are the two security fixes and their checks. Splitting costs a forager plus guard pass and delays T-020 phase C. Trimming trades readability on a Tier 3 command for a number.
+
+## D-100: From T-020 phase C on, every Tier 3 PR gets two guard reviews, one on sonnet and one on a third model; Tier 2 keeps one sonnet guard
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-020
+- **Supersedes:** none
+
+**Question:** Should Tier 3 PRs get a second guard review on a different model, and from when?
+
+**Options considered:**
+1. Yes, from T-020 phase C
+2. Sonnet only
+3. A second guard on all PRs
+
+**Hive recommendation:** Yes, from T-020 phase C
+
+**Keeper choice:** From T-020 phase C on, every Tier 3 PR (T-020 and any later Tier 3 ticket) gets two guard reviews: one on sonnet and one on a third model different from both sonnet and the builder's model (Fable while foragers run on Opus). Tier 2 keeps a single sonnet guard. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Tier 3 code rewrites the control plane, so a missed defect costs more than about 100k extra tokens per Tier 3 PR. Doubling Tier 2 review spend is not justified by today's record (the sonnet guard found the T-016 symlink escape).
+
+## D-101: Cell runtime: a `CellRuntime` interface with an OS sandbox default (Seatbelt on macOS, bubblewrap on Linux) behind a host egress proxy, plus a Docker-compatible container backend
+
+- **Date:** 2026-10-17
+- **Kind:** strategy
+- **Tickets:** T-023, T-024
+- **Supersedes:** none
+
+**Question:** What runs a worker's Cell, so that RFC-0003's targets (zero credentials, read-only repository with read-write lease, egress lockdown) are enforced?
+
+**Options considered:**
+1. Not recorded
+
+**Hive recommendation:** A `CellRuntime` interface with an OS sandbox default (Seatbelt on macOS, bubblewrap on Linux) behind a host egress proxy, plus a Docker-compatible container backend
+
+**Keeper choice:** A `CellRuntime` interface with an OS sandbox default (Seatbelt on macOS, bubblewrap on Linux) behind a per-Cell host egress proxy, plus a Docker-compatible container backend. T-024 builds it. RFC-0003 gains amendment A2, which the Head Keeper approves in its own product PR. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-102: Licensing: Apache-2.0 for the CLI and daemon, MIT-0 for templates, DCO sign-off, SPDX headers, copyright Level 19 Enterprises, LLC
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-025
+- **Supersedes:** none
+
+**Question:** Which licenses, contributor rule and file headers does Waggle ship with?
+
+**Options considered:**
+1. Not recorded
+
+**Hive recommendation:** Apache-2.0 for the CLI and daemon, MIT-0 for templates, plus DCO and SPDX headers
+
+**Keeper choice:** The CLI and daemon are Apache-2.0 and the templates are MIT-0. Contributions carry a DCO sign-off, files carry SPDX headers, and the copyright holder is Level 19 Enterprises, LLC (D-046), stated in NOTICE. T-025 builds it. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-103: GitHub merge queue is treated as unavailable on the Team plan; the org stays on Team, the admin-merge loop stays, and `native_queue` stays opt-in
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-015, T-018
+- **Supersedes:** none
+
+**Question:** Is GitHub's native merge queue available to waggle-sh/waggle (an organization repo, D-024) on the Team plan (D-047), and what follows if it is not?
+
+**Options considered:**
+1. Not recorded
+
+**Hive recommendation:** Not recorded
+
+**Keeper choice:** Treat the native merge queue as unavailable on GitHub Team and stay on Team. Merges keep the admin-merge polling loop (D-098). `merge_strategy: native_queue` stays opt-in (D-064, D-071), and `waggle doctor` reports queue availability per repo (T-018 phase C). Revisit when the repo goes public. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-104: The queen commits our generated CLAUDE.md for the Head Keeper as T-020 phase C step 0 (PR #29)
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-016, T-020
+- **Supersedes:** none
+
+**Question:** Who makes D-097's Head Keeper commit of our hive's generated `CLAUDE.md`?
+
+**Options considered:**
+1. Not recorded
+
+**Hive recommendation:** Not recorded
+
+**Keeper choice:** The queen made the commit on the Head Keeper's behalf (`0a4bed4`, PR #29, merged at `97baeda`) and the Head Keeper approved the PR. This completes T-020 phase C section 7.2 step 0 (D-097). Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-105: T-018 phase B accepted at 687 physical non-test lines against the 650 stop after the Keeper-requested N1, N2 and N4 hardening
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-018
+- **Supersedes:** none
+
+**Question:** Does T-018 phase B merge at 687 physical non-test lines (D-089 metric) against its 650 stop, after hardening commit `c85c783` closed guard notes N1, N2 and N4?
+
+**Options considered:**
+1. Not recorded
+
+**Hive recommendation:** Not recorded
+
+**Keeper choice:** Accept. T-018 phase B merges at 687 physical non-test lines (PR #28, merged at `b1e4a3a`). Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** The lines over the stop are the hardening the Keeper asked for (gh stdout and stderr caps, a per-call gh deadline with `WaitDelay`, token redirects pinned to the same https origin), as with D-099.
+
+## D-106: T-006 phase 2: a forager adds the missing backfill JSON from D-088 onward and runs `waggle decide` for every entry in a hive PR the Head Keeper approves
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-006
+- **Supersedes:** none
+
+**Question:** Who runs the T-006 phase 2 backfill, and how does it land?
+
+**Options considered:**
+1. Not recorded
+
+**Hive recommendation:** Not recorded
+
+**Keeper choice:** A forager adds the missing `internal/decisions/testdata/backfill/` JSON files (D-088 onward) transcribed from Appendix A, then runs `waggle decide` once per entry, in order, for every Appendix A entry, in a hive PR the Head Keeper approves. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-107: Non-blocking review follow-ups are folded into the brief that next touches the code
+
+- **Date:** 2026-10-17
+- **Kind:** scope
+- **Tickets:** T-006, T-012, T-014, T-018
+- **Supersedes:** none
+
+**Question:** Where do the non-blocking guard follow-ups from T-014 phase A, T-016, T-006 and T-018 phase B go?
+
+**Options considered:**
+1. Not recorded
+
+**Hive recommendation:** Not recorded
+
+**Keeper choice:** Each follow-up becomes one line in the brief that next touches the code: T-014 phase B caps `lease.json` size in `loadClaims`; T-018 phase C takes notes N3 and N5 to N10; T-012 phase B (or the next brief leasing `internal/scaffold/`) takes `roster.json` value escaping and the `waggle init` symlink hole; T-006 takes `Parse` accepting a bare CR in a title. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-108: T-023 `waggle dispatch` is built now, host-only with a `CellRuntime` seam, ahead of Cells (D-014 order); supersedes D-083's sequencing for T-023 only
+
+- **Date:** 2026-10-17
+- **Kind:** strategy
+- **Tickets:** T-021, T-023, T-024
+- **Supersedes:** D-083
+
+**Question:** Does T-023 wait for the Cell runtime, or follow D-014 and ship host-only with a Cell seam? (Q-T023-1)
+
+**Options considered:**
+1. Follow D-014: approve T-023 now, host-only with the section 7.3 seam, superseding D-083's "after the Cell runtime decision" for T-023 only
+2. Hold T-023 until the Cell runtime is decided
+
+**Hive recommendation:** Follow D-014, host-only with the seam
+
+**Keeper choice:** T-023 is approved now and runs workers on the host behind the `CellRuntime` seam of its section 7.3. This supersedes D-083's "T-023 after the Cell runtime decision" for T-023 only. Cells (T-024) stay the slice after the `run.sock` loop. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected holding T-023: it delays own honey (D-044) by at least one RFC amendment.
+
+## D-109: Until Cells exist, dispatch runs a worker on the host only with `--no-cell` on each invocation, printing and recording what is not enforced
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** May dispatch run a worker outside a Cell, and how is that allowed? (Q-T023-2)
+
+**Options considered:**
+1. Allowed only with `--no-cell` on every invocation, the not-enforced list printed and recorded, and `cell: host` in the result
+2. A config key that allows host runs hive-wide
+
+**Hive recommendation:** `--no-cell` on every invocation
+
+**Keeper choice:** Host runs need `--no-cell` on every invocation; without it dispatch exits 2. Dispatch prints the not-enforced list of T-023 section 8, records it in the run record, and writes `cell: host` in `result.json`. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected a hive-wide config key: it is a Tier 3 template change, and it is easy to forget it is on.
+
+## D-110: Headless workers get an explicit tool allowlist and a deny list (no git push, gh, curl, wget, ssh, web fetch or web search)
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Which tools may a headless dispatch worker use? (Q-T023-3)
+
+**Options considered:**
+1. An explicit allowlist in the generated settings file plus a deny list
+2. Skip permission prompts entirely
+
+**Hive recommendation:** Allowlist plus deny list
+
+**Keeper choice:** The generated settings file allows the read, edit and write tools, and Bash only for the build, test, vet and format commands in `WAGGLE.md` section 3 plus `git add`, `git commit`, `git status`, `git diff`, `git log` and `git show`. It denies `git push`, `gh`, `curl`, `wget`, `ssh`, web fetch and web search. Dispatch never passes `--dangerously-skip-permissions` by default. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Accepted that some runs end on a denied tool and need a rerun. Rejected skipping permission prompts: the post-run check would become the only guard.
+
+## D-111: Dispatch workers use the Keeper's existing Claude Code login with user settings excluded; no new credential
+
+- **Date:** 2026-10-17
+- **Kind:** credentials
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Which model login does a dispatch worker use? (Q-T023-4)
+
+**Options considered:**
+1. The Keeper's existing Claude Code login, no new credential, user settings excluded, exposure stated
+2. An isolated Claude config directory per run with an API key in the env
+
+**Hive recommendation:** The Keeper's existing login
+
+**Keeper choice:** Workers use the Keeper's existing Claude Code login and no new credential is created. A worker loads none of the Keeper's user settings, plugins, connectors or global `CLAUDE.md`, and none of the repo's `.claude/settings.json` hooks (T-023 section 8). Every run states the exposure. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected a per-run API key: cleaner isolation, but it moves spend to API billing, which is a separate spend decision.
+
+## D-112: A dispatch lease comes from `--dir` and `--gate` flags the queen copies from the brief, never from parsing the brief
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Where does `waggle dispatch` get the lease for a run? (Q-T023-5)
+
+**Options considered:**
+1. `--dir` and `--gate` flags the queen copies from the brief
+2. Parse a machine-readable lease block in the brief
+
+**Hive recommendation:** Flags
+
+**Keeper choice:** The queen copies the phase's Lease line into `--dir` and `--gate`. Comb validation applies unchanged. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected a lease block in the brief: a Tier 2 steering file would then grant write scope.
+
+## D-113: Dispatch reads briefs and review files only from base, so a brief merges in a hive PR before its first dispatch
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Where does dispatch read a ticket's brief and review file? (Q-T023-6)
+
+**Options considered:**
+1. Only from base, so a brief merges before its first dispatch
+2. A `--brief-file` flag reading the main checkout
+
+**Hive recommendation:** Only from base
+
+**Keeper choice:** Dispatch reads the brief and the review file only from the base revision. A brief merges (hive PR) before its first dispatch. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected `--brief-file`: it keeps today's habit of uncommitted briefs, and lets unreviewed steering text reach workers.
+
+## D-114: One lease and tier check: a pure `comb.CheckChanges` in `internal/comb`, written by whichever of T-014 phase B and T-023 phase C lands first and called by both
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-014, T-023
+- **Supersedes:** none
+
+**Question:** Where does the per-commit lease and tier check live, so that `waggle gate verify` and `waggle dispatch` share one implementation? (Q-T023-7)
+
+**Options considered:**
+1. A pure `comb.CheckChanges(lease, changes) []Violation` in `internal/comb`, written by whichever of T-014 phase B and T-023 phase C lands first and called by both
+
+**Hive recommendation:** `comb.CheckChanges` in `internal/comb`
+
+**Keeper choice:** A pure `comb.CheckChanges(lease, changes) []Violation` in `internal/comb`, written by whichever of T-014 phase B and T-023 phase C lands first and called by both; T-014 section 4.3 says so. Queen default, within authority; approved with the other T-023 defaults on the Head Keeper's queen card on 2026-10-17.
+
+**Rationale:** D-017 wants the same check locally and in CI, and `internal/dispatch` cannot import a check that lives in `cmd/waggle` (package `main`).
+
+## D-115: Dispatch pushes the worker branch from the host after every check passes; it never force-pushes and never opens a PR, and `--no-push` skips the push
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-018, T-023
+- **Supersedes:** none
+
+**Question:** Who pushes a dispatched worker's branch? (Q-T023-8)
+
+**Options considered:**
+1. Dispatch pushes from the host with the Keeper's git auth after every check passes; never force; never opens a PR; `--no-push` skips it
+
+**Hive recommendation:** Dispatch pushes from the host after the checks
+
+**Keeper choice:** Dispatch pushes the branch from the host with the Keeper's git auth, only after every post-run check passes. It never force-pushes and never opens a PR; `--no-push` skips the push. The worker never pushes. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-116: T-023 phase D adds D-100 second-guard model resolution to `internal/runtime/policy.go`, so Tier 3 reviews also run through dispatch
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-012, T-023
+- **Supersedes:** none
+
+**Question:** How does dispatch run the D-100 second guard on Tier 3 PRs? (Q-T023-9)
+
+**Options considered:**
+1. Phase D adds second-guard resolution to `internal/runtime/policy.go`
+2. The second guard stays a subagent until a T-012 follow-up
+
+**Hive recommendation:** Phase D adds it
+
+**Keeper choice:** Phase D adds second-guard resolution to `internal/runtime/policy.go`: a model different from both the builder's and the first guard's, failing with a config hint when none exists. `waggle dispatch --role guard --second` uses it. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-117: Dispatch cutover: one trial ticket after T-023 phase D, cutover on a Head Keeper card, Claude Code subagents kept as the rollback path
+
+- **Date:** 2026-10-17
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** How does our hive switch from Claude Code subagents to `waggle dispatch`? (Q-T023-10)
+
+**Options considered:**
+1. One trial ticket through dispatch after phase D, cutover on a Keeper card, subagents kept as the rollback path, phase E not a precondition
+2. Run the trial ticket both ways for comparison
+
+**Hive recommendation:** One trial ticket, cutover on a card
+
+**Keeper choice:** One trial ticket runs through dispatch after phase D. The cutover is a Head Keeper card, and the subagents stay as the rollback path. Phase E is not a precondition. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected running the trial both ways: about double the tokens for that ticket.
+
+## D-118: `keeper_id` in `local.yaml` is the Keeper's GitHub login; the `local-keeper` placeholder is refused when the Comb has a remote
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** How does dispatch identify the Keeper in claims? (Q-T023-11)
+
+**Options considered:**
+1. `keeper_id` from `local.yaml`, set to the GitHub login (D-016), with the `local-keeper` placeholder refused when the Comb has a remote
+
+**Hive recommendation:** `keeper_id` from `local.yaml`
+
+**Keeper choice:** `keeper_id` comes from `local.yaml` and is the Keeper's GitHub login (D-016). The `local-keeper` placeholder is refused when the Comb has a remote and allowed for local-only hives. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** The placeholder would collide across Keepers sharing a remote.
+
+## D-119: T-023 phase F sets `forge.remote: origin` in our hive's `config.yaml`, so claims reach the remote and the CI gate can verify them
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Does our hive set `forge.remote`? (Q-T023-12)
+
+**Options considered:**
+1. Phase F sets `forge.remote: origin` in our `config.yaml`
+
+**Hive recommendation:** Set it in phase F
+
+**Keeper choice:** Phase F sets `forge.remote: origin` in our hive's `config.yaml`, so claims are pushed and the CI gate can verify them (D-051). Every claim write then needs network access and the Keeper's git push auth. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-120: Cell inference credential: the egress proxy injects it and the Cell holds none by default; our hive opts into `cell.inference_credential: passthrough`, reported as not enforced
+
+- **Date:** 2026-10-17
+- **Kind:** credentials
+- **Tickets:** T-023, T-024
+- **Supersedes:** none
+
+**Question:** How does an agent inside a Cell authenticate to the inference endpoint? (Q-T024-1)
+
+**Options considered:**
+1. The egress proxy injects the credential and the Cell holds none; a subscription login the proxy cannot inject is unsupported in Cells in v0.1
+2. An opt-in `cell.inference_credential: passthrough` that places the agent's own login token in the Cell and reports the credentials target as not enforced
+
+**Hive recommendation:** Proxy injection
+
+**Keeper choice:** The product default is proxy injection: the agent talks to the in-Cell forwarder, the host proxy adds the credential over TLS, and the Cell holds zero credentials. `cell.inference_credential: passthrough` is also built as an opt-in, and our hive opts into it; `waggle doctor` then reports the zero-credentials target as not enforced. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-121: Cells never write `.git`; `waggled` commits on the host after checking the diff against the lease
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-024, T-025
+- **Supersedes:** none
+
+**Question:** Who commits a Cell worker's changes? (Q-T024-2)
+
+**Options considered:**
+1. Cells never write `.git`; `waggled` commits on the host after checking the diff against the lease, with the `T-<id>:` subject
+2. Give the Cell write access to `.git`
+
+**Hive recommendation:** `waggled` commits on the host
+
+**Keeper choice:** `.git` is read-only inside every Cell. `waggled` commits on the host after checking the diff against the lease, with the `T-<id>:` subject. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected `.git` write access: a worker could write any ref, including `refs/heads/main` and `refs/waggle/claims/*`, from inside the sandbox.
+
+## D-122: T-024 technical defaults: `waggled` copies a per-Cell `Out` dir into hive paths, registries stay closed with `GOPROXY=off`, and the container backend calls docker or podman directly
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-024
+- **Supersedes:** none
+
+**Question:** How does forager and guard output leave a Cell (Q-T024-3), are package registries reachable under `strict` (Q-T024-6), and does the container backend use the devcontainer CLI (Q-T024-9)?
+
+**Options considered:**
+1. An `Out` dir copied by `waggled`; registries closed with `GOPROXY=off` and a read-only module cache; `docker` or `podman` called directly
+2. Files over `run.sock`; `proxy.golang.org` and `sum.golang.org` allowed by default; `devcontainer up` required
+
+**Hive recommendation:** The three defaults
+
+**Keeper choice:** Each Cell gets an `Out` dir outside the repo that `waggled` validates and copies into `.waggle/hive/reviews/` and `.waggle/hive/media/`. `strict` keeps registries closed: Go builds use `GOPROXY=off` with the host module cache mounted read-only, and other hosts go in `cell.egress_allow` by exact name. The container backend calls `docker` or `podman` and reads only `image` and `runArgs` from `devcontainer.json`. Queen default, within authority; approved on the Head Keeper's queen card on 2026-10-17.
+
+**Rationale:** Rejected `devcontainer up`: a Node dependency, and it runs lifecycle hook commands Waggle cannot vet.
+
+## D-123: T-024 phases A to E dispatch after T-023 merges; phase F waits for the `run.sock` loop
+
+- **Date:** 2026-10-17
+- **Kind:** strategy
+- **Tickets:** T-023, T-024
+- **Supersedes:** none
+
+**Question:** D-014 puts Cells after dispatch and the `run.sock` loop. May T-024 start before the loop? (Q-T024-4)
+
+**Options considered:**
+1. Phases A to E after T-023 merges, phase F after the `run.sock` loop
+2. Hold every phase until the loop merges
+
+**Hive recommendation:** Phases A to E after T-023
+
+**Keeper choice:** T-024 phases A to E dispatch after T-023 merges; they are libraries with no caller. Phase F, the wiring, waits for the `run.sock` loop. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Not recorded
+
+## D-124: T-024 v0.1 scope: container backend on Linux hosts and CI only, macOS only if the socket check passes; no resource limits on OS sandboxes; no seccomp filter
+
+- **Date:** 2026-10-17
+- **Kind:** scope
+- **Tickets:** T-024
+- **Supersedes:** none
+
+**Question:** v0.1 scope for the container backend on macOS (Q-T024-5), resource limits on the OS sandbox backends (Q-T024-10) and a seccomp filter for bubblewrap (Q-T024-11)
+
+**Options considered:**
+1. Container backend on Linux and CI only, macOS unless the socket check passes; no OS sandbox resource limits; no seccomp in v0.1
+2. A TCP transport for `run.sock` and the proxy; cgroups through `systemd-run --user --scope` on Linux; a seccomp filter in phase C
+
+**Hive recommendation:** The three defaults
+
+**Keeper choice:** In v0.1 the container backend is supported on Linux hosts and CI; on macOS the probe reports it unsupported unless the T-024 section 7 socket check passes. The Seatbelt and bubblewrap backends set no resource limits and `waggle doctor` says so. bubblewrap ships without a seccomp filter; a follow-up ticket adds a denylist filter. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected a TCP transport: it needs a per-Cell secret and weakens the zero-credentials target. Rejected seccomp in phase C: about 100 more lines and a syscall table per architecture.
+
+## D-125: Cell sandbox tests run in two CI jobs path-filtered to `internal/cell/**`, macOS for Seatbelt and Linux for bubblewrap, added by Head Keeper commit
+
+- **Date:** 2026-10-17
+- **Kind:** spend
+- **Tickets:** T-024
+- **Supersedes:** none
+
+**Question:** Do the sandbox conformance tests run in CI? (Q-T024-7)
+
+**Options considered:**
+1. Two jobs in `ci.yml` path-filtered to `internal/cell/**`, one on `macos-latest` and one on `ubuntu-latest` with the AppArmor setting changed
+2. Local evidence only
+
+**Hive recommendation:** Two path-filtered jobs
+
+**Keeper choice:** `ci.yml` gains two jobs path-filtered to `internal/cell/**`: one on `macos-latest` for Seatbelt, one on `ubuntu-latest` that sets `kernel.apparmor_restrict_unprivileged_userns=0` for bubblewrap. `ci.yml` is Tier 3, so the Head Keeper commits it. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** macOS minutes bill at 10 times Linux on private repos: about 40 included minutes per macOS run out of GitHub Team's 3,000 per month.
+
+## D-126: CODEOWNERS gains `/internal/cell/ @paulternate` by Head Keeper commit; `internal/cell/` is not a hardcoded Tier 3 path
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-015, T-024
+- **Supersedes:** none
+
+**Question:** How is `internal/cell/` protected? (Q-T024-8)
+
+**Options considered:**
+1. Add `/internal/cell/ @paulternate` to CODEOWNERS, not a hardcoded Tier 3 entry
+2. Rely on guard Tier classification alone
+
+**Hive recommendation:** CODEOWNERS entry
+
+**Keeper choice:** The Head Keeper adds `/internal/cell/ @paulternate` to CODEOWNERS before T-024 phase A, as in T-015. It is not a hardcoded Tier 3 entry. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** A hardcoded Tier 3 path would apply to every host repo's own `internal/cell/` (the D-043 reasoning used for `docs/GLOSSARY.md`).
+
+## D-127: `cell.enforce_ro_root: false` is refused at config load; the key stays only so existing files parse
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-004, T-024
+- **Supersedes:** none
+
+**Question:** What does `cell.enforce_ro_root: false` do once Cells exist? (Q-T024-12)
+
+**Options considered:**
+1. Refused at config load
+2. Honored as an opt-out
+
+**Hive recommendation:** Refused
+
+**Keeper choice:** `enforce_ro_root: false` is refused at config load. The key stays only so existing files parse. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected honoring it: a Tier 3 config edit would turn off the lease boundary.
+
+## D-128: Files carry only the SPDX identifier; the copyright line lives in NOTICE and `LICENSES/MIT-0.txt`
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-025
+- **Supersedes:** none
+
+**Question:** Does each file carry a copyright line? (Q-T025-1)
+
+**Options considered:**
+1. No: SPDX identifier only, copyright in `NOTICE` and `LICENSES/MIT-0.txt`
+2. `SPDX-FileCopyrightText: 2026 Level 19 Enterprises, LLC` on product files only
+
+**Hive recommendation:** SPDX identifier only
+
+**Keeper choice:** Files carry only the SPDX identifier. The copyright line lives in `NOTICE` and `LICENSES/MIT-0.txt`. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** A per-file line adds year churn, and in MIT-0 templates it would stamp our copyright into every host repo's own files.
+
+## D-129: One license rule: product files are Apache-2.0, templates and hive files are MIT-0; CONTRIBUTING.md, ci.yml and CODEOWNERS switch to Apache-2.0
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-025
+- **Supersedes:** none
+
+**Question:** Which license covers product docs and repo config? (Q-T025-2)
+
+**Options considered:**
+1. One rule: product is Apache-2.0, templates and hive files are MIT-0
+2. Leave existing MIT-0 headers on docs and config as they are
+
+**Hive recommendation:** One rule
+
+**Keeper choice:** Product files are Apache-2.0; templates and hive files are MIT-0. `CONTRIBUTING.md`, `ci.yml` and `CODEOWNERS` switch from MIT-0 headers to Apache-2.0. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Level 19 Enterprises, LLC holds all copyright today, so the switch needs nobody else's consent.
+
+## D-130: The SPDX header check is a Go test in `internal/license/` that product-ci already runs
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-025
+- **Supersedes:** none
+
+**Question:** Where does the header check run? (Q-T025-3)
+
+**Options considered:**
+1. A Go test in `internal/license/` run by `product-ci`
+2. A shell step in `ci.yml`
+3. A `waggle gate` step
+
+**Hive recommendation:** Go test in `internal/license/`
+
+**Keeper choice:** A Go test in `internal/license/`, run by the existing `product-ci` job. Queen default, within authority; approved on the Head Keeper's queen card on 2026-10-17.
+
+**Rationale:** Rejected a shell step: a Tier 3 edit that does not run locally. Rejected `waggle gate`: it would impose our license map on every hive (D-043).
+
+## D-131: DCO is enforced by a `dco` job in product CI, required in the `main` ruleset; no third-party app
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-015, T-025
+- **Supersedes:** none
+
+**Question:** How is DCO sign-off enforced? (Q-T025-4)
+
+**Options considered:**
+1. A `dco` job in product CI plus a required check in the ruleset
+2. The DCO GitHub App
+3. A `waggle gate` step
+
+**Hive recommendation:** `dco` job plus required check
+
+**Keeper choice:** A `dco` job in product CI, added as a required check in the `main` ruleset. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** No third-party app gets access to a private repo, and the rule lives in a file the hive reviews. Rejected a `waggle gate` step: it would impose DCO on every hive.
+
+## D-132: Worker commits use the Keeper's git identity with `-s`, and that Keeper is the person certifying the DCO
+
+- **Date:** 2026-10-17
+- **Kind:** policy
+- **Tickets:** T-023, T-024, T-025
+- **Supersedes:** none
+
+**Question:** DCO is a statement by a person. Who signs off worker commits? (Q-T025-5)
+
+**Options considered:**
+1. Workers commit under the Keeper's git identity with `-s`, and that Keeper certifies
+2. A person adds sign-off by hand before review
+
+**Hive recommendation:** Keeper identity with `-s`
+
+**Keeper choice:** Workers commit under the Keeper's git identity with `-s`, and that Keeper is the certifying person; CONTRIBUTING says so. When `waggled` commits on the host (D-121), it adds the trailer from the Keeper's identity. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected sign-off by hand: it means rewriting every worker branch.
+
+## D-133: T-025 scope defaults: merge commits signed off, no retroactive sign-off, hive records and JSON unchecked, legal files code-owned, copyright year 2026
+
+- **Date:** 2026-10-17
+- **Kind:** scope
+- **Tickets:** T-025
+- **Supersedes:** none
+
+**Question:** Merge commits, history, hive records, JSON files, code owners for legal files and the copyright year (Q-T025-6 to Q-T025-11)
+
+**Options considered:**
+1. The six defaults
+2. Exempt merge commits; require MIT-0 headers in `.waggle/hive/**`; REUSE-style `.license` sidecars for JSON; guard review only for legal files; a yearly copyright range
+
+**Hive recommendation:** The six defaults
+
+**Keeper choice:** Merge commits are checked like any other (`git merge --signoff`). No retroactive sign-off: enforcement starts when `dco` is required, and open PRs then run `git rebase --signoff`. `.waggle/hive/**` is not checked. JSON files are exempt and follow the path rule. `/LICENSE`, `/NOTICE` and `/LICENSES/` join CODEOWNERS for the Head Keeper. The year is `2026`, never bumped. Decided by the Head Keeper via queen card on 2026-10-17.
+
+**Rationale:** Rejected exempting merge commits: conflict resolutions would go uncertified. Rejected hive headers: a header duty on every guard review and a Head Keeper backfill commit.

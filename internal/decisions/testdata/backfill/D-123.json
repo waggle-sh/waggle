@@ -1,0 +1,17 @@
+{
+  "kind": "strategy",
+  "title": "T-024 phases A to E dispatch after T-023 merges; phase F waits for the `run.sock` loop",
+  "question": "D-014 puts Cells after dispatch and the `run.sock` loop. May T-024 start before the loop? (Q-T024-4)",
+  "options": [
+    "Phases A to E after T-023 merges, phase F after the `run.sock` loop",
+    "Hold every phase until the loop merges"
+  ],
+  "recommendation": "Phases A to E after T-023",
+  "choice": "T-024 phases A to E dispatch after T-023 merges; they are libraries with no caller. Phase F, the wiring, waits for the `run.sock` loop. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-024",
+    "T-023"
+  ],
+  "supersedes": []
+}

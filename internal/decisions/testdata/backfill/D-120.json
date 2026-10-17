@@ -1,0 +1,17 @@
+{
+  "kind": "credentials",
+  "title": "Cell inference credential: the egress proxy injects it and the Cell holds none by default; our hive opts into `cell.inference_credential: passthrough`, reported as not enforced",
+  "question": "How does an agent inside a Cell authenticate to the inference endpoint? (Q-T024-1)",
+  "options": [
+    "The egress proxy injects the credential and the Cell holds none; a subscription login the proxy cannot inject is unsupported in Cells in v0.1",
+    "An opt-in `cell.inference_credential: passthrough` that places the agent's own login token in the Cell and reports the credentials target as not enforced"
+  ],
+  "recommendation": "Proxy injection",
+  "choice": "The product default is proxy injection: the agent talks to the in-Cell forwarder, the host proxy adds the credential over TLS, and the Cell holds zero credentials. `cell.inference_credential: passthrough` is also built as an opt-in, and our hive opts into it; `waggle doctor` then reports the zero-credentials target as not enforced. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-024",
+    "T-023"
+  ],
+  "supersedes": []
+}
