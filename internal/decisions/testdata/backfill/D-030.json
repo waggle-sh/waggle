@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "Single-folder footprint; never gitignore project-owned files",
+  "question": "Which files may Waggle create or change in a host repo?",
+  "options": [
+    "Keep the current root files (WAGGLE.md, .devcontainer/) and the .gitignore block that ignores project files",
+    "Everything under .waggle/, plus a thin gate workflow and one marked import line"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Waggle owns .waggle/control/ (Tier 3: config.yaml, roster.json, roles/, WAGGLE.md, devcontainer.json, gitignored local.yaml and run.sock) and .waggle/hive/ (Tier 2 minimum: tasks/, reviews/, media/, DECISIONS.md, WORKPLAN.md). Outside .waggle/ only .github/workflows/waggle-gate.yml and one marked import line in an existing CLAUDE.md or AGENTS.md, or a one-line file created if none exists. Waggle never gitignores project-owned files, only its own runtime state. waggle uninstall removes .waggle/, the workflow and the marked lines. The Cell dev container starts with devcontainer --config .waggle/control/devcontainer.json; no .devcontainer/ directory. Needs an RFC amendment (T-003).",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-011",
+    "T-003"
+  ],
+  "supersedes": []
+}

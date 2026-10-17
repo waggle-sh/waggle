@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Windows device names rejected in lease paths on every OS",
+  "question": "Should lease paths named like Windows reserved devices (CON, PRN, AUX, NUL, COM1, LPT1 and so on) be rejected on every OS?",
+  "options": [
+    "Reject on every OS",
+    "Reject only on Windows"
+  ],
+  "recommendation": "Reject on every OS (Q-T009-1)",
+  "choice": "Windows device names are rejected in lease paths on every OS.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-009"
+  ],
+  "supersedes": []
+}

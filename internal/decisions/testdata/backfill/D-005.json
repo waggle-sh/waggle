@@ -1,0 +1,18 @@
+{
+  "kind": "scope",
+  "title": "Queue T-002 follow-up tickets",
+  "question": "Which follow-up tickets are queued after T-002?",
+  "options": [
+    "Queue T-003, T-004 and T-005",
+    "Defer follow-ups"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Queue T-003 (RFC amendment), T-004 (config loader) and T-005 (Controller force-release).",
+  "rationale": "Each closes a gap T-002 left out of scope.",
+  "tickets": [
+    "T-003",
+    "T-004",
+    "T-005"
+  ],
+  "supersedes": []
+}

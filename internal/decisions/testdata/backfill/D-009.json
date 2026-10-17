@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "Controller identity v0.1 is an allow-list",
+  "question": "How is the Controller identified for force-release in v0.1?",
+  "options": [
+    "Allow-list of keeper IDs in a Tier 3 file",
+    "Signed requests verified against allowed signers",
+    "Host-only with no identity check"
+  ],
+  "recommendation": "Allow-list of keeper IDs in a Tier 3 file",
+  "choice": "Allow-list of keeper IDs in a Tier 3 file, checked against local.yaml keeper_id; advisory against humans with push access, and documented as such.",
+  "rationale": "A real guard against agents with little work; signed identity can follow.",
+  "tickets": [
+    "T-005"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,19 @@
+{
+  "kind": "scope",
+  "title": "Roles and terms live in README sections, not docs/GLOSSARY.md",
+  "question": "Where are Waggle's roles and terms defined, and how is that kept current and protected?",
+  "options": [
+    "docs/GLOSSARY.md, Tier 2 minimum (D-029)",
+    "README sections Roles and Terms, protected by CODEOWNERS"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Roles and terms live in two README sections, Roles and Terms, updated in the same PR as any brief that introduces a term or role. Product versus hive layer terms go in CONTRIBUTING.md. README.md is protected in this repo by CODEOWNERS (T-015), not by a hardcoded tier. If the Terms list grows past about 60 entries it may split into docs/GLOSSARY.md linked from the README.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-013",
+    "T-015"
+  ],
+  "supersedes": [
+    "D-029"
+  ]
+}
