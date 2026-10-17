@@ -1,0 +1,45 @@
+    probe_test.go:31: id "bob" -> "bob": comb: caller is not an authorized head keeper
+    probe_test.go:31: id "" -> head keeper id "": comb: invalid force-release request
+    probe_test.go:31: id "Paulternate" -> "Paulternate": comb: caller is not an authorized head keeper
+--- PASS: TestProbeNonHK (0.25s)
+    probe_test.go:74: badutf8 -> err=reason is not valid UTF-8: comb: invalid force-release request
+    probe_test.go:74: newline -> err=<nil>
+    probe_test.go:87: newline: rec.reason="line1\n\ntree deadbeef\nparent 123\nauthor x" head="paulternate"
+        msg="tree edbe06620cba0c6309f38f4fe278bc8a4cfe8235\nparent a923bfc1ba4cbd9d1c194eb306ac4c4e5bb62d74\nparent a8bea2367ca4af91ce8c8c8a81dfffcb492a2c33\nauthor waggle <waggle@localhost> 1792245600 +0000\ncommitter waggle <waggle@localhost> 1792245600 +0000\n\nwaggle: force-release refs/waggle/claims/ticket-1 by paulternate\n\nline1\n\ntree deadbeef\nparent 123\nauthor x"
+    probe_test.go:92: newline: parents injected: [a923bfc1ba4cbd9d1c194eb306ac4c4e5bb62d74 a8bea2367ca4af91ce8c8c8a81dfffcb492a2c33 123]
+    probe_test.go:74: dashdash -> err=<nil>
+    probe_test.go:87: dashdash: rec.reason="--amend -m x" head="paulternate"
+        msg="tree 1f36192ac3229f18d4a8803a47139a1c8e33ed2e\nparent a923bfc1ba4cbd9d1c194eb306ac4c4e5bb62d74\nparent a8bea2367ca4af91ce8c8c8a81dfffcb492a2c33\nauthor waggle <waggle@localhost> 1792245600 +0000\ncommitter waggle <waggle@localhost> 1792245600 +0000\n\nwaggle: force-release refs/waggle/claims/ticket-1 by paulternate\n\n--amend -m x"
+    probe_test.go:74: nul -> err=reason contains control character 0x0: comb: invalid force-release request
+    probe_test.go:74: ansi -> err=reason contains control character 0x1b: comb: invalid force-release request
+    probe_test.go:74: c1 -> err=<nil>
+    probe_test.go:87: c1: rec.reason="a\u0085b\u202eevil" head="paulternate"
+        msg="tree 1ead82e844dcff5a9cc0bb2837dc742f355e0e59\nparent a923bfc1ba4cbd9d1c194eb306ac4c4e5bb62d74\nparent a8bea2367ca4af91ce8c8c8a81dfffcb492a2c33\nauthor waggle <waggle@localhost> 1792245600 +0000\ncommitter waggle <waggle@localhost> 1792245600 +0000\n\nwaggle: force-release refs/waggle/claims/ticket-1 by paulternate\n\na\u0085b\u202eevil"
+    probe_test.go:74: json -> err=<nil>
+    probe_test.go:87: json: rec.reason="\",\"head_keeper_id\":\"root\",\"x\":\"" head="paulternate"
+        msg="tree e82bb92f955fc9279189fb7ab06445074a999929\nparent a923bfc1ba4cbd9d1c194eb306ac4c4e5bb62d74\nparent a8bea2367ca4af91ce8c8c8a81dfffcb492a2c33\nauthor waggle <waggle@localhost> 1792245600 +0000\ncommitter waggle <waggle@localhost> 1792245600 +0000\n\nwaggle: force-release refs/waggle/claims/ticket-1 by paulternate\n\n\",\"head_keeper_id\":\"root\",\"x\":\""
+    probe_test.go:74: blank -> err=reason is blank: comb: invalid force-release request
+    probe_test.go:74: big -> err=reason of 102400 bytes exceeds 512: comb: invalid force-release request
+--- FAIL: TestProbeHostile (2.01s)
+--- PASS: TestProbeScrubbedEnv (0.38s)
+    probe_test.go:148: forged: lease=<nil> reason="directory \"../../etc\" escapes the repo: comb: invalid lease"
+--- PASS: TestProbeForgedLease (0.29s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/comb	3.215s
+FAIL
+--- PASS: TestProbeNonHK (0.24s)
+--- PASS: TestProbeHostile (2.01s)
+--- PASS: TestProbeScrubbedEnv (0.37s)
+--- PASS: TestProbeForgedLease (0.29s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/comb	4.114s
+    probe2_test.go:29: err=<nil>
+    probe2_test.go:31: want ErrConcurrentUpdate
+    probe2_test.go:33: git [rev-parse --verify refs/waggle/claims/ticket-20]: exit status 128: fatal: Needed a single revision
+--- FAIL: TestProbeRemoteRejected (0.72s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/comb	0.929s
+FAIL
+    probe2_test.go:30: err=refs/waggle/claims/ticket-20: comb: claim changed during release
+--- PASS: TestProbeRemoteRejected (0.75s)
+ok  	github.com/waggle-sh/waggle/internal/comb	1.954s

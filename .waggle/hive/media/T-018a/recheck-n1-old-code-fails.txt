@@ -1,0 +1,4 @@
+# github.com/waggle-sh/waggle/internal/forge [github.com/waggle-sh/waggle/internal/forge.test]
+internal/forge/none_test.go:282:9: undefined: childEnv
+FAIL	github.com/waggle-sh/waggle/internal/forge [build failed]
+FAIL

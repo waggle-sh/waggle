@@ -1,0 +1,8 @@
+Checks run against rfc.diff (git diff aaf9fa5 t-003) and the commit message:
+- added lines containing em or en dashes: 0
+- added lines containing architect or drone: 0
+- commit message containing dashes, Claude, Co-Authored: 0
+- "JSON blobs" in normative added text: 0 (appears once in Appendix A as the "was" text)
+- subject: T-003: RFC-0003 Amendment 1: comb claim storage, ticket IDs, claim-time validation, tier lists
+- files changed: docs/RFC-0003.md only, +20/-5, one commit on aaf9fa5
+- draft PR #17 exists for head t-003; not touched
