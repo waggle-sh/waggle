@@ -1,0 +1,72 @@
+ok (0, '', 'recorded D-001 in .waggle/hive/DECISIONS.md')
+stdin (0, '', 'recorded D-002 in .waggle/hive/DECISIONS.md')
+newline (1, 'waggle decide: decisions: invalid input: title contains a control character (U+000A); fields are single-line', '')
+kind case (1, 'waggle decide: decisions: invalid input: kind "Technical" is not one of publish, spend, delete, credentials, strategy, policy, technical, sc', '')
+unk supersedes (1, 'waggle decide: decisions: invalid input: supersedes: D-009 does not exist (last entry is D-002)', '')
+D-0001 (1, 'waggle decide: decisions: invalid input: supersedes: "D-0001" is not a canonical decision ID (D-%03d)', '')
+tab (1, 'waggle decide: decisions: invalid input: title contains a control character (U+0009); fields are single-line', '')
+lead space (1, 'waggle decide: decisions: invalid input: rationale has leading or trailing whitespace', '')
+201 title (1, 'waggle decide: decisions: invalid input: title must be 1 to 200 bytes, got 201', '')
+200 title (0, '', 'recorded D-003 in .waggle/hive/DECISIONS.md')
+t-1 (1, 'waggle decide: decisions: invalid input: tickets: "t-1" is not a ticket ID (T-<n> or <n>, 1 to 6 digits, value >= 1)', '')
+T-0 (1, 'waggle decide: decisions: invalid input: tickets: "T-0" is not a ticket ID (T-<n> or <n>, 1 to 6 digits, value >= 1)', '')
+lone surrogate (0, '', 'recorded D-004 in .waggle/hive/DECISIONS.md')
+dup sup (0, '', 'recorded D-005 in .waggle/hive/DECISIONS.md')
+U+0085 (1, 'waggle decide: decisions: invalid input: title contains a control character (U+0085); fields are single-line', '')
+U+2028 (0, '', 'recorded D-006 in .waggle/hive/DECISIONS.md')
+empty opt (1, 'waggle decide: decisions: invalid input: options[0] must be 1 to 500 bytes, got 0', '')
+--date (2, 'flag provided but not defined: -date / Usage: waggle decide --file <path | -> [--repo <dir>] [--dry-run] / Append one decision entry from a JSON', '')
+--id (2, 'flag provided but not defined: -id / Usage: waggle decide --file <path | -> [--repo <dir>] [--dry-run] / Append one decision entry from a JSON o', '')
+nofile (2, 'waggle decide: --file is required / Usage: waggle decide --file <path | -> [--repo <dir>] [--dry-run] / Append one decision entry from a JSON ob', '')
+nohive (1, 'waggle decide: /private/tmp/claude-501/-Users-paul-code-waggle/56d2a18d-df7f-4cdd-bc5f-42eb57375762/scratchpad/nohive is not a waggle hive (', '')
+dry (0, '', '## D-007: T1\n\n- **Date:** 2026-10-17\n- **Kind:** technical\n- **Tickets:** T-002,')
+two objs (1, 'waggle decide: decisions: invalid input: trailing data after the JSON object', '')
+/hv ['in.json', 'two.json']
+/hv/.waggle []
+/hv/.waggle/hive ['DECISIONS.md']
+<!-- SPDX-License-Identifier: MIT-0 -->
+<!-- GENERATED FILE: append-only, written by `waggle decide`. Never edit or delete an entry; record a new one that supersedes it. -->
+# DECISIONS
+
+## D-001: T1
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-002, T-003
+- **Supersedes:** none
+
+**Question:** q
+
+**Options considered:**
+1. a
+2. b
+
+**Hive recommendation:** a
+
+**Keeper choice:** a
+
+**Rationale:** r
+
+## D-002: T1
+
+- **Date:** 2026-10-17
+- **Kind:** technical
+- **Tickets:** T-002, T-003
+- **Supersedes:** none
+
+**Question:** q
+
+**Options considered:**
+1. a
+2. b
+
+**Hive recommendation:** a
+
+**Keeper choice:** a
+
+**Rationale:** r
+
+## D-003: yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+- **Date:** 2026-10-17
+- **Kind:** tech

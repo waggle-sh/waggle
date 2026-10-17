@@ -1,0 +1,14 @@
+BUILD OK
+VET OK
+gofmt:
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.204s
+ok  	github.com/waggle-sh/waggle/cmd/waggle	1.355s
+ok  	github.com/waggle-sh/waggle/internal/comb	13.043s
+ok  	github.com/waggle-sh/waggle/internal/config	1.177s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.099s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	3.518s
+deps
+github.com/waggle-sh/waggle/internal/comb
+github.com/waggle-sh/waggle/internal/layout
+github.com/waggle-sh/waggle/internal/runtime
