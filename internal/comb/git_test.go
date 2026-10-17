@@ -167,8 +167,10 @@ func TestAcquireInvalidLease(t *testing.T) {
 	clock := newClock()
 	b := newBackend(t, dir, "", clock)
 	ctx := context.Background()
-	v2 := mkLease("T-001", "k1", "x")
-	v2.Version = 2
+	v1 := mkLease("T-001", "k1", "x")
+	v1.Version = 1
+	v3 := mkLease("T-001", "k1", "x")
+	v3.Version = 3
 	past := mkLease("T-001", "k1", "x")
 	past.ExpiresAt = t0
 	backwards := mkLease("T-001", "k1", "x")
@@ -181,7 +183,8 @@ func TestAcquireInvalidLease(t *testing.T) {
 		want error
 	}{
 		{"ticket", mkLease("T-0", "k1", "x"), ErrInvalidTicketID},
-		{"version", v2, ErrInvalidLease},
+		{"version 1", v1, ErrInvalidLease},
+		{"version 3", v3, ErrInvalidLease},
 		{"expired", past, ErrInvalidLease},
 		{"backwards", backwards, ErrInvalidLease},
 		{"too many dirs", tooMany, ErrInvalidLease},
@@ -264,7 +267,7 @@ func TestAcquireCommitShape(t *testing.T) {
 	}
 
 	stored := readLease(t, dir, oid)
-	want := Lease{Version: 1, TicketID: "T-001", KeeperID: "paulternate", Role: "builder", Gate: "full",
+	want := Lease{Version: LeaseVersion, TicketID: "T-001", KeeperID: "paulternate", Role: "builder", Gate: "full",
 		Directories: []string{"internal/comb"}, ClaimedAt: t0, ExpiresAt: t0.Add(DefaultLeaseTTL)}
 	if !reflect.DeepEqual(stored, want) {
 		t.Errorf("stored lease = %+v\nwant %+v", stored, want)
@@ -474,7 +477,7 @@ func TestMalformedClaims(t *testing.T) {
 		return string(data)
 	}
 	good := func(ticket string) Lease {
-		return Lease{Version: 1, TicketID: ticket, KeeperID: "mallory", Role: "builder", Gate: "full",
+		return Lease{Version: LeaseVersion, TicketID: ticket, KeeperID: "mallory", Role: "builder", Gate: "full",
 			Directories: []string{"shared"}, ClaimedAt: t0, ExpiresAt: t0.Add(time.Hour)}
 	}
 	set := func(ref, oid string) { runGit(t, dir, "", nil, "update-ref", ref, oid) }
@@ -530,6 +533,115 @@ func TestMalformedClaims(t *testing.T) {
 		if err := b.ReleaseLease(ctx, ticket, "mallory"); !errors.Is(err, ErrMalformedClaim) {
 			t.Errorf("ReleaseLease(%s) = %v; want ErrMalformedClaim", ticket, err)
 		}
+	}
+}
+
+// Version 1 claims were written with the old role names (D-080): "forager"
+// meant the implementation role and "scout" the triage role. Reading them maps
+// those names forward; version 2 carries current names only.
+func TestParseLeaseVersions(t *testing.T) {
+	raw := func(version int, role string) []byte {
+		return []byte(fmt.Sprintf(`{"version": %d, "ticket_id": "T-001", "keeper_id": "k", "role": %q, "gate": "full",`+
+			` "directories": ["x"], "claimed_at": "2026-10-17T14:00:00Z", "expires_at": "2026-10-17T16:00:00Z"}`, version, role))
+	}
+	ok := []struct {
+		version    int
+		role, want string
+	}{
+		{1, "forager", "builder"},
+		{1, "scout", "forager"},
+		{1, "guard", "guard"},
+		{2, "builder", "builder"},
+		{2, "forager", "forager"},
+		{2, "guard", "guard"},
+	}
+	for _, tc := range ok {
+		l, err := parseLease(raw(tc.version, tc.role))
+		if err != nil || l.Role != tc.want || l.Version != tc.version {
+			t.Errorf("version %d role %q: got %+v, %v; want role %q", tc.version, tc.role, l, err, tc.want)
+		}
+	}
+	bad := []struct {
+		version int
+		role    string
+	}{
+		{1, "archi" + "tect"}, {1, "builder"}, {1, "queen"}, {1, ""},
+		{2, "scout"}, {2, "archi" + "tect"}, {2, "queen"}, {2, ""},
+		{0, "builder"}, {3, "builder"},
+	}
+	for _, tc := range bad {
+		if l, err := parseLease(raw(tc.version, tc.role)); err == nil {
+			t.Errorf("version %d role %q: parsed as %+v; want error", tc.version, tc.role, l)
+		}
+	}
+	if _, err := parseLease([]byte("{not json")); err == nil {
+		t.Error("invalid JSON parsed")
+	}
+}
+
+// A stored version 1 claim is read with its role mapped forward, listed, and
+// renewed or taken over as a version 2 claim with the current role name.
+func TestLegacyClaimsReadBack(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	clock := newClock()
+	b := newBackend(t, dir, "", clock)
+	ctx := context.Background()
+	idEnv := []string{"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t"}
+	storeV1 := func(ticket, keeper, role string) string {
+		data, err := json.Marshal(Lease{Version: 1, TicketID: ticket, KeeperID: keeper, Role: role, Gate: "full",
+			Directories: []string{"legacy/" + ticket}, ClaimedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		blob := runGit(t, dir, string(data), nil, "hash-object", "-w", "--stdin")
+		tree := runGit(t, dir, "100644 blob "+blob+"\tlease.json\n", nil, "mktree")
+		oid := runGit(t, dir, "", idEnv, "commit-tree", tree, "-m", "legacy")
+		ref, _ := RefName(ticket)
+		runGit(t, dir, "", nil, "update-ref", ref, oid)
+		return oid
+	}
+	implOID := storeV1("T-001", "alice", "forager")
+	storeV1("T-002", "bob", "scout")
+	storeV1("T-003", "carol", "guard")
+	storeV1("T-004", "dave", "archi"+"tect")
+
+	leases, err := b.ListActiveLeases(ctx)
+	var mce *MalformedClaimsError
+	if !errors.As(err, &mce) || len(mce.Claims) != 1 || mce.Claims[0].Ref != "refs/waggle/claims/ticket-4" {
+		t.Fatalf("ListActiveLeases err = %v; want only ticket-4 malformed", err)
+	}
+	got := map[string]Lease{}
+	for _, l := range leases {
+		got[l.TicketID] = l
+	}
+	for ticket, want := range map[string]string{"T-001": "builder", "T-002": "forager", "T-003": "guard"} {
+		if l, ok := got[ticket]; !ok || l.Role != want || l.Version != 1 {
+			t.Errorf("%s = %+v; want version 1 role %q", ticket, l, want)
+		}
+	}
+
+	// A rival cannot take an active legacy claim.
+	if err := b.AcquireLease(ctx, mkLease("T-001", "bob", "legacy/T-001")); !errors.Is(err, ErrAlreadyClaimed) {
+		t.Errorf("rival on legacy claim: %v; want ErrAlreadyClaimed", err)
+	}
+	// The owner renews: the new claim chains to the legacy commit and is version 2.
+	if err := b.AcquireLease(ctx, mkLease("T-001", "alice", "legacy/T-001")); err != nil {
+		t.Fatalf("renew legacy claim: %v", err)
+	}
+	renewed, _ := b.ClaimOID(ctx, "T-001")
+	if ps := parents(t, dir, renewed); !reflect.DeepEqual(ps, []string{implOID}) {
+		t.Errorf("renewal parents = %v; want [%s]", ps, implOID)
+	}
+	if l := readLease(t, dir, renewed); l.Version != LeaseVersion || l.Role != "builder" {
+		t.Errorf("renewed lease = %+v; want version %d role builder", l, LeaseVersion)
+	}
+	if msg := runGit(t, dir, "", nil, "log", "-1", "--format=%s", renewed); msg != "waggle: renew T-001 by alice (builder, full)" {
+		t.Errorf("renewal message = %q", msg)
+	}
+	// The malformed legacy claim blocks its ticket until the Keeper deals with it.
+	if err := b.AcquireLease(ctx, mkLease("T-004", "dave", "legacy/T-004")); !errors.Is(err, ErrMalformedClaim) {
+		t.Errorf("acquire over malformed legacy claim: %v; want ErrMalformedClaim", err)
 	}
 }
 
