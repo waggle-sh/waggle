@@ -359,7 +359,12 @@ func parseLease(data []byte) (Lease, error) {
 	return l, nil
 }
 
-// decodeLease parses lease.json and checks it against the ref's ticket number.
+// decodeLease parses lease.json, checks it against the ref's ticket number and
+// re-validates every field with the rules AcquireLease applies (F4). The
+// directory limit is not enforced on stored claims, so a config change never
+// turns an existing claim malformed. The returned lease carries normalized
+// directories, so a claim stored as "foo/" blocks "foo/bar" like one stored
+// as "foo".
 func decodeLease(data []byte, num int) (Lease, string) {
 	l, err := parseLease(data)
 	if err != nil {
@@ -368,10 +373,14 @@ func decodeLease(data []byte, num int) (Lease, string) {
 	if l.TicketID != ticketDisplay(num) {
 		return Lease{}, fmt.Sprintf("lease ticket_id %q does not match ref", l.TicketID)
 	}
-	if _, err := NormalizeDirectories(l.Directories, math.MaxInt); err != nil {
-		return Lease{}, "invalid directories: " + err.Error()
+	v, err := validateLeaseFields(l, math.MaxInt)
+	if err != nil {
+		return Lease{}, err.Error()
 	}
-	return l, ""
+	if v.ClaimedAt.After(v.ExpiresAt) {
+		return Lease{}, "claimed_at is after expires_at"
+	}
+	return v, ""
 }
 
 // scan reads and decodes every claim ref. In remote mode callers sync first.
@@ -402,6 +411,10 @@ func isActive(l Lease, now time.Time) bool { return l.ExpiresAt.After(now) }
 // race. The merge gate (waggle-gate.yml) is authoritative. Malformed claim refs
 // for other tickets are ignored by the overlap check; a malformed ref for the
 // target ticket returns ErrMalformedClaim. Losing a race returns ErrAlreadyClaimed.
+//
+// Stored claims are re-validated with the current field and directory rules
+// when they are read, and the overlap check sees their normalized directories.
+// A rule change can therefore surface an existing claim as malformed.
 func (b *GitBackend) AcquireLease(ctx context.Context, lease Lease) error {
 	if b.relay {
 		return ErrRelayNotImplemented
@@ -713,6 +726,10 @@ func (b *GitBackend) ReleaseLease(ctx context.Context, ticketID string, keeperID
 // ticket ID. If some claim refs are malformed it returns the valid leases and a
 // *MalformedClaimsError; the slice is valid in that case. A git or transport
 // failure returns nil and the error.
+//
+// Every stored claim is re-validated with the current field and directory
+// rules, so a rule change can report an existing claim as malformed. Returned
+// leases carry canonical ticket IDs and normalized directories only.
 func (b *GitBackend) ListActiveLeases(ctx context.Context) ([]Lease, error) {
 	if b.relay {
 		return nil, ErrRelayNotImplemented
