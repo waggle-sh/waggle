@@ -1,0 +1,17 @@
+{
+  "kind": "technical",
+  "title": "Pre-existing gofmt trailing-newline issues are fixed in a separate chore ticket",
+  "question": "Should T-010 also fix the four Go files that fail gofmt -l because they lack a trailing newline?",
+  "options": [
+    "Fix them inside T-010",
+    "Separate chore ticket T-017, keeping T-010 a pure rename"
+  ],
+  "recommendation": "Separate chore ticket T-017",
+  "choice": "Default applied by the Queen (reversible): the missing trailing newlines in cmd/waggle/main.go, internal/runtime/claude.go, internal/runtime/runtime.go and internal/scaffold/init.go are fixed in chore ticket T-017 after T-010 merges, keeping T-010 a pure rename.",
+  "rationale": "T-010's acceptance criteria require every changed line to be module-path text only.",
+  "tickets": [
+    "T-010",
+    "T-017"
+  ],
+  "supersedes": []
+}

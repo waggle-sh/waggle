@@ -1,0 +1,17 @@
+{
+  "kind": "scope",
+  "title": "T-002 guard findings become T-009, ahead of any WORKPLAN.md write",
+  "question": "How are the non-blocking T-002 guard findings handled?",
+  "options": [
+    "Fold the fixes into T-002 before merge",
+    "One follow-up ticket ordered before any WORKPLAN.md write"
+  ],
+  "recommendation": "One small follow-up ticket for F1 to F4 and F6",
+  "choice": "Guard findings on T-002 become T-009, which must land before anything writes WORKPLAN.md to disk.",
+  "rationale": "Finding F2 is an injection path into WORKPLAN.md, a steering file agents read.",
+  "tickets": [
+    "T-002",
+    "T-009"
+  ],
+  "supersedes": []
+}

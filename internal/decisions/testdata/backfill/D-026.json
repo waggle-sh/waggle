@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "T-002 approved; merges as the first PR",
+  "question": "Is T-002 approved, and how does it merge?",
+  "options": [
+    "Approve and merge as one PR",
+    "Hold for fixes before merge"
+  ],
+  "recommendation": "Approve and merge as one PR; queue one follow-up ticket for the guard findings",
+  "choice": "The Keeper approved T-002 after a guard pass; it merges as the first PR once the repo exists, using a merge commit carrying the Intent Packet.",
+  "rationale": "The guard verdict was pass with no blocking findings; the merge commit follows D-017.",
+  "tickets": [
+    "T-002"
+  ],
+  "supersedes": []
+}

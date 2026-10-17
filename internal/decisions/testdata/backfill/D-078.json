@@ -1,0 +1,14 @@
+{
+  "kind": "scope",
+  "title": "The queen session hands off through a written file and a fresh session",
+  "question": "What happens when the queen session's context grows large?",
+  "options": [
+    "Let the runtime compact the session",
+    "Write a handoff file and start a fresh session"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "When its context grows large, the queen session writes a handoff file and continues in a fresh session. Long term, waggled makes the queen stateless.",
+  "rationale": "Not recorded",
+  "tickets": [],
+  "supersedes": []
+}
