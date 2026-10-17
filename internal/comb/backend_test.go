@@ -152,7 +152,7 @@ func TestDirsOverlap(t *testing.T) {
 }
 
 func TestValidateLeaseFields(t *testing.T) {
-	base := Lease{TicketID: "2", KeeperID: "paul", Role: "forager", Gate: "full", Directories: []string{"internal/comb/"}}
+	base := Lease{TicketID: "2", KeeperID: "paul", Role: "builder", Gate: "full", Directories: []string{"internal/comb/"}}
 	got, err := validateLeaseFields(base, 5)
 	if err != nil {
 		t.Fatal(err)
@@ -224,7 +224,7 @@ func TestRelayMode(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	l := Lease{TicketID: "T-001", KeeperID: "k", Role: "forager", Gate: "full", Directories: []string{"x"}}
+	l := Lease{TicketID: "T-001", KeeperID: "k", Role: "builder", Gate: "full", Directories: []string{"x"}}
 	if err := b.AcquireLease(ctx, l); !errors.Is(err, ErrRelayNotImplemented) {
 		t.Errorf("AcquireLease: %v", err)
 	}

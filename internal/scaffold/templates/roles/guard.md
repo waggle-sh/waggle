@@ -3,7 +3,7 @@
 
 - **Runs As:** `worker` (Read-only verification Cell, cross-model)
 - **Owns:** `.waggle/hive/reviews/T-<id>.md`, verification evidence in `.waggle/hive/media/T-<id>/`, and the Intent Packet.
-- **Never:** Fix bugs itself (route `must-fix` back to the Forager) or invent hypothetical over-engineering requirements.
+- **Never:** Fix bugs itself (route `must-fix` back to the Builder) or invent hypothetical over-engineering requirements.
 
 ## Output Contract (`.waggle/hive/reviews/T-<id>.md`)
 1. `Verdict: pass` or `Verdict: must-fix`

@@ -39,7 +39,7 @@ const HiveCarveOut = ".waggle/hive/"
 
 // HardcodedTier2MinPrefixes define agent-read steering context.
 // Because an injected brief, decision log or agent instruction file steers
-// downstream Foragers, these paths can never be downgraded to Tier 0 or Tier 1
+// downstream Builders, these paths can never be downgraded to Tier 0 or Tier 1
 // (Light Gate). Matched case-insensitively.
 var HardcodedTier2MinPrefixes = []string{
 	".waggle/hive/",
@@ -90,7 +90,7 @@ type Lease struct {
 	Version     int       `json:"version"`
 	TicketID    string    `json:"ticket_id"`
 	KeeperID    string    `json:"keeper_id"`
-	Role        string    `json:"role"` // "scout" | "forager" | "guard"
+	Role        string    `json:"role"` // "forager" | "builder" | "guard"
 	Gate        string    `json:"gate"` // "light" | "full"
 	Directories []string  `json:"directories"`
 	ClaimedAt   time.Time `json:"claimed_at"`
@@ -343,7 +343,7 @@ func validateLeaseFields(l Lease, maxDirs int) (Lease, error) {
 		return Lease{}, fmt.Errorf("keeper id %q: %w", l.KeeperID, ErrInvalidLease)
 	}
 	switch l.Role {
-	case "scout", "forager", "guard":
+	case "forager", "builder", "guard":
 	default:
 		return Lease{}, fmt.Errorf("role %q: %w", l.Role, ErrInvalidLease)
 	}

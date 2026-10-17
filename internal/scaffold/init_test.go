@@ -79,7 +79,7 @@ func tree(t *testing.T, dir string) []string {
 	return out
 }
 
-var roleNames = []string{"architect", "forager", "guard", "queen", "scout"}
+var roleNames = []string{"scout", "builder", "guard", "queen", "forager"}
 
 const wantGitignore = "# --- waggle:start ---\n" +
 	".waggle/control/local.yaml\n.waggle/control/run.sock\n.waggle/worktrees/\n.claude/agents/waggle-*.md\n" +
@@ -159,7 +159,7 @@ func TestInitPreservesProjectFiles(t *testing.T) {
 	dir := t.TempDir()
 	put(t, dir, "CLAUDE.md", "# Project rules\n\nBe nice.\n")
 	put(t, dir, ".gitignore", "node_modules/"+legacyGitignore+"dist/\n")
-	put(t, dir, ".claude/agents/forager.md", "mine\n")
+	put(t, dir, ".claude/agents/builder.md", "mine\n")
 	o, _ := opts(dir, "claude-code")
 	mustInit(t, o)
 
@@ -170,7 +170,7 @@ func TestInitPreservesProjectFiles(t *testing.T) {
 	if got := get(t, dir, ".gitignore"); got != want {
 		t.Errorf(".gitignore = %q; want %q", got, want)
 	}
-	if got := get(t, dir, ".claude/agents/forager.md"); got != "mine\n" {
+	if got := get(t, dir, ".claude/agents/builder.md"); got != "mine\n" {
 		t.Errorf("project agent changed: %q", got)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "AGENTS.md")); !os.IsNotExist(err) {
