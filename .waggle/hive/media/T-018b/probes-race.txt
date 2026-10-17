@@ -1,0 +1,199 @@
+=== RUN   TestGuardTokenPaths
+    zz_guard_test.go:66: 200-garbage-echo(200)        leak=false err="github: decoding the response: invalid character 'g' looking for beginning of value"
+    zz_guard_test.go:66: 200-oversized(200)           leak=false err="github: response body is over 1 MiB"
+    zz_guard_test.go:66: 422-already(422)             leak=false err="GitHub answered 422: Validation Failed; A pull request already exists for [redacted]"
+    zz_guard_test.go:66: 400-body-echo(400)           leak=false err="GitHub answered 400: bad Bearer [redacted]; [redacted]; x [redacted]"
+    zz_guard_test.go:66: 500-header-echo(500)         leak=false err="GitHub answered 500: boom Bearer [redacted]"
+    zz_guard_test.go:66: 500-nonjson-echo(502)        leak=false err="GitHub answered 502: "
+    zz_guard_test.go:66: 200-malformed-json(200)      leak=false err="github: decoding the response: invalid character 'g' looking for beginning of value"
+    zz_guard_test.go:76: ctx-timeout                  leak=false err="github GET /x: Get \"http://127.0.0.1:64000/x\": context deadline exceeded"
+    zz_guard_test.go:77: ctx timeout returned after 301.947958ms
+    zz_guard_test.go:82: pickTransport label=GITHUB_TOKEN err=<nil> client.Timeout=30s
+    zz_guard_test.go:85: conn-refused                 leak=false err="github GET /x: Get \"http://127.0.0.1:1/x\": dial tcp 127.0.0.1:1: connect: connection refused"
+--- PASS: TestGuardTokenPaths (0.32s)
+=== RUN   TestGuardRedirect
+    zz_guard_test.go:101: cross-host redirect: err=<nil> evil saw Authorization=""
+    zz_guard_test.go:112: same-hostname other-port redirect: evil saw Authorization="Bearer ghp_GUARDSECRET0123456789abcdefghij" (Go keeps it for same hostname)
+--- PASS: TestGuardRedirect (0.01s)
+=== RUN   TestGuardGHArgvEnv
+    zz_guard_test.go:137: branch "{owner}" status=200 err=<nil>
+    zz_guard_test.go:137: branch "{repo}" status=200 err=<nil>
+    zz_guard_test.go:137: branch "a/{branch}" status=200 err=<nil>
+    zz_guard_test.go:137: branch "x&state=closed" status=200 err=<nil>
+    zz_guard_test.go:137: branch "a%7Bowner%7D" status=200 err=<nil>
+    zz_guard_test.go:137: branch "ünï" status=200 err=<nil>
+    zz_guard_test.go:140: fake gh log:
+        ARG[api]
+        ARG[--method]
+        ARG[GET]
+        ARG[--include]
+        ARG[-H]
+        ARG[Accept: application/vnd.github+json]
+        ARG[--input]
+        ARG[-]
+        ARG[repos/o/r/pulls?head=o%3A%7Bowner%7D&state=open]
+        GH_ENTERPRISE_TOKEN=ent-secret
+        GH_HOST=github.com
+        GH_PROMPT_DISABLED=1
+        GH_REPO=evil/repo
+        GH_TOKEN=parent-gh-token
+        GITHUB_TOKEN=parent-github-token
+        NO_COLOR=1
+        STDIN[]
+        ARG[api]
+        ARG[--method]
+        ARG[GET]
+        ARG[--include]
+        ARG[-H]
+        ARG[Accept: application/vnd.github+json]
+        ARG[--input]
+        ARG[-]
+        ARG[repos/o/r/pulls?head=o%3A%7Brepo%7D&state=open]
+        GH_ENTERPRISE_TOKEN=ent-secret
+        GH_HOST=github.com
+        GH_PROMPT_DISABLED=1
+        GH_REPO=evil/repo
+        GH_TOKEN=parent-gh-token
+        GITHUB_TOKEN=parent-github-token
+        NO_COLOR=1
+        STDIN[]
+        ARG[api]
+        ARG[--method]
+        ARG[GET]
+        ARG[--include]
+        ARG[-H]
+        ARG[Accept: application/vnd.github+json]
+        ARG[--input]
+        ARG[-]
+        ARG[repos/o/r/pulls?head=o%3Aa/%7Bbranch%7D&state=open]
+        GH_ENTERPRISE_TOKEN=ent-secret
+        GH_HOST=github.com
+        GH_PROMPT_DISABLED=1
+        GH_REPO=evil/repo
+        GH_TOKEN=parent-gh-token
+        GITHUB_TOKEN=parent-github-token
+        NO_COLOR=1
+        STDIN[]
+        ARG[api]
+        ARG[--method]
+        ARG[GET]
+        ARG[--include]
+        ARG[-H]
+        ARG[Accept: application/vnd.github+json]
+        ARG[--input]
+        ARG[-]
+        ARG[repos/o/r/pulls?head=o%3Ax%26state=closed&state=open]
+        GH_ENTERPRISE_TOKEN=ent-secret
+        GH_HOST=github.com
+        GH_PROMPT_DISABLED=1
+        GH_REPO=evil/repo
+        GH_TOKEN=parent-gh-token
+        GITHUB_TOKEN=parent-github-token
+        NO_COLOR=1
+        STDIN[]
+        ARG[api]
+        ARG[--method]
+        ARG[GET]
+        ARG[--include]
+        ARG[-H]
+        ARG[Accept: application/vnd.github+json]
+        ARG[--input]
+        ARG[-]
+        ARG[repos/o/r/pulls?head=o%3Aa%257Bowner%257D&state=open]
+        GH_ENTERPRISE_TOKEN=ent-secret
+        GH_HOST=github.com
+        GH_PROMPT_DISABLED=1
+        GH_REPO=evil/repo
+        GH_TOKEN=parent-gh-token
+        GITHUB_TOKEN=parent-github-token
+        NO_COLOR=1
+        STDIN[]
+        ARG[api]
+        ARG[--method]
+        ARG[GET]
+        ARG[--include]
+        ARG[-H]
+        ARG[Accept: application/vnd.github+json]
+        ARG[--input]
+        ARG[-]
+        ARG[repos/o/r/pulls?head=o%3A%C3%BCnï&state=open]
+        GH_ENTERPRISE_TOKEN=ent-secret
+        GH_HOST=github.com
+        GH_PROMPT_DISABLED=1
+        GH_REPO=evil/repo
+        GH_TOKEN=parent-gh-token
+        GITHUB_TOKEN=parent-github-token
+        NO_COLOR=1
+        STDIN[]
+--- PASS: TestGuardGHArgvEnv (0.22s)
+=== RUN   TestGuardGHGarbageAndBig
+    zz_guard_test.go:159: exit0-status-only  status=204 num=0 err=<nil>
+    zz_guard_test.go:159: exit1-200          status=200 num=7 err=<nil>
+    zz_guard_test.go:159: exit1-nostatus     status=0 num=0 err=gh api GET /x: exit status 1: oops
+    zz_guard_test.go:159: http-999           status=0 num=0 err=gh api GET /x: <nil>: 
+    zz_guard_test.go:159: exit0-garbage      status=0 num=0 err=gh api GET /x: <nil>: 
+    zz_guard_test.go:159: exit0-empty        status=0 num=0 err=gh api GET /x: <nil>: 
+    zz_guard_test.go:159: exit0-html         status=200 num=0 err=github: decoding the response: invalid character '<' looking for beginning of value
+    zz_guard_test.go:169: 600MiB stdout: status=200 err=github: response body is over 1 MiB took=23.971703s TotalAlloc delta=4096 MiB, Sys=2768 MiB
+--- PASS: TestGuardGHGarbageAndBig (24.80s)
+=== RUN   TestGuardGHHang
+    zz_guard_test.go:178: gh hang ctx 500ms: returned after 1m0.0836025s err=gh api GET /x: signal: killed: 
+    zz_guard_test.go:185: gh with orphan grandchild, ctx 500ms: returned after 1m0.202842625s err=gh api GET /x: signal: killed: 
+    zz_guard_test.go:187: ghTransport applies own timeout: false
+--- PASS: TestGuardGHHang (120.34s)
+=== RUN   TestGuardRemotes
+    zz_guard_test.go:211: "https://github.com/o/r"                                     -> owner="o" repo="r" err=""
+    zz_guard_test.go:211: "https://github.com/o/r.git"                                 -> owner="o" repo="r" err=""
+    zz_guard_test.go:211: "https://github.com/o/r.git/"                                -> owner="" repo="" err="unsupported github.com URL form; use https://github.com/<owner>/<repo>, git@github.com:<owner>/<repo> or ssh://git@github.com/<owner>/<repo>: bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/r/"                                    -> owner="" repo="" err="unsupported github.com URL form; use https://github.com/<owner>/<repo>, git@github.com:<owner>/<repo> or ssh://git@github.com/<owner>/<repo>: bad forge remote"
+    zz_guard_test.go:211: "https://user:<TOK>@github.com/o/r"                          -> owner="" repo="" err="unsupported github.com URL form; use https://github.com/<owner>/<repo>, git@github.com:<owner>/<repo> or ssh://git@github.com/<owner>/<repo>: bad forge remote"
+    zz_guard_test.go:211: "https://<TOK>@github.com/o/r.git"                           -> owner="" repo="" err="unsupported github.com URL form; use https://github.com/<owner>/<repo>, git@github.com:<owner>/<repo> or ssh://git@github.com/<owner>/<repo>: bad forge remote"
+    zz_guard_test.go:211: "git@github.com:o/r.git"                                     -> owner="o" repo="r" err=""
+    zz_guard_test.go:211: "git@github.com:o/r"                                         -> owner="o" repo="r" err=""
+    zz_guard_test.go:211: "ssh://git@github.com/o/r.git"                               -> owner="o" repo="r" err=""
+    zz_guard_test.go:211: "ssh://git@github.com:22/o/r"                                -> owner="" repo="" err="unsupported github.com URL form; use https://github.com/<owner>/<repo>, git@github.com:<owner>/<repo> or ssh://git@github.com/<owner>/<repo>: bad forge remote"
+    zz_guard_test.go:211: "git@evil.com:o/r"                                           -> owner="" repo="" err="host \"evil.com\" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote"
+    zz_guard_test.go:211: "https://github.com.evil.com/o/r"                            -> owner="" repo="" err="host \"github.com.evil.com\" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote"
+    zz_guard_test.go:211: "https://GitHub.com/o/r"                                     -> owner="" repo="" err="host \"GitHub.com\" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote"
+    zz_guard_test.go:211: "https://GITHUB.COM/o/r"                                     -> owner="" repo="" err="host \"GITHUB.COM\" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote"
+    zz_guard_test.go:211: "https://evil.com/github.com/o/r"                            -> owner="" repo="" err="host \"evil.com\" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote"
+    zz_guard_test.go:211: "https://github.com@evil.com/o/r"                            -> owner="" repo="" err="host \"evil.com\" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/r/extra"                               -> owner="" repo="" err="unsupported github.com URL form; use https://github.com/<owner>/<repo>, git@github.com:<owner>/<repo> or ssh://git@github.com/<owner>/<repo>: bad forge remote"
+    zz_guard_test.go:211: "https://github.com/ö/r"                                     -> owner="" repo="" err="invalid GitHub owner \"ö\": bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/ré"                                    -> owner="" repo="" err="invalid GitHub repository name \"ré\": bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o-/r"                                    -> owner="o-" repo="r" err=""
+    zz_guard_test.go:211: "https://github.com/-o/r"                                    -> owner="-o" repo="r" err=""
+    zz_guard_test.go:211: "https://github.com/o/.."                                    -> owner="" repo="" err="invalid GitHub repository name \"..\": bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/."                                     -> owner="" repo="" err="invalid GitHub repository name \".\": bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/.git"                                  -> owner="o" repo=".git" err=""
+    zz_guard_test.go:211: "https://github.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/r" -> owner="" repo="" err="invalid GitHub owner \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\": bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/r\n"                                   -> owner="" repo="" err="invalid GitHub repository name \"r\\n\": bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/r%0a"                                  -> owner="" repo="" err="invalid GitHub repository name \"r%0a\": bad forge remote"
+    zz_guard_test.go:211: "http://github.com/o/r"                                      -> owner="" repo="" err="unsupported github.com URL form; use https://github.com/<owner>/<repo>, git@github.com:<owner>/<repo> or ssh://git@github.com/<owner>/<repo>: bad forge remote"
+    zz_guard_test.go:211: "ssh://user:<TOK>@evil.com/o/r"                              -> owner="" repo="" err="host \"evil.com\" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/r?x=1"                                 -> owner="" repo="" err="invalid GitHub repository name \"r?x=1\": bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/r#frag"                                -> owner="" repo="" err="invalid GitHub repository name \"r#frag\": bad forge remote"
+    zz_guard_test.go:211: "https://github.com/o/r.git.git"                             -> owner="o" repo="r.git" err=""
+    zz_guard_test.go:211: "file:///etc/passwd"                                         -> owner="" repo="" err="host \"\" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote"
+    zz_guard_test.go:211: "/local/path"                                                -> owner="" repo="" err="host \"/local/path\" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote"
+--- PASS: TestGuardRemotes (0.00s)
+=== RUN   TestGuardOpenChangeInputs
+    zz_guard_test.go:235: head="{owner}" title="t" -> num=3 err=<nil>
+    zz_guard_test.go:235: head="{repo}" title="t" -> num=3 err=<nil>
+    zz_guard_test.go:235: head="-X" title="t" -> num=0 err=forge: open change: invalid branch name "-X"
+    zz_guard_test.go:235: head="a\nb" title="t" -> num=0 err=forge: open change: invalid branch name "a\nb": git check-ref-format: exit status 128: fatal: 'a
+        b' is not a valid branch name
+    zz_guard_test.go:235: head="a\x00b" title="t" -> num=0 err=forge: open change: invalid branch name "a\x00b": git check-ref-format: fork/exec /usr/bin/git: invalid argument: 
+    zz_guard_test.go:235: head="../x" title="t" -> num=0 err=forge: open change: invalid branch name "../x": git check-ref-format: exit status 128: fatal: '../x' is not a valid branch name
+    zz_guard_test.go:235: head="a/../b" title="t" -> num=0 err=forge: open change: invalid branch name "a/../b": git check-ref-format: exit status 128: fatal: 'a/../b' is not a valid branch name
+    zz_guard_test.go:235: head="ok" title="t\x00u" -> num=3 err=<nil>
+    zz_guard_test.go:235: head="ok" title="{owner} -X\\t" -> num=3 err=<nil>
+    zz_guard_test.go:235: head="ok" title="a\nb" -> num=0 err=forge: open change: title must be one line of 1 to 256 bytes
+    zz_guard_test.go:235: head="ok" title="t" -> num=3 err=<nil>
+    zz_guard_test.go:235: head="a&state=closed" title="t" -> num=3 err=<nil>
+    zz_guard_test.go:235: head="a b" title="t" -> num=0 err=forge: open change: invalid branch name "a b": git check-ref-format: exit status 128: fatal: 'a b' is not a valid branch name
+    zz_guard_test.go:235: head="a@{1}" title="t" -> num=0 err=forge: open change: invalid branch name "a@{1}": git check-ref-format: exit status 128: fatal: 'a@{1}' is not a valid branch name
+    zz_guard_test.go:237: requests that reached the server: ["POST /repos/o/r/pulls" "POST /repos/o/r/pulls" "POST /repos/o/r/pulls" "POST /repos/o/r/pulls" "POST /repos/o/r/pulls" "POST /repos/o/r/pulls"]
+--- PASS: TestGuardOpenChangeInputs (0.27s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/forge	147.532s

@@ -1,0 +1,89 @@
+package forge
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"os/exec"
+	"strings"
+	"testing"
+)
+
+func TestGuardOps(t *testing.T) {
+	dir := t.TempDir()
+	c := exec.Command("git", "init", "-q")
+	c.Dir = dir
+	c.Run()
+	var reqs []string
+	mode := ""
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		reqs = append(reqs, r.Method+" "+r.URL.RequestURI()+" "+string(b))
+		switch {
+		case r.Method == "POST" && strings.HasSuffix(r.URL.Path, "/pulls"):
+			w.WriteHeader(422)
+			fmt.Fprint(w, `{"message":"Validation Failed","errors":[{"message":"A pull request already exists for o:x."}]}`)
+		case r.Method == "GET" && strings.HasSuffix(r.URL.Path, "/pulls"):
+			fmt.Fprint(w, `[{"number":9,"html_url":"https://github.com/o/r/pull/9"}]`)
+		case r.Method == "PUT":
+			switch mode {
+			case "merged-false":
+				fmt.Fprint(w, `{"merged":false,"message":"nope"}`)
+			case "405":
+				w.WriteHeader(405)
+				fmt.Fprint(w, `{"message":"Required status check is expected"}`)
+			case "409":
+				w.WriteHeader(409)
+				fmt.Fprint(w, `{"message":"Head branch was modified. Review and try the merge again."}`)
+			case "500":
+				w.WriteHeader(500)
+				fmt.Fprint(w, `{"message":"x"}`)
+			default:
+				fmt.Fprint(w, `{"merged":true}`)
+			}
+		case r.Method == "GET":
+			sha := strings.Repeat("a", 40)
+			if mode == "moved" {
+				sha = strings.Repeat("b", 40)
+			}
+			if mode == "nosha" {
+				sha = ""
+			}
+			fmt.Fprintf(w, `{"number":9,"node_id":"PR_x","head":{"sha":%q}}`, sha)
+		case r.URL.Path == "/graphql":
+			if mode == "gql-moved" {
+				fmt.Fprint(w, `{"errors":[{"message":"Head branch was modified. Review and try the merge again."}]}`)
+			} else if mode == "gql-unsup" {
+				fmt.Fprint(w, `{"errors":[{"message":"Auto merge is not allowed for this repository"}]}`)
+			} else {
+				fmt.Fprint(w, `{"data":{}}`)
+			}
+		}
+	}))
+	defer srv.Close()
+	g := &github{t: tt(srv.URL), repoDir: dir, owner: "o", repo: "r", repoAPI: "/repos/o/r"}
+	ctx := context.Background()
+	ch, err := g.OpenChange(ctx, ChangeRequest{Head: "{owner}x", Base: "main", Title: "t"})
+	t.Logf("422 lookup: %+v err=%v", ch, err)
+	oid := strings.Repeat("a", 40)
+	for _, m := range []string{"ok", "merged-false", "405", "409", "500", "moved", "nosha", "gql-moved", "gql-unsup"} {
+		mode = m
+		auto := m == "moved" || m == "nosha" || strings.HasPrefix(m, "gql")
+		err := g.Merge(ctx, Change{Head: "x", Base: "main", Number: 9}, MergeRequest{Subject: "s", Body: "b", ExpectedHeadOID: oid, Auto: auto})
+		t.Logf("merge mode=%-12s auto=%-5v err=%v | HeadMoved=%v NotMergeable=%v Unsupported=%v", m, auto, err,
+			errors.Is(err, ErrHeadMoved), errors.Is(err, ErrNotMergeable), errors.Is(err, ErrUnsupported))
+	}
+	for _, bad := range []MergeRequest{{Subject: "s", ExpectedHeadOID: "ABC"}, {Subject: "s\nx", ExpectedHeadOID: oid}, {ExpectedHeadOID: oid}, {Subject: "s", ExpectedHeadOID: oid + "\n"}} {
+		t.Logf("bad merge req %q -> %v", bad.ExpectedHeadOID, g.Merge(ctx, Change{Number: 9}, bad))
+	}
+	t.Logf("comment number 0: %v", g.Comment(ctx, Change{}, "x"))
+	for _, r := range reqs {
+		if len(r) > 200 {
+			r = r[:200]
+		}
+		t.Logf("REQ %s", r)
+	}
+}
