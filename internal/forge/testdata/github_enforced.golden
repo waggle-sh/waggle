@@ -1,0 +1,14 @@
+Waggle setup check: github waggle-sh/waggle (remote origin)
+Auth: GITHUB_TOKEN as paulternate (admin)
+Claims: refs/waggle/claims/* on origin
+Merge strategy: up_to_date
+Enforcement: enforced
+
+  ok        custom-refs     refs/waggle/* can be pushed and deleted.
+  ok        atomic-push     The remote accepts atomic multi-ref pushes.
+  ok        required-gate   A rule on main requires the verify-leases-and-tiers check.
+  ok        up-to-date      Branches must be up to date before merging.
+  ok        bypass          Only the Head Keeper can bypass rulesets.
+  skipped   merge-queue     Not used: merge_strategy is up_to_date.
+
+Everything Waggle relies on is enforced on this repo.
