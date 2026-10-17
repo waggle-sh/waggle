@@ -111,3 +111,18 @@ func TestCollectCancel(t *testing.T) {
 		t.Errorf("zero limits: %v; want ErrAdapterConfig", err)
 	}
 }
+
+// A system/permission_denied event carries a string message; it is valid and
+// not malformed. The line is verbatim from a live Claude Code 2.1.302 run
+// (.waggle/hive/media/T-023a/fable-run3-restricted.jsonl). An assistant event
+// whose message is not an object still counts as malformed.
+func TestCollectPermissionDenied(t *testing.T) {
+	denied := `{"type":"system","subtype":"permission_denied","tool_name":"Write","tool_use_id":"toolu_01GqndKq7oPviu6vzrxA6fmU","decision_reason_type":"other","decision_reason":"--restricted: path outside the working directory","message":"/private/tmp/claude-redacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/g-outside/restricted-marker.txt is outside /private/tmp/claude-redacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/g-probe; --restricted confines the file tools to the working directory.","uuid":"cae52bcd-06c8-45ec-9a61-2358438465ce","session_id":"20f22f6b-d867-4403-bec5-68a3de99b433"}` + "\n"
+	stream := assistant("m1", 100, 0, 5) + denied + denied +
+		`{"type":"assistant","message":"not an object"}` + "\n" +
+		`{"type":"result","subtype":"success","is_error":false,"result":"ok"}`
+	res, _ := collect(t, stream, 1000)
+	if res.MalformedLines != 1 || res.End != EndDone || res.SessionID != "20f22f6b-d867-4403-bec5-68a3de99b433" {
+		t.Errorf("Collect = %+v; want one malformed line, done, the denial's session id", res)
+	}
+}

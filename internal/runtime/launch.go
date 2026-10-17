@@ -40,7 +40,8 @@ type LaunchSpec struct {
 }
 
 // refusedArgs are flags default_args may not carry: resume paths (T-021 S1),
-// flags the adapter sets itself, and ways to widen tools, settings, MCP or plugins.
+// flags the adapter sets itself, ways to widen tools, settings, MCP or plugins,
+// model or effort overrides (T-012 owns both), and remote, cloud, browser or IDE channels.
 var refusedArgs = toSet("--continue", "--resume", "--session-id", "--fork-session", "--from-pr",
 	"--teleport", "--max-turns", "--model", "--mcp-config", "--print", "--output-format",
 	"--input-format", "--settings", "--setting-sources", "--permission-mode",
@@ -48,7 +49,8 @@ var refusedArgs = toSet("--continue", "--resume", "--session-id", "--fork-sessio
 	"--allowed-tools", "--disallowedTools", "--disallowed-tools", "--tools", "--append-system-prompt",
 	"--append-system-prompt-file", "--system-prompt", "--system-prompt-file", "--add-dir",
 	"--agent", "--agents", "--plugin-dir", "--plugin-url", "--bg", "--background", "--cloud",
-	"--worktree", "--strict-mcp-config", "--")
+	"--worktree", "--strict-mcp-config", "--effort", "--fallback-model", "--remote-control",
+	"--environment", "--chrome", "--ide", "--")
 
 // workerTools are the only built-in tools a worker gets (D-110).
 const workerTools = "Bash,Edit,Glob,Grep,Read,Write"
@@ -82,7 +84,7 @@ var envFixed = []string{"CLAUDE_CODE_DISABLE_CLAUDE_MDS=1", "CLAUDE_CODE_DISABLE
 // is hidden from help; an unknown flag makes Claude Code exit, so it fails loudly.
 var helpTokens = []string{"--print", "--output-format", "stream-json", "--verbose", "--model",
 	"--strict-mcp-config", "--setting-sources", "--settings", "--permission-mode", "dontAsk",
-	"--tools", "--append-system-prompt"}
+	"--tools", "--append-system-prompt", "--restricted"}
 
 // thinkingTokens maps the Thinking step to Claude Code's MAX_THINKING_TOKENS.
 var thinkingTokens = map[Profile]int{ProfileLean: 4000, ProfileBalanced: 12000, ProfileThorough: 32000}
@@ -133,7 +135,8 @@ func (w *capWriter) Write(p []byte) (int, error) {
 // Prepare builds one headless session: print mode with stream-json output,
 // the resolved model, no setting sources (no user, project or local settings,
 // hooks, plugins or CLAUDE.md), the D-110 tool allowlist and deny list as an
-// inline settings file, strict MCP, --max-turns, and the stable prompt appended
+// inline settings file, strict MCP, --restricted (file tools confined to the
+// working directory), --max-turns, and the stable prompt appended
 // to the system prompt. The variable prompt goes on stdin only. It refuses an
 // unresolved Selection, an unverified binary, bad thresholds, a refused
 // default argument, and an allowlisted command that could widen the rules.
@@ -171,23 +174,24 @@ func (c *ClaudeAdapter) claudeArgs(inv Invocation, s ContextSettings, settings, 
 	for _, a := range c.cfg.DefaultArgs {
 		flag, _, _ := strings.Cut(a, "=")
 		short := len(flag) > 1 && flag[0] == '-' && flag[1] != '-' && strings.ContainsAny(flag[1:], "cprw")
-		if refusedArgs[flag] || short {
+		// A bare word is a positional argument, which Claude Code appends to the prompt.
+		if refusedArgs[flag] || short || !strings.HasPrefix(flag, "-") {
 			return nil, fmt.Errorf("%w: default_args contains %q", ErrRefusedArg, a)
 		}
 	}
 	args := []string{c.cfg.Binary, "--print", "--output-format=stream-json", "--verbose",
 		"--model=" + inv.Selection.Model, "--setting-sources=", "--settings=" + string(settings),
-		"--strict-mcp-config", "--tools=" + workerTools, "--permission-mode=dontAsk",
+		"--strict-mcp-config", "--restricted", "--tools=" + workerTools, "--permission-mode=dontAsk",
 		"--max-turns=" + strconv.Itoa(s.MaxTurns), "--append-system-prompt=" + string(stable)}
 	return append(args, c.cfg.DefaultArgs...), nil
 }
 
-// workerSettings renders the settings JSON: allow rules for the read, edit and
-// write tools, each hive command in commands, and gitAllowed; deny rules from
+// workerSettings renders the settings JSON: allow rules for the read tools, the
+// edit and write tools scoped to the working directory, each hive command in commands, and gitAllowed; deny rules from
 // deniedRules. A command must be plain words: no wildcard, quote, control
 // character, shell operator or rule syntax, and none of the denied programs.
 func workerSettings(commands []string) ([]byte, error) {
-	allow := []string{"Read", "Glob", "Grep", "Edit", "Write"}
+	allow := []string{"Read", "Glob", "Grep", "Edit(./**)", "Write(./**)"}
 	for _, cmd := range append(append([]string(nil), commands...), gitAllowed...) {
 		f := strings.Fields(cmd)
 		if len(f) == 0 || strings.Join(f, " ") != cmd || strings.ContainsAny(cmd, "*()\"'`$;&|<>\\") ||
