@@ -1,0 +1,5 @@
+### same pin, hand-edited managed file
+  [pin]     fa85121f60c3846be294b03b5e8ec4a799abdaa1 (unchanged)
+  [rewrite] .waggle/control/roster.json
+ M .waggle/control/roster.json
+### downgrade

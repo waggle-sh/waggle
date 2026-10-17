@@ -1,0 +1,42 @@
+##### hash not built from / unstamped binary
+  [pin]     0123456789abcdef0123456789abcdef01234567 -> fa85121f60c3846be294b03b5e8ec4a799abdaa1
+waggle upgrade refused: this build is unpinned (modified or unstamped tree); build waggle from a clean, stamped checkout of the target commit: scaffold: refused, nothing written
+exit=1
+
+##### PROFILE / template syntax / traversal
+--- profile: ../../../etc/passwd
+12:  profile: ../../../etc/passwd
+exit=0
+ M .waggle/control/config.yaml
+ M .waggle/control/roster.json
+3:  "profile": "../../../etc/passwd",
+--- profile: {{PIN}}
+12:  profile: {{PIN}}
+exit=0
+ M .waggle/control/config.yaml
+ M .waggle/control/roster.json
+3:  "profile": "{{PIN}}",
+--- profile: {{PROFILE}}
+12:  profile: {{PROFILE}}
+exit=0
+ M .waggle/control/config.yaml
+ M .waggle/control/roster.json
+3:  "profile": "{{PROFILE}}",
+--- profile: x","evil":"1
+12:  profile: x","evil":"1
+exit=0
+ M .waggle/control/config.yaml
+ M .waggle/control/roster.json
+3:  "profile": "x","evil":"1",
+--- profile: $(id)
+12:  profile: $(id)
+exit=0
+ M .waggle/control/config.yaml
+ M .waggle/control/roster.json
+3:  "profile": "$(id)",
+--- profile: a|b
+12:  profile: a|b
+exit=0
+ M .waggle/control/config.yaml
+ M .waggle/control/roster.json
+3:  "profile": "a|b",

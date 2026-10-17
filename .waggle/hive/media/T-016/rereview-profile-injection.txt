@@ -1,0 +1,56 @@
+######## rr4
+== profile: cli extra
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli extra",
+valid JSON, profile= 'cli extra' extra keys: []
+== profile: cli", "evil": "1
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli", "evil": "1",
+valid JSON, profile= 'cli' extra keys: ['evil']
+== profile: cli # note
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli",
+valid JSON, profile= 'cli' extra keys: []
+== profile: "cli"
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli",
+valid JSON, profile= 'cli' extra keys: []
+On branch main
+nothing to commit, working tree clean
+== profile: cli
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli",
+valid JSON, profile= 'cli' extra keys: []
+######## rr4fa
+== profile: cli extra
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli",
+valid JSON, profile= 'cli' extra keys: []
+== profile: cli", "evil": "1
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli",",
+json.decoder.JSONDecodeError: Invalid control character at: line 3 column 22 (char 39)
+== profile: cli # note
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli",
+valid JSON, profile= 'cli' extra keys: []
+== profile: "cli"
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli",
+valid JSON, profile= 'cli' extra keys: []
+On branch main
+nothing to commit, working tree clean
+== profile: cli
+exit=0
+grep: prof-out.txt: No such file or directory
+  "profile": "cli",
+valid JSON, profile= 'cli' extra keys: []
