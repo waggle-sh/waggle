@@ -6,3 +6,6 @@ bin/
 .waggle/worktrees/
 .claude/agents/waggle-*.md
 # --- waggle:end ---
+.claude/settings.local.json
+.claude/worktrees/
+.dashboard/
