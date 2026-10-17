@@ -1,0 +1,16 @@
+Amendment claims checked against main (aaf9fa5): internal/comb/backend.go, git.go, workplan.go, tier_test.go, internal/layout/layout.go.
+
+OK  ref per ticket refs/waggle/claims/ticket-<n>; commit with single lease.json 100644; root commit; renew and takeover are child commits; release deletes ref; owner-only release; lost race is ErrAlreadyClaimed
+OK  CAS: update-ref against exact OID; remote fetches claims namespace then push --atomic --force-with-lease; remote authoritative
+OK  lease fields; version 2; v1 roles scout->forager, forager->builder, guard->guard; v1 never written
+OK  claim roles forager, builder, guard; keeper_id pattern; gate light|full; default TTL 120; expires_at must be future; expired claim inactive
+OK  ticket pattern, >= 1, T-%03d, unpadded ticket-<n>, non-canonical ref malformed
+OK  Tier 3 equals/contained/contains; root; case-insensitive; any part of .waggle refused; all before any git write
+OK  allow-list; 1024 and 255 byte limits; trailing dot; leading dash; device names; .git any case; absolute, drive letter, ..; clean, dedupe, sort; max dirs 5; light gate Tier 2 refusal; segment-boundary overlap; case-insensitive overlap deferred (backfill line 307)
+OK  re-validated on read with dir count excepted; malformed conditions match loadClaims and decodeLease; other-ticket malformed skipped and reported; target-ticket malformed refuses claim and release
+OK  relay mode: Acquire, Release, List, ClaimOID return ErrRelayNotImplemented
+OK  Tier 2 minimum .waggle/hive/, CLAUDE.md, AGENTS.md; Tier 3 .waggle/ minus exact-case hive carve-out, .github/workflows/, .gitlab-ci.yml, .devcontainer/; root WAGGLE.md Tier 0 (tier_test.go)
+OK  waggle-gate.yml checks the T-<id>: prefix; config keys leases.default_ttl_minutes and max_directories_per_claim exist
+
+MISMATCH  3.1 "Reading Claims": "WORKPLAN.md ... is generated only from validated leases".
+  workplan.go RenderWorkplan: "Input is not assumed to be validated"; pure, takes any []Lease; no production caller. The (invalid) rule, no echo and escaping are correct. The "only from validated leases" guarantee is not in the code.
