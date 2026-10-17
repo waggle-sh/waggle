@@ -1,0 +1,51 @@
+=== pin case: missing  (config line: )
+waggle upgrade refused: scaffold: refused, nothing written: /private/tmp/claude-redacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/h-missing/.waggle/control/config.yaml: no pin: line under waggle:
+exit=
+tree unchanged
+=== pin case: short  (config line: 9:  pin: abc1234|)
+waggle upgrade refused: scaffold: refused, nothing written: /private/tmp/claude-redacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/h-short/.waggle/control/config.yaml line 9: pin "abc1234" is not a full 40-hex commit or a release tag; set waggle.pin to the full 40-hex commit (git rev-parse <short>) or a release tag, then rerun
+exit=
+tree unchanged
+=== pin case: tagspaces  (config line: 9:  pin: v1.0.0 beta|)
+  [pin]     v1.0.0 -> fa85121f60c3846be294b03b5e8ec4a799abdaa1
+  [same]    .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+  [same]    .github/workflows/waggle-gate.yml
+exit=
+tree unchanged
+=== pin case: inject  (config line: 9:  pin: aaaa$(touch /tmp/pwn)|)
+waggle upgrade refused: scaffold: refused, nothing written: /private/tmp/claude-redacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/h-inject/.waggle/control/config.yaml line 9: pin "aaaa$(touch" is not a full 40-hex commit or a release tag; set waggle.pin to the full 40-hex commit (git rev-parse <short>) or a release tag, then rerun
+exit=
+tree unchanged
+=== pin case: inject2  (config line: 9:  pin: 'a;b'|)
+waggle upgrade refused: scaffold: refused, nothing written: /private/tmp/claude-redacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/h-inject2/.waggle/control/config.yaml line 9: pin "a;b" is not a full 40-hex commit or a release tag; set waggle.pin to the full 40-hex commit (git rev-parse <short>) or a release tag, then rerun
+exit=
+tree unchanged
+=== pin case: uppercase  (config line: 9:  pin: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA|)
+waggle upgrade refused: scaffold: refused, nothing written: /private/tmp/claude-redacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/h-uppercase/.waggle/control/config.yaml line 9: pin "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" is not a full 40-hex commit or a release tag; set waggle.pin to the full 40-hex commit (git rev-parse <short>) or a release tag, then rerun
+exit=
+tree unchanged
+=== pin case: twopins  (config line: 9:  pin: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.|10:  pin: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|)
+waggle upgrade refused: scaffold: refused, nothing written: /private/tmp/claude-redacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/h-twopins/.waggle/control/config.yaml: 2 pin: lines under waggle: (lines 9 and 10)
+exit=
+tree unchanged
+=== pin case: unpinnedval  (config line: 9:  pin: unpinned|)
+  [pin]     unpinned -> fa85121f60c3846be294b03b5e8ec4a799abdaa1
+  [same]    .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+  [same]    .github/workflows/waggle-gate.yml
+exit=
+tree unchanged
+=== pin case: commentonly  (config line: 9:  pin: # nothing|)
+waggle upgrade refused: scaffold: refused, nothing written: /private/tmp/claude-redacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/h-commentonly/.waggle/control/config.yaml line 9: pin "" is not a full 40-hex commit or a release tag; set waggle.pin to the full 40-hex commit (git rev-parse <short>) or a release tag, then rerun
+exit=
+tree unchanged
+ls: /tmp/pwn: No such file or directory
+tagspaces apply exit=0
+  [pin]     v1.0.0 -> fa85121f60c3846be294b03b5e8ec4a799abdaa1
+ M .waggle/control/config.yaml
+-  pin: v1.0.0 beta
++  pin: fa85121f60c3846be294b03b5e8ec4a799abdaa1 beta
+unpinned apply exit=0
+-  pin: unpinned
++  pin: fa85121f60c3846be294b03b5e8ec4a799abdaa1
