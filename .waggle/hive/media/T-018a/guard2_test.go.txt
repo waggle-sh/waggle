@@ -1,0 +1,42 @@
+package forge
+
+import (
+	"context"
+	"errors"
+	"sync"
+	"testing"
+)
+
+func TestGuardForcedRace(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	root := runGit(t, dir, "rev-list", "--max-parents=0", "main")
+	runGit(t, dir, "branch", "feat2", root)
+	runGit(t, dir, "checkout", "-q", "feat2")
+	writeFile(t, dir, "h2", "x\n")
+	runGit(t, dir, "add", "-A")
+	runGit(t, dir, "commit", "-q", "-m", "feat2")
+	runGit(t, dir, "checkout", "-q", "main")
+	o1, o2 := runGit(t, dir, "rev-parse", "feat"), runGit(t, dir, "rev-parse", "feat2")
+	base := runGit(t, dir, "rev-parse", "main")
+	n1, n2 := newNone(t, dir, ""), newNone(t, dir, "")
+	ready, done := make(chan struct{}), make(chan struct{})
+	n1.beforeWrite = func() { close(ready); <-done }
+	var e1 error
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		e1 = n1.Merge(context.Background(), Change{Head: "feat", Base: "main"}, MergeRequest{Subject: "one", ExpectedHeadOID: o1})
+	}()
+	<-ready
+	e2 := n2.Merge(context.Background(), Change{Head: "feat2", Base: "main"}, MergeRequest{Subject: "two", ExpectedHeadOID: o2})
+	close(done)
+	wg.Wait()
+	t.Logf("winner err=%v loser err=%v", e2, e1)
+	if e2 != nil || !errors.Is(e1, ErrHeadMoved) {
+		t.Fatalf("e2=%v e1=%v", e2, e1)
+	}
+	tip := runGit(t, dir, "rev-parse", "main")
+	t.Logf("parents of winner: %s (base %s feat2 %s)", runGit(t, dir, "log", "-1", "--format=%P", tip), base, o2)
+}

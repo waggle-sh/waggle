@@ -19,7 +19,8 @@ type Invocation struct {
 	WorktreeDir string
 	PromptFile  string
 	BriefFile   string
-	SocketPath  string // Path to waggled's .waggle/control/run.sock
+	SocketPath  string    // Path to waggled's .waggle/control/run.sock
+	Selection   Selection // Resolved model for Role; Run refuses a zero value
 }
 
 // UsageStats reports token consumption back to waggled so the daemon can enforce
