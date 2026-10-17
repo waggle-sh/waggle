@@ -91,6 +91,18 @@ func (c *ClaudeAdapter) Materialize(repoDir string) error {
 }
 
 // Run executes a single turn/session of Claude Code (implemented in Commit #2 with waggled).
+// It refuses any Invocation whose Selection was not produced by Policy.Resolve
+// for the same role, so a launch can never fall back to the session model.
 func (c *ClaudeAdapter) Run(ctx context.Context, inv Invocation) (UsageStats, error) {
+	if !inv.Selection.resolved || inv.Selection.Role != inv.Role {
+		return UsageStats{}, fmt.Errorf("%w: role %s task %s", ErrUnresolved, inv.Role, inv.TaskID)
+	}
 	return UsageStats{}, fmt.Errorf("runtime execution requires waggled (Commit #2)")
+}
+
+// claudeArgs assembles the launch argv: the resolved model, then DefaultArgs.
+// The waggled launch path uses it so the model always comes from a Selection.
+func (c *ClaudeAdapter) claudeArgs(inv Invocation) []string {
+	args := []string{"--model", inv.Selection.Model}
+	return append(args, c.cfg.DefaultArgs...)
 }
