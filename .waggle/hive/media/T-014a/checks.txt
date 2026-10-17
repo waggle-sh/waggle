@@ -1,0 +1,13 @@
+gofmt -l: []
+ok  	github.com/waggle-sh/waggle/cmd/waggle	11.755s
+ok  	github.com/waggle-sh/waggle/internal/comb	59.917s
+ok  	github.com/waggle-sh/waggle/internal/config	1.197s
+ok  	github.com/waggle-sh/waggle/internal/decisions	5.056s
+ok  	github.com/waggle-sh/waggle/internal/forge	9.399s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.172s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	21.551s
+ internal/comb/backend_test.go    |  45 ++++++++++++++++++
+ internal/comb/claim_read.go      |  42 ++++++++++++++++
+ internal/comb/claim_read_test.go | 100 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 187 insertions(+)

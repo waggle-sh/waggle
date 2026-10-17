@@ -1,0 +1,32 @@
+=== RUN   TestRRCap
+    zz_guard4_test.go:28: body 1MiB+1                        status=200 took=167ms leak=false err="github: response body is over 1 MiB"
+    zz_guard4_test.go:28: stderr 10MiB, valid response       status=200 took=129ms leak=false err="<nil>"
+    zz_guard4_test.go:28: stderr 10MiB, no status            status=0 took=490ms leak=false err="gh api GET /x: exit status 1: eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee..."
+    zz_guard4_test.go:28: total exactly at cap, body in budget? (garbage json) status=200 took=154ms leak=false err="github: response body is over 1 MiB"
+    zz_guard4_test.go:28: total cap+1                        status=0 took=156ms leak=false err="gh api GET /x: github: response body is over 1 MiB"
+    zz_guard4_test.go:28: body exactly 1MiB                  status=200 took=162ms leak=false err="github: decoding the response: unexpected end of JSON input"
+--- PASS: TestRRCap (1.26s)
+=== RUN   TestRRGrandchild
+    zz_guard4_test.go:28: grandchild holds stdout 30s, gh exits ctx500ms status=200 took=2.11s leak=false err="<nil>"
+    zz_guard4_test.go:28: grandchild + gh sleeps ctx500ms    status=0 took=2.502s leak=false err="gh api GET /x: signal: killed: "
+    zz_guard4_test.go:68: (own 30s bound is covered by the Forager's constant; checked by code read)
+--- PASS: TestRRGrandchild (4.61s)
+=== RUN   TestRRCancelled
+    zz_guard4_test.go:28: gh pre-cancelled                   status=0 took=1ms leak=false err="gh api GET /x: context canceled: "
+    zz_guard4_test.go:28: token pre-cancelled                status=0 took=1ms leak=false err="github GET /x: Get \"https://api.github.com/x\": context canceled"
+--- PASS: TestRRCancelled (0.00s)
+=== RUN   TestRRRedirects
+    zz_guard4_test.go:123: redirect https://api.github.com/other/path          followed=true want=true status=200 err=<nil> seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij" "https://api.github.com/other/path auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:123: redirect /relative/path                             followed=true want=true status=200 err=<nil> seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij" "https://api.github.com/relative/path auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:123: redirect https://API.GITHUB.COM/x                   followed=false want=false status=0 err=github POST /a: Post "https://API.GITHUB.COM/x": github: refusing a redirect to https://API.GITHUB.COM seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:123: redirect https://api.github.com./x                  followed=false want=false status=0 err=github POST /a: Post "https://api.github.com./x": github: refusing a redirect to https://api.github.com. seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:123: redirect https://api.github.com:443/x               followed=false want=false status=0 err=github POST /a: Post "https://api.github.com:443/x": github: refusing a redirect to https://api.github.com:443 seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:123: redirect https://api.github.com:8443/x              followed=false want=false status=0 err=github POST /a: Post "https://api.github.com:8443/x": github: refusing a redirect to https://api.github.com:8443 seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:123: redirect http://api.github.com/x                    followed=false want=false status=0 err=github POST /a: Post "http://api.github.com/x": github: refusing a redirect to http://api.github.com seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:123: redirect https://api.github.com@evil.example/x      followed=false want=false status=0 err=github POST /a: Post "https://api.github.com@evil.example/x": github: refusing a redirect to https://evil.example seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:123: redirect https://evil.example/x                     followed=false want=false status=0 err=github POST /a: Post "https://evil.example/x": github: refusing a redirect to https://evil.example seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:123: redirect https://uploads.github.com/x               followed=false want=false status=0 err=github POST /a: Post "https://uploads.github.com/x": github: refusing a redirect to https://uploads.github.com seen=["https://api.github.com/a auth=Bearer ghp_GUARDSECRET0123456789abcdefghij"]
+    zz_guard4_test.go:142: redirect loop: requests=10 err=github GET /a: Get "/hop10": github: refusing a redirect to https://api.github.com
+--- PASS: TestRRRedirects (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/forge	7.169s
