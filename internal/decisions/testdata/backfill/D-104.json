@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "The queen commits our generated CLAUDE.md for the Head Keeper as T-020 phase C step 0 (PR #29)",
+  "question": "Who makes D-097's Head Keeper commit of our hive's generated `CLAUDE.md`?",
+  "options": [
+    "Not recorded"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "The queen made the commit on the Head Keeper's behalf (`0a4bed4`, PR #29, merged at `97baeda`) and the Head Keeper approved the PR. This completes T-020 phase C section 7.2 step 0 (D-097). Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-020",
+    "T-016"
+  ],
+  "supersedes": []
+}

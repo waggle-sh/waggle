@@ -1,0 +1,16 @@
+{
+  "kind": "technical",
+  "title": "`waggle upgrade` reports seeded-file schema gaps with `[note]` lines; the Head Keeper edits seeded files by hand in the same PR",
+  "question": "How does `waggle upgrade` handle a seeded file (`config.yaml`, `WAGGLE.md`, `local.yaml`) whose schema has changed between the old and the target build? (Q-T016-2)",
+  "options": [
+    "Report-only: one `[note]` line per top-level key the build's `config.yaml.tmpl` has and the hive file lacks",
+    "In-place migration now, re-serializing the file through a comment-preserving parser"
+  ],
+  "recommendation": "Report-only",
+  "choice": "Report-only. `upgrade` prints one `[note]` line per top-level key present in the build's `config.yaml.tmpl` and absent from the hive's `config.yaml`; the Head Keeper edits seeded files by hand in the same hive PR. Versioned migration functions keyed by a `schema` field come later, when a release first changes the schema. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected in-place migration: it re-serializes a Head Keeper-owned file and needs a parser that preserves comments, which nothing on `main` has. No release has changed the schema yet, so the migration machinery would be built against an imagined change.",
+  "tickets": [
+    "T-016"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "strategy",
+  "title": "Cell runtime: a `CellRuntime` interface with an OS sandbox default (Seatbelt on macOS, bubblewrap on Linux) behind a host egress proxy, plus a Docker-compatible container backend",
+  "question": "What runs a worker's Cell, so that RFC-0003's targets (zero credentials, read-only repository with read-write lease, egress lockdown) are enforced?",
+  "options": [
+    "Not recorded"
+  ],
+  "recommendation": "A `CellRuntime` interface with an OS sandbox default (Seatbelt on macOS, bubblewrap on Linux) behind a host egress proxy, plus a Docker-compatible container backend",
+  "choice": "A `CellRuntime` interface with an OS sandbox default (Seatbelt on macOS, bubblewrap on Linux) behind a per-Cell host egress proxy, plus a Docker-compatible container backend. T-024 builds it. RFC-0003 gains amendment A2, which the Head Keeper approves in its own product PR. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-024",
+    "T-023"
+  ],
+  "supersedes": []
+}

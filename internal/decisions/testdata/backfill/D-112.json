@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "A dispatch lease comes from `--dir` and `--gate` flags the queen copies from the brief, never from parsing the brief",
+  "question": "Where does `waggle dispatch` get the lease for a run? (Q-T023-5)",
+  "options": [
+    "`--dir` and `--gate` flags the queen copies from the brief",
+    "Parse a machine-readable lease block in the brief"
+  ],
+  "recommendation": "Flags",
+  "choice": "The queen copies the phase's Lease line into `--dir` and `--gate`. Comb validation applies unchanged. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected a lease block in the brief: a Tier 2 steering file would then grant write scope.",
+  "tickets": [
+    "T-023"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "technical",
+  "title": "One lease and tier check: a pure `comb.CheckChanges` in `internal/comb`, written by whichever of T-014 phase B and T-023 phase C lands first and called by both",
+  "question": "Where does the per-commit lease and tier check live, so that `waggle gate verify` and `waggle dispatch` share one implementation? (Q-T023-7)",
+  "options": [
+    "A pure `comb.CheckChanges(lease, changes) []Violation` in `internal/comb`, written by whichever of T-014 phase B and T-023 phase C lands first and called by both"
+  ],
+  "recommendation": "`comb.CheckChanges` in `internal/comb`",
+  "choice": "A pure `comb.CheckChanges(lease, changes) []Violation` in `internal/comb`, written by whichever of T-014 phase B and T-023 phase C lands first and called by both; T-014 section 4.3 says so. Queen default, within authority; approved with the other T-023 defaults on the Head Keeper's queen card on 2026-10-17.",
+  "rationale": "D-017 wants the same check locally and in CI, and `internal/dispatch` cannot import a check that lives in `cmd/waggle` (package `main`).",
+  "tickets": [
+    "T-023",
+    "T-014"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "policy",
+  "title": "T-023 phase D adds D-100 second-guard model resolution to `internal/runtime/policy.go`, so Tier 3 reviews also run through dispatch",
+  "question": "How does dispatch run the D-100 second guard on Tier 3 PRs? (Q-T023-9)",
+  "options": [
+    "Phase D adds second-guard resolution to `internal/runtime/policy.go`",
+    "The second guard stays a subagent until a T-012 follow-up"
+  ],
+  "recommendation": "Phase D adds it",
+  "choice": "Phase D adds second-guard resolution to `internal/runtime/policy.go`: a model different from both the builder's and the first guard's, failing with a config hint when none exists. `waggle dispatch --role guard --second` uses it. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-023",
+    "T-012"
+  ],
+  "supersedes": []
+}
