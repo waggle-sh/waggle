@@ -50,7 +50,11 @@ type Options struct {
 	DefaultTTL             time.Duration    // <= 0 means default 120m (leases.default_ttl_minutes)
 	Now                    func() time.Time // nil means time.Now
 	GitBinary              string           // "" means "git"
-	ExtraEnv               []string         // appended to the git child env (tests use this)
+	// ExtraEnv is appended to the git child environment after the scrubbed
+	// parent environment and the fixed settings (see childEnv), so it may set
+	// any variable, including the scrubbed GIT_DIR family. It is explicit
+	// caller input; tests use it to isolate git config.
+	ExtraEnv []string
 }
 
 // GitBackend is the single Comb codepath of RFC-0003 section 3.1. Each ticket
@@ -153,17 +157,64 @@ func (e *gitError) Unwrap() []error {
 	return []error{e.err}
 }
 
+// scrubbedGitEnv lists the parent environment variables dropped from every git
+// child (F3), compared case-insensitively. Each redirects which repository git
+// operates on, overriding "-C repoDir": the repository, work tree and index
+// (GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE, GIT_COMMON_DIR, GIT_PREFIX), the
+// object store (GIT_OBJECT_DIRECTORY, GIT_ALTERNATE_OBJECT_DIRECTORIES,
+// GIT_QUARANTINE_PATH), the ref namespace (GIT_NAMESPACE), repository
+// discovery (GIT_CEILING_DIRECTORIES, GIT_DISCOVERY_ACROSS_FILESYSTEM) and
+// object substitution (GIT_REPLACE_REF_BASE, GIT_NO_REPLACE_OBJECTS,
+// GIT_GRAFT_FILE, GIT_SHALLOW_FILE). A parent git process (a hook, or a
+// "git -C other" wrapper) sets these. Credential, config, trace and PATH
+// variables are kept: they are the user's own and remote mode needs them.
+var scrubbedGitEnv = []string{
+	"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_PREFIX",
+	"GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_QUARANTINE_PATH",
+	"GIT_NAMESPACE",
+	"GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+	"GIT_REPLACE_REF_BASE", "GIT_NO_REPLACE_OBJECTS", "GIT_GRAFT_FILE", "GIT_SHALLOW_FILE",
+}
+
+// childEnv builds a git child environment: parent minus scrubbedGitEnv, then
+// GIT_TERMINAL_PROMPT=0, LC_ALL=C (stable messages for parsing) and
+// GIT_NO_REPLACE_OBJECTS=1 (a refs/replace entry can never substitute a
+// different lease.json), then extra (Options.ExtraEnv) and the per-call
+// entries, in that order. It is pure so it can be unit tested.
+func childEnv(parent, extra, call []string) []string {
+	out := make([]string, 0, len(parent)+3+len(extra)+len(call))
+	for _, kv := range parent {
+		key, _, _ := strings.Cut(kv, "=")
+		if isScrubbedGitVar(key) {
+			continue
+		}
+		out = append(out, kv)
+	}
+	out = append(out, "GIT_TERMINAL_PROMPT=0", "LC_ALL=C", "GIT_NO_REPLACE_OBJECTS=1")
+	out = append(out, extra...)
+	return append(out, call...)
+}
+
+func isScrubbedGitVar(key string) bool {
+	for _, s := range scrubbedGitEnv {
+		if strings.EqualFold(key, s) {
+			return true
+		}
+	}
+	return false
+}
+
 // git runs one git command. It is the only place this package starts a process:
 // exec.CommandContext with "-C repoDir" and separate argv entries, no shell.
-// Stdout is returned even on failure (push --porcelain reports there).
+// The child environment is os.Environ() minus scrubbedGitEnv, plus the fixed
+// settings, Options.ExtraEnv and the per-call env (see childEnv). Stdout is
+// returned even on failure (push --porcelain reports there).
 func (b *GitBackend) git(ctx context.Context, stdin []byte, env []string, args ...string) ([]byte, error) {
 	argv := make([]string, 0, len(args)+2)
 	argv = append(argv, "-C", b.repoDir)
 	argv = append(argv, args...)
 	cmd := exec.CommandContext(ctx, b.gitBin, argv...)
-	childEnv := append(os.Environ(), "GIT_TERMINAL_PROMPT=0", "LC_ALL=C")
-	childEnv = append(childEnv, b.extraEnv...)
-	cmd.Env = append(childEnv, env...)
+	cmd.Env = childEnv(os.Environ(), b.extraEnv, env)
 	if stdin != nil {
 		cmd.Stdin = bytes.NewReader(stdin)
 	}
