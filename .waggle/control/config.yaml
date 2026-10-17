@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: MIT-0
+# Waggle Hive Configuration (RFC-0003 v0.1)
+# Protected Tier 3 paths (.waggle/** except .waggle/hive/**, .github/workflows/**,
+# .gitlab-ci.yml, .devcontainer/**) and Tier 2 minimum steering paths
+# (.waggle/hive/**, CLAUDE.md, AGENTS.md) are hardcoded.
+version: 1
+
+waggle:
+  pin: b4f222166f4a824e34414e205544fb17397ccfa1 # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
+
+hive:
+  profile: cli
+  delivery: installed # "installed" (merge to local main) | "hosted" (merge deploys)
+
+forge:
+  provider: github
+  comb_mode: direct # "direct" (git push refs) | "relay" (GitHub Action comment relay)
+  merge_strategy: up_to_date # "up_to_date" (branch must be current with main before merge) | "native_queue" (opt in where the plan supports a merge queue)
+
+daemon:
+  socket_path: .waggle/control/run.sock
+  derived_workplan: .waggle/hive/WORKPLAN.md
+
+runtimes:
+  default: claude-code
+  adapters:
+    claude-code:
+      binary: claude
+      nudge_tokens: 200000
+      max_tokens: 300000
+
+cell:
+  enforce_ro_root: true
+  use_sparse_checkout: false
+  egress_policy: strict
+
+leases:
+  default_ttl_minutes: 120
+  max_directories_per_claim: 5
