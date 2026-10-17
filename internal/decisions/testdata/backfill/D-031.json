@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "\"Head Keeper\" replaces \"Master Keeper\" and \"Controller\"",
+  "question": "What is the name for the Keeper with final authority over a hive?",
+  "options": [
+    "Master Keeper",
+    "Controller",
+    "Head Keeper"
+  ],
+  "recommendation": "Not recorded",
+  "choice": "Head Keeper replaces Master Keeper and Controller. The retired aliases are recorded in the glossary.",
+  "rationale": "Avoids the master connotation and matches real beekeeping usage.",
+  "tickets": [
+    "T-013",
+    "T-011"
+  ],
+  "supersedes": []
+}

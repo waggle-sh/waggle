@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "Guard appends one verdict line per review round; T-012 may add two config files",
+  "question": "Where does the must-fix count come from, and may T-012 add files to internal/config/?",
+  "options": [
+    "Count appended Verdict lines in the review file",
+    "A counter in the claim",
+    "A separate config ticket before T-012 phase B"
+  ],
+  "recommendation": "Count appended Verdict lines; allow the two new config files",
+  "choice": "The guard appends one verdict line per review round (guard role template edit, Tier 3); T-012 may add two new files in internal/config/, T-004 files stay read-only.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-004",
+    "T-012"
+  ],
+  "supersedes": []
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "scope",
+  "title": "Queue a full waggle gate ticket after T-002",
+  "question": "Which ticket builds the general merge gate?",
+  "options": [
+    "Fold gate checks into T-007",
+    "Queue a separate waggle gate ticket after T-002"
+  ],
+  "recommendation": "Queue a gate ticket after T-002 merges (Q-T007-2)",
+  "choice": "A full waggle gate ticket is queued after T-002: per-commit lease checks, failing Tier floors instead of warnings, and case-insensitive path matching, including the GO.MOD and waggle.md gaps.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-007",
+    "T-008"
+  ],
+  "supersedes": []
+}

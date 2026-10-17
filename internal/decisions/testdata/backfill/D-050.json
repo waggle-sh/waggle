@@ -1,0 +1,16 @@
+{
+  "kind": "policy",
+  "title": "Architect brief work runs under planning tickets",
+  "question": "Brief-writing commits have no ticket of their own; how do they pass a gate that requires one?",
+  "options": [
+    "Planning tickets with a full-gate claim on the hive tasks directory",
+    "Merge by bypass"
+  ],
+  "recommendation": "Planning tickets",
+  "choice": "Architect brief work runs under planning tickets with a full-gate claim on the hive tasks directory.",
+  "rationale": "Not recorded",
+  "tickets": [
+    "T-014"
+  ],
+  "supersedes": []
+}
