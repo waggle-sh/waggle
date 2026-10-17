@@ -15,7 +15,7 @@ import (
 
 // fullHelp lists every token Verify looks for, as the pinned Claude Code does.
 const fullHelp = "--print --output-format stream-json --verbose --model --strict-mcp-config " +
-	"--setting-sources --settings --permission-mode dontAsk --tools --append-system-prompt"
+	"--setting-sources --settings --permission-mode dontAsk --tools --append-system-prompt --restricted"
 
 // fakeClaude installs an executable `claude` shell script on a temp PATH, so
 // no test ever runs the real binary.
@@ -74,13 +74,13 @@ func argValue(argv []string, flag string) (string, bool) {
 // Test 1: print mode, stream-json, model, strict MCP, max turns, isolation
 // flags and settings; never a resume flag; every refused default arg fails.
 func TestPrepareArgv(t *testing.T) {
-	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--effort", "high", "-d"}})
+	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug", "-d"}})
 	argv := mustPrepare(t, a, "T-5", []byte("brief")).Argv
 	if argv[0] != "claude" || argv[len(argv)-1] != "-d" {
 		t.Errorf("argv must start with the binary and end with default_args: %q", argv)
 	}
 	for _, want := range []string{"--print", "--output-format=stream-json", "--verbose", "--model=sonnet",
-		"--setting-sources=", "--strict-mcp-config", "--permission-mode=dontAsk", "--max-turns=40",
+		"--setting-sources=", "--strict-mcp-config", "--restricted", "--permission-mode=dontAsk", "--max-turns=40",
 		"--tools=Bash,Edit,Glob,Grep,Read,Write"} {
 		if !slices.Contains(argv, want) {
 			t.Errorf("argv lacks %q: %q", want, argv)
@@ -100,9 +100,15 @@ func TestPrepareArgv(t *testing.T) {
 	if len(settings) != 1 || settings["permissions"]["defaultMode"] != "dontAsk" {
 		t.Errorf("settings must hold only permissions (no hooks): %s", raw)
 	}
-	for _, want := range []string{`"Bash(go test *)"`, `"Bash(git commit *)"`, `"Edit"`} {
+	for _, want := range []string{`"Bash(go test *)"`, `"Bash(git commit *)"`, `"Edit(./**)"`, `"Write(./**)"`} {
 		if !strings.Contains(raw, want) {
 			t.Errorf("settings lacks allow %s: %s", want, raw)
+		}
+	}
+	// Bare Edit and Write rules would allow writes outside the working directory.
+	for _, bare := range []string{`"Edit"`, `"Write"`} {
+		if strings.Contains(raw, bare) {
+			t.Errorf("settings carries unscoped %s: %s", bare, raw)
 		}
 	}
 	for _, want := range []string{`"Bash(git push *)"`, `"Bash(gh *)"`, `"Bash(curl *)"`, `"Bash(wget *)"`, `"Bash(ssh *)"`, `"WebFetch"`, `"WebSearch"`} {
@@ -116,8 +122,10 @@ func TestPrepareArgv(t *testing.T) {
 		"--fork-session", "--from-pr", "--teleport", "--max-turns=9999", "--model", "--mcp-config", "--print",
 		"-p", "--output-format", "--settings", "--setting-sources=user", "--permission-mode",
 		"--dangerously-skip-permissions", "--allowedTools", "--allowed-tools", "--disallowedTools",
-		"--tools", "--append-system-prompt", "--system-prompt", "--add-dir", "--plugin-dir", "--agents", "--"} {
-		a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--effort", bad}})
+		"--tools", "--append-system-prompt", "--system-prompt", "--add-dir", "--plugin-dir", "--agents", "--",
+		"--effort=high", "--effort", "--fallback-model=opus", "--remote-control", "--environment=x", "--chrome",
+		"--ide", "high", "fix the bug", ""} {
+		a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug", bad}})
 		if _, err := a.Prepare(inv, s, nil, nil); !errors.Is(err, ErrRefusedArg) || !strings.Contains(err.Error(), bad) {
 			t.Errorf("default arg %q: err = %v; want ErrRefusedArg", bad, err)
 		}
@@ -174,7 +182,7 @@ func TestPrepareRefusesUnresolvedSelection(t *testing.T) {
 func TestVerify(t *testing.T) {
 	fakeClaude(t, "echo '--print --output-format stream-json --verbose --model'\n")
 	err := NewClaudeAdapter(AdapterConfig{}).Verify(context.Background())
-	wantErr(t, err, ErrUnverified, "--setting-sources", "--strict-mcp-config", "dontAsk")
+	wantErr(t, err, ErrUnverified, "--setting-sources", "--strict-mcp-config", "dontAsk", "--restricted")
 
 	fakeClaude(t, "exit 3\n")
 	wantErr(t, NewClaudeAdapter(AdapterConfig{}).Verify(context.Background()), ErrUnverified)
