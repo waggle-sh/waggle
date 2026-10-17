@@ -18,8 +18,14 @@ import (
 const (
 	githubAPI     = "https://api.github.com"
 	githubTimeout = 30 * time.Second
-	maxBody       = 1 << 20 // response bodies are capped at 1 MiB
+	maxBody       = 1 << 20  // response bodies are capped at 1 MiB
+	ghHeaderRoom  = 64 << 10 // room for gh's --include header block
+	ghWaitDelay   = 2 * time.Second
 )
+
+// errBodyTooLarge is the one error both transports return for a response
+// over maxBody.
+var errBodyTooLarge = errors.New("github: response body is over 1 MiB")
 
 // doer is the one call both GitHub transports implement. in and out are
 // JSON (nil for none); GraphQL is POST /graphql. A non-2xx status returns
@@ -46,14 +52,13 @@ func pickTransport(getenv func(string) string, lookPath func(string) (string, er
 		ctx, cancel := context.WithTimeout(context.Background(), githubTimeout)
 		defer cancel()
 		cmd := exec.CommandContext(ctx, bin, "auth", "status", "--hostname", "github.com")
-		cmd.Env = ghEnv()
+		cmd.Env, cmd.WaitDelay = ghEnv(), ghWaitDelay
 		if cmd.Run() == nil {
 			return &ghTransport{bin: bin}, "gh CLI", nil
 		}
 	}
 	if tok := getenv("GITHUB_TOKEN"); tok != "" {
-		return &tokenTransport{base: apiBase, token: tok, client: &http.Client{Timeout: githubTimeout}},
-			"GITHUB_TOKEN", nil
+		return &tokenTransport{base: apiBase, token: tok, client: tokenClient()}, "GITHUB_TOKEN", nil
 	}
 	return nil, "", fmt.Errorf("forge: github: GitHub needs `gh auth login` or a GITHUB_TOKEN environment variable: %w",
 		ErrNoForgeAuth)
@@ -73,18 +78,47 @@ func (g *ghTransport) do(ctx context.Context, method, path string, in, out any) 
 	if err != nil {
 		return 0, err
 	}
+	ctx, cancel := context.WithTimeout(ctx, githubTimeout) // the sooner of this and the caller's
+	defer cancel()
 	cmd := exec.CommandContext(ctx, g.bin, "api", "--method", method, "--include",
 		"-H", "Accept: application/vnd.github+json", "--input", "-", strings.TrimPrefix(path, "/"))
 	cmd.Env = ghEnv()
 	cmd.Stdin = bytes.NewReader(body)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	cmd.WaitDelay = ghWaitDelay // a child holding stdout open cannot block past the kill
+	stdout := &capWriter{max: maxBody + ghHeaderRoom, stop: cancel}
+	stderr := &capWriter{max: 64 << 10}
+	cmd.Stdout, cmd.Stderr = stdout, stderr
 	runErr := cmd.Run() // gh exits 1 on a 4xx or 5xx but still prints the response
-	status, resp, ok := splitInclude(stdout.Bytes())
+	if stdout.over {
+		return 0, fmt.Errorf("gh api %s %s: %w", method, path, errBodyTooLarge)
+	}
+	status, resp, ok := splitInclude(stdout.buf.Bytes())
 	if !ok {
-		return 0, fmt.Errorf("gh api %s %s: %v: %s", method, path, runErr, strings.TrimSpace(stderr.String()))
+		return 0, fmt.Errorf("gh api %s %s: %v: %s", method, path, runErr, strings.TrimSpace(stderr.buf.String()))
 	}
 	return finish(status, resp, out)
+}
+
+// capWriter buffers up to max bytes. Past max it sets over and, with stop
+// set, kills the child and fails the write; without stop it drops the rest.
+type capWriter struct {
+	buf  bytes.Buffer
+	max  int
+	over bool
+	stop func()
+}
+
+func (w *capWriter) Write(p []byte) (int, error) {
+	if w.buf.Len()+len(p) <= w.max {
+		return w.buf.Write(p)
+	}
+	w.over = true
+	if w.stop == nil {
+		w.buf.Write(p[:w.max-w.buf.Len()])
+		return len(p), nil
+	}
+	w.stop()
+	return 0, errBodyTooLarge
 }
 
 // splitInclude parses gh's --include output: a status line, headers, a
@@ -109,6 +143,18 @@ func splitInclude(b []byte) (int, []byte, bool) {
 type tokenTransport struct {
 	base, token string
 	client      *http.Client
+}
+
+// tokenClient has the 30 second timeout and refuses any redirect that leaves
+// https or changes host or port, so the token is never sent elsewhere.
+func tokenClient() *http.Client {
+	return &http.Client{Timeout: githubTimeout, CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		from := via[0].URL
+		if (from.Scheme == "https" && req.URL.Scheme != "https") || req.URL.Host != from.Host || len(via) >= 10 {
+			return fmt.Errorf("github: refusing a redirect to %s://%s", req.URL.Scheme, req.URL.Host)
+		}
+		return nil
+	}}
 }
 
 func (t *tokenTransport) do(ctx context.Context, method, path string, in, out any) (int, error) {
@@ -159,7 +205,7 @@ func encode(in any) ([]byte, error) {
 // decodes a 2xx body into out.
 func finish(status int, body []byte, out any) (int, error) {
 	if len(body) > maxBody {
-		return status, errors.New("github: response body is over 1 MiB")
+		return status, errBodyTooLarge
 	}
 	if status < 200 || status > 299 {
 		var e struct {

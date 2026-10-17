@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 // testToken is a known token value; no error, argv or output may contain it.
@@ -239,6 +240,92 @@ func TestSplitInclude(t *testing.T) {
 	} {
 		if status, _, ok := splitInclude([]byte(in)); status != want || ok != (want != 0) {
 			t.Errorf("%q: got %d %v", in, status, ok)
+		}
+	}
+}
+
+// shellGH writes a fake gh that runs body under /bin/sh.
+func shellGH(t *testing.T, body string) *ghTransport {
+	t.Helper()
+	bin := filepath.Join(t.TempDir(), "gh")
+	if err := os.WriteFile(bin, []byte("#!/bin/sh\n"+body+"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return &ghTransport{bin: bin}
+}
+
+func TestGHTransportStdoutCap(t *testing.T) {
+	// yes runs as a child of sh, so killing gh leaves a writer on the pipe.
+	gh := shellGH(t, `printf 'HTTP/2.0 200 OK\r\n\r\n'; yes aaaaaaaaaaaaaaaa`)
+	start := time.Now()
+	_, err := gh.do(context.Background(), "GET", "/x", nil, nil)
+	if !errors.Is(err, errBodyTooLarge) {
+		t.Fatalf("got %v, want errBodyTooLarge", err)
+	}
+	if d := time.Since(start); d > ghWaitDelay+5*time.Second {
+		t.Errorf("took %v", d)
+	}
+	tt := &tokenTransport{base: "http://x", client: &http.Client{Transport: roundTrip(func(*http.Request) *http.Response {
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(strings.Repeat("a", maxBody+1)))}
+	})}}
+	if _, err := tt.do(context.Background(), "GET", "/x", nil, nil); !errors.Is(err, errBodyTooLarge) {
+		t.Errorf("token transport: got %v, want the same errBodyTooLarge", err)
+	}
+}
+
+type roundTrip func(*http.Request) *http.Response
+
+func (f roundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r), nil }
+
+func TestGHTransportDeadline(t *testing.T) {
+	gh := shellGH(t, "sleep 30") // sleep is a grandchild holding stdout open
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	if _, err := gh.do(ctx, "GET", "/x", nil, nil); err == nil {
+		t.Error("want an error from a hung gh")
+	}
+	if d := time.Since(start); d > 300*time.Millisecond+ghWaitDelay+3*time.Second {
+		t.Errorf("returned after %v, want the deadline plus the wait delay", d)
+	}
+}
+
+func TestTokenRedirects(t *testing.T) {
+	var other string
+	ext := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		other = r.Header.Get("Authorization")
+	}))
+	defer ext.Close()
+	var hits []string
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits = append(hits, r.URL.Path+" "+r.Header.Get("Authorization"))
+		switch r.URL.Path {
+		case "/same":
+			http.Redirect(w, r, "/x", http.StatusTemporaryRedirect)
+		case "/down":
+			http.Redirect(w, r, "http://"+r.Host+"/x", http.StatusTemporaryRedirect)
+		case "/port":
+			http.Redirect(w, r, ext.URL+"/x", http.StatusTemporaryRedirect)
+		default:
+			w.Write([]byte(`{}`))
+		}
+	}))
+	defer srv.Close()
+	c := tokenClient()
+	c.Transport = srv.Client().Transport
+	tt := &tokenTransport{base: srv.URL, token: testToken, client: c}
+	ctx := context.Background()
+	if _, err := tt.do(ctx, "POST", "/same", nil, nil); err != nil || len(hits) != 2 || hits[1] != "/x Bearer "+testToken {
+		t.Errorf("same origin redirect: %v %q", err, hits)
+	}
+	for _, p := range []string{"/down", "/port"} {
+		hits = nil
+		_, err := tt.do(ctx, "POST", p, nil, nil)
+		if err == nil || !strings.Contains(err.Error(), "refusing a redirect") || strings.Contains(err.Error(), testToken) {
+			t.Errorf("%s: got %v, want a refused redirect", p, err)
+		}
+		if len(hits) != 1 || other != "" {
+			t.Errorf("%s: followed the redirect: hits %q, other host saw %q", p, hits, other)
 		}
 	}
 }
