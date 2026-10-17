@@ -55,7 +55,7 @@ func TestMaterializeShims(t *testing.T) {
 	if !IsGeneratedShim([]byte(got)) {
 		t.Error("generated shim not recognized")
 	}
-	if strings.ContainsAny(got, "—–") {
+	if strings.ContainsAny(got, "\u2014\u2013") {
 		t.Error("shim contains an em or en dash")
 	}
 	if s := readFile(t, filepath.Join(agents, "forager.md")); s != handForager {
