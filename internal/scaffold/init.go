@@ -38,6 +38,16 @@ type InitOptions struct {
 	BuildInfo func() (*debug.BuildInfo, bool)
 	// Out receives progress lines. Nil means os.Stdout.
 	Out io.Writer
+	// Templates is the template set to render. Nil means the embedded set.
+	Templates fs.FS
+}
+
+// templates returns the embedded template set unless one was injected.
+func templates(tfs fs.FS) fs.FS {
+	if tfs == nil {
+		return templateFS
+	}
+	return tfs
 }
 
 // ErrLegacyLayout reports a hive that still uses the pre-T-011 layout.
@@ -52,8 +62,8 @@ type templateFile struct {
 	seeded bool   // rendered once, then owned by the hive
 }
 
-// templateFiles lists every file init renders, in a stable order.
-func templateFiles() ([]templateFile, error) {
+// templateFiles lists every file tfs ships, in a stable order.
+func templateFiles(tfs fs.FS) ([]templateFile, error) {
 	files := []templateFile{
 		{"templates/config.yaml.tmpl", layout.Config, true},
 		{"templates/WAGGLE.md.tmpl", layout.WaggleMD, true},
@@ -62,7 +72,7 @@ func templateFiles() ([]templateFile, error) {
 		{"templates/devcontainer.json.tmpl", layout.Devcontainer, false},
 		{"templates/waggle-gate.yml.tmpl", layout.GateWorkflow, false},
 	}
-	roles, err := fs.ReadDir(templateFS, "templates/roles")
+	roles, err := fs.ReadDir(tfs, "templates/roles")
 	if err != nil {
 		return nil, fmt.Errorf("reading embedded roles: %w", err)
 	}
@@ -202,7 +212,8 @@ func InitRepo(opts InitOptions) error {
 		edits = append(edits, e)
 	}
 
-	files, err := templateFiles()
+	tfs := templates(opts.Templates)
+	files, err := templateFiles(tfs)
 	if err != nil {
 		return err
 	}
@@ -235,7 +246,7 @@ func InitRepo(opts InitOptions) error {
 			fmt.Fprintf(out, "  [skip]   %s (already exists)\n", f.dst)
 			continue
 		}
-		raw, err := fs.ReadFile(templateFS, f.src)
+		raw, err := fs.ReadFile(tfs, f.src)
 		if err != nil {
 			return fmt.Errorf("reading embedded template %s: %w", f.src, err)
 		}
