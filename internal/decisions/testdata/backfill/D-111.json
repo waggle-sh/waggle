@@ -1,0 +1,16 @@
+{
+  "kind": "credentials",
+  "title": "Dispatch workers use the Keeper's existing Claude Code login with user settings excluded; no new credential",
+  "question": "Which model login does a dispatch worker use? (Q-T023-4)",
+  "options": [
+    "The Keeper's existing Claude Code login, no new credential, user settings excluded, exposure stated",
+    "An isolated Claude config directory per run with an API key in the env"
+  ],
+  "recommendation": "The Keeper's existing login",
+  "choice": "Workers use the Keeper's existing Claude Code login and no new credential is created. A worker loads none of the Keeper's user settings, plugins, connectors or global `CLAUDE.md`, and none of the repo's `.claude/settings.json` hooks (T-023 section 8). Every run states the exposure. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected a per-run API key: cleaner isolation, but it moves spend to API billing, which is a separate spend decision.",
+  "tickets": [
+    "T-023"
+  ],
+  "supersedes": []
+}

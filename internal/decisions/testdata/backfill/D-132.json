@@ -1,0 +1,18 @@
+{
+  "kind": "policy",
+  "title": "Worker commits use the Keeper's git identity with `-s`, and that Keeper is the person certifying the DCO",
+  "question": "DCO is a statement by a person. Who signs off worker commits? (Q-T025-5)",
+  "options": [
+    "Workers commit under the Keeper's git identity with `-s`, and that Keeper certifies",
+    "A person adds sign-off by hand before review"
+  ],
+  "recommendation": "Keeper identity with `-s`",
+  "choice": "Workers commit under the Keeper's git identity with `-s`, and that Keeper is the certifying person; CONTRIBUTING says so. When `waggled` commits on the host (D-121), it adds the trailer from the Keeper's identity. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "Rejected sign-off by hand: it means rewriting every worker branch.",
+  "tickets": [
+    "T-025",
+    "T-023",
+    "T-024"
+  ],
+  "supersedes": []
+}

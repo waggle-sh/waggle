@@ -1,0 +1,16 @@
+{
+  "kind": "spend",
+  "title": "Cell sandbox tests run in two CI jobs path-filtered to `internal/cell/**`, macOS for Seatbelt and Linux for bubblewrap, added by Head Keeper commit",
+  "question": "Do the sandbox conformance tests run in CI? (Q-T024-7)",
+  "options": [
+    "Two jobs in `ci.yml` path-filtered to `internal/cell/**`, one on `macos-latest` and one on `ubuntu-latest` with the AppArmor setting changed",
+    "Local evidence only"
+  ],
+  "recommendation": "Two path-filtered jobs",
+  "choice": "`ci.yml` gains two jobs path-filtered to `internal/cell/**`: one on `macos-latest` for Seatbelt, one on `ubuntu-latest` that sets `kernel.apparmor_restrict_unprivileged_userns=0` for bubblewrap. `ci.yml` is Tier 3, so the Head Keeper commits it. Decided by the Head Keeper via queen card on 2026-10-17.",
+  "rationale": "macOS minutes bill at 10 times Linux on private repos: about 40 included minutes per macOS run out of GitHub Team's 3,000 per month.",
+  "tickets": [
+    "T-024"
+  ],
+  "supersedes": []
+}
