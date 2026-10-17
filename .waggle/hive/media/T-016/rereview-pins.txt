@@ -1,0 +1,78 @@
+=== pin case: trailing  [9:  pin: v1.0.0 beta$]
+waggle upgrade refused: scaffold: refused, nothing written: S/rr-pin-trailing/.waggle/control/config.yaml line 9: pin "v1.0.0 beta" is n
+dry exit=1
+apply exit=1
+9:  pin: v1.0.0 beta$
+=== pin case: trailhash  [9:  pin: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa junk$]
+waggle upgrade refused: scaffold: refused, nothing written: S/rr-pin-trailhash/.waggle/control/config.yaml line 9: pin "aaaaaaaaaaaaaaaa
+dry exit=1
+apply exit=1
+9:  pin: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa junk$
+=== pin case: trailquote  [9:  pin: "v1.0.0" beta$]
+waggle upgrade refused: scaffold: refused, nothing written: S/rr-pin-trailquote/.waggle/control/config.yaml line 9: pin "v1.0.0\" beta" 
+dry exit=1
+apply exit=1
+9:  pin: "v1.0.0" beta$
+=== pin case: comment  [9:  pin: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # my note$]
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+dry exit=141
+apply exit=0
+9:  pin: 87b9dd972e55b722c3c32de5b9b28ccb84c4512b # my note$
+ M .waggle/control/config.yaml
+=== pin case: tabcomment  [9:  pin: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa^I# tab note$]
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+dry exit=141
+apply exit=0
+9:  pin: 87b9dd972e55b722c3c32de5b9b28ccb84c4512b^I# tab note$
+ M .waggle/control/config.yaml
+=== pin case: dquote  [9:  pin: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"$]
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+dry exit=141
+apply exit=0
+9:  pin: 87b9dd972e55b722c3c32de5b9b28ccb84c4512b$
+ M .waggle/control/config.yaml
+=== pin case: squote  [9:  pin: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' # q$]
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+dry exit=141
+apply exit=0
+9:  pin: 87b9dd972e55b722c3c32de5b9b28ccb84c4512b # q$
+ M .waggle/control/config.yaml
+=== pin case: quotedcomment  [9:  pin: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"   # q$]
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+dry exit=141
+apply exit=0
+9:  pin: 87b9dd972e55b722c3c32de5b9b28ccb84c4512b   # q$
+ M .waggle/control/config.yaml
+=== pin case: hashnospace  [9:  pin: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa#c$]
+waggle upgrade refused: scaffold: refused, nothing written: S/rr-pin-hashnospace/.waggle/control/config.yaml line 9: pin "aaaaaaaaaaaaaa
+dry exit=1
+apply exit=1
+9:  pin: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa#c$
+=== pin case: trailws  [9:  pin: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   $]
+  [pin]     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+dry exit=141
+apply exit=0
+9:  pin: 87b9dd972e55b722c3c32de5b9b28ccb84c4512b   $
+ M .waggle/control/config.yaml
+=== pin case: tag  [9:  pin: v1.0.0$]
+  [pin]     v1.0.0 -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+dry exit=141
+apply exit=0
+9:  pin: 87b9dd972e55b722c3c32de5b9b28ccb84c4512b$
+ M .waggle/control/config.yaml
+=== pin case: tagpre  [9:  pin: v1.0.0-rc.1 # x$]
+  [pin]     v1.0.0-rc.1 -> 87b9dd972e55b722c3c32de5b9b28ccb84c4512b
+dry exit=141
+apply exit=0
+9:  pin: 87b9dd972e55b722c3c32de5b9b28ccb84c4512b # x$
+ M .waggle/control/config.yaml
+=== pin case: tagtab  [9:  pin: v1.0.0 ^I beta$]
+waggle upgrade refused: scaffold: refused, nothing written: S/rr-pin-tagtab/.waggle/control/config.yaml line 9: pin "v1.0.0 \t beta" is 
+dry exit=1
+apply exit=1
+9:  pin: v1.0.0 ^I beta$
+=== pin case: unpinned  [9:  pin: unpinned extra$]
+waggle upgrade refused: scaffold: refused, nothing written: S/rr-pin-unpinned/.waggle/control/config.yaml line 9: pin "unpinned extra" i
+dry exit=1
+apply exit=1
+9:  pin: unpinned extra$

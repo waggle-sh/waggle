@@ -1,0 +1,52 @@
+### dry run (no --diff), then verify nothing changed
+  [pin]     b4f222166f4a824e34414e205544fb17397ccfa1 -> fa85121f60c3846be294b03b5e8ec4a799abdaa1
+  [rewrite] .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+  [same]    .github/workflows/waggle-gate.yml
+  [create]  .waggle/control/roles/builder.md
+  [rewrite] .waggle/control/roles/forager.md
+  [rewrite] .waggle/control/roles/guard.md
+  [same]    .waggle/control/roles/queen.md
+  [rewrite] .waggle/control/roles/scout.md
+  [remove]  .waggle/control/roles/architect.md
+  [skip]    .waggle/control/config.yaml (seeded)
+  [skip]    .waggle/control/WAGGLE.md (seeded)
+  [skip]    .waggle/control/local.yaml (seeded)
+  [same]    .gitignore (waggle block)
+  [same]    CLAUDE.md (waggle block)
+  [remove]  .claude/agents/waggle-architect.md
+  [shims]   regenerate .claude/agents/waggle-*.md
+  [keep]    refs/waggle/* and .waggle/hive/**
+dry run: tree byte-identical
+### dirty tree apply
+waggle upgrade refused: work tree is not clean (first dirty path: stray.txt); commit or stash first: scaffold: refused, nothing written
+exit=1
+?? stray.txt
+dirty refusal: nothing written
+### clean apply
+Run: waggle decide --file upgrade-decision.json (same hive PR, Head Keeper or queen after an explicit Keeper answer, T-006 section 8).
+Review with git status, then open a hive PR. This changes .waggle/control/ (Tier 3) and needs Head Keeper approval.
+exit=0
+ M .waggle/control/config.yaml
+ D .waggle/control/roles/architect.md
+ M .waggle/control/roles/forager.md
+ M .waggle/control/roles/guard.md
+ M .waggle/control/roles/scout.md
+ M .waggle/control/roster.json
+?? .waggle/control/roles/builder.md
+### changed paths (git, incl ignored)
+ M .waggle/control/config.yaml
+ D .waggle/control/roles/architect.md
+ M .waggle/control/roles/forager.md
+ M .waggle/control/roles/guard.md
+ M .waggle/control/roles/scout.md
+ M .waggle/control/roster.json
+?? .waggle/control/roles/builder.md
+!! .claude/agents/
+### shims now
+waggle-builder.md
+waggle-forager.md
+waggle-guard.md
+waggle-queen.md
+waggle-scout.md
+### rerun
