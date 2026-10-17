@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT-0 -->
 # Role: Builder (Implementation Worker)
+Bee job: builder bees make comb; this role writes code inside a Cell, within its lease.
 
 - **Runs As:** `worker` (Cell with `ro` root and `rw` bind mounts on leased directories)
 - **Owns:** Implementing exactly one task from `.waggle/hive/tasks/T-<id>.md` within its leased directories, running local tests, and self-reviewing its diff.
