@@ -233,15 +233,20 @@ func parseClaimRef(ref string) (int, bool) {
 
 // NormalizeDirectories validates and canonicalizes a lease's directory list.
 //
-// Each entry must be a literal, repo-relative directory: no empty or
-// whitespace-padded entries, no NUL or control characters, no backslashes, no
-// glob metacharacters (* ? [), no absolute or volume-prefixed paths, no ".."
-// escapes, and no path under .git (case-insensitive). Entries are cleaned to
-// slash form without a trailing slash, deduplicated and sorted ascending.
-// An entry that cleans to the repo root returns ErrTier3Path because the root
-// contains Tier 3 files; every other failure returns ErrInvalidLease. An empty
-// list or more than maxDirs distinct entries is rejected. maxDirs <= 0 means
-// DefaultMaxDirectoriesPerClaim.
+// Each entry must be a literal, repo-relative directory of at most 1024 bytes
+// made only of [A-Za-z0-9._/-]: no spaces, control characters, backslashes,
+// glob metacharacters, backticks, angle brackets, colons, tildes, quotes or
+// non-ASCII (Q-T009-2). It must not be absolute, escape with "..", or lie
+// under .git (case-insensitive). After cleaning, every path segment must be at
+// most 255 bytes, must not end with "." (Windows drops trailing dots, so
+// ".waggle." would resolve to ".waggle"), must not start with "-" (never
+// flag-shaped), and must not be a Windows reserved device name (CON, PRN, AUX,
+// NUL, COM0 to COM9, LPT0 to LPT9 before the first ".", any case; Q-T009-1).
+// Entries are cleaned to slash form without a trailing slash, deduplicated and
+// sorted ascending. An entry that cleans to the repo root returns ErrTier3Path
+// because the root contains Tier 3 files; every other failure returns
+// ErrInvalidLease. An empty list or more than maxDirs distinct entries is
+// rejected. maxDirs <= 0 means DefaultMaxDirectoriesPerClaim.
 func NormalizeDirectories(dirs []string, maxDirs int) ([]string, error) {
 	if maxDirs <= 0 {
 		maxDirs = DefaultMaxDirectoriesPerClaim
@@ -268,20 +273,66 @@ func NormalizeDirectories(dirs []string, maxDirs int) ([]string, error) {
 	return out, nil
 }
 
+// Byte limits on a raw directory entry and on each cleaned path segment.
+const (
+	maxDirBytes     = 1024
+	maxSegmentBytes = 255
+)
+
+// isDirByte reports whether c is in the directory allow-list [A-Za-z0-9._/-].
+func isDirByte(c byte) bool {
+	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' ||
+		c == '.' || c == '_' || c == '/' || c == '-'
+}
+
+// isWindowsDevice reports whether the part of a segment before its first "."
+// is a Windows reserved device name, compared case-insensitively.
+func isWindowsDevice(seg string) bool {
+	stem, _, _ := strings.Cut(seg, ".")
+	stem = strings.ToUpper(stem)
+	switch stem {
+	case "CON", "PRN", "AUX", "NUL":
+		return true
+	}
+	if len(stem) == 4 && (strings.HasPrefix(stem, "COM") || strings.HasPrefix(stem, "LPT")) {
+		return stem[3] >= '0' && stem[3] <= '9'
+	}
+	return false
+}
+
+// checkSegment applies the per-segment rules of NormalizeDirectories.
+func checkSegment(seg string) error {
+	switch {
+	case strings.HasSuffix(seg, "."):
+		return fmt.Errorf("segment %q ends with a dot: %w", seg, ErrInvalidLease)
+	case strings.HasPrefix(seg, "-"):
+		return fmt.Errorf("segment %q starts with a dash: %w", seg, ErrInvalidLease)
+	case len(seg) > maxSegmentBytes:
+		return fmt.Errorf("segment of %d bytes exceeds %d: %w", len(seg), maxSegmentBytes, ErrInvalidLease)
+	case isWindowsDevice(seg):
+		return fmt.Errorf("segment %q is a Windows reserved device name: %w", seg, ErrInvalidLease)
+	}
+	return nil
+}
+
+// isCanonicalDir reports whether d passes normalizeDir and is already in
+// canonical form, so it can be emitted verbatim.
+func isCanonicalDir(d string) bool {
+	c, err := normalizeDir(d)
+	return err == nil && c == d
+}
+
 func normalizeDir(d string) (string, error) {
 	if strings.TrimSpace(d) == "" {
 		return "", fmt.Errorf("empty directory: %w", ErrInvalidLease)
 	}
-	if strings.TrimSpace(d) != d {
-		return "", fmt.Errorf("directory %q has leading or trailing whitespace: %w", d, ErrInvalidLease)
+	if len(d) > maxDirBytes {
+		return "", fmt.Errorf("directory of %d bytes exceeds %d: %w", len(d), maxDirBytes, ErrInvalidLease)
 	}
-	for _, r := range d {
-		if r < 0x20 || r == 0x7f {
-			return "", fmt.Errorf("directory %q contains a control character: %w", d, ErrInvalidLease)
+	for i := 0; i < len(d); i++ {
+		if !isDirByte(d[i]) {
+			return "", fmt.Errorf("directory %q contains a character outside [A-Za-z0-9._/-]: %w", d, ErrInvalidLease)
 		}
-	}
-	if strings.ContainsAny(d, "\\*?[") {
-		return "", fmt.Errorf("directory %q contains a backslash or glob metacharacter: %w", d, ErrInvalidLease)
 	}
 	if strings.HasPrefix(d, "/") || filepath.IsAbs(d) || filepath.VolumeName(d) != "" || hasDriveLetter(d) {
 		return "", fmt.Errorf("directory %q is absolute: %w", d, ErrInvalidLease)
@@ -296,6 +347,11 @@ func normalizeDir(d string) (string, error) {
 	first, _, _ := strings.Cut(cleaned, "/")
 	if strings.EqualFold(first, ".git") {
 		return "", fmt.Errorf("directory %q is inside .git: %w", d, ErrInvalidLease)
+	}
+	for _, seg := range strings.Split(cleaned, "/") {
+		if err := checkSegment(seg); err != nil {
+			return "", fmt.Errorf("directory %q: %w", d, err)
+		}
 	}
 	return cleaned, nil
 }
