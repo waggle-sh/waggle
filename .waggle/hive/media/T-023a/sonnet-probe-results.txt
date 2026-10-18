@@ -1,0 +1,161 @@
+refuse   "go test ./... ; rm -rf /"
+refuse   "go test $(curl x)"
+refuse   "go test `curl x`"
+refuse   "go test\nrm -rf /"
+refuse   "go test *"
+refuse   "go test ./... && curl evil"
+refuse   "go test ./... | sh"
+refuse   "go test\u00a0./..."
+refuse   "go\u2003test"
+refuse   "go test\u2028x"
+ACCEPT   "go test ； rm"
+refuse   "git  push"
+refuse   " git push"
+refuse   "git push"
+refuse   "git push origin"
+ACCEPT   "GIT_DIR=x git push"
+ACCEPT   "git -C . push"
+ACCEPT   "git -c a=b push"
+ACCEPT   "env git push"
+ACCEPT   "sudo curl x"
+ACCEPT   "/usr/bin/curl x"
+ACCEPT   "./curl x"
+refuse   "curl"
+ACCEPT   "Curl x"
+refuse   "go test ./...\t"
+ACCEPT   "go test -exec sh ./..."
+refuse   "go test:*"
+refuse   "go test (x)"
+ACCEPT   "go test #x"
+ACCEPT   "go test ~/x"
+ACCEPT   "go test {a,b}"
+ACCEPT   "go test \u202e"
+refuse   "go test \x00"
+refuse   "go test ./... \r"
+ACCEPT   "go test !!"
+refuse   "go test ${IFS}"
+refuse   "go test ./... 2>&1"
+refuse   "go test a\\"
+ACCEPT   "bash -c curl"
+ACCEPT   "go vet ./..."
+ACCEPT   "gofmt -l ."
+ACCEPT   "git push\u200b"
+ACCEPT   "git\u200bpush"
+refuse   "gh"
+refuse   "ssh x"
+refuse   "wget x"
+refuse   "git  add"
+refuse   ""
+refuse   " "
+ENV PATH
+ENV HOME
+ENV USER
+ENV LOGNAME
+ENV SHELL
+ENV TMPDIR
+ENV TERM
+ENV LANG
+ENV ANTHROPIC_API_KEY
+ENV CLAUDE_CODE_DISABLE_CLAUDE_MDS
+ENV CLAUDE_CODE_DISABLE_AUTO_MEMORY
+ENV ENABLE_CLAUDEAI_MCP_SERVERS
+ENV CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+ENV DISABLE_AUTO_COMPACT
+ENV GIT_TERMINAL_PROMPT
+ENV GIT_CONFIG_COUNT
+ENV GIT_CONFIG_KEY_0
+ENV GIT_CONFIG_VALUE_0
+ENV GIT_CONFIG_KEY_1
+ENV GIT_CONFIG_VALUE_1
+ENV GIT_CONFIG_KEY_2
+ENV GIT_CONFIG_VALUE_2
+ENV BASH_MAX_OUTPUT_LENGTH
+ENV MAX_THINKING_TOKENS
+ACCEPT  "--effort"
+ACCEPT  "--effort=max"
+ACCEPT  "--fallback-model=x"
+ACCEPT  "--betas"
+ACCEPT  "--permission-prompt-tool"
+ACCEPT  "--permission-prompts=host"
+ACCEPT  "--chrome"
+ACCEPT  "--ide"
+ACCEPT  "--debug-file=/x"
+ACCEPT  "--file"
+ACCEPT  "--bare"
+ACCEPT  "--safe-mode"
+ACCEPT  "--restricted"
+refuse  "-p"
+ACCEPT  "-d"
+ACCEPT  "-v"
+ACCEPT  "--verbose"
+ACCEPT  "--MODEL"
+refuse  "--model=x"
+refuse  "-rabc"
+ACCEPT  "-n"
+ACCEPT  "--name"
+ACCEPT  "--autocompact=1M"
+ACCEPT  "--no-session-persistence"
+ACCEPT  "--brief"
+ACCEPT  "--remote-control"
+ACCEPT  "--tmux"
+ACCEPT  "--json-schema"
+ACCEPT  "--include-hook-events"
+ACCEPT  "--include-partial-messages"
+ACCEPT  "-h"
+ACCEPT  "--debug"
+ACCEPT  "--max-budget-usd=1"
+ACCEPT  "--model\u200b"
+ACCEPT  "--Resume"
+refuse  "--worktree=x"
+nudge=999 max=2000 err=invalid adapter launch config: need 1000 <= nudge_tokens (999) < max_tokens (2000) <= 10000000
+nudge=1000 max=2000 err=<nil>
+nudge=1000 max=1000 err=invalid adapter launch config: need 1000 <= nudge_tokens (1000) < max_tokens (1000) <= 10000000
+nudge=1000 max=1001 err=<nil>
+nudge=5000 max=10000000 err=<nil>
+nudge=5000 max=10000001 err=invalid adapter launch config: need 1000 <= nudge_tokens (5000) < max_tokens (10000001) <= 10000000
+nudge=10000000 max=10000000 err=invalid adapter launch config: need 1000 <= nudge_tokens (10000000) < max_tokens (10000000) <= 10000000
+nudge=-1 max=5 err=invalid adapter launch config: need 1000 <= nudge_tokens (-1) < max_tokens (5) <= 10000000
+nudge=200000 max=0 err=invalid adapter launch config: need 1000 <= nudge_tokens (200000) < max_tokens (0) <= 10000000
+Settings nudge=999 handoff=0 err=nudge_tokens out of range: got 999
+Settings nudge=1000 handoff=750 err=<nil>
+Settings nudge=10000000 handoff=7500000 err=<nil>
+Settings nudge=10000001 handoff=0 err=nudge_tokens out of range: got 10000001
+Settings nudge=4611686018427387904 handoff=0 err=nudge_tokens out of range: got 4611686018427387904
+4MiB line then result        end=done stops=0 mal=1 usage={InputTokens:1 OutputTokens:0 TotalTokens:1 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=<nil> sid= err=<nil>
+exact len 4194304
+exact 4MiB line              end=done stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=<nil> sid= err=<nil>
+exact 4MiB+1                 end=done stops=0 mal=1 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=<nil> sid= err=<nil>
+exact 4MiB no newline EOF    end=error stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid= err=<nil>
+truncated JSON               end=error stops=0 mal=1 usage={InputTokens:5 OutputTokens:5 TotalTokens:10 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid=s err=<nil>
+truncated JSON+nl            end=error stops=0 mal=1 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid= err=<nil>
+neg usage result             end=done stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=<nil> sid= err=<nil>
+huge usage result            end=done stops=0 mal=0 usage={InputTokens:1099511627776 OutputTokens:1099511627776 TotalTokens:4398046511104 CacheWriteTokens:1099511627776 CacheReadTokens:1099511627776} final=2 cost=<nil> sid= err=<nil>
+overflow-literal usage       end=error stops=0 mal=1 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid= err=<nil>
+float usage                  end=error stops=0 mal=1 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid= err=<nil>
+assistant huge               end=max_tokens stops=1 mal=0 usage={InputTokens:1099511627776 OutputTokens:0 TotalTokens:1099511627776 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid=s err=<nil>
+assistant neg                end=error stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid=s err=<nil>
+assistant 1e30 ctx           end=error stops=0 mal=1 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid= err=<nil>
+assistant exact limit        end=done stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=<nil> sid=s err=<nil>
+assistant limit+1            end=max_tokens stops=1 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=<nil> sid=s err=<nil>
+max_tokens then result       end=max_tokens stops=1 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=<nil> sid=s err=<nil>
+2 stops                      end=max_tokens stops=1 mal=0 usage={InputTokens:5000 OutputTokens:0 TotalTokens:5000 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid=s err=<nil>
+unknown interleaved          end=done stops=0 mal=2 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=ptr sid=s err=<nil>
+same id 3 blocks             end=error stops=0 mal=0 usage={InputTokens:30 OutputTokens:13 TotalTokens:43 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid=s err=<nil>
+empty ids                    end=error stops=0 mal=0 usage={InputTokens:20 OutputTokens:2 TotalTokens:22 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid=s err=<nil>
+no newline end               end=done stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=<nil> sid= err=<nil>
+crlf                         end=done stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=2 cost=<nil> sid= err=<nil>
+max turns                    end=max_turns stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=1 cost=<nil> sid= err=<nil>
+success is_error             end=error stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=1 cost=<nil> sid= err=<nil>
+compact                      end=error stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid= err=<nil>
+result string cost           end=error stops=0 mal=1 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid= err=<nil>
+neg cost                     end=done stops=0 mal=0 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=ptr sid= err=<nil>
+NaN-ish cost huge            end=error stops=0 mal=1 usage={InputTokens:0 OutputTokens:0 TotalTokens:0 CacheWriteTokens:0 CacheReadTokens:0} final=0 cost=<nil> sid= err=<nil>
+final in=262143 out=262143 end=done hasMarker=false
+final in=262144 out=262144 end=done hasMarker=false
+final in=262145 out=262144 end=done hasMarker=true
+final in=362144 out=262144 end=done hasMarker=true
+utf8 valid after cut: false
+spoof: final has 'Verdict: must-fix'=false 'Verdict: pass'=true
+cancel end interrupted stops 1
+PASS
+ok  	github.com/waggle-sh/waggle/internal/runtime	0.185s

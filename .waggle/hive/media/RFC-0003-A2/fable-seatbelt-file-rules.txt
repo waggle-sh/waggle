@@ -1,0 +1,23 @@
+RFC-0003 A2 guard evidence (fable): Seatbelt path-based ro/rw split and file-link denial
+Host: macOS 27.0.1, /usr/bin/sandbox-exec present. Run 2026-10-17 in the guard scratchpad.
+Tests RFC-0003.md line 54: "Seatbelt ... applies the same split as path-based write rules on the host paths and denies hard-link creation."
+
+Profile:
+(version 1)(allow default)
+(deny file-write* (subpath "<repo>"))
+(allow file-write* (subpath "<repo>/lease"))
+(deny file-link)
+
+Layout: <repo>/outside.txt, <repo>/other/o.txt, <repo>/lease/ (empty)
+
+[1] write inside lease:                              ok
+[2] write outside lease (outside.txt):               denied (Operation not permitted)
+[3] write other dir (other/o.txt):                   denied
+[4] hard link outside.txt -> lease/hl:               denied (ln: Operation not permitted)
+[5] symlink lease/sl -> ../outside.txt:              symlink created; write through it: denied
+[6] rename outside.txt into lease/moved:             denied
+[7] mkdir lease/sub:                                 ok
+
+Host view afterwards: outside.txt unchanged ("outside"); lease/ holds a.txt, sl (dangling-by-policy symlink), sub/.
+
+Conclusion: the ro worktree / rw lease split, hard-link denial, and symlink-escape denial claimed for Seatbelt hold on this host. Seatbelt matches the resolved vnode path, so a symlink inside the lease that points outside stays read-only.

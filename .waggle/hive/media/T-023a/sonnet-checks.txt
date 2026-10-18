@@ -1,0 +1,25 @@
+head 4916655 worktree /Users/paul/code/waggle/.claude/worktrees/agent-a2dd45d10c609c481
+build ok
+vet ok
+gofmt -l: []
+ok  	github.com/waggle-sh/waggle/cmd/waggle	9.643s
+ok  	github.com/waggle-sh/waggle/internal/comb	50.586s
+ok  	github.com/waggle-sh/waggle/internal/config	1.249s
+ok  	github.com/waggle-sh/waggle/internal/decisions	4.174s
+ok  	github.com/waggle-sh/waggle/internal/forge	21.481s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	5.534s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	17.101s
+5	59	internal/runtime/claude.go
+227	0	internal/runtime/launch.go
+1	1	internal/runtime/policy.go
+5	5	internal/runtime/profile.go
+22	7	internal/runtime/runtime.go
+198	0	internal/runtime/stream.go
+added non-test lines: 458; wc -l of the six touched non-test files:      934 total
+go.mod/go.sum diff lines:        0
+files outside internal/runtime: 0
+em/en dashes in diff: 0
+os.Environ in non-test runtime code:        1 files
+os.Environ appears only in a comment (launch.go:211).
+tripwire test: env -i with the exact GIT_CONFIG_* values; git push to https, ssh://, scp-style remotes fails (host waggle-push-blocked); http://, git:// fail on DNS only; a local path remote (../bare) pushed successfully.

@@ -1,0 +1,21 @@
+RFC-0003 A2 guard evidence (fable): Seatbelt (deny network*) with one Unix-socket allow
+Host: macOS 27.0.1. Run 2026-10-17 in the guard scratchpad. A host-side python listener owned a Unix socket (t.sock) and a loopback TCP port (50264).
+Tests RFC-0003.md line 79: "Cell outbound network access is blocked by the backend (... sandbox deny rules) except to a per-Cell host egress proxy."
+
+Profile:
+(version 1)(allow default)
+(deny network*)
+(allow network-outbound (remote unix-socket (path-literal "<dir>/t.sock")))
+
+[a] unix socket on allowlist (connected by relative path):  ALLOWED
+[b] unix socket not on allowlist (/var/run/mDNSResponder):  denied (EPERM)
+[c] tcp 127.0.0.1:50264 (host loopback listener):            denied (EPERM)
+[d] tcp 1.1.1.1:443:                                         denied (EPERM)
+[e] dns getaddrinfo example.com:                             denied (gaierror 8)
+[f] udp sendto 8.8.8.8:53:                                   denied (EPERM)
+[g] raw socket (SOCK_RAW, ICMP):                             denied (EPERM)
+
+Conclusions:
+- Unix-socket connects are governed by network-outbound, so the Docker socket, ssh-agent and gpg-agent sockets are closed by the same deny that closes TCP. The path-literal filter matches the resolved path even when the client connects by a relative name.
+- Loopback TCP is denied by default. The brief's forwarder design needs an explicit network-outbound (remote ip "localhost:<port>") allow for the agent to reach the forwarder, in addition to the local bind rule the brief lists; otherwise the agent cannot reach its own proxy.
+- Side finding: the first attempt failed with "AF_UNIX path too long" because the socket path was 105 bytes. macOS sun_path is 104 bytes. The per-Cell proxy socket and run.sock must live under a short directory or the probe must check the length.
