@@ -15,7 +15,7 @@ func TestTakeLockRefusesFifoAndSymlink(t *testing.T) {
 	d := t.TempDir()
 	fifo := filepath.Join(d, "fifo")
 	if err := syscall.Mkfifo(fifo, 0o600); err != nil {
-		t.Skip(err)
+		t.Fatal(err)
 	}
 	link := filepath.Join(d, "link")
 	if err := os.Symlink(fifo, link); err != nil {
