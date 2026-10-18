@@ -51,3 +51,10 @@ No em dashes or en dashes in code, docs, or commits.
 | drone | none; retired | D-073 |
 
 In records written before T-020, read architect as Scout, scout as Forager, and forager as Builder.
+
+## 6. Sign-off (DCO)
+
+- Every commit carries a `Signed-off-by: Name <email>` trailer matching the commit author, certifying the Developer Certificate of Origin 1.1 (`https://developercertificate.org/`). Use `git commit -s`; for merges, `git merge --signoff`; to fix a branch, `git rebase --signoff <base>`.
+- Sign-off certifies that you have the right to submit the change under the file's license. It is a personal statement by a person. The trailer for work a worker commits under your identity is yours.
+- Commits carry no AI attribution trailers.
+- New files start with the SPDX header for their path; CI rejects a missing or wrong one.
