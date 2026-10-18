@@ -1,0 +1,11 @@
+T-025 phase A, sha256 evidence (brief 3.1)
+Forager (from commit d046d8e message):
+  LICENSE (apache.org LICENSE-2.0.txt)  cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  LICENSES/MIT-0.txt (holder line filled) 59746d6285ffa44bfc7ecada352aa5d6a20dc8eab418a60ce091cc739012c135
+  Note: the forager's MIT-0 hash is the SPDX download hash (placeholder line); the committed file hashes differently, as expected.
+Guard (independent download 2026-10-17, commit d046d8e):
+  apache.org LICENSE-2.0.txt download    cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  LICENSE in t-025a                      cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30  (match)
+  spdx text/MIT-0.txt download           59746d6285ffa44bfc7ecada352aa5d6a20dc8eab418a60ce091cc739012c135  (matches forager's stated source hash)
+  LICENSES/MIT-0.txt in t-025a           998b1a4aee057903ff3685d7f801725954feb7d727c91377c8ef2bb5f749fa3f
+  diff download vs LICENSES/MIT-0.txt: line 3 only, "Copyright <YEAR> <COPYRIGHT HOLDER>" -> "Copyright 2026 Level 19 Enterprises, LLC"

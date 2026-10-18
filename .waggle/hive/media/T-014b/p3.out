@@ -1,0 +1,64 @@
+=== claim .GitHub (case variant) accepted?
+leases: FAIL: T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: directory ".GitHub": comb: lease covers a Tier 3 control-plane path
+tiers: FAIL: .GitHub/Workflows/x.yml: Tier 3 path; needs Head Keeper commit and bypass
+decisions: unchanged
+exit=1
+=== claim .github/actions
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== claim .github/workflows/sub
+leases: FAIL: T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: directory ".github/workflows": comb: lease covers a Tier 3 control-plane path
+tiers: FAIL: .github/workflows/x.yml: Tier 3 path; needs Head Keeper commit and bypass
+decisions: unchanged
+exit=1
+=== claim .devcontainer
+leases: FAIL: T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: directory ".devcontainer": comb: lease covers a Tier 3 control-plane path
+tiers: FAIL: .devcontainer/devcontainer.json: Tier 3 path; needs Head Keeper commit and bypass
+decisions: unchanged
+exit=1
+=== claim .WAGGLE/HIVE
+leases: FAIL: T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: directory ".WAGGLE/HIVE": comb: worker leases never include .waggle/; hive files change only through waggle commands or the Head Keeper: comb: lease covers a Tier 3 control-plane path
+tiers: FAIL: .WAGGLE/HIVE/x: Tier 3 path; needs Head Keeper commit and bypass
+decisions: unchanged
+exit=1
+=== claim .waggle/hive/tasks
+leases: FAIL: T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: directory ".waggle/hive/tasks": comb: worker leases never include .waggle/; hive files change only through waggle commands or the Head Keeper: comb: lease covers a Tier 3 control-plane path
+tiers: ok
+decisions: unchanged
+exit=1
+=== claim .waggle/hive/tasks light, Tier2 prefix
+leases: FAIL: T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: directory ".waggle/hive/tasks": comb: worker leases never include .waggle/; hive files change only through waggle commands or the Head Keeper: comb: lease covers a Tier 3 control-plane path
+tiers: ok
+decisions: unchanged
+exit=1
+=== claim docs; edit with dotdot-like components / trailing
+error: Invalid path 'docs/./a.md'
+fatal: git update-index: --cacheinfo cannot add docs/./a.md
+On branch branch
+nothing to commit, working tree clean
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== path .waggle/hive/../control/x under claim 'docs' (invalid tree entry) - tier fn
+=== GHA output for tier3 + path w/ colon and comma
+::error file=.github/workflows/w%2Cx%3Ay.yml::leases: T-001: path is outside the claim directories
+::error file=.github/workflows/w%2Cx%3Ay.yml::tiers: Tier 3 path; needs Head Keeper commit and bypass
+decisions: unchanged
+exit=1
+=== light claim, subject 120 chars with CR LF and %
+cat: illegal option -- A
+usage: cat [-belnstuv] [file ...]
+=== multibyte subject truncation at 72 bytes
+cat: illegal option -- A
+usage: cat [-belnstuv] [file ...]
+=== path longer than 4096 in head tree
+leases: ok
+::error file=docs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+decisions: unchanged
+exit=1
+=== invalid utf8 path in annotation
+cat: illegal option -- A
+usage: cat [-belnstuv] [file ...]

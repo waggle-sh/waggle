@@ -2613,3 +2613,156 @@
 **Keeper choice:** `default_args` moves to an allowlist of known flags, and any other flag or bare word is refused. This is a precondition for T-023 phase C; phase A merged with the denylist. Decided by the Head Keeper on 2026-10-17.
 
 **Rationale:** A denylist against a third-party CLI whose flag set changes every release is structurally unsound: in 2.1.302 several unrefused flags widen the worker or break policy (fable and sonnet guard reviews of T-023 phase A). Rejected extending the denylist: every release reopens the gap.
+
+## D-138: T-020 phase C is drafted by a worker in an isolated worktree, reviewed by two guards, merged with Head Keeper approval
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-020
+- **Supersedes:** none
+
+**Question:** Who drafts T-020 phase C (the hive PR that renames our roles), and when?
+
+**Options considered:**
+1. A worker drafts it (the D-086 pattern) after hive-records-4 merges and nothing else is running
+2. The Head Keeper runs the upgrade and edits the hive files by hand
+
+**Hive recommendation:** A worker drafts it (the D-086 pattern) after hive-records-4 merges and nothing else is running
+
+**Keeper choice:** A worker drafts T-020 phase C in an isolated worktree, following the D-086 pattern, once hive-records-4 has merged and nothing else is running. Two guards review it (sonnet and fable) and the Head Keeper approves the merge. The Keeper renames the model_overrides keys in his own gitignored local.yaml himself. Decided by the Head Keeper on 2026-10-18; recorded by the queen.
+
+**Rationale:** The rename is mechanical but touches Tier 3 control files and many briefs; a worker draft plus two independent guard reviews gives the Head Keeper a checked diff instead of a hand edit. local.yaml is gitignored and per Keeper, so no PR can change it.
+
+## D-139: T-014 phase B accepted at 550 added non-test lines against the 450 stop
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-014
+- **Supersedes:** none
+
+**Question:** T-014 phase B came in at 550 added non-test lines against a 450 stop value. Accept it or split it?
+
+**Options considered:**
+1. Accept at 550
+2. Split the tiers check into its own phase
+
+**Hive recommendation:** Accept at 550
+
+**Keeper choice:** T-014 phase B is accepted at 550 added non-test lines against the 450 stop. The overrun is the scope D-107 and D-114 added to the phase (the lease.json size cap and the shared comb.CheckChanges) plus the B1 fix, counted per D-089 and D-136. Decided by the Head Keeper on 2026-10-18; recorded by the queen.
+
+**Rationale:** The extra lines are scope added by rulings after the estimate, not drift. Splitting a reviewed, passing phase would cost another review round for no safety gain.
+
+## D-140: CODEOWNERS covers .github/workflows/ and .github/actions/; workflow edits need code owner review
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-014, T-015
+- **Supersedes:** none
+
+**Question:** pull_request workflows run from the PR's merge ref, so a PR can edit the gate workflow and run its own edit (T-014b fable F4). How is that closed?
+
+**Options considered:**
+1. CODEOWNERS on .github/workflows/ and .github/actions/ with required code owner review
+2. Rely on the Head Keeper reading the diff before a bypass merge
+
+**Hive recommendation:** CODEOWNERS on .github/workflows/ and .github/actions/ with required code owner review
+
+**Keeper choice:** CODEOWNERS covers .github/workflows/ and .github/actions/ for the Head Keeper, so any workflow or action edit needs code owner review (T-014b fable F4: pull_request workflows run from the merge ref). Decided by the Head Keeper on 2026-10-18; recorded by the queen.
+
+**Rationale:** Building the checker from BASE_SHA closes the Go side, but the YAML itself runs from the merge ref, so a PR could replace the gate step with exit 0. Code owner review is the platform control that covers the YAML.
+
+## D-141: comb keeps rejecting claims under .waggle/; hive-record commits merge by Head Keeper bypass
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-014
+- **Supersedes:** none
+
+**Question:** Every hive-record commit fails the leases check because comb rejects claims under .waggle/ (T-014b fable F10). Allow claims there, or keep bypass merges?
+
+**Options considered:**
+1. Keep rejecting claims under .waggle/; hive records merge by Head Keeper bypass
+2. Allow leases on .waggle/hive/ for hive-record commits
+
+**Hive recommendation:** Keep rejecting claims under .waggle/; hive records merge by Head Keeper bypass
+
+**Keeper choice:** comb keeps rejecting claims under .waggle/. Every hive-record commit fails the leases check and merges by Head Keeper bypass (T-014b fable F10). Revisit only if bypass volume becomes a problem. Decided by the Head Keeper on 2026-10-18; recorded by the queen.
+
+**Rationale:** Keeping hive records out of any lease keeps workers from writing them. The cost is a bypass merge per hive PR, which is acceptable at current volume.
+
+## D-142: The T-020 phase C brief sweep covers every brief with a phase still to dispatch
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-020
+- **Supersedes:** none
+
+**Question:** T-020 section 7.3 sweeps open briefs, defined as briefs with no Merge commit on main. Do multi-phase briefs with a phase still to dispatch get the sweep too?
+
+**Options considered:**
+1. Sweep every brief with a phase still to dispatch
+2. Sweep only briefs with no Merge commit on main
+
+**Hive recommendation:** Sweep every brief with a phase still to dispatch
+
+**Keeper choice:** The phase C brief sweep covers every brief with a phase still to dispatch, not only briefs with no Merge commit: T-008, T-012, T-014, T-018, T-021, T-022, T-023 and T-025. Each gets the section 2 sweep (quoted decision text stays as quoted) and the Role names line. Decided by the Head Keeper on 2026-10-18; recorded by the queen.
+
+**Rationale:** Remaining phases are dispatched from these briefs; leaving them on the old names would hand workers briefs whose role words mean the other role once the pin moves.
+
+## D-143: waggle upgrade rewrote waggle-gate.yml from a stale template; the hive keeps main's copy and T-008 updates the template
+
+- **Date:** 2026-10-18
+- **Kind:** technical
+- **Tickets:** T-008, T-016, T-020
+- **Supersedes:** none
+
+**Question:** waggle upgrade planned a rewrite of .github/workflows/waggle-gate.yml from a template that lacks the T-014 gate step and widens permissions. What happens to the hive copy and the template?
+
+**Options considered:**
+1. Keep main's copy in the hive; T-008 brings the template in line; manual check on every upgrade until then
+2. Drop the waggle:managed line so upgrade skips the file
+3. Accept the template render
+
+**Hive recommendation:** Keep main's copy in the hive; T-008 brings the template in line; manual check on every upgrade until then
+
+**Keeper choice:** The hive keeps main's waggle-gate.yml. T-008 brings the gate workflow template in internal/scaffold/templates in line with it: the waggle gate verify step built from BASE_SHA, contents: read at workflow level, write permissions only on relay-claim. Until T-008 merges, every waggle upgrade needs a manual revert check of that file. Decided by the Head Keeper on 2026-10-18; recorded by the queen.
+
+**Rationale:** Applying the template would have removed the gate and given the verify job write permissions. Fixing the template keeps the file managed, so future upgrades converge instead of skipping it forever.
+
+## D-144: hive-records-5 rides in the T-020 phase C PR
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-020
+- **Supersedes:** none
+
+**Question:** Does hive-records-5 (reviews, media, handoff and decisions D-138 to D-145) get its own hive PR or ride in the T-020 phase C PR?
+
+**Options considered:**
+1. Ride in the T-020 phase C PR
+2. Separate hive PR after phase C merges
+
+**Hive recommendation:** Ride in the T-020 phase C PR
+
+**Keeper choice:** hive-records-5 rides in the T-020 phase C PR: the batch 5 records and decisions D-138 to D-145 merge with the rename, under the same guard reviews and Head Keeper bypass merge. Decided by the Head Keeper on 2026-10-18; recorded by the queen.
+
+**Rationale:** Both are hive-only and merge by bypass; one PR saves a review and merge cycle, and the decisions describe this PR.
+
+## D-145: Upgrade hive pin to 30639558288f93abdb378bf278a8b860e84a915e
+
+- **Date:** 2026-10-18
+- **Kind:** technical
+- **Tickets:** T-016, T-020
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Stay on b4f222166f4a824e34414e205544fb17397ccfa1
+2. Move to 30639558288f93abdb378bf278a8b860e84a915e
+
+**Hive recommendation:** Move to 30639558288f93abdb378bf278a8b860e84a915e
+
+**Keeper choice:** Move the pin from b4f222166f4a824e34414e205544fb17397ccfa1 to 30639558288f93abdb378bf278a8b860e84a915e; managed files re-rendered by waggle upgrade from the target build, except .github/workflows/waggle-gate.yml, which keeps main's copy (D-143). Decided by the Head Keeper on 2026-10-18; recorded by the queen.
+
+**Rationale:** 30639558288f93abdb378bf278a8b860e84a915e is the known-good build chosen by the Head Keeper (D-041).

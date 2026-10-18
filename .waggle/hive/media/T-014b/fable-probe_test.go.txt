@@ -1,0 +1,129 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+// Throwaway guard probes; not part of the PR.
+func TestFableProbes(t *testing.T) {
+	r := leaseRepo(t)
+	r.claim(1, "full", active, "docs")
+	r.write("docs/a.md", []byte("a\n"))
+	r.commit("T-001: base")
+	// Empty subject, CR in subject, mode-only, typechange.
+	r.git("commit", "-q", "--allow-empty", "--allow-empty-message", "-m", "")
+	msg := filepath.Join(t.TempDir(), "msg")
+	os.WriteFile(msg, []byte("T-001: cr\rhidden\n\nbody"), 0o644)
+	r.git("commit", "-q", "--allow-empty", "-F", msg)
+	os.Chmod(filepath.Join(r.dir, "docs/a.md"), 0o755)
+	r.git("add", "-A")
+	r.git("commit", "-q", "-m", "T-001: mode only")
+	g := gitRunner{context.Background(), r.dir}
+	out, _ := g.run("rev-list", "--reverse", "--parents", "--format=%s", "main..branch")
+	t.Logf("rev-list raw:\n%q", out)
+	cs, err := listCommits(g, r.git("rev-parse", "main"), r.git("rev-parse", "branch"))
+	t.Logf("listCommits: err=%v n=%d", err, len(cs))
+	for _, c := range cs {
+		t.Logf("  %.8s parents=%v subject=%q", c.oid, c.parents, c.subject)
+	}
+	for _, c := range cs {
+		ch, err := commitChanges(g, c)
+		t.Logf("  changes %.8s: %+v err=%v", c.oid, ch, err)
+	}
+	code, o := r.run("verify", true)
+	t.Logf("verify (empty subject, CR subject, mode-only): exit=%d\n%s", code, o)
+
+	// Submodule entry and a typechange, via the index.
+	r2 := leaseRepo(t)
+	r2.claim(1, "full", active, "docs")
+	r2.git("update-index", "--add", "--cacheinfo", "160000,"+r2.git("rev-parse", "HEAD")+",docs/sub")
+	r2.git("commit", "-q", "-m", "T-001: submodule")
+	g2 := gitRunner{context.Background(), r2.dir}
+	raw, _ := g2.run("diff-tree", "-r", "-z", "--no-renames", "--raw", "--no-commit-id", "branch~1", "branch")
+	t.Logf("submodule diff-tree raw: %q", raw)
+	ls, _ := g2.run("ls-tree", "-r", "-z", "--name-only", "--full-tree", "branch")
+	t.Logf("ls-tree with submodule: %q", ls)
+	code, o = r2.run("verify", false)
+	t.Logf("verify (submodule add): exit=%d\n%s", code, o)
+	// Submodule bump: 160000 -> 160000.
+	r2.git("update-index", "--add", "--cacheinfo", "160000,"+r2.git("rev-parse", "branch")+",docs/sub")
+	r2.git("commit", "-q", "-m", "T-001: bump submodule")
+	code, o = r2.run("verify", false)
+	t.Logf("verify (submodule bump): exit=%d\n%s", code, o)
+
+	// Case-fold edge: U+017F long s vs s; Docs/ dir vs docs file.
+	r3 := leaseRepo(t)
+	r3.claim(1, "full", active, "docs")
+	r3.index("docs/ſ.md")
+	r3.index("docs/s.md")
+	r3.index("Docs")
+	r3.git("commit", "-q", "-m", "T-001: fold")
+	code, o = r3.run("tiers", false)
+	t.Logf("tiers (long s vs s, Docs file vs docs dir): exit=%d\n%s", code, o)
+	t.Logf("EqualFold(ſ,s)=%v ToLower(ſ)=%q", strings.EqualFold("ſ", "s"), strings.ToLower("ſ"))
+
+	// Zero-padded and long ticket numbers in the subject.
+	r4 := leaseRepo(t)
+	r4.claim(1, "full", active, "docs")
+	r4.write("docs/a.md", []byte("a\n"))
+	r4.commit("T-0001: padded")
+	code, o = r4.run("leases", false)
+	t.Logf("leases (T-0001 subject vs ticket-1 claim): exit=%d\n%s", code, o)
+
+	// Same outside path in two tickets: reported once?
+	r5 := leaseRepo(t)
+	r5.claim(1, "full", active, "docs")
+	r5.claim(2, "full", active, "src")
+	r5.write("other/x.md", []byte("1\n"))
+	r5.commit("T-001: one")
+	r5.write("other/x.md", []byte("2\n"))
+	r5.commit("T-002: two")
+	code, o = r5.run("leases", false)
+	t.Logf("leases (same path two tickets): exit=%d\n%s", code, o)
+
+	// Unicode path with -z: raw bytes, no quoting.
+	r6 := leaseRepo(t)
+	r6.claim(1, "full", active, "docs")
+	r6.index("docs/ünï.md")
+	r6.git("commit", "-q", "-m", "T-001: unicode")
+	g6 := gitRunner{context.Background(), r6.dir}
+	raw, _ = g6.run("-c", "core.quotePath=true", "diff-tree", "-r", "-z", "--no-renames", "--raw", "--no-commit-id", "branch~1", "branch")
+	t.Logf("unicode -z raw (quotePath=true): %q", raw)
+	code, o = r6.run("verify", true)
+	t.Logf("verify (unicode path inside lease): exit=%d\n%s", code, o)
+
+	// Pure function sanity on sibling-prefix fold.
+	vs := comb.CheckChanges(comb.Lease{Gate: "full", Directories: []string{"docs"}},
+		[]comb.Change{{Path: "DOCS2/x", OldMode: "100644", NewMode: "100644"}, {Path: "docs", OldMode: "000000", NewMode: "100644"}})
+	t.Logf("CheckChanges DOCS2/x, docs(file): %+v", vs)
+	fmt.Fprintln(os.Stderr)
+}
+
+// Two empty-subject commits keep the line count even and misalign the pairs.
+func TestFableEmptySubjectPairs(t *testing.T) {
+	r := leaseRepo(t)
+	r.claim(1, "full", active, "docs")
+	r.git("commit", "-q", "--allow-empty", "--allow-empty-message", "-m", "")
+	r.git("commit", "-q", "--allow-empty", "--allow-empty-message", "-m", "")
+	r.write("docs/a.md", []byte("a\n"))
+	r.commit("T-001: good")
+	code, o := r.run("verify", false)
+	t.Logf("verify (two empty subjects + good): exit=%d\n%s", code, o)
+	// Empty-message commit built with plumbing, as an agent might.
+	r = leaseRepo(t)
+	r.claim(1, "full", active, "docs")
+	r.write("docs/a.md", []byte("a\n"))
+	r.git("add", "-A")
+	tree := r.git("write-tree")
+	oid := r.gitIn("", "commit-tree", tree, "-p", "HEAD")
+	r.git("update-ref", "refs/heads/branch", oid)
+	code, o = r.run("verify", false)
+	t.Logf("verify (one plumbing empty-message commit): exit=%d\n%s", code, o)
+}
