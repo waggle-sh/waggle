@@ -1,0 +1,5 @@
+{"ts":"2026-10-17T08:00:00Z","ticket":"T-001","role":"alpha","session":"s1","cost_usd":0.5}
+{not json
+
+{"ts":"2026-10-17T08:00:00Z","ticket":"ticket-seven","role":"alpha","session":"s2","cost_usd":0.5}
+{"ts":"2026-10-17T08:00:00Z","ticket":"T-002","role":"alpha","session":"s3","cost_usd":0.5}
