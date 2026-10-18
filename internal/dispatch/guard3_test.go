@@ -144,7 +144,7 @@ func TestReuseAcceptsRelativePathWorktree(t *testing.T) {
 	_ = w.Unlock()
 	reg, _ := os.ReadFile(filepath.Join(registration(t, dir), "gitdir"))
 	if filepath.IsAbs(strings.TrimSpace(string(reg))) {
-		t.Skip("git older than 2.48 ignores worktree.useRelativePaths; registration is absolute")
+		t.Fatalf("git older than 2.48 ignores worktree.useRelativePaths and writes an absolute registration; this test requires git 2.48 or newer (CI runs 2.55)")
 	}
 	// A different working directory makes a cwd-relative resolve fail.
 	old, _ := os.Getwd()
