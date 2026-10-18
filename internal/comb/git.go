@@ -340,7 +340,8 @@ type claim struct {
 // malformed claim and is never decoded (D-107).
 const MaxLeaseBytes = 64 << 10
 
-// loadClaims decodes the lease.json of each ref with one cat-file --batch call.
+// loadClaims decodes the lease.json of each ref: one cat-file --batch-check
+// call for types and sizes, then one --batch call for the blobs under the cap.
 func (b *GitBackend) loadClaims(ctx context.Context, refs []refEntry) ([]claim, error) {
 	claims := make([]claim, len(refs))
 	var batch bytes.Buffer
@@ -365,43 +366,64 @@ func (b *GitBackend) loadClaims(ctx context.Context, refs []refEntry) ([]claim, 
 	if len(pending) == 0 {
 		return claims, nil
 	}
-	out, err := b.git(ctx, batch.Bytes(), nil, "cat-file", "--batch")
+	// Types and sizes first, so a blob over the cap is never read (D-107).
+	out, err := b.git(ctx, batch.Bytes(), nil, "cat-file", "--batch-check")
 	if err != nil {
 		return nil, err
 	}
-	rd := bufio.NewReader(bytes.NewReader(out))
-	for _, i := range pending {
+	lines := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+	if len(lines) != len(pending) {
+		return nil, errors.New("comb: short cat-file --batch-check output")
+	}
+	var blobs bytes.Buffer
+	var read []int
+	for k, i := range pending {
 		c := &claims[i]
-		header, err := rd.ReadString('\n')
-		if err != nil {
-			return nil, fmt.Errorf("comb: short cat-file --batch output: %w", err)
-		}
-		f := strings.Fields(header)
+		f := strings.Fields(lines[k])
 		if len(f) != 3 {
 			// "<name> missing" or "<name> ambiguous".
 			c.reason = "tree has no lease.json"
 			continue
 		}
 		size, err := strconv.Atoi(f[2])
-		if err != nil || size < 0 {
-			return nil, fmt.Errorf("comb: unexpected cat-file --batch header %q", strings.TrimSpace(header))
+		if err != nil || size < 0 || !oidPattern.MatchString(f[0]) {
+			return nil, fmt.Errorf("comb: unexpected cat-file --batch-check line %q", lines[k])
 		}
-		if size > MaxLeaseBytes {
-			if _, err := io.CopyN(io.Discard, rd, int64(size)+1); err != nil {
-				return nil, fmt.Errorf("comb: short cat-file --batch output: %w", err)
-			}
+		switch {
+		case f[1] != "blob":
+			c.reason = "lease.json is a " + f[1] + ", not a blob"
+		case size > MaxLeaseBytes:
 			c.reason = fmt.Sprintf("lease.json is %d bytes, over the %d byte cap", size, MaxLeaseBytes)
-			continue
+		default:
+			read = append(read, i)
+			blobs.WriteString(f[0] + "\n")
+		}
+	}
+	if len(read) == 0 {
+		return claims, nil
+	}
+	if out, err = b.git(ctx, blobs.Bytes(), nil, "cat-file", "--batch"); err != nil {
+		return nil, err
+	}
+	rd := bufio.NewReader(bytes.NewReader(out))
+	for _, i := range read {
+		header, err := rd.ReadString('\n')
+		if err != nil {
+			return nil, fmt.Errorf("comb: short cat-file --batch output: %w", err)
+		}
+		f := strings.Fields(header)
+		size := -1
+		if len(f) == 3 && f[1] == "blob" {
+			size, _ = strconv.Atoi(f[2])
+		}
+		if size < 0 || size > MaxLeaseBytes {
+			return nil, fmt.Errorf("comb: unexpected cat-file --batch header %q", strings.TrimSpace(header))
 		}
 		body := make([]byte, size+1)
 		if _, err := io.ReadFull(rd, body); err != nil {
 			return nil, fmt.Errorf("comb: short cat-file --batch output: %w", err)
 		}
-		if f[1] != "blob" {
-			c.reason = "lease.json is a " + f[1] + ", not a blob"
-			continue
-		}
-		c.lease, c.reason = decodeLease(body[:size], c.num)
+		claims[i].lease, claims[i].reason = decodeLease(body[:size], claims[i].num)
 	}
 	return claims, nil
 }

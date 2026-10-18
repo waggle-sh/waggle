@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -68,10 +70,29 @@ func TestLoadClaimsSizeCap(t *testing.T) {
 			`"expires_at":"2026-10-17T02:00:00Z"%s}`, n, strings.Repeat(" ", pad))
 	}
 	forgeClaim(t, dir, "refs/waggle/claims/ticket-1", lease(1, 0))
-	forgeClaim(t, dir, "refs/waggle/claims/ticket-2", lease(2, MaxLeaseBytes))
+	big := forgeClaim(t, dir, "refs/waggle/claims/ticket-2", lease(2, MaxLeaseBytes))
+	bigBlob := runGit(t, dir, "", nil, "rev-parse", big+":lease.json")
 	forgeClaim(t, dir, "refs/waggle/claims/ticket-3", lease(3, 0))
-	b := newBackend(t, dir, "", nil)
+	// A git wrapper logs what cat-file --batch is asked to print, to show the
+	// oversized blob is never read.
+	tmp := t.TempDir()
+	logFile, wrapper := filepath.Join(tmp, "batch.log"), filepath.Join(tmp, "git")
+	script := "#!/bin/sh\nfor a in \"$@\"; do [ \"$a\" = --batch ] && { tee -a \"$BATCH_LOG\" | git \"$@\"; exit $?; }; done\nexec git \"$@\"\n"
+	if err := os.WriteFile(wrapper, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	b, err := NewGitBackend(Options{RepoDir: dir, GitBinary: wrapper,
+		ExtraEnv: append(append([]string(nil), isolatedEnv...), "BATCH_LOG="+logFile)})
+	if err != nil {
+		t.Fatal(err)
+	}
 	ctx := context.Background()
+	defer func() {
+		logged, _ := os.ReadFile(logFile)
+		if len(logged) == 0 || strings.Contains(string(logged), bigBlob) || strings.Contains(string(logged), big) {
+			t.Errorf("--batch input %q must hold the small blobs only, never %s", logged, bigBlob)
+		}
+	}()
 	if _, err := b.ReadClaim(ctx, "T-002"); !errors.Is(err, ErrMalformedClaim) || !strings.Contains(err.Error(), "byte cap") {
 		t.Errorf("oversized claim: %v", err)
 	}
