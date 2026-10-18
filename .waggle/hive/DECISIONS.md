@@ -2766,3 +2766,197 @@
 **Keeper choice:** Move the pin from b4f222166f4a824e34414e205544fb17397ccfa1 to 30639558288f93abdb378bf278a8b860e84a915e; managed files re-rendered by waggle upgrade from the target build, except .github/workflows/waggle-gate.yml, which keeps main's copy (D-143). Decided by the Head Keeper on 2026-10-18; recorded by the queen.
 
 **Rationale:** 30639558288f93abdb378bf278a8b860e84a915e is the known-good build chosen by the Head Keeper (D-041).
+
+## D-146: T-012 section 7.1 template commit written by the builder
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-012
+- **Supersedes:** none
+
+**Question:** Who writes the T-012 section 7.1 Head Keeper template commit on t-012b before the builder's phase B commits?
+
+**Options considered:**
+1. Builder, as a separate first commit
+2. Head Keeper writes and pushes it first
+3. Queen writes it in a scratch worktree
+
+**Hive recommendation:** Builder, as a separate first commit
+
+**Keeper choice:** The builder writes the section 7.1 commit as the first, separate commit on t-012b, titled 'Head Keeper: T-012 model levels in roster and config templates', touching only roster.json.tmpl and config.yaml.tmpl; the guards check it against section 7.1. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Zero Keeper time and no wait; the commit stays isolated and reviewable, and the queen keeps out of product code.
+
+## D-147: Own honey switch stays after T-023 phase D
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** When does our hive switch from Claude Code subagents to waggle dispatch (own honey, D-044)?
+
+**Options considered:**
+1. After T-023 phase C, guards stay subagents until D
+2. After T-023 phase D, as briefed
+3. After T-023 phase E
+
+**Hive recommendation:** After T-023 phase C, guards stay subagents until D
+
+**Keeper choice:** The switch stays as T-023 section 10.4 briefs it: after phases A to D merge, builder and guard both through dispatch. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Rejected the early switch after phase C: it would run builders through dispatch without guard dispatch, the second-guard pick and the usage ledger.
+
+## D-148: internal/dispatch/ added to WAGGLE.md before T-023 phase B
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Add internal/dispatch/ to WAGGLE.md section 2 now, or when T-023 phase B dispatches?
+
+**Options considered:**
+1. Add it now in hive-records-6
+2. Add it with T-023 phase B
+
+**Hive recommendation:** Add it now in hive-records-6
+
+**Keeper choice:** Head Keeper commit adds internal/dispatch/ to the WAGGLE.md module list now, riding in hive-records-6. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Removes a T-023 phase B prerequisite from the critical path; one reversible line.
+
+## D-149: T-022 phase B runs in parallel with T-023 phase B
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-022, T-023
+- **Supersedes:** none
+
+**Question:** Run T-022 phase B alongside T-023 phase B once T-021 phase B merges?
+
+**Options considered:**
+1. Run them together
+2. Keep them serial
+
+**Hive recommendation:** Run them together
+
+**Keeper choice:** T-022 phase B and T-023 phase B dispatch together after T-021 phase B merges; their leases are disjoint. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Takes T-022 phase B off the T-023 phase D critical path for one extra concurrent builder and guard run.
+
+## D-150: T-012 phase B merged; upgrade gap fixed by a new phase C
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-012, T-021
+- **Supersedes:** none
+
+**Question:** Merge T-012 phase B (#39) with waggle upgrade still materializing shims without a policy, and how to close that gap?
+
+**Options considered:**
+1. Merge #39; follow-up phase C (t-012c) makes upgrade policy-aware
+2. Workaround: waggle init --force after upgrade
+3. Fold the fix into T-021 phase B
+
+**Hive recommendation:** Merge #39; follow-up phase C (t-012c) makes upgrade policy-aware
+
+**Keeper choice:** #39 merged as is at 6a2401b. New T-012 phase C resolves the policy at upgrade plan time from the hive config plus the rendered roster, refuses before any write when levels is missing, and passes the policy to Materialize; section 7.2 reordered so the levels edit is committed before upgrade --apply. Phase C serialized before T-021 phase B. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Both guards passed phase B and found the same gap (T-012b-sonnet finding 1, T-012b-fable F12); a fix in #39 was outside the lease and past the 300-line stop.
+
+## D-151: Symlinked CLAUDE.md stays refused by init and upgrade
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-012, T-016
+- **Supersedes:** none
+
+**Question:** Should waggle init and waggle upgrade refuse a symlinked CLAUDE.md, such as CLAUDE.md pointing to AGENTS.md?
+
+**Options considered:**
+1. Refuse for now; allow in-repo targets in a later ticket
+2. Allow symlinks resolving to a regular file inside the repo now
+
+**Hive recommendation:** Refuse for now; allow in-repo targets in a later ticket
+
+**Keeper choice:** Both commands keep refusing symlinked destinations including CLAUDE.md (D-107 default). Open follow-up, recorded in T-012 section 9: allow a symlink that resolves to a regular file inside the repo, for both commands. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Safe default with no new review surface now; the common CLAUDE.md to AGENTS.md layout is blocked until the follow-up.
+
+## D-152: T-012 phase C merged; queen runs the 7.2 hive follow-up
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-012
+- **Supersedes:** none
+
+**Question:** Merge T-012 phase C (#40), and who runs the T-012 section 7.2 hive follow-up?
+
+**Options considered:**
+1. Queen runs it in hive-records-6
+2. Keeper runs it
+3. Defer until T-021 phase B
+
+**Hive recommendation:** Queen runs it in hive-records-6
+
+**Keeper choice:** #40 merged as is at 6a4886e. The queen commits the levels block, builds waggle from 6a4886e outside the tree, runs upgrade then --apply on the hive-records-6 branch, restores main's waggle-gate.yml (D-143), and opens one hive PR for Head Keeper merge. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Both guards passed phase C and rehearsed 7.2 against our real hive files; one hive PR carries the pin move and the batch records.
+
+## D-153: Upgrade hive pin to 6a4886eb16e0de1d005a4ba354e72ecd1dd63756
+
+- **Date:** 2026-10-18
+- **Kind:** technical
+- **Tickets:** T-012, T-016
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Stay on 30639558288f93abdb378bf278a8b860e84a915e
+2. Move to 6a4886eb16e0de1d005a4ba354e72ecd1dd63756
+
+**Hive recommendation:** Move to 6a4886eb16e0de1d005a4ba354e72ecd1dd63756
+
+**Keeper choice:** Move the pin from 30639558288f93abdb378bf278a8b860e84a915e to 6a4886eb16e0de1d005a4ba354e72ecd1dd63756; roster.json re-rendered (min_level per role, mode removed) and shims regenerated with model lines (queen, scout, guard opus; builder sonnet; forager haiku) by waggle upgrade from the target build, except .github/workflows/waggle-gate.yml, which keeps main's copy (D-143). Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** 6a4886eb16e0de1d005a4ba354e72ecd1dd63756 is the known-good build chosen by the Head Keeper (D-041) and the first that writes model lines through upgrade (T-012 phase C).
+
+## D-154: T-021 section 7.3 template commit written by the builder
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-021
+- **Supersedes:** none
+
+**Question:** Who writes the T-021 phase B Head Keeper commit editing config.yaml.tmpl and roles/queen.md?
+
+**Options considered:**
+1. Builder, as a separate first commit
+2. Head Keeper writes and pushes it first
+
+**Hive recommendation:** Builder, as a separate first commit
+
+**Keeper choice:** The builder writes the section 7.3 commit as the first, separate commit on t-021b, titled 'Head Keeper: T-021 context profile template and queen handoff', touching only those two templates; the guards check it against section 7.3 and the Head Keeper approves the PR at merge. Same pattern as D-146. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** No wait on the Keeper; the commit stays isolated and reviewable, and the queen keeps out of product code.
+
+## D-155: T-021 phase B dispatched before hive-records-6 merges
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-021
+- **Supersedes:** none
+
+**Question:** Dispatch T-021 phase B now, before the hive-records-6 PR (#41) merges and the session restarts on the new shims?
+
+**Options considered:**
+1. Dispatch now
+2. After #41 and a session restart
+
+**Hive recommendation:** Dispatch now
+
+**Keeper choice:** T-021 phase B dispatches now; product and hive changes do not overlap. The builder runs on the session model (opus) because this session's shims predate the model lines. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Keeps the own honey critical path moving; the cost is one opus builder run instead of sonnet.

@@ -1,11 +1,11 @@
 {
   "version": 1,
   "profile": "cli",
-  "mode": "swarm",
   "entry": "queen",
   "roles": [
     {
       "id": "queen",
+      "min_level": "frontier",
       "runs": "session",
       "workspace": "main",
       "purpose": "Single conversational interface for the Keeper; surfaces AskUserQuestion decision cards.",
@@ -14,6 +14,7 @@
     },
     {
       "id": "scout",
+      "min_level": "frontier",
       "runs": "worker",
       "workspace": "main",
       "purpose": "Breaks down goals into <400-line task briefs with directory leases and Light/Full gate tags.",
@@ -22,6 +23,7 @@
     },
     {
       "id": "forager",
+      "min_level": "fast",
       "runs": "worker",
       "workspace": "cell-ro",
       "allow_unattended": true,
@@ -31,6 +33,7 @@
     },
     {
       "id": "builder",
+      "min_level": "standard",
       "runs": "worker",
       "workspace": "cell-rw-lease",
       "allow_unattended": false,
@@ -40,6 +43,7 @@
     },
     {
       "id": "guard",
+      "min_level": "standard",
       "runs": "worker",
       "workspace": "cell-ro",
       "require_cross_model": true,
