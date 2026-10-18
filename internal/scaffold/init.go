@@ -90,6 +90,8 @@ func templateFiles(tfs fs.FS) ([]templateFile, error) {
 var gitignoreBody = strings.Join([]string{
 	layout.Local,
 	layout.Socket,
+	layout.Handoffs,
+	layout.Usage,
 	layout.Worktrees + "/",
 	layout.ShimPrefix + "*.md",
 }, "\n") + "\n"
