@@ -1,0 +1,190 @@
+package dispatch
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+// Redirected .git file in a registered worktree: must now be exit 3.
+func TestRecheck2RedirectedGitFile(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	foreign := t.TempDir()
+	sh(t, foreign, "init", "-q", "-b", "t-023")
+	canary := filepath.Join(t.TempDir(), "ran")
+	write(t, foreign, ".gitattributes", "* filter=x\n")
+	sh(t, foreign, "--work-tree="+w.Path, "add", "-A")
+	sh(t, foreign, "--work-tree="+w.Path, "commit", "-q", "-m", "mirror")
+	sh(t, foreign, "config", "filter.x.clean", "sh -c 'touch "+canary+"; cat'")
+	_ = os.WriteFile(filepath.Join(w.Path, ".git"), []byte("gitdir: "+filepath.Join(foreign, ".git")+"\n"), 0o644)
+	_ = os.Remove(canary)
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("redirected .git file: reused=%v code=%d err=%v", w2 != nil && w2.Reused, ExitCode(err), err)
+	if ExitCode(err) != ExitEnv || !strings.Contains(err.Error(), "not its registration") {
+		t.Error("redirected .git file not refused with the registration message")
+	}
+	if _, serr := os.Stat(canary); serr == nil {
+		t.Error("foreign clean filter ran on the host")
+	}
+	if _, serr := os.Stat(w.LockPath); serr == nil {
+		t.Error("lock left behind")
+	}
+	if w2 != nil {
+		_ = w2.Unlock()
+	}
+}
+
+// Symlink at the lock path to a file holding a stale body: 7.1 question.
+func TestRecheck2SymlinkLock(t *testing.T) {
+	old := pidAlive
+	t.Cleanup(func() { pidAlive = old })
+	self := os.Getpid()
+	pidAlive = func(pid int) bool { return pid == self }
+	host, _ := os.Hostname()
+	stale := `{"pid":4242,"host":"` + host + `","started":"2026-10-18T10:00:00Z"}`
+	d := t.TempDir()
+	target := filepath.Join(d, "target")
+	_ = os.WriteFile(target, []byte(stale), 0o600)
+	lock := filepath.Join(d, "T-023-builder.lock")
+	if err := os.Symlink(target, lock); err != nil {
+		t.Fatal(err)
+	}
+	warns, err := takeLock(lock, t0)
+	t.Logf("symlink lock to stale body: warns=%v code=%d err=%v", warns, ExitCode(err), err)
+	if ExitCode(err) != ExitEnv || !strings.Contains(err.Error(), "unreadable") {
+		t.Error("symlink lock not refused as unreadable")
+	}
+	if fi, lerr := os.Lstat(lock); lerr != nil || fi.Mode()&os.ModeSymlink == 0 {
+		t.Error("symlink was moved or replaced")
+	}
+	if b, _ := os.ReadFile(target); string(b) != stale {
+		t.Error("link target was modified")
+	}
+	// Oversized lock body (legit body is about 90 bytes).
+	big := filepath.Join(d, "big.lock")
+	_ = os.WriteFile(big, []byte(strings.Repeat("{", 5000)), 0o600)
+	_, err = takeLock(big, t0)
+	t.Logf("5000 byte lock: code=%d err=%v", ExitCode(err), err)
+	if ExitCode(err) != ExitEnv || !strings.Contains(err.Error(), "unreadable") {
+		t.Error("oversized lock not refused")
+	}
+	// Live and stale messages unchanged.
+	live := filepath.Join(d, "live.lock")
+	if _, err := takeLock(live, t0); err != nil {
+		t.Fatal(err)
+	}
+	_, err = takeLock(live, t0)
+	t.Logf("live lock: code=%d err=%v", ExitCode(err), err)
+	if ExitCode(err) != ExitEnv || !strings.Contains(err.Error(), "run in progress") {
+		t.Error("live lock message changed")
+	}
+	st := filepath.Join(d, "stale.lock")
+	_ = os.WriteFile(st, []byte(stale), 0o600)
+	warns, err = takeLock(st, t0)
+	t.Logf("stale lock alone: warns=%v err=%v", warns, err)
+	if err != nil || len(warns) != 1 || !strings.Contains(warns[0], "took over stale run lock of dead pid 4242") {
+		t.Error("stale takeover changed")
+	}
+	left, _ := filepath.Glob(st + ".*")
+	if len(left) != 0 {
+		t.Errorf("left behind: %v", left)
+	}
+}
+
+// Keeper with worktree.useRelativePaths=true (git 2.48+): registration gitdir
+// files are relative to the admin dir. Does an honest reuse still pass?
+func TestRecheck2RelativeRegistration(t *testing.T) {
+	t.Setenv("GIT_CONFIG_COUNT", "1")
+	t.Setenv("GIT_CONFIG_KEY_0", "worktree.useRelativePaths")
+	t.Setenv("GIT_CONFIG_VALUE_0", "true")
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	gf, _ := os.ReadFile(filepath.Join(w.Path, ".git"))
+	t.Logf("worktree .git file: %q", strings.TrimSpace(string(gf)))
+	common := strings.TrimSpace(sh(t, dir, "rev-parse", "--path-format=absolute", "--git-common-dir"))
+	ents, _ := os.ReadDir(filepath.Join(common, "worktrees"))
+	for _, e := range ents {
+		reg, _ := os.ReadFile(filepath.Join(common, "worktrees", e.Name(), "gitdir"))
+		t.Logf("registration %s/gitdir: %q", e.Name(), strings.TrimSpace(string(reg)))
+	}
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("honest reuse under useRelativePaths: reused=%v code=%d err=%v", w2 != nil && w2.Reused, ExitCode(err), err)
+	if err != nil {
+		t.Errorf("honest worktree refused under worktree.useRelativePaths")
+	}
+	if w2 != nil {
+		_ = w2.Unlock()
+	}
+}
+
+// Characterization: filter in <admin>/config.worktree (a write outside the
+// worktree, into the main .git) still runs under the explicit --git-dir.
+func TestRecheck2WorktreeConfigFilter(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	canary := filepath.Join(t.TempDir(), "ran")
+	write(t, w.Path, ".gitattributes", "* filter=x\n")
+	sh(t, w.Path, "add", "-A")
+	sh(t, w.Path, "commit", "-q", "-m", "T-023: attrs")
+	sh(t, dir, "config", "extensions.worktreeConfig", "true")
+	sh(t, w.Path, "config", "--worktree", "filter.x.clean", "sh -c 'touch "+canary+"; cat'")
+	future := time.Now().Add(time.Hour)
+	_ = os.Chtimes(filepath.Join(w.Path, ".gitignore"), future, future)
+	_ = os.Remove(canary)
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	_, ran := os.Stat(canary)
+	t.Logf("config.worktree filter: reused=%v err=%v filterRan=%v", w2 != nil && w2.Reused, err, ran == nil)
+	if w2 != nil {
+		_ = w2.Unlock()
+	}
+}
+
+// A symlinked .git file inside a registered worktree, with honest content.
+func TestRecheck2SymlinkedGitFile(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	gitFile := filepath.Join(w.Path, ".git")
+	content, _ := os.ReadFile(gitFile)
+	elsewhere := filepath.Join(t.TempDir(), "gitfile")
+	_ = os.WriteFile(elsewhere, content, 0o644)
+	_ = os.Remove(gitFile)
+	if err := os.Symlink(elsewhere, gitFile); err != nil {
+		t.Fatal(err)
+	}
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("symlinked .git file with honest content: reused=%v code=%d err=%v", w2 != nil && w2.Reused, ExitCode(err), err)
+	if ExitCode(err) != ExitEnv {
+		t.Error("symlinked .git file accepted")
+	}
+	if w2 != nil {
+		_ = w2.Unlock()
+	}
+}

@@ -1,0 +1,59 @@
+    zz_fable_recheck2_probes_test.go:32: redirected .git file: reused=false code=3 err=/var/folders/xx/redacted/T/TestRecheck2RedirectedGitFile285317639/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/xx/redacted/T/TestRecheck2RedirectedGitFile285317639/001/.waggle/worktrees/T-023-builder/.git points at /var/folders/xx/redacted/T/TestRecheck2RedirectedGitFile285317639/002/.git, not its registration)
+--- PASS: TestRecheck2RedirectedGitFile (0.27s)
+    zz_fable_recheck2_probes_test.go:63: symlink lock to stale body: warns=[] code=3 err=run lock /var/folders/xx/redacted/T/TestRecheck2SymlinkLock1310794510/001/T-023-builder.lock is unreadable; remove it if no run is in progress
+    zz_fable_recheck2_probes_test.go:77: 5000 byte lock: code=3 err=run lock /var/folders/xx/redacted/T/TestRecheck2SymlinkLock1310794510/001/big.lock is unreadable; remove it if no run is in progress
+    zz_fable_recheck2_probes_test.go:87: live lock: code=3 err=run in progress: /var/folders/xx/redacted/T/TestRecheck2SymlinkLock1310794510/001/live.lock held by pid 3115 on redacted.local since 2026-10-18T12:00:00Z
+    zz_fable_recheck2_probes_test.go:94: stale lock alone: warns=[took over stale run lock of dead pid 4242] err=<nil>
+--- PASS: TestRecheck2SymlinkLock (0.00s)
+    zz_fable_recheck2_probes_test.go:119: worktree .git file: "gitdir: ../../../.git/worktrees/T-023-builder"
+    zz_fable_recheck2_probes_test.go:124: registration T-023-builder/gitdir: "../../../.waggle/worktrees/T-023-builder/.git"
+    zz_fable_recheck2_probes_test.go:127: honest reuse under useRelativePaths: reused=false code=3 err=/var/folders/xx/redacted/T/TestRecheck2RelativeRegistration1383102558/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (no registration for /private/var/folders/xx/redacted/T/TestRecheck2RelativeRegistration1383102558/001/.waggle/worktrees/T-023-builder/.git)
+    zz_fable_recheck2_probes_test.go:129: honest worktree refused under worktree.useRelativePaths
+--- FAIL: TestRecheck2RelativeRegistration (0.16s)
+    zz_fable_recheck2_probes_test.go:151: git [config --worktree filter.x.clean sh -c 'touch /var/folders/xx/redacted/T/TestRecheck2WorktreeConfigFilter373504053/002/ran; cat']: exit status 128: fatal: --worktree cannot be used with multiple working trees unless the config
+        extension worktreeConfig is enabled. Please read "CONFIGURATION FILE"
+        section in "git help worktree" for details
+--- FAIL: TestRecheck2WorktreeConfigFilter (0.16s)
+    zz_fable_recheck2_probes_test.go:182: symlinked .git file with honest content: reused=false code=3 err=/var/folders/xx/redacted/T/TestRecheck2SymlinkedGitFile3813567147/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (no registration for /private/var/folders/xx/redacted/T/TestRecheck2SymlinkedGitFile3813567147/001/.waggle/worktrees/T-023-builder/.git)
+--- PASS: TestRecheck2SymlinkedGitFile (0.16s)
+    zz_fable_recheck_probes_test.go:31: remote fresh: verb=claim notes=[] err=<nil>
+    zz_fable_recheck_probes_test.go:41: remote takeover from stale mirror: verb=takeover notes=[taking over T-023 from alice (expired 2026-10-18T13:00:00Z)] err=<nil>
+    zz_fable_recheck_probes_test.go:46: alice vs active bob (stale mirror): verb= notes=[] err=T-023 held by bob until 2026-10-18T16:00:00Z: comb: ticket already claimed code=4
+--- PASS: TestRecheckRemoteClaim (0.84s)
+    zz_fable_recheck_probes_test.go:78: 413 candidates, 0 dangerous mismatches
+--- PASS: TestRecheckBranchFuzz (2.14s)
+    zz_fable_recheck_probes_test.go:87: Validate read ".": code=2 err=read path "." must be a clean repo-relative path
+    zz_fable_recheck_probes_test.go:87: Validate read ":(top)x": code=2 err=read path ":(top)x" must be a clean repo-relative path
+    zz_fable_recheck_probes_test.go:87: Validate read ":/x": code=2 err=read path ":/x" must be a clean repo-relative path
+    zz_fable_recheck_probes_test.go:87: Validate read "internal/x/*.go": code=0 err=<nil>
+    zz_fable_recheck_probes_test.go:96: readpath "internal/x/*.go" -> ""
+    zz_fable_recheck_probes_test.go:96: readpath "internal/x/[a]a.go" -> ""
+    zz_fable_recheck_probes_test.go:98: glob read err=internal/x/*.go is not on base f79d755f124c708eb9e3971647b4313bf575d5e8; land it in a hive PR first
+    zz_fable_recheck_probes_test.go:101: icase lookup of t-023.md: found=false data="" err=git ls-tree: exit status 128: fatal: .waggle/hive/tasks/t-023.md: pathspec magic not supported by this command: 'icase'
+--- PASS: TestRecheckPathspec (0.18s)
+    zz_fable_recheck_probes_test.go:127: symlink to foreign repo: w=<nil> code=3 err=/var/folders/xx/redacted/T/TestRecheckSymlinkForeign4145905326/001/.waggle/worktrees/T-023-builder exists but is not a real directory; remove it
+--- PASS: TestRecheckSymlinkForeign (0.17s)
+    zz_fable_recheck_probes_test.go:153: copied forager worktree at builder path: w=<nil> code=3 err=/var/folders/xx/redacted/T/TestRecheckCopiedWorktree837661396/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it
+--- PASS: TestRecheckCopiedWorktree (0.13s)
+    zz_fable_recheck_probes_test.go:182: redirected .git file: reused=false code=3 err=/var/folders/xx/redacted/T/TestRecheckRedirectedGitFile1322654838/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/xx/redacted/T/TestRecheckRedirectedGitFile1322654838/001/.waggle/worktrees/T-023-builder/.git points at /var/folders/xx/redacted/T/TestRecheckRedirectedGitFile1322654838/002/.git, not its registration)
+    zz_fable_recheck_probes_test.go:186: foreign fsmonitor did not run (hooks and fsmonitor off)
+--- PASS: TestRecheckRedirectedGitFile (0.24s)
+    zz_fable_recheck_probes_test.go:206: stale lock + leaked guard: warns=[] code=3 err=run lock /var/folders/xx/redacted/T/TestRecheckLeakedGuard3386058867/001/T-023-builder.lock is contended; run in progress (if none is, remove /var/folders/xx/redacted/T/TestRecheckLeakedGuard3386058867/001/T-023-builder.lock.takeover)
+    zz_fable_recheck_probes_test.go:211: no lock + leaked guard: warns=[] err=<nil>
+    zz_fable_recheck_probes_test.go:222: live lock: code=3 err=run in progress: /var/folders/xx/redacted/T/TestRecheckLeakedGuard3386058867/003/T-023-builder.lock held by pid 3115 on redacted.local since 2026-10-18T12:00:00Z
+    zz_fable_recheck_probes_test.go:231: stale lock alone: warns=[took over stale run lock of dead pid 4242] err=<nil>
+    zz_fable_recheck_probes_test.go:233: files left beside lock4: []
+--- PASS: TestRecheckLeakedGuard (0.00s)
+    zz_fable_recheck_probes_test.go:245: base "t-023b" == branch: code=2 err=base "t-023b" is the branch being created
+    zz_fable_recheck_probes_test.go:245: base "refs/heads/t-023b" == branch: code=2 err=base "refs/heads/t-023b" is the branch being created
+    zz_fable_recheck_probes_test.go:245: base "heads/t-023b" == branch: code=0 err=<nil>
+    zz_fable_recheck_probes_test.go:245: base "origin/t-023b" == branch: code=0 err=<nil>
+    zz_fable_recheck_probes_test.go:245: base "refs/remotes/origin/t-023b" == branch: code=0 err=<nil>
+--- PASS: TestRecheckBaseIsBranch (0.00s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	4.735s
+FAIL
+    zz_fable_recheck2_probes_test.go:158: config.worktree filter: reused=true err=<nil> filterRan=true
+--- PASS: TestRecheck2WorktreeConfigFilter (0.28s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	1.559s

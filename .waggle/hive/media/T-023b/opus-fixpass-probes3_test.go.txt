@@ -1,0 +1,48 @@
+package dispatch
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+// R1b: a write confined to the worktree (what a Cell allows) rewrites its
+// own .git file to a gitdir it planted inside the worktree.
+func TestProbe3InWorktreeGitFile(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Unlock()
+	scratch := filepath.Join(t.TempDir(), "s")
+	sh(t, filepath.Dir(scratch), "init", "-q", "-b", "t-023", filepath.Base(scratch))
+	write(t, scratch, ".gitattributes", "* filter=x\n")
+	write(t, scratch, "f", "x")
+	sh(t, scratch, "add", "-A")
+	sh(t, scratch, "commit", "-q", "-m", "foreign")
+	flt := filepath.Join(t.TempDir(), "flt")
+	sh(t, scratch, "config", "filter.x.clean", "sh -c 'touch "+flt+"; cat'")
+	os.WriteFile(filepath.Join(scratch, ".git/info/exclude"), []byte(".evil\n"), 0o644)
+	os.RemoveAll(filepath.Join(w.Path, ".waggle"))
+	os.RemoveAll(filepath.Join(w.Path, "internal"))
+	os.Remove(filepath.Join(w.Path, ".gitignore"))
+	os.Remove(filepath.Join(w.Path, ".git"))
+	if err := os.Rename(filepath.Join(scratch, ".git"), filepath.Join(w.Path, ".evil")); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(filepath.Join(w.Path, ".git"), []byte("gitdir: .evil\n"), 0o644)
+	for _, f := range []string{".gitattributes", "f"} {
+		b, _ := os.ReadFile(filepath.Join(scratch, f))
+		os.WriteFile(filepath.Join(w.Path, f), b, 0o644)
+	}
+	future := time.Now().Add(time.Hour)
+	os.Chtimes(filepath.Join(w.Path, "f"), future, future)
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	_, e := os.Stat(flt)
+	t.Logf("in-worktree .git rewrite: err=%v reused=%v filterRan=%v", err, w2 != nil && w2.Reused, e == nil)
+}
