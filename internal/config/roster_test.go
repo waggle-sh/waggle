@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -126,5 +127,63 @@ func TestLoadRosterIgnoresLeftoverMode(t *testing.T) {
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("mode %s: minimums = %v; want %v", mode, got, want)
 		}
+	}
+}
+
+// Test 20: the from-bytes forms match the path forms and keep the size cap.
+func TestParseFormsMatchPathForms(t *testing.T) {
+	base := renderRoster(t)
+	for _, src := range []string{
+		base,
+		strings.Replace(base, `"version": 1,`, `"version": 1, "mode": "swarm",`, 1),
+		strings.Replace(base, `"min_level": "fast"`, `"min_level": "opus"`, 1),
+		`{"version": 1, "roles": []}`,
+	} {
+		want, wantErr := LoadRoster(writeRoster(t, src))
+		got, err := ParseRoster([]byte(src))
+		if !reflect.DeepEqual(got, want) || (err == nil) != (wantErr == nil) || (err != nil && err.Error() != wantErr.Error()) {
+			t.Errorf("ParseRoster = %v, %v; LoadRoster = %v, %v", got, err, want, wantErr)
+		}
+	}
+	if _, err := ParseRoster([]byte(`{"version": 1, "roles": []}`)); err == nil || strings.Contains(err.Error(), "<nil>") {
+		t.Errorf("empty roles: err = %v; want a reason, not <nil>", err)
+	}
+
+	cfg := renderTemplate(t, "direct")
+	dir := t.TempDir()
+	for rel, content := range map[string]string{layout.Config: string(cfg), layout.Roster: base} {
+		p := filepath.Join(dir, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want, err := LoadPolicy(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := ParsePolicy(cfg, []byte(base))
+	if err != nil || !reflect.DeepEqual(got, want) {
+		t.Errorf("ParsePolicy = %+v, %v; want %+v", got, err, want)
+	}
+
+	padded := strings.Replace(base, `"version": 1,`, `"version": 1, "pad": "`+strings.Repeat("x", MaxFileSize)+`",`, 1)
+	if _, err := ParseRoster([]byte(padded)); !errors.Is(err, ErrInvalidRoster) || !strings.Contains(err.Error(), "larger than") {
+		t.Errorf("oversize roster: err = %v; want ErrInvalidRoster size error", err)
+	}
+	if _, err := ParsePolicy(cfg, []byte(padded)); !errors.Is(err, ErrInvalidRoster) {
+		t.Errorf("ParsePolicy oversize roster: err = %v; want ErrInvalidRoster", err)
+	}
+	bigCfg := append(append([]byte{}, cfg...), "# "+strings.Repeat("x", MaxFileSize)+"\n"...)
+	if _, err := ParsePolicy(bigCfg, []byte(base)); !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "larger than") {
+		t.Errorf("ParsePolicy oversize config: err = %v; want ErrInvalidConfig size error", err)
+	}
+
+	noLevels := regexp.MustCompile(`(?m)^      levels:\n(        .*\n)+`).ReplaceAll(cfg, nil)
+	_, err = ParsePolicy(noLevels, []byte(base))
+	if !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "runtimes.adapters.claude-code.levels") || !strings.Contains(err.Error(), "T-012 section 3.2") {
+		t.Errorf("no levels: err = %v; want ErrInvalidConfig naming the key path and the fix", err)
 	}
 }
