@@ -399,14 +399,15 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 	}
 
 	// 2. Managed files this build ships, rendered with the hive's seeded values.
-	replacer := strings.NewReplacer(
+	// Values come from the hive's own config; placeholders escapes them for JSON.
+	values := []string{
 		"{{PROFILE}}", scalar(cfgLines, "hive", "profile"),
 		"{{DELIVERY}}", scalar(cfgLines, "hive", "delivery"),
 		"{{FORGE}}", scalar(cfgLines, "forge", "provider"),
 		"{{COMB_MODE}}", scalar(cfgLines, "forge", "comb_mode"),
 		"{{RUNTIME}}", opts.Runtime,
 		"{{PIN}}", newPin,
-	)
+	}
 	ships := map[string]bool{}
 	var configTmpl string
 	for _, f := range files {
@@ -421,7 +422,7 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 			}
 			continue
 		}
-		want := replacer.Replace(string(raw))
+		want := placeholders(f.dst, values).Replace(string(raw))
 		have, found, err := readOptional(plan.abs(f.dst))
 		if err != nil {
 			return nil, fmt.Errorf("reading %s: %w", f.dst, err)
