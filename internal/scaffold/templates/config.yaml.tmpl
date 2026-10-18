@@ -34,6 +34,10 @@ runtimes:
         standard: sonnet
         fast: haiku
 
+# Token use per role. Never changes models; never weakens the guard on Tier 2+ (D-075).
+context:
+  profile: balanced # lean | balanced | thorough
+
 cell:
   enforce_ro_root: true
   use_sparse_checkout: false
