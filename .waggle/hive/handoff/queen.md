@@ -8,7 +8,7 @@ You are the queen (`.waggle/control/roles/queen.md`): you talk to the Keeper (Pa
 
 Two layers. Product is Waggle itself (cmd/, internal/ including internal/scaffold/templates/, go.mod, README, CONTRIBUTING, docs/). Hive is our own installation used to build it: `.waggle/control/` (config, roster, roles, WAGGLE.md, devcontainer), `.waggle/hive/` (tasks, reviews, media, handoff, DECISIONS.md once T-006 phase 2 runs) and the gate workflow. Nothing in the hive ships. Keep the two apart in every brief and every answer.
 
-## State of the repo (main at `6b84500` when this was written)
+## Background (written at main `6b84500`, sixth session and earlier; the live state section below wins where they differ)
 
 - GitHub `waggle-sh/waggle`, private, Team plan (D-084). Ruleset `main` (id 25310890), edited at the end of this session for T-015: `product-ci` and `verify-leases-and-tiers` required, branches up to date, force-push blocked, deletion restricted, pull request rule with code owner review required (count 1, stale reviews dismissed), admin bypass always. Because GitHub never counts the PR author's own approval, every merge now needs `gh pr merge <n> --merge --admin` (logged bypass). Auto-merge is disabled at the repo level, so merge with a polling loop. Record this as D-098 (policy, T-015) in the backfill in the next batch; not yet recorded. Auth: `env -u GITHUB_TOKEN -u GH_TOKEN gh ...` from the main checkout; inside a worker worktree push with `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push ...`.
 - Hive layout is post-T-011: pinned to `b4f222166f4a824e34414e205544fb17397ccfa1` (full hash, D-087, D-096). Generated `CLAUDE.md` is untracked in every checkout until D-097 is implemented by T-016 (`?? CLAUDE.md` is expected). `docs/handoff/` is gone; this file replaced it.
@@ -24,7 +24,7 @@ D-001 to D-097 are in `.waggle/hive/tasks/T-006-backfill.md`. Today's: D-086 (wo
 
 ## Next work, in order (all briefs in `.waggle/hive/tasks/`, each lists its lease)
 
-1. Collect the first wave (T-007, T-016, T-021 A): draft PR, guard on sonnet, merge with `--admin` on green (Tier 2 on guard pass; Tier 3 on a card).
+1. Collect the first wave (T-007, T-016, T-021 A): draft PR, guard, merge with `--admin` on green (Tier 2 on guard pass; Tier 3 on a card).
 2. Record D-098 and update T-015's status, then hive records batch 2.
 3. Already dispatched: T-007, T-016, T-021 phase A (see above). Next, disjoint leases: T-012 phase B (`internal/runtime/`, `internal/config/` new files, `internal/scaffold/init.go` Materialize call only; serialize with T-016 on `internal/scaffold/`, so run T-016 first or T-012 B first, not both), T-008 (`internal/comb/` backend.go and `internal/scaffold/` gate template; needs T-005 merged; serialize with T-014 A and with T-016 on scaffold), T-006 phase 2 backfill (hive PR, Head Keeper approves; the Keeper runs or a worker runs `waggle decide` 87 times from `internal/decisions/testdata/backfill/D-*.json`). Suggested first wave: T-007, T-016, T-021 A. Second wave: T-012 B, T-008, T-014 A, T-018 B (expect about 500 lines).
 4. T-020 phase C after T-016 merges (hive rename through `waggle upgrade`, brief sweep, D-097 CLAUDE.md commit as step 0).
@@ -32,7 +32,7 @@ D-001 to D-097 are in `.waggle/hive/tasks/T-006-backfill.md`. Today's: D-086 (wo
 
 ## Habits that worked
 
-- Brief first (scout), build in an isolated worktree (builder; scout for docs), review on sonnet (guard) with explicit hostile probes in the prompt, Intent Packet in the merge commit, remove the worktree after merge (`git worktree remove --force`, then `git branch -D`).
+- Brief first (scout), build in an isolated worktree (builder; scout for docs), review by the guard (opus by default since pin `6a4886e`; the second Tier 3 guard on fable) with explicit hostile probes in the prompt, Intent Packet in the merge commit, remove the worktree after merge (`git worktree remove --force`, then `git branch -D`).
 - Open the draft PR yourself right after the build report so CI runs during review; mark ready and merge on green with a backgrounded poll loop. When main moved, `gh pr update-branch <n>` first (ruleset requires up to date), then wait for CI again.
 - Tier 2: merge on guard pass without a card when the Keeper has said to keep building. Tier 3 and anything touching policy, budgets, schema limits or spend: card, recommended option first, cost and reversibility stated. Batch rulings on one card.
 - All open briefs use the new role names since T-020 phase C (D-142). Merged briefs, reviews and decisions keep the old names on purpose; tell builders that if they quote them.
@@ -50,18 +50,18 @@ Open PR to merge next: hive-records-6, branch `hive-records-6` (worktree `hr6` i
 
 After that PR merges: pull main, then copy the regenerated shims from the `hr6` worktree's `.claude/agents/` into the main checkout's `.claude/agents/` (gitignored, so a pull does not bring them), or run `<pin build>/bin/waggle upgrade --apply` in a clean main checkout and revert the gate workflow. Restart the session so agent types load with their `model:` lines. **Model change:** shims now say builder `sonnet`, guard `opus`, scout and queen `opus`, forager `haiku` (T-012 section 1 minimums). So the first guard is opus by default; do not pass `model: sonnet` to a guard any more (that would equal the builder). The D-100 second guard uses `fable` (differs from both).
 
-DECISIONS.md (on `hive-records-6`): 153 entries. Next ID D-154. New decisions go through `waggle decide --file <json>`; kinds: policy, scope, technical.
+DECISIONS.md (on `hive-records-6`): 155 entries. Next ID D-156. New decisions go through `waggle decide --file <json>`; kinds: policy, scope, technical.
 
 Keeper rulings NOT yet recorded: none.
 
 Keeper to do: rename `model_overrides` keys in his own gitignored `local.yaml` (D-138); T-014 AC7, two scratch PRs (out-of-lease edit, `GO.MOD` edit) proving the gate fails both, screenshots in `media/T-014/` (fable F9).
 
-Running: nothing besides the hive-records-6 PR awaiting the Keeper card.
+Running: T-021 phase B builder (dispatched before #41 merged, D-155), isolated worktree, branch `t-021b` from `6a4886e`; it writes the section 7.3 Head Keeper template commit first (D-154). If this session is gone, check `git branch -r` for `origin/t-021b`: present means open a draft PR and dispatch two guards (Tier 3 template commit: opus guard plus fable); missing means re-dispatch. PR #41 (hive-records-6) guard PASS (`reviews/hive-records-6.md`), awaiting the Keeper merge card.
 
 Open notes: until T-008 lands, every `waggle upgrade --apply` rewrites `.github/workflows/waggle-gate.yml` from the stale template, dropping the gate verify step; revert it right after (D-143). `upgrade` refuses a dirty tree, so run it in a clean worktree. Redact before the repo goes public: `media/T-023a/fable-run2-tools.jsonl` (Keeper git email, `~/Repos/znap`), `media/T-014b/p1.sh` to `p6.sh` (home path and username); home paths also appear in several reviews (T-020c, others) and `media/T-020c/pr-body.md`; the Keeper's protonmail address is in `reviews/hive-records-4.md`, the T-020c reviews and 96 commits. Symlinked `CLAUDE.md` stays refused by init and upgrade; allowing in-repo targets is an open follow-up (D-151, T-012 section 9). T-025 A sign-off email: Keeper to decide before phase D (DCO enforcement). T-025 phase C must merge before any release. Fable F5 (CheckChanges canonical-path precondition) goes into the T-023 brief that calls it; F6 and F8 are small follow-ups for the next `cmd/waggle/` lease. Open RFC note from T-020 section 11 (v0.2 Traditional Equivalent column) is still undecided.
 
 Next work, in order (own honey stays after T-023 phase D, D-147):
-1. T-021 phase B: builder plus two guards (Tier 3 template commit: ask the Keeper who writes its Head Keeper commit, D-146 was T-012 only). Then T-021 hive follow-up if any.
+1. T-021 phase B: running (see Running). Then the T-021 hive follow-up if its brief has one.
 2. T-023 phase B and T-022 phase B together (D-149). `internal/dispatch/` is in WAGGLE.md once hive-records-6 merges (D-148).
 3. T-023 C, then D (needs T-022 B), then phase F own honey switch (section 10.4: trial, then cutover card).
 4. Off the critical path: T-008 (catches the scaffold gate template up, ends the D-143 revert), T-018 C, T-025 B then C. T-024 phases A to E after all of T-023 (D-123).
