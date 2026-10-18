@@ -6,7 +6,7 @@
 version: 1
 
 waggle:
-  pin: 30639558288f93abdb378bf278a8b860e84a915e # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
+  pin: 6a4886eb16e0de1d005a4ba354e72ecd1dd63756 # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
 
 hive:
   profile: cli
@@ -28,6 +28,10 @@ runtimes:
       binary: claude
       nudge_tokens: 200000
       max_tokens: 300000
+      levels: # Keeper-assigned in v0.1 (T-012)
+        frontier: opus
+        standard: sonnet
+        fast: haiku
 
 cell:
   enforce_ro_root: true
