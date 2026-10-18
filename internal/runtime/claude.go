@@ -20,6 +20,13 @@ const GeneratedMarker = "# waggle:generated"
 type ClaudeAdapter struct {
 	cfg      AdapterConfig
 	verified atomic.Bool // set by Verify
+	policy   *Policy     // set by WithPolicy; Materialize writes model: lines from it
+}
+
+// WithPolicy sets the policy Materialize resolves shim model: lines from.
+func (c *ClaudeAdapter) WithPolicy(p Policy) *ClaudeAdapter {
+	c.policy = &p
+	return c
 }
 
 // NewClaudeAdapter returns a configured Claude Code runtime adapter.
@@ -45,11 +52,41 @@ func IsGeneratedShim(content []byte) bool {
 	return bytes.Contains(content, []byte("\n"+GeneratedMarker+"\n"))
 }
 
+// shimModels returns the "model: <model>\n" frontmatter line per role file in
+// entries; the map is empty when no policy is set.
+func (c *ClaudeAdapter) shimModels(entries []os.DirEntry) (map[string]string, error) {
+	lines := map[string]string{}
+	if c.policy == nil {
+		return lines, nil
+	}
+	if err := c.policy.Validate(); err != nil {
+		return nil, fmt.Errorf("model policy: %w", err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
+			continue
+		}
+		role := strings.TrimSuffix(entry.Name(), ".md")
+		sel, err := c.policy.Resolve(role, nil, nil)
+		if err != nil {
+			return nil, fmt.Errorf("resolving the model for role %s (%s/%s): %w", role, layout.RolesDir, entry.Name(), err)
+		}
+		if strings.ContainsAny(sel.Model, "\r\n") {
+			return nil, fmt.Errorf("role %s: model %q contains a line break", role, sel.Model)
+		}
+		lines[role] = "model: " + sel.Model + "\n"
+	}
+	return lines, nil
+}
+
 // Materialize reads the role prompts in .waggle/control/roles/*.md and writes
 // Claude Code agent shims to .claude/agents/waggle-<role>.md. Frontmatter keeps
 // name: <role>, so `claude --agent <role>` works. Shims are gitignored runtime
 // state. A file at a shim path without GeneratedMarker is left untouched, and
 // Materialize never writes CLAUDE.md.
+//
+// With a policy (WithPolicy), each shim carries model: from Resolve(role, nil,
+// nil); every role resolves before any write, and any error fails Materialize.
 func (c *ClaudeAdapter) Materialize(repoDir string) error {
 	rolesDir := filepath.Join(repoDir, filepath.FromSlash(layout.RolesDir))
 	shimPrefix := filepath.Join(repoDir, filepath.FromSlash(layout.ShimPrefix))
@@ -57,6 +94,10 @@ func (c *ClaudeAdapter) Materialize(repoDir string) error {
 	entries, err := os.ReadDir(rolesDir)
 	if err != nil {
 		return fmt.Errorf("reading %s: %w", layout.RolesDir, err)
+	}
+	models, err := c.shimModels(entries)
+	if err != nil {
+		return err
 	}
 	if err := os.MkdirAll(filepath.Dir(shimPrefix), 0o755); err != nil {
 		return fmt.Errorf("creating %s: %w", filepath.Dir(layout.ShimPrefix), err)
@@ -83,8 +124,8 @@ func (c *ClaudeAdapter) Materialize(repoDir string) error {
 			return fmt.Errorf("reading %s: %w", rel, err)
 		}
 
-		shim := fmt.Sprintf("---\n%s\nname: %s\ndescription: Waggle %s role, generated from %s/%s.md; edit the source, not this file\n---\n\n%s",
-			GeneratedMarker, role, role, layout.RolesDir, role, body)
+		shim := fmt.Sprintf("---\n%s\nname: %s\n%sdescription: Waggle %s role, generated from %s/%s.md; edit the source, not this file\n---\n\n%s",
+			GeneratedMarker, role, models[role], role, layout.RolesDir, role, body)
 		if err := os.WriteFile(dstPath, []byte(shim), 0o644); err != nil {
 			return fmt.Errorf("writing %s: %w", rel, err)
 		}
