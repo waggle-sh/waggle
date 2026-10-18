@@ -1,0 +1,70 @@
+//go:build probe
+
+package runtime
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"testing"
+	"time"
+)
+
+// TestGuardProbe runs the real claude binary with the exact argv and env Prepare
+// produces. PROBE_REPO is cwd, PROBE_PROMPT a file holding the variable prompt,
+// PROBE_OUT the raw stream destination, PROBE_COMMANDS the allowed commands,
+// PROBE_EXTRA_ARGS extra argv appended (simulates default_args), PROBE_SPEC a
+// path to dump argv and env as JSON.
+func TestGuardProbe(t *testing.T) {
+	a := NewClaudeAdapter(AdapterConfig{Binary: "claude", NudgeTokens: 200000, MaxTokens: 300000,
+		DefaultArgs: splitList(os.Getenv("PROBE_EXTRA_ARGS"))})
+	if err := a.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	p := testPolicy()
+	p.Models.Primary[LevelStandard] = "haiku"
+	sel := mustResolve(t, p, "builder", nil, nil)
+	s, _ := ContextPolicy{Default: ProfileLean}.Settings("builder", nil, 200000)
+	cmds := splitList(os.Getenv("PROBE_COMMANDS"))
+	inv := Invocation{Role: "builder", TaskID: "T-0", Selection: sel, Commands: cmds}
+	prompt, _ := os.ReadFile(os.Getenv("PROBE_PROMPT"))
+	spec, err := a.Prepare(inv, s, []byte("STABLE-CANARY-9 is the stable prompt marker."), prompt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sp := os.Getenv("PROBE_SPEC"); sp != "" {
+		b, _ := json.MarshalIndent(map[string]any{"argv": spec.Argv, "env": spec.Env}, "", " ")
+		os.WriteFile(sp, b, 0o600)
+	}
+	if os.Getenv("PROBE_OUT") == "" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, spec.Argv[0], spec.Argv[1:]...)
+	var stderr bytes.Buffer
+	cmd.Dir, cmd.Env, cmd.Stdin, cmd.Stderr = os.Getenv("PROBE_REPO"), spec.Env, bytes.NewReader(spec.Stdin), &stderr
+	out, runErr := cmd.Output()
+	os.WriteFile(os.Getenv("PROBE_OUT"), out, 0o600)
+	res, cerr := a.Collect(context.Background(), bytes.NewReader(out), Limits{MaxTokens: 300000}, func() {})
+	fmt.Printf("== exit=%v collect=%v end=%s session=%s malformed=%d compacted=%v cost=%v usage=%+v\nfinal: %s\nstderr: %s\n",
+		runErr, cerr, res.End, res.SessionID, res.MalformedLines, res.Compacted, deref(res.CostUSD), res.Usage, res.Final, stderr.String())
+}
+
+func deref(f *float64) float64 {
+	if f == nil {
+		return -1
+	}
+	return *f
+}
+
+func splitList(s string) []string {
+	if s == "" {
+		return nil
+	}
+	return strings.Split(s, ",")
+}

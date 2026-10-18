@@ -2537,3 +2537,79 @@
 **Keeper choice:** Merge commits are checked like any other (`git merge --signoff`). No retroactive sign-off: enforcement starts when `dco` is required, and open PRs then run `git rebase --signoff`. `.waggle/hive/**` is not checked. JSON files are exempt and follow the path rule. `/LICENSE`, `/NOTICE` and `/LICENSES/` join CODEOWNERS for the Head Keeper. The year is `2026`, never bumped. Decided by the Head Keeper via queen card on 2026-10-17.
 
 **Rationale:** Rejected exempting merge commits: conflict resolutions would go uncertified. Rejected hive headers: a header duty on every guard review and a Head Keeper backfill commit.
+
+## D-134: T-023 phase A gets a short fix pass before merge: `--restricted`, Write and Edit scoped to `./**`, MalformedLines fix, more `default_args` refusals
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Does T-023 phase A merge as reviewed, or after a short fix pass on the guard findings?
+
+**Options considered:**
+1. Short fix pass before merge
+2. Merge as reviewed and carry every finding to phase C
+
+**Hive recommendation:** Short fix pass before merge
+
+**Keeper choice:** Phase A gets one short fix pass before merge: add `--restricted`, scope Write and Edit to `./**`, fix MalformedLines, and refuse `--effort`, `--fallback-model`, `--remote-control`, `--environment`, `--chrome`, `--ide` and a bare positional word in `default_args`. Other findings carry to later phases. Decided by the Head Keeper on 2026-10-17.
+
+**Rationale:** The fixes are small and close the widest gaps the sonnet and fable guards found while the adapter has no caller. Rejected carrying them: phase C would launch workers on an adapter known to be wider than D-110.
+
+## D-135: Auto-compaction stays off in workers; long sessions end at max_tokens until T-023 phase E
+
+- **Date:** 2026-10-18
+- **Kind:** technical
+- **Tickets:** T-021, T-023
+- **Supersedes:** none
+
+**Question:** With `DISABLE_AUTO_COMPACT=1` set by the T-023 phase A adapter and no handoff loop yet, what happens to long worker sessions?
+
+**Options considered:**
+1. Keep compaction off; long sessions end at max_tokens and are rerun until phase E
+2. Allow compaction until phase E ships the handoff loop
+
+**Hive recommendation:** Keep compaction off; long sessions end at max_tokens and are rerun until phase E
+
+**Keeper choice:** Auto-compaction stays off in workers (`DISABLE_AUTO_COMPACT=1`). Until T-023 phase E adds the handoff loop, a long session ends at `max_tokens` (or with an API error when the model window is smaller) and the ticket is rerun. Closes the T-021 compaction carry. Decided by the Head Keeper on 2026-10-17.
+
+**Rationale:** A compacted session loses context silently, which T-021 S5 rules out. Rejected allowing compaction until phase E: it trades a loud, rerunnable stop for a quiet loss of state.
+
+## D-136: Clarifies D-089: the size metric is added non-test lines, not the whole length of every touched file
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-016, T-018, T-021, T-023
+- **Supersedes:** none
+
+**Question:** D-089 says "`wc -l` of the non-test Go files the phase touches". When a phase edits existing files, does the figure count whole files or only the lines the phase adds?
+
+**Options considered:**
+1. Added non-test lines (numstat additions over non-test files)
+2. Whole touched files (`wc -l` of every non-test file touched)
+
+**Hive recommendation:** Added non-test lines (numstat additions over non-test files)
+
+**Keeper choice:** Every size figure in a brief counts added non-test lines: the additions `git diff --numstat` reports over non-test files, blanks and comments included. Whole touched files are not counted. For phases that only add files this equals D-089's `wc -l`. T-023 phase A is 469 under this reading. Decided by the Head Keeper on 2026-10-17.
+
+**Rationale:** Counting whole touched files penalizes a one-line edit to a long file and made T-023 phase A read as 934 against a 520 stop. Added lines is the metric the guards already used for phases that added files, and it stays one undisputed command.
+
+## D-137: A `default_args` allowlist replaces the denylist, as a precondition for T-023 phase C
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Does `default_args` keep a denylist of refused Claude Code flags, or move to an allowlist before phase C launches workers?
+
+**Options considered:**
+1. Allowlist before phase C; anything else refused
+2. Keep the denylist and extend it each Claude Code release
+
+**Hive recommendation:** Allowlist before phase C; anything else refused
+
+**Keeper choice:** `default_args` moves to an allowlist of known flags, and any other flag or bare word is refused. This is a precondition for T-023 phase C; phase A merged with the denylist. Decided by the Head Keeper on 2026-10-17.
+
+**Rationale:** A denylist against a third-party CLI whose flag set changes every release is structurally unsound: in 2.1.302 several unrefused flags widen the worker or break policy (fable and sonnet guard reviews of T-023 phase A). Rejected extending the denylist: every release reopens the gap.
