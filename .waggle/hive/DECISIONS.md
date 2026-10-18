@@ -2960,3 +2960,24 @@
 **Keeper choice:** T-021 phase B dispatches now; product and hive changes do not overlap. The builder runs on the session model (opus) because this session's shims predate the model lines. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
 
 **Rationale:** Keeps the own honey critical path moving; the cost is one opus builder run instead of sonnet.
+
+## D-156: T-023 phase B and T-022 phase B dispatched before hive-records-7
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-022, T-023
+- **Supersedes:** none
+
+**Question:** Dispatch T-023 phase B and T-022 phase B now, as approved at the end of the seventh session, or land hive-records-7 first?
+
+**Options considered:**
+1. Dispatch both now
+2. Hive records 7 first
+3. Both in parallel
+4. Hold
+
+**Hive recommendation:** Dispatch both now
+
+**Keeper choice:** Both builders dispatch now on sonnet in isolated worktrees; T-023 phase B gets an opus guard plus a fable guard and Head Keeper merge (D-100), T-022 phase B one opus guard (Tier 2). Hive-records-7 follows. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Keeps the own honey critical path moving; the product leases do not overlap the hive records.
