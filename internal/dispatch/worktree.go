@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -179,12 +180,13 @@ func requireRealDir(p string) error {
 }
 
 // checkReusable accepts an existing path only when the main repo registers it
-// as a worktree on the expected branch (so a planted repo is never asked
-// anything) and it has no uncommitted or untracked change. The caller has
-// already Lstat-checked that the path is a real directory.
+// as a worktree on the expected branch, the path's own .git file points at
+// that registration, and it has no uncommitted or untracked change. Git never
+// runs inside the path until the registration is pinned, and then only with an
+// explicit --git-dir. The caller has already Lstat-checked the path.
 func (w *Worktree) checkReusable(ctx context.Context, g *Git, branchExists bool) error {
 	bad := fmt.Errorf("%s exists but is not a worktree on branch %s; run waggle dispatch clean or remove it", w.Path, w.Branch)
-	if gf, err := os.Lstat(filepath.Join(w.Path, ".git")); err != nil || !gf.Mode().IsRegular() || !branchExists {
+	if !branchExists {
 		return bad
 	}
 	list, err := g.Run(ctx, "worktree", "list", "--porcelain")
@@ -202,15 +204,89 @@ func (w *Worktree) checkReusable(ctx context.Context, g *Git, branchExists bool)
 			cur = strings.TrimPrefix(line, "worktree ")
 		case line == "branch refs/heads/"+w.Branch:
 			if got, err := filepath.EvalSymlinks(cur); err == nil && got == want {
-				return w.checkClean(ctx, g)
+				admin, err := w.adminDir(ctx, g, want)
+				if err != nil {
+					return fmt.Errorf("%w (%v)", bad, err)
+				}
+				return w.checkClean(ctx, g, admin)
 			}
 		}
 	}
 	return bad
 }
 
-func (w *Worktree) checkClean(ctx context.Context, g *Git) error {
-	st, err := g.RunIn(ctx, w.Path, "status", "--porcelain=v1", "--untracked-files=all")
+// adminDir returns <common>/worktrees/<id> for the registration whose gitdir
+// file names <real>/.git, after checking that <real>/.git is a regular file
+// whose own gitdir line resolves to that same directory.
+func (w *Worktree) adminDir(ctx context.Context, g *Git, real string) (string, error) {
+	out, err := g.Run(ctx, "rev-parse", "--path-format=absolute", "--git-common-dir")
+	if err != nil {
+		return "", err
+	}
+	root := filepath.Join(strings.TrimSpace(string(out)), "worktrees")
+	ents, err := os.ReadDir(root)
+	if err != nil {
+		return "", err
+	}
+	dotGit := filepath.Join(real, ".git")
+	for _, e := range ents {
+		admin := filepath.Join(root, e.Name())
+		reg, err := readSmall(filepath.Join(admin, "gitdir"))
+		if err != nil {
+			continue
+		}
+		if got, err := filepath.EvalSymlinks(strings.TrimSpace(string(reg))); err != nil || got != dotGit {
+			continue
+		}
+		own, err := readSmall(dotGit)
+		if err != nil {
+			return "", err
+		}
+		target, ok := strings.CutPrefix(strings.TrimSpace(string(own)), "gitdir:")
+		if !ok {
+			return "", fmt.Errorf("%s is not a gitdir file", dotGit)
+		}
+		if target = strings.TrimSpace(target); !filepath.IsAbs(target) {
+			target = filepath.Join(real, target)
+		}
+		got, err := filepath.EvalSymlinks(target)
+		want, werr := filepath.EvalSymlinks(admin)
+		if err != nil || werr != nil || got != want {
+			return "", fmt.Errorf("%s points at %s, not its registration", dotGit, target)
+		}
+		return want, nil
+	}
+	return "", fmt.Errorf("no registration for %s", dotGit)
+}
+
+// maxSmall bounds files dispatch reads from directories others can write.
+const maxSmall = 4096
+
+// readSmall reads a regular file of at most maxSmall bytes without following
+// a final symlink or blocking on a FIFO.
+func readSmall(path string) ([]byte, error) {
+	if fi, err := os.Lstat(path); err != nil {
+		return nil, err
+	} else if !fi.Mode().IsRegular() {
+		return nil, fmt.Errorf("%s is not a regular file", path)
+	}
+	f, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK|syscall.O_NOFOLLOW, 0)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	if fi, err := f.Stat(); err != nil || !fi.Mode().IsRegular() {
+		return nil, fmt.Errorf("%s is not a regular file", path)
+	}
+	data, err := io.ReadAll(io.LimitReader(f, maxSmall+1))
+	if err == nil && len(data) > maxSmall {
+		err = fmt.Errorf("%s is larger than %d bytes", path, maxSmall)
+	}
+	return data, err
+}
+
+func (w *Worktree) checkClean(ctx context.Context, g *Git, admin string) error {
+	st, err := g.RunIn(ctx, w.Path, "--git-dir="+admin, "--work-tree="+w.Path, "status", "--porcelain=v1", "--untracked-files=all")
 	if err != nil {
 		return err
 	}
@@ -254,7 +330,7 @@ func takeLock(path string, now time.Time) (warns []string, err error) {
 			return nil, failf(ExitEnv, "%w", err)
 		}
 		var info lockInfo
-		data, rerr := os.ReadFile(path)
+		data, rerr := readSmall(path)
 		if rerr != nil || json.Unmarshal(data, &info) != nil || info.PID <= 0 {
 			return nil, failf(ExitEnv, "run lock %s is unreadable; remove it if no run is in progress", path)
 		}
@@ -270,7 +346,7 @@ func takeLock(path string, now time.Time) (warns []string, err error) {
 			return nil, failf(ExitEnv, "run lock %s is contended; run in progress (if none is, remove %s)", path, guard)
 		}
 		_ = gf.Close()
-		if again, _ := os.ReadFile(path); bytes.Equal(again, data) {
+		if again, _ := readSmall(path); bytes.Equal(again, data) {
 			aside := fmt.Sprintf("%s.stale.%d.%d", path, os.Getpid(), staleSeq.Add(1))
 			if err := os.Rename(path, aside); err != nil {
 				_ = os.Remove(guard)
@@ -294,6 +370,9 @@ func NewRunDir(repoDir, ticket, role string) (string, error) {
 	}
 	runs := filepath.Join(repo, filepath.FromSlash(layout.Worktrees), "runs")
 	if err := os.MkdirAll(runs, 0o700); err != nil {
+		return "", failf(ExitEnv, "%w", err)
+	}
+	if err := requireRealDir(runs); err != nil {
 		return "", failf(ExitEnv, "%w", err)
 	}
 	for seq := 1; seq <= 10000; seq++ {
