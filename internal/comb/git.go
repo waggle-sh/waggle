@@ -336,6 +336,10 @@ type claim struct {
 	reason  string
 }
 
+// MaxLeaseBytes caps the size of a stored lease.json. A larger blob is a
+// malformed claim and is never decoded (D-107).
+const MaxLeaseBytes = 64 << 10
+
 // loadClaims decodes the lease.json of each ref with one cat-file --batch call.
 func (b *GitBackend) loadClaims(ctx context.Context, refs []refEntry) ([]claim, error) {
 	claims := make([]claim, len(refs))
@@ -381,6 +385,13 @@ func (b *GitBackend) loadClaims(ctx context.Context, refs []refEntry) ([]claim, 
 		size, err := strconv.Atoi(f[2])
 		if err != nil || size < 0 {
 			return nil, fmt.Errorf("comb: unexpected cat-file --batch header %q", strings.TrimSpace(header))
+		}
+		if size > MaxLeaseBytes {
+			if _, err := io.CopyN(io.Discard, rd, int64(size)+1); err != nil {
+				return nil, fmt.Errorf("comb: short cat-file --batch output: %w", err)
+			}
+			c.reason = fmt.Sprintf("lease.json is %d bytes, over the %d byte cap", size, MaxLeaseBytes)
+			continue
 		}
 		body := make([]byte, size+1)
 		if _, err := io.ReadFull(rd, body); err != nil {
