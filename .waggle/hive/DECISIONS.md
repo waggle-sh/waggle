@@ -2981,3 +2981,41 @@
 **Keeper choice:** Both builders dispatch now on sonnet in isolated worktrees; T-023 phase B gets an opus guard plus a fable guard and Head Keeper merge (D-100), T-022 phase B one opus guard (Tier 2). Hive-records-7 follows. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
 
 **Rationale:** Keeps the own honey critical path moving; the product leases do not overlap the hive records.
+
+## D-157: T-021 phase B merged as is; two lease overreaches ratified; handoff-format and error-prefix notes go to T-023 phase F
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-021, T-023
+- **Supersedes:** none
+
+**Question:** PR #42 (T-021 phase B) added `internal/scaffold/context_ignore_test.go` and one constant in `init_test.go`, outside its lease. Merge as is, and where do the guards' handoff-format and error-prefix notes (fable N1, N2; sonnet 3) go?
+
+**Options considered:**
+1. Merge as is, ratify both overreaches, notes to T-023 phase F's queen template edit
+2. Revert the overreaches in a fix pass before merge
+
+**Hive recommendation:** Merge as is, ratify both overreaches, notes to T-023 phase F's queen template edit
+
+**Keeper choice:** #42 merged as is at `8650124`; the new `context_ignore_test.go` and the one `init_test.go` constant are ratified. Fable N1 and N2 and sonnet note 3 go to T-023 phase F's queen template edit. Ruled by the Head Keeper at the end of the seventh session and confirmed via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Both overreaches are test-only and small; a fix pass would cost a full Tier 3 review cycle for no behavior change.
+
+## D-158: Our hive keeps the committed queen handoff and the Stop hook until T-023 phase F
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-021, T-023
+- **Supersedes:** none
+
+**Question:** T-021 phase B's queen template writes handoffs to `.waggle/control/handoffs/`. Does our hive switch now or keep `.waggle/hive/handoff/queen.md` and the Stop hook?
+
+**Options considered:**
+1. Keep the committed handoff and Stop hook until T-023 phase F; a WAGGLE.md line tells the queen to ignore the template path
+2. Switch to the template path at the next pin move
+
+**Hive recommendation:** Keep the committed handoff and Stop hook until T-023 phase F; a WAGGLE.md line tells the queen to ignore the template path
+
+**Keeper choice:** Our hive keeps `.waggle/hive/handoff/queen.md` and the Stop hook until T-023 phase F. A Head Keeper commit adds a Hive Overrides section to our `WAGGLE.md` telling the queen to ignore the template's `.waggle/control/handoffs/` path; it lands before the next pin move. Ruled by the Head Keeper at the end of the seventh session and confirmed via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** The handoff path and hook switch together with dispatch in phase F; switching earlier would break the Stop hook check.
