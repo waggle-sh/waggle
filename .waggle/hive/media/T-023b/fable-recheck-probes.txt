@@ -1,0 +1,45 @@
+    zz_fable_recheck_test.go:31: remote fresh: verb=claim notes=[] err=<nil>
+    zz_fable_recheck_test.go:41: remote takeover from stale mirror: verb=takeover notes=[taking over T-023 from alice (expired 2026-10-18T13:00:00Z)] err=<nil>
+    zz_fable_recheck_test.go:46: alice vs active bob (stale mirror): verb= notes=[] err=T-023 held by bob until 2026-10-18T16:00:00Z: comb: ticket already claimed code=4
+--- PASS: TestRecheckRemoteClaim (0.98s)
+    zz_fable_recheck_test.go:78: 413 candidates, 0 dangerous mismatches
+--- PASS: TestRecheckBranchFuzz (2.55s)
+    zz_fable_recheck_test.go:87: Validate read ".": code=2 err=read path "." must be a clean repo-relative path
+    zz_fable_recheck_test.go:87: Validate read ":(top)x": code=2 err=read path ":(top)x" must be a clean repo-relative path
+    zz_fable_recheck_test.go:87: Validate read ":/x": code=2 err=read path ":/x" must be a clean repo-relative path
+    zz_fable_recheck_test.go:87: Validate read "internal/x/*.go": code=0 err=<nil>
+    zz_fable_recheck_test.go:96: readpath "internal/x/*.go" -> ""
+    zz_fable_recheck_test.go:96: readpath "internal/x/[a]a.go" -> ""
+    zz_fable_recheck_test.go:98: glob read err=internal/x/*.go is not on base d8c5d02966e0279abda837054449a8a80841f578; land it in a hive PR first
+    zz_fable_recheck_test.go:101: icase lookup of t-023.md: found=false data="" err=git ls-tree: exit status 128: fatal: .waggle/hive/tasks/t-023.md: pathspec magic not supported by this command: 'icase'
+--- PASS: TestRecheckPathspec (0.23s)
+    zz_fable_recheck_test.go:126: symlink to foreign repo: w=<nil> code=3 err=/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestRecheckSymlinkForeign4214750338/001/.waggle/worktrees/T-023-builder exists but is not a real directory; remove it
+    zz_fable_recheck_test.go:131: foreign fsmonitor ran
+--- FAIL: TestRecheckSymlinkForeign (0.19s)
+    zz_fable_recheck_test.go:152: copied forager worktree at builder path: w=<nil> code=3 err=/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestRecheckCopiedWorktree3786758550/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it
+--- PASS: TestRecheckCopiedWorktree (0.15s)
+    zz_fable_recheck_test.go:180: redirected .git file: reused=false code=3 err=worktree /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestRecheckRedirectedGitFile4152981156/001/.waggle/worktrees/T-023-builder is dirty; commit or discard its changes first
+    zz_fable_recheck_test.go:182: foreign fsmonitor ran from dispatch's git call
+--- FAIL: TestRecheckRedirectedGitFile (0.27s)
+    zz_fable_recheck_test.go:204: stale lock + leaked guard: warns=[] code=3 err=run lock /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestRecheckLeakedGuard3456291716/001/T-023-builder.lock is contended; run in progress (if none is, remove /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestRecheckLeakedGuard3456291716/001/T-023-builder.lock.takeover)
+    zz_fable_recheck_test.go:209: no lock + leaked guard: warns=[] err=<nil>
+    zz_fable_recheck_test.go:220: live lock: code=3 err=run in progress: /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestRecheckLeakedGuard3456291716/003/T-023-builder.lock held by pid 58041 on darktower.local since 2026-10-18T12:00:00Z
+    zz_fable_recheck_test.go:229: stale lock alone: warns=[took over stale run lock of dead pid 4242] err=<nil>
+    zz_fable_recheck_test.go:231: files left beside lock4: []
+--- PASS: TestRecheckLeakedGuard (0.00s)
+    zz_fable_recheck_test.go:243: base "t-023b" == branch: code=2 err=base "t-023b" is the branch being created
+    zz_fable_recheck_test.go:243: base "refs/heads/t-023b" == branch: code=2 err=base "refs/heads/t-023b" is the branch being created
+    zz_fable_recheck_test.go:243: base "heads/t-023b" == branch: code=0 err=<nil>
+    zz_fable_recheck_test.go:243: base "origin/t-023b" == branch: code=0 err=<nil>
+    zz_fable_recheck_test.go:243: base "refs/remotes/origin/t-023b" == branch: code=0 err=<nil>
+--- PASS: TestRecheckBaseIsBranch (0.00s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	4.645s
+FAIL
+    zz_fable_recheck_test.go:127: symlink to foreign repo: w=<nil> code=3 err=/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestRecheckSymlinkForeign2249587933/001/.waggle/worktrees/T-023-builder exists but is not a real directory; remove it
+--- PASS: TestRecheckSymlinkForeign (0.21s)
+    zz_fable_recheck_test.go:182: redirected .git file: reused=false code=3 err=worktree /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestRecheckRedirectedGitFile3870913420/001/.waggle/worktrees/T-023-builder is dirty; commit or discard its changes first
+    zz_fable_recheck_test.go:186: foreign fsmonitor did not run (hooks and fsmonitor off)
+--- PASS: TestRecheckRedirectedGitFile (0.25s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	1.655s

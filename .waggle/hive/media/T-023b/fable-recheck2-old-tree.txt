@@ -1,0 +1,19 @@
+Builder's guard2_test.go (from 3958676) run against a read-only `git archive` of 8fa7b20
+(go test -race -count=1 -run 'TestReuse|TestTakeLockRefusesFifoAndSymlink|TestNewRunDirRefusesSymlinkedRuns'):
+
+    guard2_test.go:55: planted separate-git-dir repo reused: <nil>
+--- FAIL: TestReuseRefusesSeparateGitDirPlant (0.25s)
+    guard2_test.go:83: rewritten .git file reused: <nil>
+--- FAIL: TestReuseRefusesInWorktreeGitFileRewrite (0.26s)
+--- PASS: TestReuseAcceptsHonestWorktree (0.19s)
+    guard2_test.go:115: takeLock blocked on .../TestTakeLockRefusesFifoAndSymlink2663115433/001/fifo
+--- FAIL: TestTakeLockRefusesFifoAndSymlink (5.00s)
+    guard2_test.go:131: symlinked runs accepted: <nil>
+--- FAIL: TestNewRunDirRefusesSymlinkedRuns (0.06s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	5.948s
+
+Cross-compile (GOOS=windows GOARCH=amd64 go build ./...):
+  origin/main f816050: clean
+  8fa7b20:            clean
+  3958676:            internal/dispatch/worktree.go:273:69: undefined: syscall.O_NOFOLLOW

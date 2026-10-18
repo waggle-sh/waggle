@@ -1,0 +1,248 @@
+package dispatch
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+func p4Admin(t *testing.T, dir string) string {
+	return filepath.Join(strings.TrimSpace(sh(t, dir, "rev-parse", "--path-format=absolute", "--git-common-dir")), "worktrees", "T-023-builder")
+}
+
+// foreign repo (full gitdir) with filter.x.clean touching canary.
+func p4Foreign(t *testing.T, canary string) string {
+	r := filepath.Join(t.TempDir(), "foreign")
+	os.MkdirAll(r, 0o755)
+	sh(t, r, "init", "-q", "-b", "t-023")
+	write(t, r, "f", "x")
+	sh(t, r, "add", "-A")
+	sh(t, r, "commit", "-q", "-m", "f")
+	sh(t, r, "config", "filter.x.clean", "sh -c 'touch "+canary+"; cat'")
+	return filepath.Join(r, ".git")
+}
+
+// commit a .gitattributes selecting filter x and make it stat-dirty.
+func p4Dirty(t *testing.T, wt string) {
+	write(t, wt, ".gitattributes", "* filter=x\n")
+	sh(t, wt, "add", ".gitattributes")
+	sh(t, wt, "commit", "-q", "-m", "attr")
+	future := time.Now().Add(time.Hour)
+	os.Chtimes(filepath.Join(wt, ".gitattributes"), future, future)
+}
+
+func p4Ran(c string) bool { _, e := os.Stat(c); return e == nil }
+
+func repoOf(wt string) string { return filepath.Dir(filepath.Dir(filepath.Dir(wt))) }
+
+// N1: rewrite <admin>/commondir to a foreign gitdir.
+func TestProbe4CommondirRewrite(t *testing.T) {
+	err, canary := reuseAfter(t, func(wt, canary string) {
+		p4Dirty(t, wt)
+		admin := p4Admin(t, repoOf(wt))
+		f := p4Foreign(t, canary)
+		os.WriteFile(filepath.Join(admin, "commondir"), []byte(f+"\n"), 0o644)
+	})
+	t.Logf("commondir rewrite: err=%v filterRan=%v", err, p4Ran(canary))
+}
+
+// N1b: control, same dirty state with no tampering: filter undefined, no run.
+func TestProbe4CommondirControl(t *testing.T) {
+	err, canary := reuseAfter(t, func(wt, canary string) {
+		p4Dirty(t, wt)
+	})
+	t.Logf("control: err=%v filterRan=%v", err, p4Ran(canary))
+}
+
+// N2: extra registration entry AAA (sorts before T-023-builder), full gitdir,
+// gitdir file -> <wt>/.git, <wt>/.git -> AAA.
+func TestProbe4ExtraAdminEntry(t *testing.T) {
+	err, canary := reuseAfter(t, func(wt, canary string) {
+		p4Dirty(t, wt)
+		dir := repoOf(wt)
+		root := filepath.Dir(p4Admin(t, dir))
+		f := p4Foreign(t, canary)
+		aaa := filepath.Join(root, "AAA")
+		if err := os.Rename(f, aaa); err != nil {
+			t.Fatal(err)
+		}
+		os.WriteFile(filepath.Join(aaa, "gitdir"), []byte(filepath.Join(wt, ".git")+"\n"), 0o644)
+		os.WriteFile(filepath.Join(wt, ".git"), []byte("gitdir: "+aaa+"\n"), 0o644)
+		t.Logf("porcelain:\n%s", sh(t, dir, "worktree", "list", "--porcelain"))
+	})
+	t.Logf("extra admin entry: err=%v filterRan=%v", err, p4Ran(canary))
+}
+
+// N2b: extra entry AAA is a full foreign gitdir that tracks the same
+// .gitattributes, so the stat-dirty file is hashed through its filter.
+func TestProbe4ExtraAdminEntryTracked(t *testing.T) {
+	err, canary := reuseAfter(t, func(wt, canary string) {
+		p4Dirty(t, wt)
+		dir := repoOf(wt)
+		root := filepath.Dir(p4Admin(t, dir))
+		r := filepath.Join(t.TempDir(), "foreign")
+		os.MkdirAll(r, 0o755)
+		sh(t, r, "init", "-q", "-b", "t-023")
+		write(t, r, ".gitattributes", "* filter=x\n")
+		sh(t, r, "add", "-A")
+		sh(t, r, "commit", "-q", "-m", "f")
+		sh(t, r, "config", "filter.x.clean", "sh -c 'touch "+canary+"; cat'")
+		aaa := filepath.Join(root, "AAA")
+		if err := os.Rename(filepath.Join(r, ".git"), aaa); err != nil {
+			t.Fatal(err)
+		}
+		os.WriteFile(filepath.Join(aaa, "gitdir"), []byte(filepath.Join(wt, ".git")+"\n"), 0o644)
+		os.WriteFile(filepath.Join(wt, ".git"), []byte("gitdir: "+aaa+"\n"), 0o644)
+	})
+	t.Logf("extra admin entry (tracked attrs): err=%v filterRan=%v", err, p4Ran(canary))
+}
+
+// N3: honest worktree created with relative paths (git 2.48+).
+func TestProbe4RelativePaths(t *testing.T) {
+	dir, g := newRepo(t)
+	sh(t, dir, "config", "worktree.useRelativePaths", "true")
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Unlock()
+	b, _ := os.ReadFile(filepath.Join(w.Path, ".git"))
+	a, _ := os.ReadFile(filepath.Join(p4Admin(t, dir), "gitdir"))
+	t.Logf(".git=%q admin/gitdir=%q", b, a)
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("relative-path honest reuse: err=%v reused=%v", err, w2 != nil && w2.Reused)
+}
+
+// N4: .git file variants on an honest worktree.
+func TestProbe4GitFileVariants(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		mk   func(a string) string
+	}{
+		{"crlf", func(a string) string { return "gitdir: " + a + "\r\n" }},
+		{"trailing-ws", func(a string) string { return "gitdir: " + a + "  \t\n" }},
+		{"no-space", func(a string) string { return "gitdir:" + a + "\n" }},
+		{"relative", func(a string) string { return "gitdir: ../../../.git/worktrees/T-023-builder\n" }},
+		{"via-var", func(a string) string { return "gitdir: " + strings.TrimPrefix(a, "/private") + "\n" }},
+		{"upper-case", func(a string) string { return "gitdir: " + strings.ToUpper(a) + "\n" }},
+		{"oversize", func(a string) string { return "gitdir: " + a + "\n" + strings.Repeat("#", 5000) }},
+		{"two-lines", func(a string) string { return "gitdir: " + a + "\ngitdir: /elsewhere\n" }},
+	} {
+		err, _ := reuseAfter(t, func(wt, _ string) {
+			admin := p4Admin(t, repoOf(wt))
+			os.WriteFile(filepath.Join(wt, ".git"), []byte(c.mk(admin)), 0o644)
+		})
+		t.Logf("%s: err=%v", c.name, err)
+	}
+}
+
+// N5: symlinked main .git dir.
+func TestProbe4SymlinkedCommonDir(t *testing.T) {
+	dir, g := newRepo(t)
+	real := filepath.Join(t.TempDir(), "realgit")
+	if err := os.Rename(filepath.Join(dir, ".git"), real); err != nil {
+		t.Fatal(err)
+	}
+	os.Symlink(real, filepath.Join(dir, ".git"))
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	w.Unlock()
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("symlinked .git reuse: err=%v reused=%v", err, w2 != nil && w2.Reused)
+}
+
+// N6: readSmall shapes and a racing swap.
+func TestProbe4ReadSmall(t *testing.T) {
+	d := t.TempDir()
+	reg := filepath.Join(d, "reg")
+	os.WriteFile(reg, []byte("ok"), 0o644)
+	big := filepath.Join(d, "big")
+	os.WriteFile(big, make([]byte, 4097), 0o644)
+	exact := filepath.Join(d, "exact")
+	os.WriteFile(exact, make([]byte, 4096), 0o644)
+	fifo := filepath.Join(d, "fifo")
+	syscall.Mkfifo(fifo, 0o600)
+	ln := filepath.Join(d, "ln")
+	os.Symlink(reg, ln)
+	devln := filepath.Join(d, "devln")
+	os.Symlink("/dev/zero", devln)
+	for _, p := range []string{reg, big, exact, fifo, ln, devln, "/dev/zero", d} {
+		done := make(chan string, 1)
+		go func() { b, err := readSmall(p); done <- fmt.Sprintf("len=%d err=%v", len(b), err) }()
+		select {
+		case s := <-done:
+			t.Logf("%s: %s", filepath.Base(p), s)
+		case <-time.After(2 * time.Second):
+			t.Logf("%s: BLOCKED", filepath.Base(p))
+		}
+	}
+	tgt := filepath.Join(d, "race")
+	stop := make(chan struct{})
+	go func() {
+		for i := 0; ; i++ {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			os.Remove(tgt)
+			switch i % 3 {
+			case 0:
+				os.WriteFile(tgt, []byte("ok"), 0o644)
+			case 1:
+				syscall.Mkfifo(tgt, 0o600)
+			case 2:
+				os.Symlink("/dev/zero", tgt)
+			}
+		}
+	}()
+	okN, errN, odd := 0, 0, 0
+	deadline := time.After(10 * time.Second)
+	for i := 0; i < 3000; i++ {
+		done := make(chan error, 1)
+		go func() {
+			b, err := readSmall(tgt)
+			if err == nil && len(b) > 2 {
+				err = fmt.Errorf("odd len %d", len(b))
+				odd++
+			}
+			done <- err
+		}()
+		select {
+		case err := <-done:
+			if err == nil {
+				okN++
+			} else {
+				errN++
+			}
+		case <-deadline:
+			t.Fatalf("race: BLOCKED after %d", i)
+		}
+	}
+	close(stop)
+	t.Logf("race: ok=%d err=%d odd=%d, no block", okN, errN, odd)
+}
+
+// N7: symlink at the lock path pointing at a stale body.
+func TestProbe4SymlinkLock(t *testing.T) {
+	d := t.TempDir()
+	h, _ := os.Hostname()
+	body := filepath.Join(d, "body")
+	os.WriteFile(body, []byte(`{"pid":999999,"host":"`+h+`","started":"2026-10-18T10:00:00Z"}`), 0o644)
+	lock := filepath.Join(d, "L.lock")
+	os.Symlink(body, lock)
+	_, err := takeLock(lock, t0)
+	fi, _ := os.Lstat(lock)
+	t.Logf("symlink lock: err=%v stillSymlink=%v", err, fi != nil && fi.Mode()&os.ModeSymlink != 0)
+}

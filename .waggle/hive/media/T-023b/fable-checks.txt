@@ -1,0 +1,34 @@
+# T-023 phase B, fable guard checks, branch t-023b at 56990da on main 8650124
+
+## go build ./...
+ok
+
+## go vet ./...
+ok
+
+## gofmt -l internal cmd (empty = clean)
+
+## go test -race -count=1 ./...
+ok  	github.com/waggle-sh/waggle/cmd/waggle	14.292s
+ok  	github.com/waggle-sh/waggle/internal/comb	29.187s
+ok  	github.com/waggle-sh/waggle/internal/config	1.410s
+ok  	github.com/waggle-sh/waggle/internal/decisions	3.642s
+ok  	github.com/waggle-sh/waggle/internal/dispatch	5.312s
+ok  	github.com/waggle-sh/waggle/internal/forge	12.059s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	4.597s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	10.844s
+
+## numstat origin/main..HEAD
+57	0	internal/config/local.go
+88	0	internal/config/local_test.go
+84	0	internal/dispatch/claim.go
+527	0	internal/dispatch/dispatch_test.go
+138	0	internal/dispatch/inputs.go
+142	0	internal/dispatch/request.go
+246	0	internal/dispatch/worktree.go
+
+Added non-test lines: 57+84+138+142+246 = 667 (stop 580, target 450).
+go.mod and go.sum: no diff. Imports: stdlib plus internal/comb, internal/config, internal/layout, internal/runtime.
+U+2013 or U+2014 in the diff: 0.
+Filesystem writes in the new non-test code: .waggle/worktrees/ (MkdirAll), <worktree>.lock (O_EXCL create, Remove), .waggle/worktrees/runs/<run> (Mkdir), prompt.stable.txt and prompt.variable.txt inside the run dir. Nothing under .waggle/hive or .waggle/control.

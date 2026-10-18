@@ -1,0 +1,138 @@
+// T-023 phase B, opus guard probes. Drop into internal/dispatch/ as
+// zz_probe_test.go on t-023b (56990da) and run:
+//   go test -race -run Probe -v ./internal/dispatch/
+// Observed output on 56990da is at the bottom of this file.
+package dispatch
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+// B1: a foreign repo planted at the worktree path is accepted as reusable,
+// and its core.fsmonitor runs on the host during checkReusable's git status.
+func TestProbeForeignRepoReused(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	sh(t, dir, "branch", "t-023", base)
+	p := filepath.Join(dir, ".waggle/worktrees/T-023-builder")
+	os.MkdirAll(p, 0o755)
+	sh(t, p, "init", "-q", "-b", "t-023")
+	write(t, p, "f", "x")
+	sh(t, p, "add", "-A")
+	sh(t, p, "commit", "-q", "-m", "foreign")
+	canary := filepath.Join(t.TempDir(), "pwned")
+	sh(t, p, "config", "core.fsmonitor", "touch "+canary+"; false")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	_, cerr := os.Stat(canary)
+	t.Logf("provision err=%v reused=%v fsmonitorRan=%v", err, w != nil && w.Reused, cerr == nil)
+}
+
+// B1: a symlink at the worktree path to another registered worktree is reused.
+func TestProbeSymlinkReused(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	r := mustValid(t, okReq(dir))
+	r.Role = "forager"
+	w1, err := Provision(ctx, g, r, base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w1.Unlock()
+	p := filepath.Join(dir, ".waggle/worktrees/T-023-builder")
+	os.Symlink(w1.Path, p)
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("symlink provision err=%v reused=%v", err, w != nil && w.Reused)
+}
+
+// N: read path "." and pathspec magic pass Validate.
+func TestProbeReadPaths(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	for _, p := range []string{".", "*", "internal/x/*.go", ":(glob)**/a.go", ":(top)internal/x/a.go", "internal/x", "INTERNAL/x/a.go"} {
+		r := okReq(dir)
+		r.ReadPaths = []string{p}
+		rv, verr := r.Validate()
+		if verr != nil {
+			t.Logf("%q validate: %v", p, verr)
+			continue
+		}
+		in, err := ReadInputs(ctx, g, base, rv)
+		var c string
+		if len(in.ReadOnly) > 0 {
+			c = string(in.ReadOnly[0].Content)
+		}
+		t.Logf("%q -> err=%v content=%q", p, err, c)
+	}
+}
+
+func TestProbeBranches(t *testing.T) {
+	for _, b := range []string{"t-023/../main", "t-023.lock", "t-023@{", "t-023.", "t-023\x01", "t-023-", "t-023.x", "t-023-.", "t-023_@", "t-023--", "t-023.-"} {
+		r := okReq("/repo")
+		r.Branch = b
+		_, err := r.Validate()
+		t.Logf("%q -> %v", b, err)
+	}
+}
+
+func TestProbeHiveClaim(t *testing.T) {
+	dir, _ := newRepo(t)
+	b, _ := claimEnv(t, dir)
+	r := okReq(dir)
+	r.Dirs = []string{".waggle/hive"}
+	_, err := AcquireClaim(context.Background(), b, mustValid(t, r), "alice", t0)
+	t.Logf("hive claim exit=%d %v", code(err), err)
+}
+
+// B2: remote mode, stale local mirror: taking over another Keeper's expired
+// claim reports verb "claim" with no note naming the previous owner.
+func TestProbeRemoteStale(t *testing.T) {
+	dir, _ := newRepo(t)
+	bare := t.TempDir()
+	sh(t, bare, "init", "-q", "--bare")
+	sh(t, dir, "remote", "add", "origin", bare)
+	sh(t, dir, "push", "-q", "origin", "main")
+	other := t.TempDir()
+	sh(t, other, "clone", "-q", bare, ".")
+	now := t0
+	mk := func(d string) *comb.GitBackend {
+		b, err := comb.NewGitBackend(comb.Options{RepoDir: d, Remote: "origin", Now: func() time.Time { return now }, DefaultTTL: time.Hour,
+			ExtraEnv: []string{"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+	a, b := mk(other), mk(dir)
+	if _, err := AcquireClaim(context.Background(), a, mustValid(t, okReq(other)), "alice", now); err != nil {
+		t.Fatal(err)
+	}
+	now = now.Add(2 * time.Hour)
+	c, err := AcquireClaim(context.Background(), b, mustValid(t, okReq(dir)), "bob", now)
+	t.Logf("stale remote: err=%v verb=%s notes=%v", err, c.Verb, c.Notes)
+}
+
+/* Observed on 56990da (macOS, git from PATH):
+
+zz_probe_test.go: provision err=<nil> reused=true fsmonitorRan=true
+zz_probe_test.go: symlink provision err=<nil> reused=true
+"." -> err=<nil> content=".waggle/worktrees/\n"          (the root .gitignore, labeled ".")
+"*" -> not on base
+"internal/x/*.go" -> not on base
+":(glob)**/a.go" -> git ls-tree exit 128, pathspec magic not supported
+":(top)internal/x/a.go" -> err=<nil> content="package x\n"
+"internal/x" -> not a regular file
+"INTERNAL/x/a.go" -> not on base
+"t-023/../main" refused; "t-023.lock" refused; "t-023@{" refused; "t-023." refused;
+"t-023\x01" refused; "t-023-.", "t-023_@" refused; "t-023-", "t-023.x", "t-023--", "t-023.-" accepted
+hive claim exit=4 (ErrWaggleDir wrapped in ErrTier3Path)
+stale remote: err=<nil> verb=claim notes=[]
+*/

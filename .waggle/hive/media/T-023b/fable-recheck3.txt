@@ -1,0 +1,58 @@
+T-023 phase B, fix pass 3 re-check (fable), head ab68fb6 on top of 9ee93c7. Detached read-only checkout.
+Host: darwin, git 2.54.0 (Apple Git-157). Runner (product-ci 39158910152): ubuntu-24.04, git 2.55.0, go 1.23.12.
+
+== Diff scope (git diff --stat 9ee93c7 ab68fb6)
+ internal/dispatch/fifo_unix_test.go |  36 +   (moved from guard2_test.go, now //go:build unix)
+ internal/dispatch/guard2_test.go    |  26 -
+ internal/dispatch/guard3_test.go    | 136 +
+ internal/dispatch/nofollow_other.go |   7 +
+ internal/dispatch/nofollow_unix.go  |   8 +
+ internal/dispatch/worktree.go       |  73 +-  (37 net non-test lines)
+Files outside internal/dispatch/ in this diff: none. Branch vs origin/main: internal/dispatch/**, internal/config/local.go, local_test.go only.
+U+2013 / U+2014 in the diff: none (grep exit 1).
+
+== Local checks on ab68fb6
+go build ./...                              OK
+go vet ./...                                OK
+gofmt -l internal cmd                       clean
+go test -race -count=1 ./...                all ok (dispatch 11.7s)
+GOOS=windows go build ./...                 OK
+GOOS=windows go vet ./internal/dispatch/    OK (compiles the test files too)
+
+== Same checks on 9ee93c7 (scratch checkout, since removed)
+GOOS=windows go build ./...  ->  internal/dispatch/worktree.go:273:69: undefined: syscall.O_NOFOLLOW   (F2 reproduced)
+guard3_test.go dropped in and run:
+  --- FAIL TestReuseRefusesCommondirRewrite   (error was "worktree ... is dirty", i.e. accepted as a worktree)
+  --- FAIL TestReuseRefusesExtraRegistration  (same)
+  --- FAIL TestReuseAcceptsRelativePathWorktree  "no registration for <wt>/.git"   (F1 reproduced)
+  TestFilterCanaryFiresWithoutTamper passes (control)
+Canary first (assertion order swapped in the scratch copy):
+  TestReuseRefusesCommondirRewrite:  CANARY: clean filter of the foreign gitdir ran on the host
+  TestReuseRefusesExtraRegistration: CANARY: clean filter of the extra registration ran on the host
+  => both tampers executed a foreign clean filter on 9ee93c7; both are refused on ab68fb6 with the canary absent.
+
+== New tests on ab68fb6, -v
+TestTakeLockRefusesFifoAndSymlink     PASS
+TestFilterCanaryFiresWithoutTamper    PASS
+TestReuseAcceptsRelativePathWorktree  PASS (ran, not skipped; git 2.54 writes relative registrations)
+
+== product-ci on ab68fb6 (run 39158910152): FAIL; on 9ee93c7 (run 39157831927): success
+--- FAIL: TestReuseRefusesExtraRegistration (0.06s)
+    guard3_test.go:80: second registration for the path accepted: /tmp/.../T-023-builder exists but is not a worktree on branch t-023;
+    run waggle dispatch clean or remove it (lstat /tmp/.../.git/worktrees/AAA/commondir: no such file or directory)
+Only this test fails there. verify-leases-and-tiers also red (D-051 condition and the merge commit 9ee93c7, both known).
+
+== Mechanism, reproduced on macOS
+provision() runs "git worktree prune" before checkReusable. git's prune removes duplicate registrations that name the same
+worktree path (prune_dups, keeps one). On Linux the test's AAA/gitdir and git's own T-023-builder/gitdir are byte-identical,
+so prune deleted one of them and adminDir saw a single hit. On macOS the test writes /var/folders/... while git wrote
+/private/var/folders/..., so prune saw no duplicate and the "%d registrations name" branch fired.
+Patched scratch copy of the test to write filepath.EvalSymlinks(wt)+"/.git" into AAA/gitdir, run on macOS:
+  --- FAIL: TestReuseRefusesExtraRegistration
+      guard3_test.go:81: second registration for the path accepted: ... (lstat /private/var/.../.git/worktrees/AAA/commondir: no such file or directory)
+Identical to the CI failure. Either way the reuse is refused with exit 3 before any git command runs against AAA.
+
+== Size (wc -l, non-test Go files the phase touches)
+claim.go 88, inputs.go 142, request.go 145, worktree.go 420, nofollow_unix.go 8, nofollow_other.go 7, internal/config/local.go 57 = 867
+(9ee93c7: 819). Test lines (dispatch *_test.go + config/local_test.go): 1116.
+PR #46 description still says 819.
