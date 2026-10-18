@@ -1,0 +1,46 @@
+=== dotdot tree entry inside lease: docs/../other/evil (crafted with mktree; GitHub receive fsck would reject)
+:100644 100644 78981922613b2afb6025042ff6bd878ac1994e85 b68025345d5301abad4d9ec9166f455243a0d746 M
+README.md
+:000000 100644 0000000000000000000000000000000000000000 b68025345d5301abad4d9ec9166f455243a0d746 A
+docs/../evil
+:100644 100644 975fbec8256d3e8a3797e7a3611380f27c49f4ac b68025345d5301abad4d9ec9166f455243a0d746 M
+docs/keep.md
+:100644 000000 587be6b4c3f93f93c489c0111bba5596147a26cb 0000000000000000000000000000000000000000 D
+other/x.md
+leases: FAIL: README.md: T-001: path is outside the claim directories
+leases: FAIL: other/x.md: T-001: path is outside the claim directories
+tiers: ok
+decisions: unchanged
+exit=1
+=== .git component inside lease: docs/.git/config
+error: Invalid path 'docs/.git/config'
+fatal: git update-index: --cacheinfo cannot add docs/.git/config
+On branch branch
+nothing to commit, working tree clean
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== 501 commits
+leases: FAIL: PR too large for the gate; split it
+tiers: ok
+decisions: unchanged
+exit=1
+=== 500 commits
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== 5001 paths in one commit
+leases: FAIL: PR too large for the gate; split it
+tiers: ok
+decisions: unchanged
+exit=1
+=== 'verify' with leases error and tiers error both printed? exit 3 for git error
+verify: error: git rev-list: odd line count 1
+decisions: unchanged
+exit=3
+=== GHA mode, empty-subject error line
+verify: error: git rev-list: odd line count 1
+decisions: unchanged
+exit=3
