@@ -9,7 +9,7 @@
 - **Comb Mode:** `direct`
 
 ## 2. Module Boundaries (Directory Leases)
-Define the top-level modules Foragers may lease:
+Define the top-level modules Builders may lease:
 - `cmd/waggle/`: Operator CLI entrypoint
 - `internal/comb/`: Unified Git ref `CombBackend` implementation
 - `internal/config/`: Parses `.waggle/control/config.yaml` into typed options (T-004)
