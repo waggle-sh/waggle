@@ -1,0 +1,41 @@
+  [pin]     30639558288f93abdb378bf278a8b860e84a915e -> 6a4886eb16e0de1d005a4ba354e72ecd1dd63756
+  [rewrite] .waggle/control/roster.json
+  [same]    .waggle/control/devcontainer.json
+  [rewrite] .github/workflows/waggle-gate.yml
+  [same]    .waggle/control/roles/builder.md
+  [same]    .waggle/control/roles/forager.md
+  [same]    .waggle/control/roles/guard.md
+  [same]    .waggle/control/roles/queen.md
+  [same]    .waggle/control/roles/scout.md
+  [skip]    .waggle/control/config.yaml (seeded)
+  [skip]    .waggle/control/WAGGLE.md (seeded)
+  [skip]    .waggle/control/local.yaml (seeded)
+  [same]    .gitignore (waggle block)
+  [same]    CLAUDE.md (waggle block)
+  [shims]   regenerate .claude/agents/waggle-*.md
+  [keep]    refs/waggle/* and .waggle/hive/**
+--- waggle decide input (save as upgrade-decision.json) ---
+{
+  "kind": "technical",
+  "title": "Upgrade hive pin to 6a4886eb16e0de1d005a4ba354e72ecd1dd63756",
+  "question": "Which Waggle build does this hive run?",
+  "options": [
+    "Stay on 30639558288f93abdb378bf278a8b860e84a915e",
+    "Move to 6a4886eb16e0de1d005a4ba354e72ecd1dd63756"
+  ],
+  "recommendation": "Move to 6a4886eb16e0de1d005a4ba354e72ecd1dd63756",
+  "choice": "Move the pin from 30639558288f93abdb378bf278a8b860e84a915e to 6a4886eb16e0de1d005a4ba354e72ecd1dd63756; managed files re-rendered by waggle upgrade from the target build",
+  "rationale": "6a4886eb16e0de1d005a4ba354e72ecd1dd63756 is the known-good build chosen by the Head Keeper (D-041).",
+  "tickets": [
+    "T-016"
+  ],
+  "supersedes": []
+}
+--- end ---
+Run: waggle decide --file upgrade-decision.json (same hive PR, Head Keeper or queen after an explicit Keeper answer, T-006 section 8).
+  [shim]   .claude/agents/waggle-builder.md
+  [shim]   .claude/agents/waggle-forager.md
+  [shim]   .claude/agents/waggle-guard.md
+  [shim]   .claude/agents/waggle-queen.md
+  [shim]   .claude/agents/waggle-scout.md
+Review with git status, then open a hive PR. This changes .waggle/control/ (Tier 3) and needs Head Keeper approval.
