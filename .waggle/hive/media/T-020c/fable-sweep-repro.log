@@ -1,0 +1,12 @@
+# T-020 section 2 sweep reproduced over the origin/main briefs and compared byte for byte
+# with the mechanical commits a871143 (T-008) and c3d6c00 (T-012, T-014, T-018, T-021, T-022, T-025).
+== sentinels before:
+== sentinels after:
+MATCH    T-008
+MATCH    T-012
+MATCH    T-014
+MATCH    T-018
+MATCH    T-021
+MATCH    T-022
+MATCH    T-025
+== residue (step 3) in swept files:
