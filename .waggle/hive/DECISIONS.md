@@ -3019,3 +3019,42 @@
 **Keeper choice:** Our hive keeps `.waggle/hive/handoff/queen.md` and the Stop hook until T-023 phase F. A Head Keeper commit adds a Hive Overrides section to our `WAGGLE.md` telling the queen to ignore the template's `.waggle/control/handoffs/` path; it lands before the next pin move. Ruled by the Head Keeper at the end of the seventh session and confirmed via queen card on 2026-10-18; recorded by the queen.
 
 **Rationale:** The handoff path and hook switch together with dispatch in phase F; switching earlier would break the Stop hook check.
+
+## D-159: T-014 AC7 met by check-run API evidence instead of screenshots
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-014
+- **Supersedes:** none
+
+**Question:** Both scratch PRs (#44 out-of-lease edit, #45 `GO.MOD` edit) fail the Waggle gate with annotations. Is the saved check-run API output enough for AC7, or are screenshots required?
+
+**Options considered:**
+1. API evidence is enough
+2. Keeper takes screenshots
+
+**Hive recommendation:** API evidence is enough
+
+**Keeper choice:** AC7 is met by the check-run and annotation JSON plus the summary in `.waggle/hive/media/T-014/AC7.md`. #44 proves the gate refuses an edit no lease covers; an edit outside an existing claim's paths is proven once claims exist on the remote (T-023 phase C). #44 and #45 closed unmerged and their branches deleted. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** The API output is the same data the Checks tab renders, is machine-checkable, and carries no personal data; screenshots add Keeper time and nothing else.
+
+## D-160: The Head Keeper's DCO sign-off email is the GitHub noreply address
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-025
+- **Supersedes:** none
+
+**Question:** Which email signs off the Head Keeper's commits once DCO is enforced (T-025)? The author email must match, and it becomes public when the repo opens.
+
+**Options considered:**
+1. GitHub noreply (27632860+paulternate@users.noreply.github.com)
+2. Company address
+3. Keep the personal address
+
+**Hive recommendation:** GitHub noreply (27632860+paulternate@users.noreply.github.com)
+
+**Keeper choice:** The Head Keeper authors and signs off commits as `27632860+paulternate@users.noreply.github.com`, set in git config and backed by GitHub's email privacy setting, before T-025 phase D enforces DCO. Past commits are not rewritten by this decision; history redaction stays a separate decision before the repo goes public. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Keeps a personal address out of every future commit in a repo that will go public.
