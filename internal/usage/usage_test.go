@@ -79,7 +79,7 @@ func TestReadBadLines(t *testing.T) {
 	}
 }
 
-// A line over 1 MiB is an I/O error, not a silent skip.
+// A line of 1 MiB or more is an I/O error, not a silent skip.
 func TestReadLongLine(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "usage.jsonl")
 	if err := os.WriteFile(path, []byte(strings.Repeat("x", maxLine+10)+"\n"), 0o600); err != nil {

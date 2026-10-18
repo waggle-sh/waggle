@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 )
@@ -35,11 +36,11 @@ func Render(s []TicketSummary, path string) []byte {
 	}
 	tw := tabwriter.NewWriter(&b, 0, 0, 2, ' ', 0)
 	for _, t := range append(append([]TicketSummary(nil), s...), total) {
-		cells := []string{"  " + t.Ticket}
+		cells := []string{"  " + plain(t.Ticket)}
 		for i := 0; i < maxRoles; i++ {
 			c := ""
 			if i < len(t.Roles) {
-				c = fmt.Sprintf("%s %d sess", t.Roles[i].Role, t.Roles[i].Sessions)
+				c = fmt.Sprintf("%s %d sess", plain(t.Roles[i].Role), t.Roles[i].Sessions)
 			}
 			cells = append(cells, c)
 		}
@@ -52,6 +53,15 @@ func Render(s []TicketSummary, path string) []byte {
 	tw.Flush()
 	b.WriteString(footer)
 	return b.Bytes()
+}
+
+// plain returns s unchanged when every rune is printable, else its quoted
+// form, so stored strings cannot send control sequences to the terminal.
+func plain(s string) string {
+	if strings.IndexFunc(s, func(r rune) bool { return !strconv.IsPrint(r) }) >= 0 {
+		return strconv.Quote(s)
+	}
+	return s
 }
 
 // tokensIn is the in cell: the count plus the cached share when in is not 0.
