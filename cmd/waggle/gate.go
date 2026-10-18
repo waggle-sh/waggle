@@ -35,29 +35,38 @@ var errGit = errors.New("git")
 // as a git argument.
 var oidPattern = regexp.MustCompile(`^[0-9a-f]{40}([0-9a-f]{24})?$`)
 
-// runGate implements `waggle gate <check> [flags]`. v0.1 has exactly one
-// check, decisions; the shape leaves room for verify-commit and friends. It
-// never calls os.Exit, and there is no override flag: an override is a Keeper
-// admin merge, never a flag an agent can pass.
+// runGate implements `waggle gate <check> [flags]`. It never calls os.Exit,
+// and there is no override flag: an override is a Keeper admin merge, never a
+// flag an agent can pass.
 func runGate(args []string, stdout, stderr io.Writer, getenv func(string) string) int {
-	if len(args) == 0 || args[0] != "decisions" {
-		if len(args) > 0 {
-			fmt.Fprintf(stderr, "waggle gate: unknown check %q\n\n", args[0])
+	if len(args) > 0 {
+		switch args[0] {
+		case "decisions":
+			return runGateDecisions(args[1:], stdout, stderr, getenv)
+		case "verify", checkLeases, checkTiers:
+			return runGateRange(args[0], args[1:], stdout, stderr, getenv)
 		}
-		fmt.Fprintf(stderr, `Usage: waggle gate <check> [flags]
+		fmt.Fprintf(stderr, "waggle gate: unknown check %q\n\n", args[0])
+	}
+	fmt.Fprintf(stderr, `Usage: waggle gate <check> --base <rev> --head <rev> [--repo <dir>]
 
-Merge-gate checks CI runs against a pull request. Exit codes: 0 pass or
-unchanged, 1 check failed, 2 usage, 3 git or I/O error. No override flag
-exists; an override is a Keeper admin merge.
+Merge-gate checks CI runs against a pull request. Each compares
+merge-base(base, head) to head. Exit codes: 0 pass or unchanged, 1 check
+failed, 2 usage, 3 git or I/O error. No override flag exists; an override is
+a Keeper admin merge.
 
 Checks:
+  verify      Run leases, tiers and decisions; report every failure and exit
+              with the worst code.
+  leases      Every commit is a T-<id>: commit (no merges) whose paths stay
+              inside its claim directories, exact case, with no new symlink
+              or submodule.
+  tiers       No commit touches a Tier 3 path or, under a light claim, a
+              Tier 2 path; no two head paths differ only in case.
   decisions   Reject any change to %s that is not a pure append of
-              well-formed entries. Compares merge-base(base, head) to head.
-              waggle gate decisions --base <rev> --head <rev> [--repo <dir>]
+              well-formed entries.
 `, layout.Decisions)
-		return gateUsage
-	}
-	return runGateDecisions(args[1:], stdout, stderr, getenv)
+	return gateUsage
 }
 
 func runGateDecisions(args []string, stdout, stderr io.Writer, getenv func(string) string) int {
