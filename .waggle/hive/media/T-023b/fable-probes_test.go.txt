@@ -1,0 +1,134 @@
+package dispatch
+
+import (
+	"context"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+// Remote mode: does AcquireClaim work when the backend has a remote?
+func TestScratchRemoteClaim(t *testing.T) {
+	dir, _ := newRepo(t)
+	bare := t.TempDir()
+	sh(t, bare, "init", "-q", "--bare", "-b", "main")
+	sh(t, dir, "remote", "add", "origin", bare)
+	sh(t, dir, "push", "-q", "origin", "main")
+	now := t0
+	b, err := comb.NewGitBackend(comb.Options{RepoDir: dir, Remote: "origin", Now: func() time.Time { return now }, DefaultTTL: time.Hour,
+		ExtraEnv: []string{"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	req := mustValid(t, okReq(dir))
+	c, err := AcquireClaim(ctx, b, req, "alice", now)
+	t.Logf("remote fresh: verb=%s oid=%s notes=%v err=%v", c.Verb, c.OID, c.Notes, err)
+	if err != nil {
+		t.Fatalf("remote fresh claim failed: %v", err)
+	}
+	other := t.TempDir()
+	sh(t, other, "clone", "-q", bare, "c")
+	c2dir := filepath.Join(other, "c")
+	now2 := t0.Add(3 * time.Hour)
+	b2, err := comb.NewGitBackend(comb.Options{RepoDir: c2dir, Remote: "origin", Now: func() time.Time { return now2 }, DefaultTTL: time.Hour,
+		ExtraEnv: []string{"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req2 := mustValid(t, okReq(c2dir))
+	c2, err := AcquireClaim(ctx, b2, req2, "bob", now2)
+	t.Logf("remote takeover from stale mirror: verb=%s oid=%s notes=%v err=%v", c2.Verb, c2.OID, c2.Notes, err)
+	c3, err := AcquireClaim(ctx, b, req, "alice", now2)
+	t.Logf("alice vs active bob (stale mirror): verb=%s notes=%v err=%v code=%d", c3.Verb, c3.Notes, err, ExitCode(err))
+}
+
+// Compare checkBranch with git check-ref-format --branch over a small alphabet.
+func TestScratchBranchFuzz(t *testing.T) {
+	chars := []rune("aZ09._-")
+	var cands []string
+	var gen func(prefix string, n int)
+	gen = func(prefix string, n int) {
+		cands = append(cands, prefix)
+		if n == 0 {
+			return
+		}
+		for _, c := range chars {
+			gen(prefix+string(c), n-1)
+		}
+	}
+	gen("t-023", 3)
+	cands = append(cands, "t-023.lock.x", "t-023-.lock", "t-023@{x", "t-023\x7f", "t-023 x", "t-023~", "t-023^", "t-023:", "t-023?", "t-023*", "t-023[", "t-023\\", "t-023/x")
+	mism := 0
+	for _, b := range cands {
+		ours := checkBranch(b, "T-023") == nil
+		cmd := exec.Command("git", "check-ref-format", "--branch", b)
+		cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1")
+		gitOK := cmd.Run() == nil
+		rest := strings.TrimPrefix(b, "t-023")
+		digitNext := rest != "" && rest[0] >= '0' && rest[0] <= '9'
+		slash := strings.Contains(rest, "/")
+		if ours && !gitOK {
+			mism++
+			t.Errorf("ACCEPTED by checkBranch but refused by git: %q", b)
+		}
+		if !ours && gitOK && !digitNext && !slash {
+			t.Logf("refused by checkBranch but git accepts: %q", b)
+		}
+	}
+	t.Logf("%d candidates, %d dangerous mismatches", len(cands), mism)
+}
+
+// Glob and icase pathspecs in blobAt.
+func TestScratchPathspec(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	r := okReq(dir)
+	r.ReadPaths = []string{"internal/x/*.go", ".", "internal/x/[a]a.go"}
+	req := mustValid(t, r)
+	in, err := ReadInputs(ctx, g, base, req)
+	for _, f := range in.ReadOnly {
+		t.Logf("readpath %q -> %q", f.Path, string(f.Content))
+	}
+	t.Logf("err=%v", err)
+	t.Setenv("GIT_ICASE_PATHSPECS", "1")
+	data, found, err := blobAt(ctx, g, base, ".waggle/hive/tasks/t-023.md", maxBrief)
+	t.Logf("icase lookup of t-023.md: found=%v data=%q err=%v", found, data, err)
+}
+
+// Symlinked worktree path pointing at a foreign repo on the same branch name.
+func TestScratchSymlinkForeign(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	sh(t, dir, "branch", "t-023", base)
+	foreign := t.TempDir()
+	sh(t, foreign, "init", "-q", "-b", "t-023")
+	write(t, foreign, "f.txt", "foreign\n")
+	sh(t, foreign, "add", "-A")
+	sh(t, foreign, "commit", "-q", "-m", "foreign")
+	wt := filepath.Join(dir, ".waggle/worktrees")
+	_ = os.MkdirAll(wt, 0o700)
+	if err := os.Symlink(foreign, filepath.Join(wt, "T-023-builder")); err != nil {
+		t.Fatal(err)
+	}
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("symlink to foreign repo: w=%+v err=%v", w, err)
+	if w != nil {
+		_ = w.Unlock()
+	}
+}
+
+// Does Validate refuse base == branch?
+func TestScratchBaseIsBranch(t *testing.T) {
+	r := okReq("/repo")
+	r.Branch, r.Base = "t-023b", "t-023b"
+	_, err := r.Validate()
+	t.Logf("base == branch: err=%v", err)
+}

@@ -1,0 +1,247 @@
+package dispatch
+
+import (
+	"context"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+// Remote mode re-run: the takeover from a stale mirror must now carry a note.
+func TestRecheckRemoteClaim(t *testing.T) {
+	dir, _ := newRepo(t)
+	bare := t.TempDir()
+	sh(t, bare, "init", "-q", "--bare", "-b", "main")
+	sh(t, dir, "remote", "add", "origin", bare)
+	sh(t, dir, "push", "-q", "origin", "main")
+	now := t0
+	env := []string{"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1"}
+	b, err := comb.NewGitBackend(comb.Options{RepoDir: dir, Remote: "origin", Now: func() time.Time { return now }, DefaultTTL: time.Hour, ExtraEnv: env})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	req := mustValid(t, okReq(dir))
+	c, err := AcquireClaim(ctx, b, req, "alice", now)
+	t.Logf("remote fresh: verb=%s notes=%v err=%v", c.Verb, c.Notes, err)
+	other := t.TempDir()
+	sh(t, other, "clone", "-q", bare, "c")
+	c2dir := filepath.Join(other, "c")
+	now2 := t0.Add(3 * time.Hour)
+	b2, err := comb.NewGitBackend(comb.Options{RepoDir: c2dir, Remote: "origin", Now: func() time.Time { return now2 }, DefaultTTL: time.Hour, ExtraEnv: env})
+	if err != nil {
+		t.Fatal(err)
+	}
+	c2, err := AcquireClaim(ctx, b2, mustValid(t, okReq(c2dir)), "bob", now2)
+	t.Logf("remote takeover from stale mirror: verb=%s notes=%v err=%v", c2.Verb, c2.Notes, err)
+	if c2.Verb != "takeover" || len(c2.Notes) != 1 || !strings.Contains(c2.Notes[0], "alice") {
+		t.Errorf("B2 not fixed: %+v", c2)
+	}
+	c3, err := AcquireClaim(ctx, b, req, "alice", now2)
+	t.Logf("alice vs active bob (stale mirror): verb=%s notes=%v err=%v code=%d", c3.Verb, c3.Notes, err, ExitCode(err))
+	if ExitCode(err) != ExitClaim {
+		t.Errorf("expected exit 4, got %d", ExitCode(err))
+	}
+}
+
+// Branch fuzz re-run (unchanged code path, confirms no regression).
+func TestRecheckBranchFuzz(t *testing.T) {
+	chars := []rune("aZ09._-")
+	var cands []string
+	var gen func(prefix string, n int)
+	gen = func(prefix string, n int) {
+		cands = append(cands, prefix)
+		if n == 0 {
+			return
+		}
+		for _, c := range chars {
+			gen(prefix+string(c), n-1)
+		}
+	}
+	gen("t-023", 3)
+	cands = append(cands, "t-023.lock.x", "t-023-.lock", "t-023@{x", "t-023\x7f", "t-023 x", "t-023~", "t-023^", "t-023:", "t-023?", "t-023*", "t-023[", "t-023\\", "t-023/x")
+	mism := 0
+	for _, b := range cands {
+		ours := checkBranch(b, "T-023") == nil
+		cmd := exec.Command("git", "check-ref-format", "--branch", b)
+		cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1")
+		if ours && cmd.Run() != nil {
+			mism++
+			t.Errorf("ACCEPTED by checkBranch but refused by git: %q", b)
+		}
+	}
+	t.Logf("%d candidates, %d dangerous mismatches", len(cands), mism)
+}
+
+// Read paths: "." and pathspec magic at Validate, globs and icase at blobAt.
+func TestRecheckPathspec(t *testing.T) {
+	for _, p := range []string{".", ":(top)x", ":/x", "internal/x/*.go"} {
+		r := okReq("/repo")
+		r.ReadPaths = []string{p}
+		_, err := r.Validate()
+		t.Logf("Validate read %q: code=%d err=%v", p, ExitCode(err), err)
+	}
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	r := okReq(dir)
+	r.ReadPaths = []string{"internal/x/*.go", "internal/x/[a]a.go"}
+	in, err := ReadInputs(ctx, g, base, mustValid(t, r))
+	for _, f := range in.ReadOnly {
+		t.Logf("readpath %q -> %q", f.Path, string(f.Content))
+	}
+	t.Logf("glob read err=%v", err)
+	t.Setenv("GIT_ICASE_PATHSPECS", "1")
+	data, found, err := blobAt(ctx, g, base, ".waggle/hive/tasks/t-023.md", maxBrief)
+	t.Logf("icase lookup of t-023.md: found=%v data=%q err=%v", found, data, err)
+	if found {
+		t.Error("icase lookup resolved a differently cased path")
+	}
+}
+
+// Symlinked worktree path pointing at a foreign repo: must now be exit 3.
+func TestRecheckSymlinkForeign(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	sh(t, dir, "branch", "t-023", base)
+	foreign := t.TempDir()
+	sh(t, foreign, "init", "-q", "-b", "t-023")
+	marker := filepath.Join(t.TempDir(), "ran")
+	sh(t, foreign, "config", "core.fsmonitor", "touch "+marker)
+	write(t, foreign, "f.txt", "foreign\n")
+	sh(t, foreign, "add", "-A")
+	sh(t, foreign, "commit", "-q", "-m", "foreign")
+	wt := filepath.Join(dir, ".waggle/worktrees")
+	_ = os.MkdirAll(wt, 0o700)
+	if err := os.Symlink(foreign, filepath.Join(wt, "T-023-builder")); err != nil {
+		t.Fatal(err)
+	}
+	_ = os.Remove(marker) // setup commits above ran the foreign fsmonitor; clear it
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("symlink to foreign repo: w=%+v code=%d err=%v", w, ExitCode(err), err)
+	if ExitCode(err) != ExitEnv {
+		t.Errorf("N2 not fixed")
+	}
+	if _, serr := os.Stat(marker); serr == nil {
+		t.Error("foreign fsmonitor ran")
+	}
+	if _, serr := os.Stat(filepath.Join(wt, "T-023-builder.lock")); serr == nil {
+		t.Error("lock left behind")
+	}
+}
+
+// A copy of another role's registered worktree at the builder path.
+func TestRecheckCopiedWorktree(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	sh(t, dir, "branch", "t-023", base)
+	wt := filepath.Join(dir, ".waggle/worktrees")
+	_ = os.MkdirAll(wt, 0o700)
+	sh(t, dir, "worktree", "add", filepath.Join(wt, "T-023-forager"), "t-023")
+	out, err := exec.Command("cp", "-R", filepath.Join(wt, "T-023-forager"), filepath.Join(wt, "T-023-builder")).CombinedOutput()
+	if err != nil {
+		t.Fatal(string(out))
+	}
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("copied forager worktree at builder path: w=%+v code=%d err=%v", w, ExitCode(err), err)
+	if ExitCode(err) != ExitEnv {
+		t.Errorf("copied worktree accepted")
+	}
+}
+
+// A registered worktree whose .git file was redirected to a foreign gitdir.
+// Residual characterization, not a phase B requirement.
+func TestRecheckRedirectedGitFile(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	foreign := t.TempDir()
+	sh(t, foreign, "init", "-q", "-b", "t-023")
+	marker := filepath.Join(t.TempDir(), "ran")
+	sh(t, foreign, "config", "core.fsmonitor", "touch "+marker)
+	// Make the foreign index describe the worktree's files so status looks clean.
+	sh(t, foreign, "--work-tree="+w.Path, "add", "-A")
+	sh(t, foreign, "--work-tree="+w.Path, "commit", "-q", "-m", "mirror")
+	if err := os.WriteFile(filepath.Join(w.Path, ".git"), []byte("gitdir: "+filepath.Join(foreign, ".git")+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_ = os.Remove(marker) // setup commits above ran the foreign fsmonitor; clear it
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("redirected .git file: reused=%v code=%d err=%v", w2 != nil && w2.Reused, ExitCode(err), err)
+	if _, serr := os.Stat(marker); serr == nil {
+		t.Error("foreign fsmonitor ran from dispatch's git call")
+	} else {
+		t.Logf("foreign fsmonitor did not run (hooks and fsmonitor off)")
+	}
+	if w2 != nil {
+		_ = w2.Unlock()
+	}
+}
+
+// Leaked .takeover guard: with a stale lock, without one, and with a live lock.
+func TestRecheckLeakedGuard(t *testing.T) {
+	old := pidAlive
+	t.Cleanup(func() { pidAlive = old })
+	self := os.Getpid()
+	pidAlive = func(pid int) bool { return pid == self }
+	host, _ := os.Hostname()
+	stale := `{"pid":4242,"host":"` + host + `","started":"2026-10-18T10:00:00Z"}`
+
+	lock := filepath.Join(t.TempDir(), "T-023-builder.lock")
+	_ = os.WriteFile(lock, []byte(stale), 0o600)
+	_ = os.WriteFile(lock+".takeover", nil, 0o600)
+	warns, err := takeLock(lock, t0)
+	t.Logf("stale lock + leaked guard: warns=%v code=%d err=%v", warns, ExitCode(err), err)
+
+	lock2 := filepath.Join(t.TempDir(), "T-023-builder.lock")
+	_ = os.WriteFile(lock2+".takeover", nil, 0o600)
+	warns, err = takeLock(lock2, t0)
+	t.Logf("no lock + leaked guard: warns=%v err=%v", warns, err)
+	if err != nil {
+		t.Error("leaked guard blocked a free lock")
+	}
+
+	lock3 := filepath.Join(t.TempDir(), "T-023-builder.lock")
+	_, err = takeLock(lock3, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = takeLock(lock3, t0)
+	t.Logf("live lock: code=%d err=%v", ExitCode(err), err)
+	if ExitCode(err) != ExitEnv || !strings.Contains(err.Error(), "run in progress") {
+		t.Error("live lock message or code changed")
+	}
+
+	// Stale lock, no contention: taken over with the warning, nothing left behind.
+	lock4 := filepath.Join(t.TempDir(), "T-023-builder.lock")
+	_ = os.WriteFile(lock4, []byte(stale), 0o600)
+	warns, err = takeLock(lock4, t0)
+	t.Logf("stale lock alone: warns=%v err=%v", warns, err)
+	left, _ := filepath.Glob(lock4 + ".*")
+	t.Logf("files left beside lock4: %v", left)
+	if len(left) != 0 {
+		t.Error("guard or stale file left behind")
+	}
+}
+
+// Base equal to the branch, in its local and remote spellings.
+func TestRecheckBaseIsBranch(t *testing.T) {
+	for _, b := range []string{"t-023b", "refs/heads/t-023b", "heads/t-023b", "origin/t-023b", "refs/remotes/origin/t-023b"} {
+		r := okReq("/repo")
+		r.Branch, r.Base = "t-023b", b
+		_, err := r.Validate()
+		t.Logf("base %q == branch: code=%d err=%v", b, ExitCode(err), err)
+	}
+}
