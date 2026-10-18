@@ -1,0 +1,211 @@
+package dispatch
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+// R1: registered worktree path, directory replaced by a planted repo whose
+// .git FILE points to a foreign gitdir. Registration still lists the path.
+func TestProbe2SeparateGitDirPlant(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Unlock()
+	os.RemoveAll(w.Path)
+	evil := filepath.Join(t.TempDir(), "evil.git")
+	sh(t, filepath.Dir(w.Path), "init", "-q", "-b", "t-023", "--separate-git-dir", evil, filepath.Base(w.Path))
+	write(t, w.Path, ".gitattributes", "* filter=x\n")
+	write(t, w.Path, "f", "x")
+	sh(t, w.Path, "add", "-A")
+	sh(t, w.Path, "commit", "-q", "-m", "foreign")
+	fsm := filepath.Join(t.TempDir(), "fsm")
+	flt := filepath.Join(t.TempDir(), "flt")
+	sh(t, w.Path, "config", "core.fsmonitor", "touch "+fsm+"; false")
+	sh(t, w.Path, "config", "filter.x.clean", "sh -c 'touch "+flt+"; cat'")
+	future := time.Now().Add(time.Hour)
+	os.Chtimes(filepath.Join(w.Path, "f"), future, future)
+	t.Logf("worktree list:\n%s", sh(t, dir, "worktree", "list", "--porcelain"))
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	_, e1 := os.Stat(fsm)
+	_, e2 := os.Stat(flt)
+	t.Logf("separate-git-dir plant: err=%v reused=%v fsmonitorRan=%v filterRan=%v", err, w2 != nil && w2.Reused, e1 == nil, e2 == nil)
+	if w2 != nil {
+		t.Logf("agent cwd HEAD: %s (main t-023: %s)", sh(t, w2.Path, "rev-parse", "HEAD"), sh(t, dir, "rev-parse", "t-023"))
+	}
+}
+
+// R2: legit registered worktree, filter set in the shared config (agent
+// writable). Same exec class as hooks in phase C test 12.
+func TestProbe2SharedConfigFilter(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Unlock()
+	write(t, w.Path, ".gitattributes", "* filter=x\n")
+	sh(t, w.Path, "add", "-A")
+	sh(t, w.Path, "commit", "-q", "-m", "attr")
+	flt := filepath.Join(t.TempDir(), "flt")
+	sh(t, dir, "config", "filter.x.clean", "sh -c 'touch "+flt+"; cat'")
+	future := time.Now().Add(time.Hour)
+	os.Chtimes(filepath.Join(w.Path, ".gitattributes"), future, future)
+	_, err = Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	_, e := os.Stat(flt)
+	t.Logf("shared config filter: err=%v filterRan=%v", err, e == nil)
+}
+
+func newRepoAt(t *testing.T, root string) (string, *Git) {
+	t.Helper()
+	t.Setenv("GIT_CONFIG_GLOBAL", "/dev/null")
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+	sh(t, root, "init", "-q", "-b", "main")
+	write(t, root, ".gitignore", ".waggle/worktrees/\n")
+	write(t, root, "internal/x/a.go", "package x\n")
+	sh(t, root, "add", "-A")
+	sh(t, root, "commit", "-q", "-m", "init")
+	return root, &Git{Dir: root}
+}
+
+// R3: path shapes for the porcelain parse.
+func TestProbe2PathShapes(t *testing.T) {
+	ctx := context.Background()
+	for _, name := range []string{"has space", "new\nline", "tab\there", "quo\"te"} {
+		root := filepath.Join(t.TempDir(), name)
+		os.MkdirAll(root, 0o755)
+		dir, g := newRepoAt(t, root)
+		base, _ := ResolveBase(ctx, g, "", "")
+		w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+		if err != nil {
+			t.Logf("%q first provision: %v", name, err)
+			continue
+		}
+		w.Unlock()
+		w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+		t.Logf("%q reuse: err=%v reused=%v", name, err, w2 != nil && w2.Reused)
+		if w2 != nil {
+			w2.Unlock()
+		}
+	}
+	dir, g := newRepo(t)
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Unlock()
+	up := strings.ToUpper(dir)
+	if _, err := os.Stat(up); err == nil {
+		w2, err := Provision(ctx, &Git{Dir: up}, mustValid(t, okReq(up)), base, t0)
+		t.Logf("case-different repo path: err=%v reused=%v", err, w2 != nil && w2.Reused)
+		if w2 != nil {
+			w2.Unlock()
+		}
+	}
+	pt := "/private" + dir
+	if !strings.HasPrefix(dir, "/private") {
+		if _, err := os.Stat(pt); err == nil {
+			w2, err := Provision(ctx, &Git{Dir: pt}, mustValid(t, okReq(pt)), base, t0)
+			t.Logf("/private-prefixed repo path: err=%v reused=%v", err, w2 != nil && w2.Reused)
+			if w2 != nil {
+				w2.Unlock()
+			}
+		}
+	}
+	sh(t, dir, "worktree", "lock", w.Path)
+	w3, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("locked entry reuse: err=%v reused=%v", err, w3 != nil && w3.Reused)
+	if w3 != nil {
+		w3.Unlock()
+	}
+	os.RemoveAll(w.Path)
+	_, err = Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("locked missing entry: exit=%d err=%v", code(err), err)
+}
+
+// R4: takeover guard surface.
+func TestProbe2Guard(t *testing.T) {
+	old := pidAlive
+	t.Cleanup(func() { pidAlive = old })
+	self := os.Getpid()
+	pidAlive = func(pid int) bool { return pid == self }
+	host, _ := hostName()
+	stale := `{"pid":4242,"host":"` + host + `","started":"2026-10-18T10:00:00Z"}`
+	d := t.TempDir()
+	lock := filepath.Join(d, "L.lock")
+
+	os.WriteFile(lock, []byte(stale), 0o600)
+	os.WriteFile(lock+".takeover", nil, 0o600)
+	_, err := takeLock(lock, t0)
+	t.Logf("stale lock + leftover guard: exit=%d %v", code(err), err)
+	os.Remove(lock)
+	_, err = takeLock(lock, t0)
+	t.Logf("no lock + leftover guard: err=%v", err)
+	os.Remove(lock)
+	os.Remove(lock + ".takeover")
+
+	os.WriteFile(lock, []byte(stale), 0o600)
+	tgt := filepath.Join(d, "guard-target")
+	os.Symlink(tgt, lock+".takeover")
+	_, err = takeLock(lock, t0)
+	_, terr := os.Lstat(tgt)
+	t.Logf("dangling symlink guard: err=%v targetCreated=%v", err, terr == nil)
+	os.Remove(lock + ".takeover")
+	os.Remove(lock)
+
+	victim := filepath.Join(d, "victim")
+	os.WriteFile(victim, []byte(stale), 0o600)
+	os.Symlink(victim, lock)
+	_, err = takeLock(lock, t0)
+	vb, _ := os.ReadFile(victim)
+	fi, _ := os.Lstat(lock)
+	t.Logf("symlinked lock: err=%v victimIntact=%v lockIsRegular=%v", err, string(vb) == stale, fi != nil && fi.Mode().IsRegular())
+	os.Remove(lock)
+
+	fifo := filepath.Join(d, "fifo")
+	if err := syscall.Mkfifo(fifo, 0o600); err == nil {
+		os.Symlink(fifo, lock)
+		done := make(chan error, 1)
+		go func() { _, e := takeLock(lock, t0); done <- e }()
+		select {
+		case e := <-done:
+			t.Logf("fifo lock: returned %v", e)
+		case <-time.After(2 * time.Second):
+			t.Logf("fifo lock: takeLock BLOCKED (>2s)")
+			f, _ := os.OpenFile(fifo, os.O_WRONLY, 0)
+			if f != nil {
+				f.Close()
+			}
+			<-done
+		}
+		os.Remove(lock)
+	}
+
+	pidAlive = func(int) bool { return true }
+	os.WriteFile(lock, []byte(stale), 0o600)
+	_, err = takeLock(lock, t0)
+	t.Logf("pid reused: exit=%d %v", code(err), err)
+}
+
+// R5: symlinked runs dir.
+func TestProbe2RunsSymlink(t *testing.T) {
+	dir, _ := newRepo(t)
+	elsewhere := t.TempDir()
+	os.MkdirAll(filepath.Join(dir, ".waggle/worktrees"), 0o700)
+	os.Symlink(elsewhere, filepath.Join(dir, ".waggle/worktrees/runs"))
+	p, err := NewRunDir(dir, "T-023", "builder")
+	rp, _ := filepath.EvalSymlinks(p)
+	t.Logf("runs symlink: err=%v path=%s resolved=%s", err, p, rp)
+}

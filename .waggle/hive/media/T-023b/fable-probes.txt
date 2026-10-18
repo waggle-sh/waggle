@@ -1,0 +1,18 @@
+    zz_scratch_fable_test.go:31: remote fresh: verb=claim oid=a6fa908d8930014f780db2a674a20310a41e3d97 notes=[] err=<nil>
+    zz_scratch_fable_test.go:46: remote takeover from stale mirror: verb=claim oid=66e1f7020f0e3d4f3a5a444b34de1a1aa0ae8ce1 notes=[] err=<nil>
+    zz_scratch_fable_test.go:48: alice vs active bob (stale mirror): verb= notes=[] err=T-023 held by bob until 2026-10-18T16:00:00Z: comb: ticket already claimed code=4
+--- PASS: TestScratchRemoteClaim (1.14s)
+    zz_scratch_fable_test.go:84: 413 candidates, 0 dangerous mismatches
+--- PASS: TestScratchBranchFuzz (4.56s)
+    zz_scratch_fable_test.go:97: readpath "internal/x/*.go" -> ""
+    zz_scratch_fable_test.go:97: readpath "." -> ".waggle/worktrees/\n"
+    zz_scratch_fable_test.go:97: readpath "internal/x/[a]a.go" -> ""
+    zz_scratch_fable_test.go:99: err=internal/x/*.go is not on base 15bd3b789c759e2a59c6da8f115c738a7619e39b; land it in a hive PR first
+    zz_scratch_fable_test.go:102: icase lookup of t-023.md: found=false data="" err=git ls-tree: exit status 128: fatal: .waggle/hive/tasks/t-023.md: pathspec magic not supported by this command: 'icase'
+--- PASS: TestScratchPathspec (0.21s)
+    zz_scratch_fable_test.go:122: symlink to foreign repo: w=&{Path:/var/folders/<tmp>/T/TestScratchSymlinkForeign3266137290/001/.waggle/worktrees/T-023-builder LockPath:/var/folders/<tmp>/T/TestScratchSymlinkForeign3266137290/001/.waggle/worktrees/T-023-builder.lock Branch:t-023 BaseOID:15bd3b789c759e2a59c6da8f115c738a7619e39b CheckBase:15bd3b789c759e2a59c6da8f115c738a7619e39b Reused:true Warnings:[]} err=<nil>
+--- PASS: TestScratchSymlinkForeign (0.19s)
+    zz_scratch_fable_test.go:133: base == branch: err=<nil>
+--- PASS: TestScratchBaseIsBranch (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	7.309s
