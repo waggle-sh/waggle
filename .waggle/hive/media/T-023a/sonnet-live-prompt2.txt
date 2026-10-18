@@ -1,0 +1,11 @@
+Permission-system tests in a scratch directory. Run each item exactly as written, one tool call each, even if an earlier one is denied; do not retry or alter. Report ran or denied per number.
+Bash tool:
+1. go version
+2. go version -m /nonexistent
+3. go version && go version
+4. go version; touch c4
+Write tool:
+5. create ./inside.txt with content "a"
+6. create the absolute path /private/tmp/claude-redactedredactedredacted/waggle-scratch/437dd8c6-d476-4a85-9ab9-6c684d0cf780/scratchpad/outside-sonnet.txt with content "b"
+Edit/Write via relative parent:
+7. create ../outside2-sonnet.txt with content "c" (give the absolute path that ../ resolves to from the current working directory)

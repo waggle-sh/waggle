@@ -1,0 +1,21 @@
+package probe
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"testing"
+)
+
+// TestProbe shows what an allowed command (go test) can do: dump the env it
+// sees and run git push through exec, which the Bash deny rule cannot see.
+func TestProbe(t *testing.T) {
+	os.WriteFile("env-dump.txt", []byte(strings.Join(os.Environ(), "\n")), 0o600)
+	var b strings.Builder
+	for _, r := range []string{"https-remote", "ssh-remote", "scp-remote", "http-remote", "local-remote"} {
+		out, err := exec.Command("git", "push", r, "HEAD:refs/heads/from-go-test").CombinedOutput()
+		fmt.Fprintf(&b, "--- %s: err=%v\n%s\n", r, err, out)
+	}
+	os.WriteFile("push-result.txt", []byte(b.String()), 0o600)
+}

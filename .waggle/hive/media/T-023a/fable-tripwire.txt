@@ -1,0 +1,11 @@
+git push under the exact worker env from Prepare (GIT_CONFIG_COUNT tripwire). Remotes: https-remote=https://127.0.0.1:1/x.git ssh-remote=ssh://git@127.0.0.1:1/x.git scp-remote=git@127.0.0.1:x.git http-remote=http://127.0.0.1:1/x.git local-remote=<bare path in scratch>
+
+[push https:// (tripwire)] rc=128: ssh: Could not resolve hostname waggle-push-blocked: nodename nor servname provided, or not known | fatal: Could not read from remote repository. |  | Please make sure you have the correct access rights | and the repository exists.
+[push ssh:// (tripwire)] rc=128: ssh: Could not resolve hostname waggle-push-blocked: nodename nor servname provided, or not known | fatal: Could not read from remote repository. |  | Please make sure you have the correct access rights | and the repository exists.
+[push git@ (tripwire)] rc=128: ssh: Could not resolve hostname waggle-push-blocked: nodename nor servname provided, or not known | fatal: Could not read from remote repository. |  | Please make sure you have the correct access rights | and the repository exists.
+[push http:// (NOT covered by the tripwire)] rc=128: fatal: unable to access 'http://127.0.0.1:1/x.git/': Failed to connect to 127.0.0.1 port 1 after 0 ms: Couldn't connect to server
+[fetch https:// (reads unaffected)] rc=128: fatal: unable to access 'https://127.0.0.1:1/x.git/': Failed to connect to 127.0.0.1 port 1 after 0 ms: Couldn't connect to server
+[bypass A: a longer pushInsteadOf prefix via -c wins] rc=128: fatal: unable to access 'https://127.0.0.1:1/x.git/': Failed to connect to 127.0.0.1 port 1 after 0 ms: Couldn't connect to server
+[bypass B: remote.<name>.pushurl set, pushInsteadOf ignored] rc=128: fatal: unable to access 'https://127.0.0.1:1/x.git/': Failed to connect to 127.0.0.1 port 1 after 0 ms: Couldn't connect to server
+[bypass C: empty value via -c (does not bypass)] rc=128: ssh: Could not resolve hostname waggle-push-blocked: nodename nor servname provided, or not known | fatal: Could not read from remote repository. |  | Please make sure you have the correct access rights | and the repository exists.
+[where git sees the tripwire] rc=0: command line:	https:// | command line:	ssh:// | command line:	git@

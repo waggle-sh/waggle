@@ -1,0 +1,41 @@
+{
+ "argv": [
+  "claude",
+  "--print",
+  "--output-format=stream-json",
+  "--verbose",
+  "--model=haiku",
+  "--setting-sources=",
+  "--settings={\"permissions\":{\"allow\":[\"Read\",\"Glob\",\"Grep\",\"Edit\",\"Write\",\"Bash(go build)\",\"Bash(go build *)\",\"Bash(go test)\",\"Bash(go test *)\",\"Bash(go vet)\",\"Bash(go vet *)\",\"Bash(git add)\",\"Bash(git add *)\",\"Bash(git commit)\",\"Bash(git commit *)\",\"Bash(git status)\",\"Bash(git status *)\",\"Bash(git diff)\",\"Bash(git diff *)\",\"Bash(git log)\",\"Bash(git log *)\",\"Bash(git show)\",\"Bash(git show *)\"],\"deny\":[\"Bash(git push)\",\"Bash(git push *)\",\"Bash(gh)\",\"Bash(gh *)\",\"Bash(curl)\",\"Bash(curl *)\",\"Bash(wget)\",\"Bash(wget *)\",\"Bash(ssh)\",\"Bash(ssh *)\",\"WebFetch\",\"WebSearch\"],\"defaultMode\":\"dontAsk\"}}",
+  "--strict-mcp-config",
+  "--tools=Bash,Edit,Glob,Grep,Read,Write",
+  "--permission-mode=dontAsk",
+  "--max-turns=40",
+  "--append-system-prompt=STABLE-CANARY-9 is the stable prompt marker."
+ ],
+ "env": [
+  "PATH=/opt/homebrew/Cellar/go/1.27.2/libexec/bin:/Applications/Orca.app/Contents/Resources/bin:/Users/example/.opencode/bin:/Users/example/.codeium/windsurf/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Users/example/.docker/bin:/Users/example/.volta/bin:/Users/example/.asdf/shims:/Users/example/.fnm/aliases/default/bin:/Users/example/.local/share/mise/shims:/Users/example/Library/pnpm:/Users/example/.yarn/bin:/Users/example/.bun/bin:/usr/local/sbin:/nix/var/nix/profiles/default/bin:/Users/example/bin:/Users/example/.local/bin:/Users/example/.nix-profile/bin:/Users/example/.vite-plus/bin",
+  "HOME=/Users/example",
+  "USER=example",
+  "LOGNAME=example",
+  "SHELL=/bin/zsh",
+  "TMPDIR=/var/folders/xx/redacted/T/",
+  "TERM=xterm-256color",
+  "LANG=en_US.UTF-8",
+  "CLAUDE_CODE_DISABLE_CLAUDE_MDS=1",
+  "CLAUDE_CODE_DISABLE_AUTO_MEMORY=1",
+  "ENABLE_CLAUDEAI_MCP_SERVERS=false",
+  "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1",
+  "DISABLE_AUTO_COMPACT=1",
+  "GIT_TERMINAL_PROMPT=0",
+  "GIT_CONFIG_COUNT=3",
+  "GIT_CONFIG_KEY_0=url.waggle-push-blocked:.pushInsteadOf",
+  "GIT_CONFIG_VALUE_0=https://",
+  "GIT_CONFIG_KEY_1=url.waggle-push-blocked:.pushInsteadOf",
+  "GIT_CONFIG_VALUE_1=ssh://",
+  "GIT_CONFIG_KEY_2=url.waggle-push-blocked:.pushInsteadOf",
+  "GIT_CONFIG_VALUE_2=git@",
+  "BASH_MAX_OUTPUT_LENGTH=10000",
+  "MAX_THINKING_TOKENS=4000"
+ ]
+}

@@ -1,0 +1,17 @@
+package runtime
+
+import (
+	"encoding/json"
+	"os"
+	"testing"
+)
+
+func TestLiveArgv(t *testing.T) {
+	c := NewClaudeAdapter(AdapterConfig{Binary: "claude", NudgeTokens: 200000, MaxTokens: 300000})
+	c.verified.Store(true)
+	sel := Selection{Role: "builder", Model: "haiku", resolved: true}
+	spec, err := c.Prepare(Invocation{Role: "builder", TaskID: "T-1", Selection: sel, Commands: []string{"go version"}}, ContextSettings{MaxTurns: 20, ToolOutputChars: 20000, Thinking: ProfileLean}, []byte("Be terse."), []byte(os.Getenv("PROBE_PROMPT")))
+	if err != nil { t.Fatal(err) }
+	b, _ := json.Marshal(spec)
+	os.WriteFile(os.Getenv("PROBE_OUT"), b, 0o600)
+}

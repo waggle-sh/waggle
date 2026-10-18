@@ -1,0 +1,5 @@
+Claude Code 2.1.302, model haiku, cwd probe-repo (project CLAUDE.md, CLAUDE.local.md, .claude/settings.json with SessionStart and Stop hooks writing marker files).
+worker (Prepare argv and env): end=done, final "NONE USER=NO STABLE=YES", 0 hook events in stream, no marker files written, tools [Bash Edit Glob Grep Read Write], mcp_servers [].
+control (same minus --setting-sources= and CLAUDE_CODE_DISABLE_CLAUDE_MDS): end=done, final "CANARY-PROJECT-7731, CANARY-LOCAL-4410; USER=YES; STABLE=YES", 12 hook events, session-start-fired and stop-fired written once each.
+USER canary: the Keeper's real ~/.claude/CLAUDE.md names the GitHub user paulternate; it was not edited.
+Built-in plugins still listed in the worker init event: cc-plugin-agents-md@builtin, cc-plugin-plugin-authoring@builtin (shipped inside Claude Code, not Keeper-installed).
