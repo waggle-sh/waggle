@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/waggle-sh/waggle/internal/layout"
 	"github.com/waggle-sh/waggle/internal/runtime"
@@ -38,10 +39,23 @@ func LoadRoster(path string) (map[string]runtime.Level, error) {
 	if err != nil {
 		return nil, err
 	}
+	return ParseRoster(data)
+}
+
+// ParseRoster is LoadRoster on roster bytes already in memory, with the same
+// rules and the same MaxFileSize cap.
+func ParseRoster(data []byte) (map[string]runtime.Level, error) {
+	if len(data) > MaxFileSize {
+		return nil, fmt.Errorf("%w: file is larger than %d bytes", ErrInvalidRoster, MaxFileSize)
+	}
 	var doc struct {
 		Roles []map[string]json.RawMessage `json:"roles"`
 	}
-	if err := json.Unmarshal(data, &doc); err != nil || len(doc.Roles) == 0 {
+	err := json.Unmarshal(data, &doc)
+	if err == nil && len(doc.Roles) == 0 {
+		err = errors.New("roles is missing or empty")
+	}
+	if err != nil {
 		return nil, fmt.Errorf("%w: roles must be a non-empty array of objects (%v)", ErrInvalidRoster, err)
 	}
 	mins := map[string]runtime.Level{}
@@ -71,14 +85,33 @@ func LoadPolicy(repoDir string) (runtime.Policy, error) {
 	if err != nil {
 		return runtime.Policy{}, err
 	}
-	if _, err := Parse(data); err != nil {
+	return policy(data, func() (map[string]runtime.Level, error) {
+		return LoadRoster(filepath.Join(repoDir, filepath.FromSlash(layout.Roster)))
+	})
+}
+
+// ParsePolicy is LoadPolicy on config and roster bytes already in memory.
+func ParsePolicy(cfg, roster []byte) (runtime.Policy, error) {
+	return policy(cfg, func() (map[string]runtime.Level, error) { return ParseRoster(roster) })
+}
+
+// policy parses and validates cfg, then reads the roster only if cfg is good,
+// so a config error is reported before any roster error.
+func policy(cfg []byte, roster func() (map[string]runtime.Level, error)) (runtime.Policy, error) {
+	if len(cfg) > MaxFileSize {
+		return runtime.Policy{}, fmt.Errorf("%w: file is larger than %d bytes", ErrInvalidConfig, MaxFileSize)
+	}
+	if _, err := Parse(cfg); err != nil {
 		return runtime.Policy{}, err
 	}
-	rt, err := ParseRuntimes(data)
+	rt, err := ParseRuntimes(cfg)
 	if err != nil {
+		if strings.Contains(err.Error(), ".levels.") {
+			err = fmt.Errorf("%w; add or fix the levels block from T-012 section 3.2 in %s (a seeded file: edit it by hand, commit, rerun)", err, layout.Config)
+		}
 		return runtime.Policy{}, err
 	}
-	mins, err := LoadRoster(filepath.Join(repoDir, filepath.FromSlash(layout.Roster)))
+	mins, err := roster()
 	if err != nil {
 		return runtime.Policy{}, err
 	}
