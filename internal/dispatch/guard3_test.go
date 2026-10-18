@@ -62,26 +62,53 @@ func TestReuseRefusesCommondirRewrite(t *testing.T) {
 	}
 }
 
-func TestReuseRefusesExtraRegistration(t *testing.T) {
+// extraRegistrationRefused plants a second registration AAA for the worktree
+// path, with its gitdir file written by gitdirOf, and points the worktree's
+// .git at it. Depending on how prune treats the planted entry, the reuse guard
+// refuses on the registration count or on the commondir pin; either is a
+// refusal, and the foreign clean filter must never run.
+func extraRegistrationRefused(t *testing.T, gitdirOf func(wt, aaa string) string) {
+	t.Helper()
 	err, canary := reuseAfter(t, func(wt, canary string) {
 		dirtyViaFilter(t, wt)
 		aaa := filepath.Join(filepath.Dir(registration(t, repoOfWorktree(wt))), "AAA")
 		if err := os.Rename(filterRepo(t, canary), aaa); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(filepath.Join(aaa, "gitdir"), []byte(filepath.Join(wt, ".git")+"\n"), 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(aaa, "gitdir"), []byte(gitdirOf(wt, aaa)+"\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.WriteFile(filepath.Join(wt, ".git"), []byte("gitdir: "+aaa+"\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	})
-	if code(err) != ExitEnv || !strings.Contains(err.Error(), "registrations") {
+	t.Logf("refusal: %v", err)
+	if code(err) != ExitEnv || !(strings.Contains(err.Error(), "registrations") || strings.Contains(err.Error(), "commondir")) {
 		t.Fatalf("second registration for the path accepted: %v", err)
 	}
 	if _, e := os.Stat(canary); e == nil {
 		t.Fatal("clean filter of the extra registration ran on the host")
 	}
+}
+
+func TestReuseRefusesExtraRegistration(t *testing.T) {
+	// Byte-identical to the real registration: on Linux prune removes the real
+	// entry and only AAA survives (commondir refusal); on macOS the /var vs
+	// /private/var spelling keeps both (registrations refusal).
+	t.Run("absolute", func(t *testing.T) {
+		extraRegistrationRefused(t, func(wt, aaa string) string { return filepath.Join(wt, ".git") })
+	})
+	// A relative spelling of the same path, so the outcome does not hinge on
+	// the OS temp directory layout.
+	t.Run("relative", func(t *testing.T) {
+		extraRegistrationRefused(t, func(wt, aaa string) string {
+			rel, err := filepath.Rel(aaa, filepath.Join(wt, ".git"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return rel
+		})
+	})
 }
 
 // The filter canary only proves the refusals above if the same dirty state
