@@ -40,24 +40,30 @@ D-001 to D-097 are in `.waggle/hive/tasks/T-006-backfill.md`. Today's: D-086 (wo
 - Keep Keeper messages short, lead with the answer, no em or en dashes anywhere.
 - Hand off again before context passes about 200k, and refresh this file after every merge batch.
 
-## Live state (fourth session, main at `c94df60` plus in-flight PRs)
+## Live state (end of fourth session, main at `12a4372`, nothing in flight)
 
-Merged this session: T-021 A `de82ff9` (#25), T-007 `2dcadfc` (#23), T-016 `250f331` (#24), hive-records-2 `e1f2c2e` (#26, D-098 to D-100), T-014 A `c94df60` (#27, Tier 3, Keeper card).
+Merged this session, in order: T-021 A (#25), T-007 (#23), T-016 (#24), hive-records-2 (#26), T-014 A (#27), CLAUDE.md (#29), T-018 B (#28), hive-records-3 (#30), RFC-0003 Amendment 2 Cells (#31), T-006 JSON inputs (#33), DECISIONS.md backfill D-001 to D-133 (#34), T-023 A (#32). No open PRs, no worktrees, no agents running.
 
-Keeper rulings this session NOT yet recorded (record in hive-records-3, next D numbers after D-100): (1) Cell runtime: CellRuntime interface, OS sandbox default (Seatbelt macOS, bubblewrap Linux) behind a host egress proxy, plus a Docker-compatible container backend; RFC-0003 amendment drafted by architect, Head Keeper approves (strategy). (2) Licensing: Apache-2.0 CLI and daemon, MIT-0 templates, DCO, SPDX headers, copyright Level 19 Enterprises, LLC (policy). (3) GitHub merge queue treated as unavailable on Team; stay on Team, admin-merge loop stays, native_queue opt-in, doctor reports it, revisit when public (policy). (4) Queen commits the generated CLAUDE.md for the Head Keeper (PR #29, approved). (5) T-018 B accepted at 687 lines vs 650 stop after the Keeper-requested N1/N2/N4 hardening (policy, like D-099). (6) T-006 phase 2: a forager adds the missing backfill JSON (D-088 onward) and runs waggle decide for all entries in a hive PR the Keeper approves. (7) Review follow-ups are folded into the brief that next touches the code (T-014 B: lease.json size cap; T-018 C: N3, N5 to N8; scaffold ticket or T-012 B: roster.json escaping and init symlink hole; T-006: Parse bare CR). Remove Cell runtime, Licensing and merge queue from Appendix B when recorded.
+DECISIONS.md now exists (`.waggle/hive/DECISIONS.md`, 133 entries, append-only, gate-checked). New decisions go through `waggle decide --file <json>` (build waggle from main; input shape is `internal/decisions/testdata/backfill/D-*.json`), not into T-006-backfill Appendix A. Next ID D-134.
 
-In flight:
-- PR #29 merged: CLAUDE.md is tracked on main (D-097 step 0 done). T-020 C is unblocked.
-- PR #28 T-018 B: re-guard pass at `c85c783`, Keeper approved merge; merge loop running. N9 and N10 join N3, N5 to N8 for the T-018 C brief. Worktree `.claude/worktrees/agent-a433dd662d67a7084`.
-- Architect on branch `t-023-brief`: T-023 waggle dispatch brief (Keeper approved).
-- Architect on branch `t-024-cells-license`: RFC-0003 Cells amendment draft plus Cells build brief plus licensing brief (Keeper approved both designs).
-- Uncommitted hive files: reviews T-014a, T-018b and media dirs.
+Keeper rulings NOT yet recorded with waggle decide (do this in hive-records-4):
+- D-134 (policy, T-023): T-023 A short fix pass before merge (`--restricted`, Write/Edit scoped to `./**`, MalformedLines fix, refuse `--effort`, `--fallback-model`, `--remote-control`, `--environment`, `--chrome`, `--ide`, bare positional).
+- D-135 (technical, T-023, T-021): auto-compaction stays off in workers; long sessions end at max_tokens until phase E.
+- D-136 (policy, T-018, T-016, T-021, T-023): D-089 clarification, the size metric is added non-test lines, not whole touched files.
+- D-137 (policy, T-023): a `default_args` allowlist replaces the denylist as a precondition for T-023 phase C.
 
-Next: hive-records-3 (the seven rulings above, reviews, follow-up folding, new briefs), then T-006 phase 2 forager, then T-020 C (two guards per D-100), then T-012 B and T-008, T-014 B.
+Uncommitted hive files for hive-records-4: reviews RFC-0003-A2-sonnet.md, RFC-0003-A2-fable.md, T-006-json.md, T-023a-sonnet.md, T-023a-fable.md and media dirs RFC-0003-A2/, T-006-json/, T-023a/, plus this handoff.
 
-### Keeper rulings on T-023, T-024, T-025 open questions (2026-10-17, all queen defaults approved on cards; record as D-entries in hive-records-3)
+Brief edits for hive-records-4 (status lines and one-line folds only):
+- T-023: phase A Done (`12a4372`, #32, 469 lines); phase C precondition: default_args allowlist (D-137); carry: settings.json copied into run record (phase C), truncated guard verdict as no_verdict (phase D, sonnet N3), push tripwire gaps for http://, git://, local paths, pushInsteadOf and pushurl (sonnet N9, fable), `go test -exec` widening (N2), record `claude --version` in result.json (N10), Windows argv limit note (N11).
+- T-024: fable's builder hazards from `RFC-0003-A2-fable.md` (104-byte sun_path so short runtime dir, Seatbelt loopback allow for the forwarder, allowlist before DNS, bwrap keeps /run out and consider --disable-userns, apiKeyHelper seam, macOS keychain token materialized into the Cell home for passthrough); A2 merged (`44a5e51`); four bullets lack Amended markers (fix next RFC edit).
+- T-006: Done (#33, #34); section 10 loop fixed in practice with printf (update the text); lease text should read `testdata/**`.
+- RFC-0003 A1 "Approved by" still placeholder on main.
 
-- Merged since: T-018 B `b1e4a3a` (#28, Tier 3, 687 lines accepted), CLAUDE.md `97baeda` (#29). Briefs pushed, not merged: `t-023-brief` `85cf224` (T-023), `t-024-cells-license` `4d54f20` (T-024 Cells, T-025 licensing, RFC-0003 amendment A2 draft in docs/).
-- T-023: Q1 dispatch first, host-only with CellRuntime seam (supersedes D-083 wording for T-023). Q2 host runs only with `--no-cell` per invocation, unenforced list printed and recorded. Q3 tool allowlist plus deny list (no git push, gh, curl, wget, ssh, web). Q4 workers use the Keeper's Claude Code login, user settings excluded. Q5 lease from `--dir` and `--gate` flags. Q6 briefs read only from base (briefs merge before first dispatch). Q7 (technical, queen default) shared `comb.CheckChanges`. Q8 dispatch pushes after checks, never force, never opens PRs, `--no-push`. Q9 phase D runs the D-100 second guard. Q10 one trial ticket after phase D, cutover on a card, subagents as rollback. Q11 keeper_id is the GitHub login, placeholder refused with a remote. Q12 phase F sets `forge.remote: origin`.
-- T-024: Q1 default is proxy-injected key with zero credentials, and our hive opts into `cell.inference_credential: passthrough` (doctor reports the target unenforced). Q2 `.git` read-only, waggled commits on host. Q3, Q6, Q9 queen technical defaults (Out dir copied by waggled; registries closed, GOPROXY=off with ro module cache; docker/podman directly). Q4 phases A to E after T-023 merges, F after run.sock loop. Q5, Q10, Q11 scope defaults (container Linux/CI only on macOS unless socket check passes; no OS sandbox resource limits; no seccomp in v0.1, follow-up ticket). Q7 path-filtered macOS and Linux CI jobs. Q8 CODEOWNERS `/internal/cell/ @paulternate`. Q12 refuse `enforce_ro_root: false`.
-- T-025: Q1 SPDX identifier only, copyright in NOTICE. Q2 one rule: product Apache-2.0, templates and hive MIT-0. Q3 (technical) Go test in `internal/license/`. Q4 `dco` CI job, required in the ruleset. Q5 workers commit under the Keeper's identity with `-s`; Keeper certifies. Q6 to Q11 scope defaults (merge commits signed off; no retroactive sign-off; hive unchecked; JSON exempt; LICENSE, NOTICE, LICENSES/ code-owned; year 2026).
+Next work, in order:
+1. hive-records-4 (above), Keeper approves.
+2. T-020 phase C (hive rename through waggle upgrade; CLAUDE.md already tracked), Tier 3, two guards (sonnet plus fable, D-100).
+3. Parallel, disjoint leases: T-023 phase B (`internal/dispatch/`, `internal/config/local.go`), T-014 phase B (`cmd/waggle/` gate verify plus the loadClaims cap), T-021 phase B, T-025 phase A (license files, Tier 2). Serialize on `internal/scaffold/`: T-020 C, then T-012 B (with the init symlink and roster.json fold), then T-008 (also after T-014 B on internal/comb). T-018 C after T-014 B (main.go) and carries T-007 section 8 and N3, N5 to N10.
+4. T-024 phases A to E dispatch after all of T-023 merges (D-123); phase F after the run.sock loop.
+
+Habits from this session: merge with a backgrounded poll script (`gh pr ready`, `gh pr update-branch`, poll `gh pr checks`, `gh pr merge --merge --admin` with the Intent Packet); after a merge that adds files you hold untracked locally, delete identical local copies before pulling; never switch the main checkout's branch to commit (it deletes untracked-then-tracked files like CLAUDE.md), use a worktree; scan builder evidence for secrets before copying into media; Tier 3 gets sonnet plus fable guards; agents can't be resumed after /clear, so re-dispatch fresh on the same worktree.

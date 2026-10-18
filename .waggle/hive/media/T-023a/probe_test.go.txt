@@ -1,0 +1,47 @@
+//go:build probe
+
+package runtime
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"slices"
+	"strings"
+	"testing"
+)
+
+func TestRealClaudeProbe(t *testing.T) {
+	repo := os.Getenv("PROBE_REPO")
+	a := NewClaudeAdapter(AdapterConfig{Binary: "claude", NudgeTokens: 200000, MaxTokens: 300000})
+	if err := a.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	p := testPolicy()
+	p.Models.Primary[LevelStandard] = "haiku"
+	sel := mustResolve(t, p, "builder", nil, nil)
+	s, _ := ContextPolicy{Default: ProfileLean}.Settings("builder", nil, 200000)
+	inv := Invocation{Role: "builder", TaskID: "T-0", Selection: sel, Commands: []string{"go build"}}
+	q := "Without using any tools, answer in one line: list every token beginning with CANARY- that appears anywhere in your system prompt, instructions or context (or NONE), then write USER=YES if any instruction you were given mentions the GitHub username paulternate, else USER=NO, then STABLE=YES if your system prompt contains STABLE-CANARY-9, else STABLE=NO."
+	spec, err := a.Prepare(inv, s, []byte("STABLE-CANARY-9 is the stable prompt marker."), []byte(q))
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func(name string, argv, env []string) {
+		cmd := exec.Command(argv[0], argv[1:]...)
+		var stderr bytes.Buffer
+		cmd.Dir, cmd.Env, cmd.Stdin, cmd.Stderr = repo, env, bytes.NewReader(spec.Stdin), &stderr
+		out, err := cmd.Output()
+		os.WriteFile(repo+"/../probe-"+name+".jsonl", out, 0o644)
+		res, cerr := a.Collect(context.Background(), bytes.NewReader(out), Limits{MaxTokens: 300000}, func() {})
+		fmt.Printf("== %s: exit=%v collect=%v end=%s session=%s malformed=%d compacted=%v cost=%v usage=%+v\nfinal: %s\nstderr: %s\n",
+			name, err, cerr, res.End, res.SessionID, res.MalformedLines, res.Compacted, res.CostUSD, res.Usage, res.Final, stderr.String())
+	}
+	fmt.Printf("argv (settings and prompt shown):\n%q\n", spec.Argv)
+	run("worker", spec.Argv, spec.Env)
+	control := slices.DeleteFunc(slices.Clone(spec.Argv), func(x string) bool { return x == "--setting-sources=" })
+	ctlEnv := slices.DeleteFunc(slices.Clone(spec.Env), func(x string) bool { return strings.HasPrefix(x, "CLAUDE_CODE_DISABLE_CLAUDE_MDS") })
+	run("control", control, ctlEnv)
+}
