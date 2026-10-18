@@ -1,0 +1,95 @@
+=== A. copy from outside into lease (new file inside lease only)
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== B. file with spaces / unicode lookalike dir 'dоcs' (cyrillic o)
+leases: FAIL: dоcs/a.md: T-001: path is outside the claim directories
+tiers: ok
+decisions: unchanged
+exit=1
+=== C. path with newline in dir inside lease
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== D. dotdot entry inside lease (via mktree --missing)
+mktree: 0e33aa18f6dae39f969375e76e6df50ba1018d27
+=== E. root commit in range (orphan branch unrelated history)
+verify: error: git: no merge-base; is the clone shallow? use fetch-depth: 0 (git merge-base: exit status 1: )
+decisions: error: git: no merge-base; is the clone shallow? use fetch-depth: 0 (git merge-base: exit status 1: )
+exit=3
+=== F. submodule gitlink inside lease
+leases: FAIL: docs/sub: T-001: symlink or submodule mode 160000 is not allowed
+tiers: ok
+decisions: unchanged
+exit=1
+=== G. exec-bit/mode-only change inside lease (should pass)
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== H. type change file->symlink (old 100644 new 120000)
+leases: FAIL: docs/keep.md: T-001: symlink or submodule mode 120000 is not allowed
+tiers: ok
+decisions: unchanged
+exit=1
+=== I. lease dir prefix confusion: claim 'doc', path 'docs/a'
+leases: FAIL: docs/n.md: T-001: path is outside the claim directories
+tiers: ok
+decisions: unchanged
+exit=1
+=== J. merge commit then revert? (merge fails)
+leases: FAIL: merge commit d7311b39857f in PR; rebase onto main
+tiers: ok
+decisions: unchanged
+exit=1
+=== K. empty-subject commit
+verify: error: git rev-list: odd line count 1
+decisions: unchanged
+exit=3
+=== L. subject 'commit <sha>' lookalike and multi-line body
+leases: FAIL: commit 43fbeaee2af0 "commit b47de1bcc1674e8cb780054cc86fbfa26b24148d": commit has no T-<id>: prefix
+tiers: ok
+decisions: unchanged
+exit=1
+=== M. subject containing format-ish: 'T-001: x%n%H'
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== N. subject with CR only
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== O. ticket T-0001 / T-001 variants: T-1000000 (7 digits) , 't-001: ' lowercase
+leases: FAIL: commit f029374dee3c "t-001: x": commit has no T-<id>: prefix
+tiers: ok
+decisions: unchanged
+exit=1
+=== P. claim for ticket 1 used by commit 'T-0001:' (4 digits, canonical?)
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== Q. Tier2 CLAUDE.md in nested dir under light
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== R. subject mimicking Head Keeper with ticket prefix: 'T-001: Head Keeper: x'
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== S. lease dirs trailing slash / dot-segments are normalized?
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== T. claim dir '.'
+leases: FAIL: T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: directory "." is the repo root: comb: lease covers a Tier 3 control-plane path
+tiers: ok
+decisions: unchanged
+exit=1
