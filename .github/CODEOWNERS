@@ -8,3 +8,5 @@
 /internal/scaffold/templates/   @paulternate
 /README.md                      @paulternate
 /.github/CODEOWNERS             @paulternate
+/.github/workflows/             @paulternate
+/.github/actions/               @paulternate
