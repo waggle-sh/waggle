@@ -115,6 +115,9 @@ func policy(cfg []byte, roster func() (map[string]runtime.Level, error)) (runtim
 	if err != nil {
 		return runtime.Policy{}, err
 	}
+	if _, err := ParseContext(cfg, mins); err != nil {
+		return runtime.Policy{}, err
+	}
 	models, _ := rt.Models() // ParseRuntimes guarantees the default adapter exists
 	p := runtime.Policy{Models: models, Minimums: mins}
 	return p, p.Validate()
