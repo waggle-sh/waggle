@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/waggle-sh/waggle/internal/comb"
 	"github.com/waggle-sh/waggle/internal/layout"
 )
 
@@ -162,8 +163,8 @@ func TestVerifyTier2UnderLight(t *testing.T) {
 	}
 }
 
-// Test 8. GO.MOD is not on the Tier 3 list until T-008 lands, so it fails as
-// a path outside the claim; the other two fail the tier check as well.
+// Test 8. Each path fails leases; the tier check fires exactly for the paths
+// RequiredMinTier puts in Tier 3 (GO.MOD joins them when T-008 lands).
 func TestVerifyTier3Paths(t *testing.T) {
 	for _, p := range []string{"GO.MOD", ".WAGGLE/control/waggle.md", ".github/workflows/x.yml"} {
 		r := leaseRepo(t)
@@ -171,7 +172,7 @@ func TestVerifyTier3Paths(t *testing.T) {
 		r.index(p)
 		r.git("commit", "-q", "-m", "T-001: edit")
 		out := r.expect(t, 1, "leases: FAIL: "+p)
-		if strings.Contains(out, "Tier 3 path") == (p == "GO.MOD") {
+		if strings.Contains(out, "Tier 3 path") != (comb.RequiredMinTier(p) == comb.Tier3ControlPlane) {
 			t.Errorf("%s\n%s", p, out)
 		}
 	}

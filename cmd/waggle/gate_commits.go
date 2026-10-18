@@ -50,7 +50,9 @@ type commitScan struct {
 // listCommits returns mb..head oldest first. One commit past the limit is
 // read so the caller can tell the range is too large.
 func listCommits(g gitRunner, mb, head string) ([]gateCommit, error) {
-	out, err := g.run("rev-list", "--reverse", "--parents", "--format=%s",
+	// git omits an empty format line, so a leading "." keeps an empty subject
+	// on its own line.
+	out, err := g.run("rev-list", "--reverse", "--parents", "--format=.%s",
 		fmt.Sprintf("--max-count=%d", maxGateCommits+1), mb+".."+head)
 	if err != nil {
 		return nil, err
@@ -66,10 +68,11 @@ func listCommits(g gitRunner, mb, head string) ([]gateCommit, error) {
 	var cs []gateCommit
 	for i := 0; i < len(lines); i += 2 {
 		f := strings.Fields(lines[i])
-		if len(f) < 2 || f[0] != "commit" || !oidPattern.MatchString(f[1]) {
+		subject, dot := strings.CutPrefix(lines[i+1], ".")
+		if len(f) < 2 || f[0] != "commit" || !oidPattern.MatchString(f[1]) || !dot {
 			return nil, fmt.Errorf("%w rev-list: unexpected line %q", errGit, lines[i])
 		}
-		cs = append(cs, gateCommit{oid: f[1], parents: f[2:], subject: lines[i+1]})
+		cs = append(cs, gateCommit{oid: f[1], parents: f[2:], subject: subject})
 	}
 	return cs, nil
 }
