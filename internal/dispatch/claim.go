@@ -1,0 +1,84 @@
+package dispatch
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"slices"
+	"time"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+// ClaimBackend is the slice of *comb.GitBackend that dispatch uses.
+type ClaimBackend interface {
+	comb.Backend
+	ReadClaim(ctx context.Context, ticketID string) (comb.Lease, error)
+	ClaimOID(ctx context.Context, ticketID string) (string, error)
+}
+
+// Claim is the outcome of AcquireClaim. Notes are lines the caller prints
+// before it continues: a takeover names the previous owner, and a renewal that
+// changes role, gate or directories shows old and new.
+type Claim struct {
+	Lease comb.Lease // as requested; times are the backend's
+	OID   string     // claim commit
+	Verb  string     // claim, renew or takeover
+	Notes []string
+}
+
+// AcquireClaim claims the ticket for a builder or forager (T-023 section 6).
+// The guard reads the claim instead and never calls this. req must have passed
+// Validate. The pre-read only builds the notes; AcquireLease stays the
+// authority, so a stale local mirror in remote mode costs a missing note, not
+// a wrong claim. Failures are *Error: ExitClaim for a held, overlapping,
+// malformed or refused claim, ExitEnv for git trouble. Nothing is written
+// when the claim is refused.
+func AcquireClaim(ctx context.Context, cb ClaimBackend, req Request, keeperID string, now time.Time) (Claim, error) {
+	if req.Role == "guard" {
+		return Claim{}, failf(ExitUsage, "guard does not claim; it reads the builder's claim")
+	}
+	want := comb.Lease{TicketID: req.Ticket, KeeperID: keeperID, Role: req.Role, Gate: req.Gate, Directories: req.Dirs}
+	c := Claim{Lease: want, Verb: "claim"}
+	old, err := cb.ReadClaim(ctx, req.Ticket)
+	switch {
+	case errors.Is(err, comb.ErrNotFound):
+	case err != nil:
+		return Claim{}, claimError(err)
+	case !old.ExpiresAt.After(now):
+		c.Verb = "takeover"
+		c.Notes = append(c.Notes, fmt.Sprintf("taking over %s from %s (expired %s)", req.Ticket, old.KeeperID, old.ExpiresAt.UTC().Format(time.RFC3339)))
+	case old.KeeperID == keeperID:
+		c.Verb = "renew"
+		if old.Role != want.Role || old.Gate != want.Gate || !slices.Equal(old.Directories, want.Directories) {
+			c.Notes = append(c.Notes, fmt.Sprintf("renewal changes the claim: %s %s %v -> %s %s %v",
+				old.Role, old.Gate, old.Directories, want.Role, want.Gate, want.Directories))
+		}
+	}
+	if err := cb.AcquireLease(ctx, want); err != nil {
+		return Claim{}, claimError(err)
+	}
+	if c.Lease, err = cb.ReadClaim(ctx, req.Ticket); err != nil {
+		return Claim{}, claimError(err)
+	}
+	if c.OID, err = cb.ClaimOID(ctx, req.Ticket); err != nil {
+		return Claim{}, claimError(err)
+	}
+	return c, nil
+}
+
+// claimError maps a Comb error to its dispatch exit code.
+func claimError(err error) error {
+	switch {
+	case errors.Is(err, comb.ErrMalformedClaim):
+		return failf(ExitClaim, "%w; a Head Keeper force-release clears it (T-005)", err)
+	case errors.Is(err, comb.ErrAlreadyClaimed), errors.Is(err, comb.ErrLeaseOverlap),
+		errors.Is(err, comb.ErrTier3Path), errors.Is(err, comb.ErrGateTooLow), errors.Is(err, comb.ErrInvalidLease):
+		return failf(ExitClaim, "%w", err)
+	case errors.Is(err, comb.ErrInvalidTicketID):
+		return failf(ExitUsage, "%w", err)
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+		return failf(ExitFailed, "interrupted: %w", err)
+	}
+	return failf(ExitEnv, "%w", err)
+}
