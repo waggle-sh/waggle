@@ -61,3 +61,4 @@ Any brief that adds a role or term updates these two sections in the same PR.
 
 ## License
 Waggle, the `waggle` CLI and the `waggled` daemon, is licensed under the Apache License 2.0 (`LICENSE`, `NOTICE`). The templates `waggle init` writes into your repository (everything from `internal/scaffold/templates/`: your `.waggle/` files and `.github/workflows/waggle-gate.yml`) are licensed under MIT-0 (`LICENSES/MIT-0.txt`): use, change and relicense them with no attribution. Copyright 2026 Level 19 Enterprises, LLC. Contributions are accepted under the Developer Certificate of Origin (see `CONTRIBUTING.md`).
+
