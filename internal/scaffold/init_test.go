@@ -161,7 +161,7 @@ func TestRosterRoleIDs(t *testing.T) {
 }
 
 const wantGitignore = "# --- waggle:start ---\n" +
-	".waggle/control/local.yaml\n.waggle/control/run.sock\n.waggle/worktrees/\n.claude/agents/waggle-*.md\n" +
+	".waggle/control/local.yaml\n.waggle/control/run.sock\n.waggle/control/handoffs/\n.waggle/control/usage.jsonl\n.waggle/worktrees/\n.claude/agents/waggle-*.md\n" +
 	"# --- waggle:end ---\n"
 
 const wantClaudeBlock = "<!-- waggle:start -->\n@.waggle/control/WAGGLE.md\n<!-- waggle:end -->\n"
