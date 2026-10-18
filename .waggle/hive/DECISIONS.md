@@ -2922,3 +2922,41 @@
 **Keeper choice:** Move the pin from 30639558288f93abdb378bf278a8b860e84a915e to 6a4886eb16e0de1d005a4ba354e72ecd1dd63756; roster.json re-rendered (min_level per role, mode removed) and shims regenerated with model lines (queen, scout, guard opus; builder sonnet; forager haiku) by waggle upgrade from the target build, except .github/workflows/waggle-gate.yml, which keeps main's copy (D-143). Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
 
 **Rationale:** 6a4886eb16e0de1d005a4ba354e72ecd1dd63756 is the known-good build chosen by the Head Keeper (D-041) and the first that writes model lines through upgrade (T-012 phase C).
+
+## D-154: T-021 section 7.3 template commit written by the builder
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-021
+- **Supersedes:** none
+
+**Question:** Who writes the T-021 phase B Head Keeper commit editing config.yaml.tmpl and roles/queen.md?
+
+**Options considered:**
+1. Builder, as a separate first commit
+2. Head Keeper writes and pushes it first
+
+**Hive recommendation:** Builder, as a separate first commit
+
+**Keeper choice:** The builder writes the section 7.3 commit as the first, separate commit on t-021b, titled 'Head Keeper: T-021 context profile template and queen handoff', touching only those two templates; the guards check it against section 7.3 and the Head Keeper approves the PR at merge. Same pattern as D-146. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** No wait on the Keeper; the commit stays isolated and reviewable, and the queen keeps out of product code.
+
+## D-155: T-021 phase B dispatched before hive-records-6 merges
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-021
+- **Supersedes:** none
+
+**Question:** Dispatch T-021 phase B now, before the hive-records-6 PR (#41) merges and the session restarts on the new shims?
+
+**Options considered:**
+1. Dispatch now
+2. After #41 and a session restart
+
+**Hive recommendation:** Dispatch now
+
+**Keeper choice:** T-021 phase B dispatches now; product and hive changes do not overlap. The builder runs on the session model (opus) because this session's shims predate the model lines. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Keeps the own honey critical path moving; the cost is one opus builder run instead of sonnet.
