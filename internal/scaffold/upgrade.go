@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/waggle-sh/waggle/internal/config"
 	"github.com/waggle-sh/waggle/internal/layout"
 	"github.com/waggle-sh/waggle/internal/runtime"
 )
@@ -180,6 +181,8 @@ type upgradePlan struct {
 	blocks      []pendingEdit // marked blocks in project files
 	shimRemoves []string      // generated shims whose role file goes
 	materialize bool          // regenerate this Keeper's shims
+
+	policy runtime.Policy // resolved at plan time from the hive config and the rendered roster
 }
 
 func (plan *upgradePlan) abs(rel string) string {
@@ -244,7 +247,7 @@ func checkSymlinks(root string, rels []string) error {
 				return fmt.Errorf("reading %s: %w", p, err)
 			}
 			if info.Mode()&fs.ModeSymlink != 0 {
-				return fmt.Errorf("%s is a symlink; upgrade writes only regular files and directories inside the repository, replace it first: %w", p, ErrRefused)
+				return fmt.Errorf("%s is a symlink; waggle writes only regular files and directories inside the repository, replace it first: %w", p, ErrRefused)
 			}
 		}
 	}
@@ -370,7 +373,7 @@ func Upgrade(opts UpgradeOptions) error {
 		return err
 	}
 	if plan.materialize {
-		if err := runtime.NewClaudeAdapter(runtime.AdapterConfig{Binary: "claude"}).Materialize(root); err != nil {
+		if err := runtime.NewClaudeAdapter(runtime.AdapterConfig{Binary: "claude"}).WithPolicy(plan.policy).Materialize(root); err != nil {
 			return fmt.Errorf("materializing claude-code shims: %w", err)
 		}
 	}
@@ -409,7 +412,7 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 		"{{PIN}}", newPin,
 	}
 	ships := map[string]bool{}
-	var configTmpl string
+	var configTmpl, rosterWant string
 	for _, f := range files {
 		ships[f.dst] = true
 		raw, err := fs.ReadFile(tfs, f.src)
@@ -423,6 +426,9 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 			continue
 		}
 		want := placeholders(f.dst, values).Replace(string(raw))
+		if f.dst == layout.Roster {
+			rosterWant = want
+		}
 		have, found, err := readOptional(plan.abs(f.dst))
 		if err != nil {
 			return nil, fmt.Errorf("reading %s: %w", f.dst, err)
@@ -520,6 +526,9 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 
 	// 6. This Keeper's shims: prune the generated ones whose role went, then regenerate.
 	if opts.Runtime == "claude-code" {
+		if plan.policy, err = resolvePolicy(cfgContent, rosterWant); err != nil {
+			return nil, fmt.Errorf("model policy for claude-code shims: %w: %w", ErrRefused, err)
+		}
 		if err := planShimPrune(plan, out, ships); err != nil {
 			return nil, err
 		}
@@ -530,6 +539,27 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 	// 7. Never touched.
 	line(out, "keep", "refs/waggle/* and %s/**", layout.HiveDir)
 	return plan, nil
+}
+
+// resolvePolicy loads the model policy from the hive's config and the roster
+// this build is about to write, never the one on disk, and resolves every
+// role's base model, so no shim is written without a model: line.
+func resolvePolicy(cfg, roster string) (runtime.Policy, error) {
+	p, err := config.ParsePolicy([]byte(cfg), []byte(roster))
+	if err != nil {
+		return p, err
+	}
+	roles := make([]string, 0, len(p.Minimums))
+	for role := range p.Minimums {
+		roles = append(roles, role)
+	}
+	slices.Sort(roles)
+	for _, role := range roles {
+		if _, err := p.Resolve(role, nil, nil); err != nil {
+			return p, fmt.Errorf("role %s: %w", role, err)
+		}
+	}
+	return p, nil
 }
 
 // planShimPrune queues every generated shim whose role file the build does
