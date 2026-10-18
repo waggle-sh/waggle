@@ -14,6 +14,7 @@ import (
 	"github.com/waggle-sh/waggle/internal/comb"
 	"github.com/waggle-sh/waggle/internal/layout"
 	"github.com/waggle-sh/waggle/internal/scaffold"
+	"github.com/waggle-sh/waggle/internal/usage"
 )
 
 // fixedNow is the clock every status test runs at (T-022 section 5).
@@ -271,11 +272,52 @@ Claims (2 active):
 
 Usage: none recorded (.waggle/control/usage.jsonl absent)
 `
-	if got := string(renderStatus(h, leases, malformed, fixedNow)); got != want {
+	block := usage.Render(nil, layout.Usage)
+	if got := string(renderStatus(h, leases, malformed, block, fixedNow)); got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
 	}
 	if strings.ContainsAny(want, dashes) {
 		t.Error("golden contains an en or em dash")
+	}
+}
+
+// Test 14: with a ledger present status prints the usage block and the footer;
+// the stderr warning appears only when bad lines exist; the ledger is untouched.
+func TestStatusUsageSection(t *testing.T) {
+	requireGit(t)
+	fixClock(t)
+	dir := newHive(t)
+	path := filepath.Join(dir, layout.Usage)
+	rec := `{"ts":"2026-10-17T08:00:00Z","ticket":"T-005","role":"r1","session":"s1","input_tokens":1000,"cache_read_tokens":500,"output_tokens":52381,"cost_usd":1.5,"end":"done"}` + "\n"
+	if err := os.WriteFile(path, []byte(rec), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	code, out, errb := runStatusT(t, "--repo", dir)
+	if code != 0 || errb != "" {
+		t.Fatalf("code %d, stderr %q", code, errb)
+	}
+	want := "Usage (this machine, .waggle/control/usage.jsonl):\n" +
+		"  T-005  r1 1 sess  in 2k (33% cached)  out 52k  est. $1.50\n" +
+		"  total             in 2k (33% cached)  out 52k  est. $1.50\n" +
+		"  Not counted: sessions a Keeper starts directly (today the queen and the planning role) and other Keepers' machines.\n"
+	if !strings.HasSuffix(out, "\n"+want) {
+		t.Errorf("stdout:\n%s\nwant suffix:\n%s", out, want)
+	}
+
+	bad := rec + "{oops\n"
+	if err := os.WriteFile(path, []byte(bad), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	code, out, errb = runStatusT(t, "--repo", dir)
+	if code != 0 || !strings.HasPrefix(errb, "warning: 1 unreadable ledger lines (first: line 2: ") || strings.Count(errb, "\n") != 1 {
+		t.Errorf("code %d, stderr %q", code, errb)
+	}
+	if !strings.Contains(out, "T-005") {
+		t.Errorf("good line not reported:\n%s", out)
+	}
+	if got, _ := os.ReadFile(path); string(got) != bad {
+		t.Errorf("status changed the ledger: %q", got)
 	}
 }
 
