@@ -1,0 +1,45 @@
+=== RUN   TestFableProbes
+    zz_fable_probe_test.go:30: rev-list raw:
+        "commit bb6d7a3c73abe24a424b052ba1b8f09a6950d781 48b08ff794b11c5f3d8c51700171902bf4d47dec\nT-001: base\ncommit f58d22af8bedb2c64100d594a173d7bf31f57c83 bb6d7a3c73abe24a424b052ba1b8f09a6950d781\ncommit b3db6f7f76d9746699d4765b6e134d6b97248169 f58d22af8bedb2c64100d594a173d7bf31f57c83\nT-001: cr\rhidden\ncommit cd960b547690c9e17b3b828680506ecd735bdb79 b3db6f7f76d9746699d4765b6e134d6b97248169\nT-001: mode only\n"
+    zz_fable_probe_test.go:32: listCommits: err=git rev-list: odd line count 7 n=0
+    zz_fable_probe_test.go:41: verify (empty subject, CR subject, mode-only): exit=3
+        decisions: unchanged
+        verify: error: git rev-list: odd line count 7
+    zz_fable_probe_test.go:50: submodule diff-tree raw: ":000000 160000 0000000000000000000000000000000000000000 48b08ff794b11c5f3d8c51700171902bf4d47dec A\x00docs/sub\x00"
+    zz_fable_probe_test.go:52: ls-tree with submodule: ".waggle/hive/DECISIONS.md\x00README.md\x00docs/sub\x00other/x.md\x00"
+    zz_fable_probe_test.go:54: verify (submodule add): exit=1
+        tiers: ok
+        decisions: unchanged
+        leases: FAIL: docs/sub: T-001: symlink or submodule mode 160000 is not allowed
+    zz_fable_probe_test.go:59: verify (submodule bump): exit=1
+        tiers: ok
+        decisions: unchanged
+        leases: FAIL: docs/sub: T-001: symlink or submodule mode 160000 is not allowed
+    zz_fable_probe_test.go:69: tiers (long s vs s, Docs file vs docs dir): exit=0
+        tiers: ok
+    zz_fable_probe_test.go:70: EqualFold(ſ,s)=true ToLower(ſ)="ſ"
+    zz_fable_probe_test.go:78: leases (T-0001 subject vs ticket-1 claim): exit=0
+        leases: ok
+    zz_fable_probe_test.go:89: leases (same path two tickets): exit=1
+        leases: FAIL: other/x.md: T-001: path is outside the claim directories
+    zz_fable_probe_test.go:98: unicode -z raw (quotePath=true): ":000000 100644 0000000000000000000000000000000000000000 587be6b4c3f93f93c489c0111bba5596147a26cb A\x00docs/ünï.md\x00"
+    zz_fable_probe_test.go:100: verify (unicode path inside lease): exit=0
+        leases: ok
+        tiers: ok
+        decisions: unchanged
+    zz_fable_probe_test.go:105: CheckChanges DOCS2/x, docs(file): [{Rule:outside_lease Path:DOCS2/x Detail:path is outside the claim directories}]
+
+--- PASS: TestFableProbes (1.72s)
+PASS
+ok  	github.com/waggle-sh/waggle/cmd/waggle	1.933s
+=== RUN   TestFableEmptySubjectPairs
+    zz_fable_probe_test.go:118: verify (two empty subjects + good): exit=1
+        tiers: ok
+        decisions: unchanged
+        leases: FAIL: commit 13f37320cf80 "commit c9f6d7313dc0f3b77aee79dcf051bf2b1526ca38 13f37320cf80cd0fedcb52a5": commit has no T-<id>: prefix
+    zz_fable_probe_test.go:128: verify (one plumbing empty-message commit): exit=3
+        decisions: unchanged
+        verify: error: git rev-list: odd line count 1
+--- PASS: TestFableEmptySubjectPairs (0.51s)
+PASS
+ok  	github.com/waggle-sh/waggle/cmd/waggle	0.767s

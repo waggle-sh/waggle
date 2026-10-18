@@ -1,0 +1,18 @@
+=== lease.json 65536 bytes
+   65536
+leases: ok
+tiers: ok
+decisions: unchanged
+exit=0
+=== lease.json 65537 bytes
+   65537
+leases: FAIL: T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: lease.json is 65537 bytes, over the 65536 byte cap
+tiers: ok
+decisions: unchanged
+exit=1
+=== lease.json 300 MiB (sparse-ish whitespace)
+ 300000000
+leases: FAIL: T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: lease.json is 300000000 bytes, over the 65536 byte cap
+        0.27 real         0.16 user         0.19 sys
+          1084473344  maximum resident set size
+exit=1
