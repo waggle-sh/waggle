@@ -53,6 +53,7 @@ func TestLoadKeeperID(t *testing.T) {
 		{"nested not scalar", "", str("keeper_id:\n  a: b\n"), "", "keeper_id"},
 		{"placeholder local-only", "", str(seeded), LocalKeeperPlaceholder, ""},
 		{"placeholder with remote", "origin", str(seeded), "", "collide"},
+		{"placeholder case-insensitive with remote", "origin", str("keeper_id: Local-Keeper\n"), "", "collide"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
