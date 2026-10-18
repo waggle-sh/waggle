@@ -25,3 +25,6 @@ Define the top-level modules Builders may lease:
 - **Build:** `go build ./...`
 - **Test:** `go test -race ./...`
 - **Vet:** `go vet ./...`
+
+## 4. Hive Overrides
+- **Queen handoff:** until T-023 phase F, this hive's queen writes `.waggle/hive/handoff/queen.md` (committed, checked by the Stop hook) and ignores the `.waggle/control/handoffs/` path in its role template.

@@ -1,0 +1,99 @@
+=== RUN   TestProbe2SeparateGitDirPlant
+    zz_probe2_test.go:37: worktree list:
+        worktree /private/var/folders/<tmp>/T/TestProbe2SeparateGitDirPlant130702463/001
+        HEAD 98f892d59e9882b09109f64c876a7d9fcc2c60fc
+        branch refs/heads/main
+        
+        worktree /private/var/folders/<tmp>/T/TestProbe2SeparateGitDirPlant130702463/001/.waggle/worktrees/T-023-builder
+        HEAD 98f892d59e9882b09109f64c876a7d9fcc2c60fc
+        branch refs/heads/t-023
+    zz_probe2_test.go:41: separate-git-dir plant: err=/var/folders/<tmp>/T/TestProbe2SeparateGitDirPlant130702463/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/<tmp>/T/TestProbe2SeparateGitDirPlant130702463/001/.waggle/worktrees/T-023-builder/.git points at /private/var/folders/<tmp>/T/TestProbe2SeparateGitDirPlant130702463/002/evil.git, not its registration) reused=false fsmonitorRan=false filterRan=false
+--- PASS: TestProbe2SeparateGitDirPlant (0.28s)
+=== RUN   TestProbe2SharedConfigFilter
+    zz_probe2_test.go:67: shared config filter: err=<nil> filterRan=true
+--- PASS: TestProbe2SharedConfigFilter (0.34s)
+=== RUN   TestProbe2PathShapes
+    zz_probe2_test.go:97: "has space" reuse: err=<nil> reused=true
+    zz_probe2_test.go:97: "new\nline" reuse: err=/var/folders/<tmp>/T/TestProbe2PathShapes2092775523/002/new
+        line/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false
+    zz_probe2_test.go:97: "tab\there" reuse: err=<nil> reused=true
+    zz_probe2_test.go:97: "quo\"te" reuse: err=<nil> reused=true
+    zz_probe2_test.go:112: case-different repo path: err=/VAR/FOLDERS/8Y/XSQ0G8LS1G5BQFDZJSL9M0P00000GN/T/TESTPROBE2PATHSHAPES2092775523/005/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false
+    zz_probe2_test.go:121: /private-prefixed repo path: err=<nil> reused=true
+    zz_probe2_test.go:129: locked entry reuse: err=<nil> reused=true
+    zz_probe2_test.go:135: locked missing entry: exit=3 err=git worktree: exit status 128: Preparing worktree (checking out 't-023')
+        fatal: '/var/folders/<tmp>/T/TestProbe2PathShapes2092775523/005/.waggle/worktrees/T-023-builder' is a missing but locked worktree;
+        use 'add -f -f' to override, or 'unlock' and 'prune' or 'remove' to clear
+--- PASS: TestProbe2PathShapes (1.17s)
+=== RUN   TestProbe2Guard
+    zz_probe2_test.go:152: stale lock + leftover guard: exit=3 run lock /var/folders/<tmp>/T/TestProbe2Guard3124383032/001/L.lock is contended; run in progress (if none is, remove /var/folders/<tmp>/T/TestProbe2Guard3124383032/001/L.lock.takeover)
+    zz_probe2_test.go:155: no lock + leftover guard: err=<nil>
+    zz_probe2_test.go:164: dangling symlink guard: err=run lock /var/folders/<tmp>/T/TestProbe2Guard3124383032/001/L.lock is contended; run in progress (if none is, remove /var/folders/<tmp>/T/TestProbe2Guard3124383032/001/L.lock.takeover) targetCreated=false
+    zz_probe2_test.go:174: symlinked lock: err=run lock /var/folders/<tmp>/T/TestProbe2Guard3124383032/001/L.lock is unreadable; remove it if no run is in progress victimIntact=true lockIsRegular=false
+    zz_probe2_test.go:184: fifo lock: returned run lock /var/folders/<tmp>/T/TestProbe2Guard3124383032/001/L.lock is unreadable; remove it if no run is in progress
+    zz_probe2_test.go:199: pid reused: exit=3 run in progress: /var/folders/<tmp>/T/TestProbe2Guard3124383032/001/L.lock held by pid 4242 on <host>.local since 2026-10-18T10:00:00Z
+--- PASS: TestProbe2Guard (0.00s)
+=== RUN   TestProbe2RunsSymlink
+    zz_probe2_test.go:210: runs symlink: err=/var/folders/<tmp>/T/TestProbe2RunsSymlink3472217439/001/.waggle/worktrees/runs is not a real directory (symlinks are refused) path= resolved=.
+--- PASS: TestProbe2RunsSymlink (0.06s)
+=== RUN   TestProbe3InWorktreeGitFile
+    zz_probe3_test.go:47: in-worktree .git rewrite: err=/var/folders/<tmp>/T/TestProbe3InWorktreeGitFile3435532724/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/<tmp>/T/TestProbe3InWorktreeGitFile3435532724/001/.waggle/worktrees/T-023-builder/.git points at /private/var/folders/<tmp>/T/TestProbe3InWorktreeGitFile3435532724/001/.waggle/worktrees/T-023-builder/.evil, not its registration) reused=false filterRan=false
+--- PASS: TestProbe3InWorktreeGitFile (0.24s)
+=== RUN   TestProbe4CommondirRewrite
+    zz_probe4_test.go:51: commondir rewrite: err=git --git-dir=/private/var/folders/<tmp>/T/TestProbe4CommondirRewrite306500045/001/.git/worktrees/T-023-builder: exit status 128: fatal: unable to read 3a4e754870ef5fddbc0edac394c7029e01ce9411 filterRan=true
+--- PASS: TestProbe4CommondirRewrite (0.38s)
+=== RUN   TestProbe4CommondirControl
+    zz_probe4_test.go:59: control: err=<nil> filterRan=false
+--- PASS: TestProbe4CommondirControl (0.27s)
+=== RUN   TestProbe4ExtraAdminEntry
+    zz_probe4_test.go:76: porcelain:
+        worktree /private/var/folders/<tmp>/T/TestProbe4ExtraAdminEntry955982615/001
+        HEAD 2ec1a40a9c472be0d3964d8964ac483762898025
+        branch refs/heads/main
+        
+        worktree /private/var/folders/<tmp>/T/TestProbe4ExtraAdminEntry955982615/001/.waggle/worktrees/T-023-builder
+        HEAD f17c91393b47692280a56a96a6d5f08b7a7b8255
+        branch refs/heads/t-023
+        
+        worktree /var/folders/<tmp>/T/TestProbe4ExtraAdminEntry955982615/001/.waggle/worktrees/T-023-builder
+        HEAD 4a8db4ce93423c8c31f52ffbccdf2736e14ef90f
+        branch refs/heads/t-023
+    zz_probe4_test.go:78: extra admin entry: err=worktree /var/folders/<tmp>/T/TestProbe4ExtraAdminEntry955982615/001/.waggle/worktrees/T-023-builder is dirty; commit or discard its changes first filterRan=false
+--- PASS: TestProbe4ExtraAdminEntry (0.30s)
+=== RUN   TestProbe4ExtraAdminEntryTracked
+    zz_probe4_test.go:102: extra admin entry (tracked attrs): err=worktree /var/folders/<tmp>/T/TestProbe4ExtraAdminEntryTracked2134551209/001/.waggle/worktrees/T-023-builder is dirty; commit or discard its changes first filterRan=true
+--- PASS: TestProbe4ExtraAdminEntryTracked (0.46s)
+=== RUN   TestProbe4RelativePaths
+    zz_probe4_test.go:118: .git="gitdir: ../../../.git/worktrees/T-023-builder\n" admin/gitdir="../../../.waggle/worktrees/T-023-builder/.git\n"
+    zz_probe4_test.go:120: relative-path honest reuse: err=/var/folders/<tmp>/T/TestProbe4RelativePaths62517264/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (no registration for /private/var/folders/<tmp>/T/TestProbe4RelativePaths62517264/001/.waggle/worktrees/T-023-builder/.git) reused=false
+--- PASS: TestProbe4RelativePaths (0.33s)
+=== RUN   TestProbe4GitFileVariants
+    zz_probe4_test.go:142: crlf: err=<nil>
+    zz_probe4_test.go:142: trailing-ws: err=<nil>
+    zz_probe4_test.go:142: no-space: err=<nil>
+    zz_probe4_test.go:142: relative: err=<nil>
+    zz_probe4_test.go:142: via-var: err=<nil>
+    zz_probe4_test.go:142: upper-case: err=/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/011/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/011/.waggle/worktrees/T-023-builder/.git points at /PRIVATE/VAR/FOLDERS/8Y/XSQ0G8LS1G5BQFDZJSL9M0P00000GN/T/TESTPROBE4GITFILEVARIANTS336923800/011/.GIT/WORKTREES/T-023-BUILDER, not its registration)
+    zz_probe4_test.go:142: oversize: err=/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/013/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/013/.waggle/worktrees/T-023-builder/.git is larger than 4096 bytes)
+    zz_probe4_test.go:142: two-lines: err=/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/015/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/015/.waggle/worktrees/T-023-builder/.git points at /private/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/015/.git/worktrees/T-023-builder
+        gitdir: /elsewhere, not its registration)
+--- PASS: TestProbe4GitFileVariants (1.53s)
+=== RUN   TestProbe4SymlinkedCommonDir
+    zz_probe4_test.go:162: symlinked .git reuse: err=<nil> reused=true
+--- PASS: TestProbe4SymlinkedCommonDir (0.17s)
+=== RUN   TestProbe4ReadSmall
+    zz_probe4_test.go:185: reg: len=2 err=<nil>
+    zz_probe4_test.go:185: big: len=4097 err=/var/folders/<tmp>/T/TestProbe4ReadSmall168818737/001/big is larger than 4096 bytes
+    zz_probe4_test.go:185: exact: len=4096 err=<nil>
+    zz_probe4_test.go:185: fifo: len=0 err=/var/folders/<tmp>/T/TestProbe4ReadSmall168818737/001/fifo is not a regular file
+    zz_probe4_test.go:185: ln: len=0 err=/var/folders/<tmp>/T/TestProbe4ReadSmall168818737/001/ln is not a regular file
+    zz_probe4_test.go:185: devln: len=0 err=/var/folders/<tmp>/T/TestProbe4ReadSmall168818737/001/devln is not a regular file
+    zz_probe4_test.go:185: zero: len=0 err=/dev/zero is not a regular file
+    zz_probe4_test.go:185: 001: len=0 err=/var/folders/<tmp>/T/TestProbe4ReadSmall168818737/001 is not a regular file
+    zz_probe4_test.go:234: race: ok=89 err=2911 odd=0, no block
+--- PASS: TestProbe4ReadSmall (0.02s)
+=== RUN   TestProbe4SymlinkLock
+    zz_probe4_test.go:247: symlink lock: err=run lock /var/folders/<tmp>/T/TestProbe4SymlinkLock3824878598/001/L.lock is unreadable; remove it if no run is in progress stillSymlink=true
+--- PASS: TestProbe4SymlinkLock (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	5.632s

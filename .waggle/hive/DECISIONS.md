@@ -2960,3 +2960,120 @@
 **Keeper choice:** T-021 phase B dispatches now; product and hive changes do not overlap. The builder runs on the session model (opus) because this session's shims predate the model lines. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
 
 **Rationale:** Keeps the own honey critical path moving; the cost is one opus builder run instead of sonnet.
+
+## D-156: T-023 phase B and T-022 phase B dispatched before hive-records-7
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-022, T-023
+- **Supersedes:** none
+
+**Question:** Dispatch T-023 phase B and T-022 phase B now, as approved at the end of the seventh session, or land hive-records-7 first?
+
+**Options considered:**
+1. Dispatch both now
+2. Hive records 7 first
+3. Both in parallel
+4. Hold
+
+**Hive recommendation:** Dispatch both now
+
+**Keeper choice:** Both builders dispatch now on sonnet in isolated worktrees; T-023 phase B gets an opus guard plus a fable guard and Head Keeper merge (D-100), T-022 phase B one opus guard (Tier 2). Hive-records-7 follows. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Keeps the own honey critical path moving; the product leases do not overlap the hive records.
+
+## D-157: T-021 phase B merged as is; two lease overreaches ratified; handoff-format and error-prefix notes go to T-023 phase F
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-021, T-023
+- **Supersedes:** none
+
+**Question:** PR #42 (T-021 phase B) added `internal/scaffold/context_ignore_test.go` and one constant in `init_test.go`, outside its lease. Merge as is, and where do the guards' handoff-format and error-prefix notes (fable N1, N2; sonnet 3) go?
+
+**Options considered:**
+1. Merge as is, ratify both overreaches, notes to T-023 phase F's queen template edit
+2. Revert the overreaches in a fix pass before merge
+
+**Hive recommendation:** Merge as is, ratify both overreaches, notes to T-023 phase F's queen template edit
+
+**Keeper choice:** #42 merged as is at `8650124`; the new `context_ignore_test.go` and the one `init_test.go` constant are ratified. Fable N1 and N2 and sonnet note 3 go to T-023 phase F's queen template edit. Ruled by the Head Keeper at the end of the seventh session and confirmed via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Both overreaches are test-only and small; a fix pass would cost a full Tier 3 review cycle for no behavior change.
+
+## D-158: Our hive keeps the committed queen handoff and the Stop hook until T-023 phase F
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-021, T-023
+- **Supersedes:** none
+
+**Question:** T-021 phase B's queen template writes handoffs to `.waggle/control/handoffs/`. Does our hive switch now or keep `.waggle/hive/handoff/queen.md` and the Stop hook?
+
+**Options considered:**
+1. Keep the committed handoff and Stop hook until T-023 phase F; a WAGGLE.md line tells the queen to ignore the template path
+2. Switch to the template path at the next pin move
+
+**Hive recommendation:** Keep the committed handoff and Stop hook until T-023 phase F; a WAGGLE.md line tells the queen to ignore the template path
+
+**Keeper choice:** Our hive keeps `.waggle/hive/handoff/queen.md` and the Stop hook until T-023 phase F. A Head Keeper commit adds a Hive Overrides section to our `WAGGLE.md` telling the queen to ignore the template's `.waggle/control/handoffs/` path; it lands before the next pin move. Ruled by the Head Keeper at the end of the seventh session and confirmed via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** The handoff path and hook switch together with dispatch in phase F; switching earlier would break the Stop hook check.
+
+## D-159: T-014 AC7 met by check-run API evidence instead of screenshots
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-014
+- **Supersedes:** none
+
+**Question:** Both scratch PRs (#44 out-of-lease edit, #45 `GO.MOD` edit) fail the Waggle gate with annotations. Is the saved check-run API output enough for AC7, or are screenshots required?
+
+**Options considered:**
+1. API evidence is enough
+2. Keeper takes screenshots
+
+**Hive recommendation:** API evidence is enough
+
+**Keeper choice:** AC7 is met by the check-run and annotation JSON plus the summary in `.waggle/hive/media/T-014/AC7.md`. #44 proves the gate refuses an edit no lease covers; an edit outside an existing claim's paths is proven once claims exist on the remote (T-023 phase C). #44 and #45 closed unmerged and their branches deleted. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** The API output is the same data the Checks tab renders, is machine-checkable, and carries no personal data; screenshots add Keeper time and nothing else.
+
+## D-160: The Head Keeper's DCO sign-off email is the GitHub noreply address
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-025
+- **Supersedes:** none
+
+**Question:** Which email signs off the Head Keeper's commits once DCO is enforced (T-025)? The author email must match, and it becomes public when the repo opens.
+
+**Options considered:**
+1. GitHub noreply (27632860+paulternate@users.noreply.github.com)
+2. Company address
+3. Keep the personal address
+
+**Hive recommendation:** GitHub noreply (27632860+paulternate@users.noreply.github.com)
+
+**Keeper choice:** The Head Keeper authors and signs off commits as `27632860+paulternate@users.noreply.github.com`, set in git config and backed by GitHub's email privacy setting, before T-025 phase D enforces DCO. Past commits are not rewritten by this decision; history redaction stays a separate decision before the repo goes public. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Keeps a personal address out of every future commit in a repo that will go public.
+
+## D-161: T-023 phase B accepted at 867 added non-test lines against a 580 stop
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** T-023 phase B grew from 667 to 867 added non-test lines through three guard fix passes, against the brief's 580 stop. Accept, or cut?
+
+**Options considered:**
+1. Accept at 867 and record it
+2. Leave the ruling in the reviews only
+
+**Hive recommendation:** Accept at 867 and record it
+
+**Keeper choice:** Phase B is accepted at 867 added non-test lines (D-089 metric), including the third fix pass for Windows build tags, relative gitdir resolution and the adminDir hardening. Every line past 667 is a guard-requested security fix (worktree reuse pinned to its registered gitdir, bounded lock reads, atomic stale-lock takeover); both guards found no cut worth the risk. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** The overrun is larger than earlier precedents (D-136), so it is recorded rather than left in the reviews; the phase C and D estimates should assume similar safety overhead.
