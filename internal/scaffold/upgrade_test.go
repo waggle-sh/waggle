@@ -56,6 +56,9 @@ func templatesA(t *testing.T) fs.FS {
 		t.Fatal(err)
 	}
 	m["templates/roles/oldrole.md"] = &fstest.MapFile{Data: []byte("# Role: Oldrole (Retired)\n")}
+	// init resolves a model for every role file (T-012), so the old role needs a roster entry.
+	roster := m["templates/roster.json.tmpl"]
+	roster.Data = []byte(strings.Replace(string(roster.Data), `"roles": [`, `"roles": [{"id": "oldrole", "min_level": "fast"},`, 1))
 	return m
 }
 
@@ -132,12 +135,12 @@ func TestUpgradeRoundTripRemovesDroppedRole(t *testing.T) {
 	o, _ := upgradeOpts(dir, "claude-code", commitBuild(pinB), false)
 	out := upgrade(t, o)
 	wantLines(t, out, "[pin]     "+pinA+" -> "+pinB, "[remove]  "+oldRole, "[remove]  "+oldShim,
-		"[same]    "+layout.Roster, "[same]    "+layout.Devcontainer, "[same]    "+layout.GateWorkflow,
+		"[rewrite] "+layout.Roster, "[same]    "+layout.Devcontainer, "[same]    "+layout.GateWorkflow,
 		"[shims]   regenerate", "Dry run: nothing changed", upgradeLastLine)
 	for _, r := range roleNames {
 		wantLines(t, out, "[same]    "+layout.RolesDir+"/"+r+".md")
 	}
-	if strings.Contains(out, "[rewrite]") || strings.Contains(out, "[create]") {
+	if strings.Count(out, "[rewrite]") != 1 || strings.Contains(out, "[create]") {
 		t.Errorf("unexpected rewrite or create:\n%s", out)
 	}
 	if after := project(t, dir); !reflect.DeepEqual(before, after) {
@@ -167,8 +170,8 @@ func TestUpgradeRoundTripRemovesDroppedRole(t *testing.T) {
 	if got := names(t, dir, filepath.Dir(layout.ShimPrefix), filepath.Base(layout.ShimPrefix)); !reflect.DeepEqual(got, roleNames) {
 		t.Errorf("shims = %v; want %v", got, roleNames)
 	}
-	if st := git(t, dir, "status", "--porcelain=v1"); st != "M "+layout.Config+"\n D "+oldRole {
-		t.Errorf("status after apply = %q; want only the pin edit and the role removal", st)
+	if st := git(t, dir, "status", "--porcelain=v1"); st != "M "+layout.Config+"\n D "+oldRole+"\n M "+layout.Roster {
+		t.Errorf("status after apply = %q; want only the pin edit, the role removal and the roster without it", st)
 	}
 
 	commitAll(t, dir, "upgrade")
