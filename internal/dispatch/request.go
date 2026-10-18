@@ -105,6 +105,9 @@ func (r Request) Validate() (Request, error) {
 	if err := checkBranch(r.Branch, id); err != nil {
 		return r, failf(ExitUsage, "%w", err)
 	}
+	if r.Base != "" && (r.Base == r.Branch || r.Base == "refs/heads/"+r.Branch) {
+		return r, failf(ExitUsage, "base %q is the branch being created", r.Base)
+	}
 	if strings.HasPrefix(r.Base, "-") || strings.ContainsAny(r.Base, " \t\r\n\x00") {
 		return r, failf(ExitUsage, "base %q is not a revision", r.Base)
 	}
@@ -115,7 +118,7 @@ func (r Request) Validate() (Request, error) {
 		return r, failf(ExitUsage, "%d read paths exceeds %d", len(r.ReadPaths), maxReadPaths)
 	}
 	for _, p := range r.ReadPaths {
-		if path.Clean(p) != p || p == ".." || strings.HasPrefix(p, "/") || strings.HasPrefix(p, "../") {
+		if path.Clean(p) != p || p == "." || strings.HasPrefix(p, ":") || p == ".." || strings.HasPrefix(p, "/") || strings.HasPrefix(p, "../") {
 			return r, failf(ExitUsage, "read path %q must be a clean repo-relative path", p)
 		}
 	}

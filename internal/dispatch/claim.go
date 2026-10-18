@@ -29,9 +29,8 @@ type Claim struct {
 
 // AcquireClaim claims the ticket for a builder or forager (T-023 section 6).
 // The guard reads the claim instead and never calls this. req must have passed
-// Validate. The pre-read only builds the notes; AcquireLease stays the
-// authority, so a stale local mirror in remote mode costs a missing note, not
-// a wrong claim. Failures are *Error: ExitClaim for a held, overlapping,
+// Validate. The pre-read (after a sync in remote mode) only builds the
+// notes; AcquireLease stays the authority. Failures are *Error: ExitClaim for a held, overlapping,
 // malformed or refused claim, ExitEnv for git trouble. Nothing is written
 // when the claim is refused.
 func AcquireClaim(ctx context.Context, cb ClaimBackend, req Request, keeperID string, now time.Time) (Claim, error) {
@@ -40,6 +39,11 @@ func AcquireClaim(ctx context.Context, cb ClaimBackend, req Request, keeperID st
 	}
 	want := comb.Lease{TicketID: req.Ticket, KeeperID: keeperID, Role: req.Role, Gate: req.Gate, Directories: req.Dirs}
 	c := Claim{Lease: want, Verb: "claim"}
+	// ClaimOID fetches in remote mode, so the notes and the malformed-ref exit
+	// below describe the remote claim, not a stale local mirror.
+	if _, err := cb.ClaimOID(ctx, req.Ticket); err != nil && !errors.Is(err, comb.ErrNotFound) {
+		return Claim{}, claimError(err)
+	}
 	old, err := cb.ReadClaim(ctx, req.Ticket)
 	switch {
 	case errors.Is(err, comb.ErrNotFound):
