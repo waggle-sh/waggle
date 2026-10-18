@@ -1,0 +1,6 @@
+Usage (this machine, .waggle/control/usage.jsonl):
+  T-012  alpha 2 sess  gamma 2 sess  in 1.84M (72% cached)  out 52k  est. $4.10  [guard floored]
+  T-016  alpha 1 sess                in 360k (56% cached)   out 9k   est. $0.62
+  T-020  alpha 1 sess                in 500 (0% cached)     out 400  est. $ n/a
+  total                              in 2.20M (70% cached)  out 62k  est. $ n/a
+  Not counted: sessions a Keeper starts directly (today the queen and the planning role) and other Keepers' machines.
