@@ -32,6 +32,10 @@ const (
 	Local = ControlDir + "/local.yaml"
 	// Socket is the waggled control socket. Runtime state, gitignored.
 	Socket = ControlDir + "/run.sock"
+	// Handoffs holds session handoff files (T-021 S5). Runtime state, gitignored.
+	Handoffs = ControlDir + "/handoffs/"
+	// Usage is the per-Keeper token and cost ledger (T-021 section 8). Runtime state, gitignored.
+	Usage = ControlDir + "/usage.jsonl"
 
 	// TasksDir holds task briefs.
 	TasksDir = HiveDir + "/tasks"
