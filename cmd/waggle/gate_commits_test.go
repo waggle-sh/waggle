@@ -53,3 +53,30 @@ func TestListCommitsLimitAndOrder(t *testing.T) {
 		t.Errorf("root changes %+v %v", ch, err)
 	}
 }
+
+// emptyCommit adds a commit with an empty message on branch that stages path
+// in the index, built with commit-tree because porcelain refuses it.
+func (r gateRepo) emptyCommit(path string) string {
+	r.t.Helper()
+	r.index(path)
+	tree := r.git("write-tree")
+	oid := r.gitIn("", "commit-tree", tree, "-p", r.git("rev-parse", "HEAD"))
+	r.git("update-ref", "refs/heads/branch", oid)
+	return oid
+}
+
+// B2: an empty subject keeps its line, so each such commit fails the prefix
+// rule (exit 1, not a git error) and is still diffed.
+func TestVerifyEmptySubject(t *testing.T) {
+	r := leaseRepo(t)
+	one := r.emptyCommit(".github/workflows/a.yml")
+	r.expect(t, 1, fmt.Sprintf(`commit %.12s "": commit has no T-<id>: prefix`, one),
+		"tiers: FAIL: .github/workflows/a.yml")
+
+	two := r.emptyCommit(".github/workflows/b.yml")
+	out := r.expect(t, 1, fmt.Sprintf(`commit %.12s "": commit has no T-<id>: prefix`, two),
+		"tiers: FAIL: .github/workflows/b.yml")
+	if strings.Count(out, "commit has no T-<id>: prefix") != 2 {
+		t.Errorf("want both commits reported\n%s", out)
+	}
+}
