@@ -1,10 +1,10 @@
 === RUN   TestProbe2SeparateGitDirPlant
     zz_probe2_test.go:37: worktree list:
-        worktree /private/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2SeparateGitDirPlant303168347/001
+        worktree /private/var/folders/<tmp>/T/TestProbe2SeparateGitDirPlant303168347/001
         HEAD 7ba40ab8a03cd3aea4bdb6aff9d2cb0ee4303b2b
         branch refs/heads/main
         
-        worktree /private/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2SeparateGitDirPlant303168347/001/.waggle/worktrees/T-023-builder
+        worktree /private/var/folders/<tmp>/T/TestProbe2SeparateGitDirPlant303168347/001/.waggle/worktrees/T-023-builder
         HEAD 7ba40ab8a03cd3aea4bdb6aff9d2cb0ee4303b2b
         branch refs/heads/t-023
     zz_probe2_test.go:41: separate-git-dir plant: err=<nil> reused=true fsmonitorRan=false filterRan=true
@@ -15,7 +15,7 @@
 --- PASS: TestProbe2SharedConfigFilter (0.30s)
 === RUN   TestProbe2PathShapes
     zz_probe2_test.go:97: "has space" reuse: err=<nil> reused=true
-    zz_probe2_test.go:97: "new\nline" reuse: err=/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2PathShapes1440275028/002/new
+    zz_probe2_test.go:97: "new\nline" reuse: err=/var/folders/<tmp>/T/TestProbe2PathShapes1440275028/002/new
         line/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false
     zz_probe2_test.go:97: "tab\there" reuse: err=<nil> reused=true
     zz_probe2_test.go:97: "quo\"te" reuse: err=<nil> reused=true
@@ -23,28 +23,28 @@
     zz_probe2_test.go:121: /private-prefixed repo path: err=<nil> reused=true
     zz_probe2_test.go:129: locked entry reuse: err=<nil> reused=true
     zz_probe2_test.go:135: locked missing entry: exit=3 err=git worktree: exit status 128: Preparing worktree (checking out 't-023')
-        fatal: '/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2PathShapes1440275028/005/.waggle/worktrees/T-023-builder' is a missing but locked worktree;
+        fatal: '/var/folders/<tmp>/T/TestProbe2PathShapes1440275028/005/.waggle/worktrees/T-023-builder' is a missing but locked worktree;
         use 'add -f -f' to override, or 'unlock' and 'prune' or 'remove' to clear
 --- PASS: TestProbe2PathShapes (1.00s)
 === RUN   TestProbe2Guard
-    zz_probe2_test.go:152: stale lock + leftover guard: exit=3 run lock /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2Guard490989399/001/L.lock is contended; run in progress (if none is, remove /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2Guard490989399/001/L.lock.takeover)
+    zz_probe2_test.go:152: stale lock + leftover guard: exit=3 run lock /var/folders/<tmp>/T/TestProbe2Guard490989399/001/L.lock is contended; run in progress (if none is, remove /var/folders/<tmp>/T/TestProbe2Guard490989399/001/L.lock.takeover)
     zz_probe2_test.go:155: no lock + leftover guard: err=<nil>
-    zz_probe2_test.go:164: dangling symlink guard: err=run lock /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2Guard490989399/001/L.lock is contended; run in progress (if none is, remove /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2Guard490989399/001/L.lock.takeover) targetCreated=false
+    zz_probe2_test.go:164: dangling symlink guard: err=run lock /var/folders/<tmp>/T/TestProbe2Guard490989399/001/L.lock is contended; run in progress (if none is, remove /var/folders/<tmp>/T/TestProbe2Guard490989399/001/L.lock.takeover) targetCreated=false
     zz_probe2_test.go:174: symlinked lock: err=<nil> victimIntact=true lockIsRegular=true
     zz_probe2_test.go:186: fifo lock: takeLock BLOCKED (>2s)
-    zz_probe2_test.go:199: pid reused: exit=3 run in progress: /var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2Guard490989399/001/L.lock held by pid 4242 on darktower.local since 2026-10-18T10:00:00Z
+    zz_probe2_test.go:199: pid reused: exit=3 run in progress: /var/folders/<tmp>/T/TestProbe2Guard490989399/001/L.lock held by pid 4242 on <host>.local since 2026-10-18T10:00:00Z
 --- PASS: TestProbe2Guard (2.01s)
 === RUN   TestProbe2RunsSymlink
-    zz_probe2_test.go:210: runs symlink: err=<nil> path=/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2RunsSymlink3123796038/001/.waggle/worktrees/runs/T-023-builder-1 resolved=/private/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbe2RunsSymlink3123796038/002/T-023-builder-1
+    zz_probe2_test.go:210: runs symlink: err=<nil> path=/var/folders/<tmp>/T/TestProbe2RunsSymlink3123796038/001/.waggle/worktrees/runs/T-023-builder-1 resolved=/private/var/folders/<tmp>/T/TestProbe2RunsSymlink3123796038/002/T-023-builder-1
 --- PASS: TestProbe2RunsSymlink (0.09s)
 === RUN   TestProbe3InWorktreeGitFile
     zz_probe3_test.go:47: in-worktree .git rewrite: err=<nil> reused=true filterRan=true
 --- PASS: TestProbe3InWorktreeGitFile (0.28s)
 === RUN   TestProbeForeignRepoReused
-    zz_probe_test.go:34: provision err=/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbeForeignRepoReused1897430764/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false fsmonitorRan=false
+    zz_probe_test.go:34: provision err=/var/folders/<tmp>/T/TestProbeForeignRepoReused1897430764/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false fsmonitorRan=false
 --- PASS: TestProbeForeignRepoReused (0.17s)
 === RUN   TestProbeSymlinkReused
-    zz_probe_test.go:52: symlink provision err=/var/folders/8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn/T/TestProbeSymlinkReused3605589140/001/.waggle/worktrees/T-023-builder exists but is not a real directory; remove it reused=false
+    zz_probe_test.go:52: symlink provision err=/var/folders/<tmp>/T/TestProbeSymlinkReused3605589140/001/.waggle/worktrees/T-023-builder exists but is not a real directory; remove it reused=false
 --- PASS: TestProbeSymlinkReused (0.14s)
 === RUN   TestProbeReadPaths
     zz_probe_test.go:65: "." validate: read path "." must be a clean repo-relative path
