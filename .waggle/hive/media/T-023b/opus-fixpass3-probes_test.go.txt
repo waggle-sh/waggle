@@ -1,0 +1,99 @@
+package dispatch
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestProbe5Commondir(t *testing.T) {
+	cases := []struct {
+		name string
+		mk   func(t *testing.T, wt, admin, canary string)
+	}{
+		{"rel-foreign", func(t *testing.T, wt, admin, canary string) {
+			dirtyViaFilter(t, wt)
+			f := filterRepo(t, canary)
+			rel, _ := filepath.Rel(admin, f)
+			os.WriteFile(filepath.Join(admin, "commondir"), []byte(rel+"\n"), 0o644)
+		}},
+		{"symlink-file", func(t *testing.T, wt, admin, canary string) {
+			dirtyViaFilter(t, wt)
+			f := filterRepo(t, canary)
+			p := filepath.Join(t.TempDir(), "cd")
+			os.WriteFile(p, []byte(f+"\n"), 0o644)
+			os.Remove(filepath.Join(admin, "commondir"))
+			os.Symlink(p, filepath.Join(admin, "commondir"))
+		}},
+		{"honest-crlf", func(t *testing.T, wt, admin, canary string) {
+			os.WriteFile(filepath.Join(admin, "commondir"), []byte("../..\r\n"), 0o644)
+		}},
+		{"honest-abs", func(t *testing.T, wt, admin, canary string) {
+			os.WriteFile(filepath.Join(admin, "commondir"), []byte(filepath.Dir(filepath.Dir(admin))+"\n"), 0o644)
+		}},
+		{"honest-trailing-slash", func(t *testing.T, wt, admin, canary string) {
+			os.WriteFile(filepath.Join(admin, "commondir"), []byte("../../\n"), 0o644)
+		}},
+		{"missing", func(t *testing.T, wt, admin, canary string) {
+			os.Remove(filepath.Join(admin, "commondir"))
+		}},
+		{"extra-symlink-entry", func(t *testing.T, wt, admin, canary string) {
+			os.Symlink(admin, filepath.Join(filepath.Dir(admin), "AAA"))
+		}},
+		{"extra-rel-entry", func(t *testing.T, wt, admin, canary string) {
+			dirtyViaFilter(t, wt)
+			aaa := filepath.Join(filepath.Dir(admin), "AAA")
+			os.Rename(filterRepo(t, canary), aaa)
+			rel, _ := filepath.Rel(aaa, filepath.Join(wt, ".git"))
+			os.WriteFile(filepath.Join(aaa, "gitdir"), []byte(rel+"\n"), 0o644)
+			os.WriteFile(filepath.Join(wt, ".git"), []byte("gitdir: "+aaa+"\n"), 0o644)
+		}},
+	}
+	for _, c := range cases {
+		err, canary := reuseAfter(t, func(wt, canary string) {
+			c.mk(t, wt, registration(t, repoOfWorktree(wt)), canary)
+		})
+		_, e := os.Stat(canary)
+		t.Logf("%s: err=%v filterRan=%v", c.name, err, e == nil)
+	}
+}
+
+func TestProbe5Dbg(t *testing.T) {
+	var adminP string
+	err, cn := reuseAfter(t, func(wt, canary string) {
+		admin := registration(t, repoOfWorktree(wt))
+		adminP = admin
+		dirtyViaFilter(t, wt)
+		aaa := filepath.Join(filepath.Dir(admin), "AAA")
+		os.Rename(filterRepo(t, canary), aaa)
+		rel, _ := filepath.Rel(aaa, filepath.Join(wt, ".git"))
+		os.WriteFile(filepath.Join(aaa, "gitdir"), []byte(rel+"\n"), 0o644)
+		os.WriteFile(filepath.Join(wt, ".git"), []byte("gitdir: "+aaa+"\n"), 0o644)
+		os.WriteFile(filepath.Join(aaa, "commondir"), []byte("../..\n"), 0o644)
+		b, _ := os.ReadFile(filepath.Join(admin, "gitdir"))
+		t.Logf("before: %q rel=%q", b, rel)
+	})
+	b, e := os.ReadFile(filepath.Join(adminP, "gitdir"))
+	_, ce := os.Stat(cn); t.Logf("after: %q %v err=%v filterRan=%v", b, e, err, ce == nil)
+}
+
+func TestProbe5SymlinkedGitRelative(t *testing.T) {
+	dir, g := newRepo(t)
+	real := filepath.Join(t.TempDir(), "realgit")
+	os.Rename(filepath.Join(dir, ".git"), real)
+	os.Symlink(real, filepath.Join(dir, ".git"))
+	sh(t, dir, "config", "worktree.useRelativePaths", "true")
+	ctx := context.Background()
+	base, _ := ResolveBase(ctx, g, "", "")
+	w, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	if err != nil {
+		t.Fatalf("first: %v", err)
+	}
+	w.Unlock()
+	a, _ := os.ReadFile(filepath.Join(registration(t, dir), "gitdir"))
+	b, _ := os.ReadFile(filepath.Join(w.Path, ".git"))
+	t.Logf("admin/gitdir=%q .git=%q", a, b)
+	w2, err := Provision(ctx, g, mustValid(t, okReq(dir)), base, t0)
+	t.Logf("symlinked .git + relative reuse: err=%v reused=%v", err, w2 != nil && w2.Reused)
+}
