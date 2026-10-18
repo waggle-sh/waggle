@@ -21,6 +21,7 @@ import (
 	"github.com/waggle-sh/waggle/internal/config"
 	"github.com/waggle-sh/waggle/internal/layout"
 	"github.com/waggle-sh/waggle/internal/scaffold"
+	"github.com/waggle-sh/waggle/internal/usage"
 )
 
 // Injection points for tests, which never run in parallel in this package.
@@ -30,10 +31,6 @@ var (
 	statusClock  = time.Now
 	socketExists = func(path string) bool { _, err := os.Lstat(path); return err == nil }
 )
-
-// usagePath is the per-machine token ledger. Phase B (T-021) adds
-// layout.Usage; until then the path is derived here from layout.ControlDir.
-const usagePath = layout.ControlDir + "/usage.jsonl"
 
 // header is the hive line and the daemon line of the report.
 type header struct {
@@ -101,12 +98,20 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 		return exit(3, "failed: %v", err)
 	}
 
+	recs, bad, err := usage.Read(filepath.Join(root, layout.Usage))
+	if err != nil {
+		return exit(3, "failed: %v", err)
+	}
+	if len(bad) > 0 {
+		fmt.Fprintf(stderr, "warning: %d unreadable ledger lines (first: line %d: %v)\n", len(bad), bad[0].Line, bad[0].Err)
+	}
 	h := header{
 		Name: filepath.Base(root), Pin: readPin(cfgPath),
 		Mode: cfg.Forge.CombMode, Remote: cfg.Forge.Remote,
 		Daemon: socketExists(filepath.Join(root, layout.Socket)),
 	}
-	stdout.Write(renderStatus(h, leases, malformed, statusClock()))
+	block := usage.Render(usage.Summarize(recs), layout.Usage)
+	stdout.Write(renderStatus(h, leases, malformed, block, statusClock()))
 	return 0
 }
 
@@ -150,7 +155,7 @@ func readPin(path string) string {
 // renderStatus renders the report; it is pure so tests use golden output.
 // Leases print sorted by ticket number (the backend already filters expired
 // ones) with role names as the backend returns them.
-func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaimsError, now time.Time) []byte {
+func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaimsError, usageBlock []byte, now time.Time) []byte {
 	var b bytes.Buffer
 	pin := h.Pin
 	if len(pin) == 40 && strings.Trim(pin, "0123456789abcdef") == "" {
@@ -178,8 +183,8 @@ func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaims
 		fmt.Fprintf(&b, "  malformed: %d (%s: %s)\n", len(malformed.Claims), first.Ref, first.Reason)
 	}
 
-	// Phase A prints the absent-ledger line unconditionally; phase B reads it.
-	fmt.Fprintf(&b, "\nUsage: none recorded (%s absent)\n", usagePath)
+	b.WriteByte('\n')
+	b.Write(usageBlock)
 	return b.Bytes()
 }
 
