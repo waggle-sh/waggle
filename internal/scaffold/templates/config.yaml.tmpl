@@ -28,6 +28,11 @@ runtimes:
       binary: claude
       nudge_tokens: 200000
       max_tokens: 300000
+      # Keeper-assigned models per level (T-012). Roles never name models.
+      levels:
+        frontier: opus
+        standard: sonnet
+        fast: haiku
 
 cell:
   enforce_ro_root: true

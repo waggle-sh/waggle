@@ -2,6 +2,7 @@ package scaffold
 
 import (
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,9 +12,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strings"
 
+	"github.com/waggle-sh/waggle/internal/config"
 	"github.com/waggle-sh/waggle/internal/layout"
 	"github.com/waggle-sh/waggle/internal/runtime"
 )
@@ -119,6 +122,19 @@ func resolvePin(read func() (*debug.BuildInfo, bool)) (pin string, ok bool) {
 	return Unpinned, false
 }
 
+// placeholders returns the replacer of kv pairs for template destination dst,
+// JSON-escaping values for a .json destination so none can leave its string.
+func placeholders(dst string, kv []string) *strings.Replacer {
+	if path.Ext(dst) == ".json" {
+		kv = slices.Clone(kv)
+		for i := 1; i < len(kv); i += 2 {
+			b, _ := json.Marshal(kv[i])
+			kv[i] = string(b[1 : len(b)-1])
+		}
+	}
+	return strings.NewReplacer(kv...)
+}
+
 // pendingEdit is a project file whose new content was computed before any write.
 type pendingEdit struct {
 	rel, old, new string
@@ -181,6 +197,9 @@ func InitRepo(opts InitOptions) error {
 	if opts.Delivery != "installed" && opts.Delivery != "hosted" {
 		return fmt.Errorf("invalid --delivery=%q (must be 'installed' or 'hosted')", opts.Delivery)
 	}
+	if opts.Forge != "github" && opts.Forge != "none" {
+		return fmt.Errorf("invalid --forge=%q (must be 'github' or 'none')", opts.Forge)
+	}
 	if opts.CombMode != "direct" && opts.CombMode != "relay" {
 		return fmt.Errorf("invalid --comb-mode=%q (must be 'direct' or 'relay')", opts.CombMode)
 	}
@@ -217,6 +236,9 @@ func InitRepo(opts InitOptions) error {
 	if err != nil {
 		return err
 	}
+	if err := checkSymlinks(root, append(writePaths(root, files, opts.Runtime), layout.TasksDir, layout.ReviewsDir, layout.MediaDir)); err != nil {
+		return err
+	}
 
 	read := opts.BuildInfo
 	if read == nil {
@@ -226,14 +248,14 @@ func InitRepo(opts InitOptions) error {
 	if !pinned {
 		fmt.Fprintln(out, "  [warn]   built from a modified or unstamped tree; set waggle.pin by hand")
 	}
-	replacer := strings.NewReplacer(
+	values := []string{
 		"{{PROFILE}}", opts.Profile,
 		"{{DELIVERY}}", opts.Delivery,
 		"{{FORGE}}", opts.Forge,
 		"{{COMB_MODE}}", opts.CombMode,
 		"{{RUNTIME}}", opts.Runtime,
 		"{{PIN}}", pin,
-	)
+	}
 
 	for _, f := range files {
 		dstPath := filepath.Join(root, filepath.FromSlash(f.dst))
@@ -253,7 +275,7 @@ func InitRepo(opts InitOptions) error {
 		if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
 			return fmt.Errorf("creating directory for %s: %w", f.dst, err)
 		}
-		if err := os.WriteFile(dstPath, []byte(replacer.Replace(string(raw))), 0o644); err != nil {
+		if err := os.WriteFile(dstPath, []byte(placeholders(f.dst, values).Replace(string(raw))), 0o644); err != nil {
 			return fmt.Errorf("writing %s: %w", f.dst, err)
 		}
 		verb := "create"
@@ -284,7 +306,11 @@ func InitRepo(opts InitOptions) error {
 	}
 
 	if opts.Runtime == "claude-code" {
-		adapter := runtime.NewClaudeAdapter(runtime.AdapterConfig{Binary: "claude"})
+		p, err := config.LoadPolicy(root)
+		if err != nil {
+			return fmt.Errorf("loading the model policy for claude-code shims: %w", err)
+		}
+		adapter := runtime.NewClaudeAdapter(runtime.AdapterConfig{Binary: "claude"}).WithPolicy(p)
 		if err := adapter.Materialize(root); err != nil {
 			return fmt.Errorf("materializing claude-code shims: %w", err)
 		}
