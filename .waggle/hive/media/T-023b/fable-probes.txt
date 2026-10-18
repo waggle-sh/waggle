@@ -10,7 +10,7 @@
     zz_scratch_fable_test.go:99: err=internal/x/*.go is not on base 15bd3b789c759e2a59c6da8f115c738a7619e39b; land it in a hive PR first
     zz_scratch_fable_test.go:102: icase lookup of t-023.md: found=false data="" err=git ls-tree: exit status 128: fatal: .waggle/hive/tasks/t-023.md: pathspec magic not supported by this command: 'icase'
 --- PASS: TestScratchPathspec (0.21s)
-    zz_scratch_fable_test.go:122: symlink to foreign repo: w=&{Path:/var/folders/xx/redacted/T/TestScratchSymlinkForeign3266137290/001/.waggle/worktrees/T-023-builder LockPath:/var/folders/xx/redacted/T/TestScratchSymlinkForeign3266137290/001/.waggle/worktrees/T-023-builder.lock Branch:t-023 BaseOID:15bd3b789c759e2a59c6da8f115c738a7619e39b CheckBase:15bd3b789c759e2a59c6da8f115c738a7619e39b Reused:true Warnings:[]} err=<nil>
+    zz_scratch_fable_test.go:122: symlink to foreign repo: w=&{Path:/var/folders/<tmp>/T/TestScratchSymlinkForeign3266137290/001/.waggle/worktrees/T-023-builder LockPath:/var/folders/<tmp>/T/TestScratchSymlinkForeign3266137290/001/.waggle/worktrees/T-023-builder.lock Branch:t-023 BaseOID:15bd3b789c759e2a59c6da8f115c738a7619e39b CheckBase:15bd3b789c759e2a59c6da8f115c738a7619e39b Reused:true Warnings:[]} err=<nil>
 --- PASS: TestScratchSymlinkForeign (0.19s)
     zz_scratch_fable_test.go:133: base == branch: err=<nil>
 --- PASS: TestScratchBaseIsBranch (0.00s)
