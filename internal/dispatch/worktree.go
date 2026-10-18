@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -35,7 +36,9 @@ func (g *Git) RunIn(ctx context.Context, dir string, args ...string) ([]byte, er
 	if bin == "" {
 		bin = "git"
 	}
-	cmd := exec.CommandContext(ctx, bin, args...)
+	// Hooks and fsmonitor never run from dispatch's own host calls.
+	full := append([]string{"-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false"}, args...)
+	cmd := exec.CommandContext(ctx, bin, full...)
 	cmd.Dir, cmd.Env = dir, gitEnv(os.Environ())
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
@@ -79,6 +82,8 @@ type lockInfo struct {
 	Started time.Time `json:"started"`
 }
 
+var staleSeq atomic.Int64
+
 // Test seams: pid liveness and the host name.
 var (
 	pidAlive = processAlive
@@ -109,6 +114,12 @@ func Provision(ctx context.Context, g *Git, req Request, baseOID string, now tim
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, failf(ExitEnv, "%w", err)
 	}
+	if err := requireRealDir(filepath.Dir(dir)); err != nil {
+		return nil, failf(ExitEnv, "%w", err)
+	}
+	if err := requireRealDir(dir); err != nil {
+		return nil, failf(ExitEnv, "%w", err)
+	}
 	w := &Worktree{Path: filepath.Join(dir, req.Ticket+"-"+req.Role), Branch: req.Branch, BaseOID: baseOID}
 	w.LockPath = w.Path + ".lock"
 	if w.Warnings, err = takeLock(w.LockPath, now); err != nil {
@@ -127,9 +138,11 @@ func (w *Worktree) provision(ctx context.Context, g *Git) error {
 	}
 	_, verr := g.Run(ctx, "rev-parse", "--verify", "--quiet", "refs/heads/"+w.Branch)
 	exists := verr == nil
-	_, serr := os.Lstat(w.Path)
+	fi, serr := os.Lstat(w.Path)
 	var err error
 	switch {
+	case serr == nil && !fi.IsDir():
+		err = fmt.Errorf("%s exists but is not a real directory; remove it", w.Path)
 	case serr == nil:
 		w.Reused = true
 		err = w.checkReusable(ctx, g, exists)
@@ -153,16 +166,50 @@ func (w *Worktree) provision(ctx context.Context, g *Git) error {
 	return nil
 }
 
-// checkReusable accepts an existing path only when it is a registered
-// worktree on the expected branch with no uncommitted or untracked change.
-func (w *Worktree) checkReusable(ctx context.Context, g *Git, branchExists bool) error {
-	// An empty --show-prefix means w.Path is a work tree root, not a plain
-	// directory inside the main checkout.
-	prefix, perr := g.RunIn(ctx, w.Path, "rev-parse", "--show-prefix")
-	head, _ := g.RunIn(ctx, w.Path, "symbolic-ref", "--short", "HEAD")
-	if perr != nil || len(bytes.TrimSpace(prefix)) > 0 || !branchExists || strings.TrimSpace(string(head)) != w.Branch {
-		return fmt.Errorf("%s exists but is not a worktree on branch %s; run waggle dispatch clean or remove it", w.Path, w.Branch)
+// requireRealDir refuses a symlink or non-directory at p.
+func requireRealDir(p string) error {
+	fi, err := os.Lstat(p)
+	if err != nil {
+		return err
 	}
+	if !fi.IsDir() {
+		return fmt.Errorf("%s is not a real directory (symlinks are refused)", p)
+	}
+	return nil
+}
+
+// checkReusable accepts an existing path only when the main repo registers it
+// as a worktree on the expected branch (so a planted repo is never asked
+// anything) and it has no uncommitted or untracked change. The caller has
+// already Lstat-checked that the path is a real directory.
+func (w *Worktree) checkReusable(ctx context.Context, g *Git, branchExists bool) error {
+	bad := fmt.Errorf("%s exists but is not a worktree on branch %s; run waggle dispatch clean or remove it", w.Path, w.Branch)
+	if gf, err := os.Lstat(filepath.Join(w.Path, ".git")); err != nil || !gf.Mode().IsRegular() || !branchExists {
+		return bad
+	}
+	list, err := g.Run(ctx, "worktree", "list", "--porcelain")
+	if err != nil {
+		return err
+	}
+	want, err := filepath.EvalSymlinks(w.Path)
+	if err != nil {
+		return bad
+	}
+	var cur string
+	for _, line := range strings.Split(string(list), "\n") {
+		switch {
+		case strings.HasPrefix(line, "worktree "):
+			cur = strings.TrimPrefix(line, "worktree ")
+		case line == "branch refs/heads/"+w.Branch:
+			if got, err := filepath.EvalSymlinks(cur); err == nil && got == want {
+				return w.checkClean(ctx, g)
+			}
+		}
+	}
+	return bad
+}
+
+func (w *Worktree) checkClean(ctx context.Context, g *Git) error {
 	st, err := g.RunIn(ctx, w.Path, "status", "--porcelain=v1", "--untracked-files=all")
 	if err != nil {
 		return err
@@ -214,10 +261,25 @@ func takeLock(path string, now time.Time) (warns []string, err error) {
 		if info.Host != host || pidAlive(info.PID) {
 			return nil, failf(ExitEnv, "run in progress: %s held by pid %d on %s since %s", path, info.PID, info.Host, info.Started.Format(time.RFC3339))
 		}
-		warns = append(warns, fmt.Sprintf("took over stale run lock of dead pid %d", info.PID))
-		if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return nil, failf(ExitEnv, "%w", err)
+		// A takeover guard (O_EXCL) serializes dispatchers that saw the same
+		// stale lock. The winner re-reads under it, renames the stale lock
+		// aside and loops to the O_EXCL create, which only one run can win.
+		guard := path + ".takeover"
+		gf, gerr := os.OpenFile(guard, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+		if gerr != nil {
+			return nil, failf(ExitEnv, "run lock %s is contended; run in progress (if none is, remove %s)", path, guard)
 		}
+		_ = gf.Close()
+		if again, _ := os.ReadFile(path); bytes.Equal(again, data) {
+			aside := fmt.Sprintf("%s.stale.%d.%d", path, os.Getpid(), staleSeq.Add(1))
+			if err := os.Rename(path, aside); err != nil {
+				_ = os.Remove(guard)
+				return nil, failf(ExitEnv, "%w", err)
+			}
+			_ = os.Remove(aside)
+			warns = append(warns, fmt.Sprintf("took over stale run lock of dead pid %d", info.PID))
+		}
+		_ = os.Remove(guard)
 	}
 	return nil, failf(ExitEnv, "run lock %s is contended; run in progress", path)
 }

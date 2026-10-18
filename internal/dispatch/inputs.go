@@ -59,9 +59,13 @@ func blobAt(ctx context.Context, g *Git, oid, path string, max int) (data []byte
 	if err != nil {
 		return nil, false, failf(ExitEnv, "%w", err)
 	}
-	meta, _, _ := strings.Cut(string(out), "\t")
-	if meta == "" {
+	if len(out) == 0 {
 		return nil, false, nil
+	}
+	entry, _, _ := strings.Cut(string(out), "\x00")
+	meta, name, _ := strings.Cut(entry, "\t")
+	if name != path {
+		return nil, false, failf(ExitEnv, "%s at base is not a regular file", path)
 	}
 	f := strings.Fields(meta) // mode type oid
 	if len(f) != 3 || f[1] != "blob" || f[0] == "120000" {

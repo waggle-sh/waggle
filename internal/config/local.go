@@ -43,7 +43,7 @@ func LoadKeeperID(repoDir string) (string, error) {
 	if id = strings.TrimSpace(id); id == "" {
 		return "", fmt.Errorf("%w: keeper_id is empty; set it to your GitHub login", ErrNoKeeperID)
 	}
-	if id != LocalKeeperPlaceholder {
+	if !strings.EqualFold(id, LocalKeeperPlaceholder) {
 		return id, nil
 	}
 	cfg, err := Load(filepath.Join(repoDir, filepath.FromSlash(layout.Config)))
