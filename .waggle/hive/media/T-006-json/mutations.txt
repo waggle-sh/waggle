@@ -1,0 +1,4 @@
+Mutations applied to a git-archive copy of 91d19d0 (not the branch). Each makes TestBackfillMatchesAppendixA fail:
+D-099 kind policy->scope; D-108 supersedes D-083->D-084; D-120 "Decided"->"decided"; D-133.json removed (file count 132 vs 133).
+Baseline copy passes. Independent python check (check-appendix-a.py) over all 133 items: 0 mismatches.
+Gate at 91d19d0: go build, go vet, gofmt -l (empty), go test -race -count=2 ./... all ok. Golden diff vs 9015bc9: 549 added, 0 removed lines.
