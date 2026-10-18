@@ -3058,3 +3058,22 @@
 **Keeper choice:** The Head Keeper authors and signs off commits as `27632860+paulternate@users.noreply.github.com`, set in git config and backed by GitHub's email privacy setting, before T-025 phase D enforces DCO. Past commits are not rewritten by this decision; history redaction stays a separate decision before the repo goes public. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
 
 **Rationale:** Keeps a personal address out of every future commit in a repo that will go public.
+
+## D-161: T-023 phase B accepted at 867 added non-test lines against a 580 stop
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** T-023 phase B grew from 667 to 867 added non-test lines through three guard fix passes, against the brief's 580 stop. Accept, or cut?
+
+**Options considered:**
+1. Accept at 867 and record it
+2. Leave the ruling in the reviews only
+
+**Hive recommendation:** Accept at 867 and record it
+
+**Keeper choice:** Phase B is accepted at 867 added non-test lines (D-089 metric), including the third fix pass for Windows build tags, relative gitdir resolution and the adminDir hardening. Every line past 667 is a guard-requested security fix (worktree reuse pinned to its registered gitdir, bounded lock reads, atomic stale-lock takeover); both guards found no cut worth the risk. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** The overrun is larger than earlier precedents (D-136), so it is recorded rather than left in the reviews; the phase C and D estimates should assume similar safety overhead.
