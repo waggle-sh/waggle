@@ -229,34 +229,67 @@ func (w *Worktree) adminDir(ctx context.Context, g *Git, real string) (string, e
 		return "", err
 	}
 	dotGit := filepath.Join(real, ".git")
+	var hits []string
 	for _, e := range ents {
 		admin := filepath.Join(root, e.Name())
 		reg, err := readSmall(filepath.Join(admin, "gitdir"))
 		if err != nil {
 			continue
 		}
-		if got, err := filepath.EvalSymlinks(strings.TrimSpace(string(reg))); err != nil || got != dotGit {
-			continue
+		reg1 := strings.TrimSpace(string(reg))
+		if !filepath.IsAbs(reg1) { // worktree.useRelativePaths
+			reg1 = filepath.Join(admin, reg1)
 		}
-		own, err := readSmall(dotGit)
-		if err != nil {
-			return "", err
+		if got, err := filepath.EvalSymlinks(reg1); err == nil && got == dotGit {
+			hits = append(hits, admin)
 		}
-		target, ok := strings.CutPrefix(strings.TrimSpace(string(own)), "gitdir:")
-		if !ok {
-			return "", fmt.Errorf("%s is not a gitdir file", dotGit)
-		}
-		if target = strings.TrimSpace(target); !filepath.IsAbs(target) {
-			target = filepath.Join(real, target)
-		}
-		got, err := filepath.EvalSymlinks(target)
-		want, werr := filepath.EvalSymlinks(admin)
-		if err != nil || werr != nil || got != want {
-			return "", fmt.Errorf("%s points at %s, not its registration", dotGit, target)
-		}
-		return want, nil
 	}
-	return "", fmt.Errorf("no registration for %s", dotGit)
+	if len(hits) == 0 {
+		return "", fmt.Errorf("no registration for %s", dotGit)
+	}
+	if len(hits) > 1 {
+		return "", fmt.Errorf("%d registrations name %s", len(hits), dotGit)
+	}
+	admin := hits[0]
+	if err := sameCommonDir(admin, strings.TrimSpace(string(out))); err != nil {
+		return "", err
+	}
+	own, err := readSmall(dotGit)
+	if err != nil {
+		return "", err
+	}
+	target, ok := strings.CutPrefix(strings.TrimSpace(string(own)), "gitdir:")
+	if !ok {
+		return "", fmt.Errorf("%s is not a gitdir file", dotGit)
+	}
+	if target = strings.TrimSpace(target); !filepath.IsAbs(target) {
+		target = filepath.Join(real, target)
+	}
+	got, err := filepath.EvalSymlinks(target)
+	want, werr := filepath.EvalSymlinks(admin)
+	if err != nil || werr != nil || got != want {
+		return "", fmt.Errorf("%s points at %s, not its registration", dotGit, target)
+	}
+	return want, nil
+}
+
+// sameCommonDir requires admin's commondir file to resolve to common, so git
+// run with --git-dir=admin cannot be sent to another repository's config.
+func sameCommonDir(admin, common string) error {
+	b, err := readSmall(filepath.Join(admin, "commondir"))
+	if err != nil {
+		return err
+	}
+	c := strings.TrimSpace(string(b))
+	if !filepath.IsAbs(c) {
+		c = filepath.Join(admin, c)
+	}
+	got, err := filepath.EvalSymlinks(c)
+	want, werr := filepath.EvalSymlinks(common)
+	if err != nil || werr != nil || got != want {
+		return fmt.Errorf("%s names commondir %s, not the main repository", admin, c)
+	}
+	return nil
 }
 
 // maxSmall bounds files dispatch reads from directories others can write.
@@ -270,7 +303,7 @@ func readSmall(path string) ([]byte, error) {
 	} else if !fi.Mode().IsRegular() {
 		return nil, fmt.Errorf("%s is not a regular file", path)
 	}
-	f, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK|syscall.O_NOFOLLOW, 0)
+	f, err := os.OpenFile(path, os.O_RDONLY|openFlags, 0)
 	if err != nil {
 		return nil, err
 	}
