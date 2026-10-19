@@ -65,3 +65,50 @@ Fix: restore the paragraph under Live state (adding the hostname and temp prefix
 - Risk: Tier 2 (`.waggle/hive/**` only), Keeper card and `--admin` merge by hive practice (leases and tiers fail by design, no claim). No code changes. After B1 to B5, the handoff matches the repo and the decisions, and the brief's carry claim is true.
 
 Verdict: must-fix (B1 to B4: handoff text; B5: one line in T-023 section 10.5.2)
+
+## Re-review at 4007e6e
+
+Verdict: pass
+Risk-Tier: 2
+
+Scope: `git diff 0b184e5 origin/hive-records-8` (one commit, `4007e6e`: handoff, T-023 brief, `reviews/hive-records-7.md`, this review file), plus the whole PR diff against `origin/main` (`a06d1b7`) for regressions. Four commits, all authored and committed by the D-160 noreply address. Only `.waggle/hive/DECISIONS.md`, `handoff/queen.md`, `reviews/hive-records-7.md`, `reviews/hive-records-8.md` and `tasks/T-023.md` change; nothing under `.waggle/control/`, `cmd/`, `internal/`, `go.mod` or `.github/`. DECISIONS.md is untouched by the fix commit (168 headings, D-162 to D-168 as reviewed).
+
+### Blocking issues
+
+- B1 fixed. "Open notes carried" is back under Live state: D-143 (upgrade rewrites the gate workflow until T-008, revert right after, clean worktree), the pre-public redaction list now naming the machine hostname, temp-dir prefixes and `/var/folders` paths (hive-records-7 N4 folded in), D-151, T-025 phase C before any release, T-014b fable F6 and F8 with F8 (`main.go:90`) routed to the phase C builder, and the RFC v0.2 column. A new paragraph carries this review's open notes N1 (accepted), N5, N6 and N7, each described correctly. `internal/dispatch/worktree.go:398` still holds the stale "so the agent cannot rewrite them" comment N6 names.
+- B2 fixed. Standing facts: "until T-023 phase F sets `forge.remote`, D-119, D-168, T-014 F10". D-119 and D-168 say exactly that.
+- B3 fixed. "D-136 sets the metric (added non-test lines)"; range now 1.5x to 3.3x with T-023 phase B as the 3.3x case (867 / 260). Matches D-136's Keeper choice and T-023 section 3.
+- B4 fixed. In-flight line names PR #48, branch `hive-records-8`, worktree `hr8` in the queen's scratchpad, the contents, this review's must-fix round, then Keeper card and `--admin`. True at `4007e6e`.
+- B5 fixed. 10.5.2 item 10 attributes the residual to opus's phase C requirements bullet, names `GIT_CONFIG_PARAMETERS`, `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_<n>`, `GIT_CONFIG_VALUE_<n>` and `GIT_EXEC_PATH`, and has every 7.2 post-run git call and the pre-launch `status` snapshot drop them (case-insensitive, prefix match for the numbered pair). Test 28 covers the canary and the list sync. Identifiers checked: `gitEnv` and `redirectVars` exist in `internal/dispatch/worktree.go` (lines 52 to 66), `scrubbedGitEnv` in `internal/comb/git.go` (line 181, unexported, so the `go/parser` route is right given phase C has no comb lease). Both lists today hold the same 15 names, so the sync assertion passes on main. The claim that the pinned `GIT_CONFIG_GLOBAL` / `GIT_CONFIG_NOSYSTEM` do not drop these variables is correct. The status line's "every phase C carry item is listed" is now true.
+
+No remaining must-fix.
+
+### Notes addressed
+
+- N2: 10.5.2 item 7 and test 27 now make D-166's cross-compile check a Go test in `internal/dispatch`, not a workflow edit.
+- N4: section 3's stale CLI-split sentence replaced with "D-164 ruled C0 then C with the CLI inside phase C".
+- N8: tripwire claim narrowed to absolute, `.`, `./` and `../` paths; bare relative paths (`bare.git`, `sub/bare.git`) are named as not caught and listed in the doc comment; test list now says `../`. The 7.2 rule 4 backstop holds for a push into the main repo (ref snapshot). A push to some other local bare repo by a bare relative name stays uncaught; the brief says so plainly, and it is local, not egress.
+- N9: "`reviews/T-014b-sonnet.md` N2" named.
+- N10: `/var/folders/<tmp>/.../T/` in both `reviews/hive-records-7.md` N4 and this file.
+- N11: "two guards (opus and fable, D-100 as practiced since D-156)"; D-156 records opus plus fable for T-023 phase B.
+- N3 (15.1 format) not addressed; cosmetic, fine to leave.
+
+### New notes (non-blocking)
+
+- R-N1 (test 28 wording vs item 10): item 10 adds five config variables to what post-run calls drop, and test 28 requires dispatch's `redirectVars` to equal comb's `scrubbedGitEnv`, which keeps config variables on purpose (its doc comment: "Credential, config, trace and PATH variables are kept"). So the builder must put the five in a separate list applied only to the 7.2 calls and the pre-launch `status`, not add them to `redirectVars`. The sync test would fail loudly if they did, so this self-corrects; one sentence in the phase C dispatch prompt saves a fix round.
+- R-N2: `GIT_EXEC_PATH` is dropped only from 7.2 calls, so the run's other host calls (provision, fetch, claim) still honor it. That matches the opus residual's scope (post-run inspection under verified config) and is fine; mention it if a guard asks.
+
+### Probes
+
+1. Dashes: zero U+2013 or U+2014 in the 413 added lines of the whole PR diff.
+2. Privacy: no `/Users/`, `/home/`, encoded `-Users-` segment, real uid, `claude-<uid>` with a real number, the machine hostname (`hostname -s`, 0 hits), or a real `/var/folders/` segment in any added line. The only email address is the D-160 noreply; "protonmail" appears only as a bare word.
+3. Handoff facts: main at `a06d1b7` matches `origin/main`; 168 entries once merged, 161 on main, next D-169; pin, D-084, D-098, D-131, D-136, D-142, D-143, D-147, D-151, D-156, D-158, D-160, D-119, D-168 say what the handoff says; T-022b, T-023b and #47 hashes unchanged from the first review's check. No line was lost in the fix commit beyond the five rewritten ones.
+4. Regression spot-check of the full PR against `origin/main`: the decisions, the brief edits reviewed at `0b184e5` and the hive-records-7 review are unchanged except the fixes above; no new contradiction with D-100, D-123, D-135, D-137, D-147 or D-161.
+
+### Intent Packet
+
+- What: D-162 to D-168 (T-023 phase C readiness rulings, every queen default); T-023 brief rewritten for phase C0 (D-137 allowlist, two fixed argv flags, tripwire gaps stated honestly, stop 130) and phase C (target 850, stop 1000, section 10.5 carry list now complete including the git config env residual, wider 7.2 host-state snapshot under pinned config, tainted worktree marker, `dispatch.lock`, sign-off rule, tests 20 to 28, AC11 to AC13, section 15.1); hive-records-7 and hive-records-8 guard reviews committed; queen handoff tidied with open notes restored and facts corrected. Hive only, nothing ships.
+- Why: lands the brief and rulings on `origin/main` so the phase C0 builder's worktree carries them, and gives a fresh queen a handoff that matches the repo and the decisions.
+- Risk: Tier 2 (`.waggle/hive/**` only); Keeper card and `--admin` merge by hive practice (`verify-leases-and-tiers` fails by design, no claim until phase F). No code changes. Opus guard: must-fix at `0b184e5` (B1 to B5), pass at `4007e6e`.
+
+Verdict: pass
