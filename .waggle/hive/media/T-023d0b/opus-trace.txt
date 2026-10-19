@@ -1,0 +1,51 @@
+pr: maintenance/gc child_start events=1 planted=survived
+       1 "argv":["git-receive-pack '<tmp>/pr/origin.git'"]
+       1 "argv":["git-upload-pack '<tmp>/pr/origin.git'"]
+       1 "argv":["git","--git-dir=<tmp>/pr/origin.git","for-each-ref","--format=%(objectname)"]
+       1 "argv":["git","branch","--quiet","t-1","main"]
+       1 "argv":["git","maintenance","run","--auto","--quiet","--detach"]
+       1 "argv":["git","pack-objects","--all-progress-implied","--revs","--stdout","--thin","--delta-base-offset","-q"]
+       1 "argv":["git","reset","--hard","--no-recurse-submodules","--quiet"]
+       1 "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"]
+       1 "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=receive","--all","--quiet","--alternate-refs"]
+       1 "argv":["git","unpack-objects","--pack_header=2,9","-q"]
+base: maintenance/gc child_start events=5 planted=PRUNED
+       1 "argv":["git-receive-pack '<tmp>/base/origin.git'"]
+       1 "argv":["git-upload-pack '<tmp>/base/origin.git'"]
+       1 "argv":["git","--git-dir=<tmp>/base/origin.git","for-each-ref","--format=%(objectname)"]
+       1 "argv":["git","branch","--quiet","t-1","main"]
+       5 "argv":["git","maintenance","run","--auto","--quiet","--detach"]
+       1 "argv":["git","pack-objects","--all-progress-implied","--revs","--stdout","--thin","--delta-base-offset","-q"]
+       1 "argv":["git","reset","--hard","--no-recurse-submodules","--quiet"]
+       1 "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"]
+       1 "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=receive","--all","--quiet","--alternate-refs"]
+       1 "argv":["git","unpack-objects","--pack_header=2,9","-q"]
+       1 "argv":["git","worktree","prune","--expire","3.months.ago"]
+pr-local-hostile: maintenance/gc child_start events=1 planted=survived
+       1 "argv":["git-receive-pack '<tmp>/pr-local-hostile/origin.git'"]
+       1 "argv":["git-upload-pack '<tmp>/pr-local-hostile/origin.git'"]
+       1 "argv":["git","--git-dir=<tmp>/pr-local-hostile/origin.git","for-each-ref","--format=%(objectname)"]
+       1 "argv":["git","branch","--quiet","t-1","main"]
+       1 "argv":["git","maintenance","run","--auto","--quiet","--detach"]
+       1 "argv":["git","pack-objects","--all-progress-implied","--revs","--stdout","--thin","--delta-base-offset","-q"]
+       1 "argv":["git","reset","--hard","--no-recurse-submodules","--quiet"]
+       1 "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"]
+       1 "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=receive","--all","--quiet","--alternate-refs"]
+       1 "argv":["git","unpack-objects","--pack_header=2,9","-q"]
+base-local-hostile: maintenance/gc child_start events=5 planted=PRUNED
+       1 "argv":["git-receive-pack '<tmp>/base-local-hostile/origin.git'"]
+       1 "argv":["git-upload-pack '<tmp>/base-local-hostile/origin.git'"]
+       1 "argv":["git","--git-dir=<tmp>/base-local-hostile/origin.git","for-each-ref","--format=%(objectname)"]
+       1 "argv":["git","branch","--quiet","t-1","main"]
+       5 "argv":["git","maintenance","run","--auto","--quiet","--detach"]
+       1 "argv":["git","pack-objects","--all-progress-implied","--revs","--stdout","--thin","--delta-base-offset","-q"]
+       1 "argv":["git","reset","--hard","--no-recurse-submodules","--quiet"]
+       1 "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"]
+       1 "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=receive","--all","--quiet","--alternate-refs"]
+       1 "argv":["git","unpack-objects","--pack_header=2,9","-q"]
+       1 "argv":["git","worktree","prune","--expire","now"]
+comb fetch pr: 0 maintenance child_start
+comb fetch old: 1 maintenance child_start
+# the one maintenance child in each pr variant, by trace2 cmd_name hierarchy (pr and pr-local-hostile, host and worker traces):
+      2 "hierarchy":"push/receive-pack/maintenance"
+# it runs in the bare origin (receive-pack, which git starts with GIT_CONFIG_* cleared), after the post-run check.

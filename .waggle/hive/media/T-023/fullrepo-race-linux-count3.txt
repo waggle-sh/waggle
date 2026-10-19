@@ -1,0 +1,45 @@
+ok  	github.com/waggle-sh/waggle/cmd/waggle	4.816s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/comb	15.034s
+ok  	github.com/waggle-sh/waggle/internal/config	1.135s
+ok  	github.com/waggle-sh/waggle/internal/decisions	5.336s
+--- FAIL: TestReuseRefusesExtraRegistration (0.04s)
+    --- FAIL: TestReuseRefusesExtraRegistration/relative (0.02s)
+        guard3_test.go:104: refusal: <tmp> exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (<tmp> points at <tmp> not its registration)
+        guard3_test.go:104: second registration for the path accepted: <tmp> exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (<tmp> points at <tmp> not its registration)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.01s)
+    guard3_test.go:147: git older than 2.48 ignores worktree.useRelativePaths and writes an absolute registration; this test requires git 2.48 or newer (CI runs 2.55)
+--- FAIL: TestRunLimitsKillTheGroup (10.53s)
+    --- FAIL: TestRunLimitsKillTheGroup/max_tokens (5.06s)
+        run_test.go:202: grandchild 24489 survived
+    --- FAIL: TestRunLimitsKillTheGroup/timeout (5.47s)
+        run_test.go:202: grandchild 27213 survived
+--- FAIL: TestReuseRefusesExtraRegistration (0.05s)
+    --- FAIL: TestReuseRefusesExtraRegistration/relative (0.02s)
+        guard3_test.go:104: refusal: <tmp> exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (<tmp> points at <tmp> not its registration)
+        guard3_test.go:104: second registration for the path accepted: <tmp> exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (<tmp> points at <tmp> not its registration)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.02s)
+    guard3_test.go:147: git older than 2.48 ignores worktree.useRelativePaths and writes an absolute registration; this test requires git 2.48 or newer (CI runs 2.55)
+--- FAIL: TestRunLimitsKillTheGroup (10.54s)
+    --- FAIL: TestRunLimitsKillTheGroup/max_tokens (5.06s)
+        run_test.go:202: grandchild 35070 survived
+    --- FAIL: TestRunLimitsKillTheGroup/timeout (5.49s)
+        run_test.go:202: grandchild 35126 survived
+--- FAIL: TestReuseRefusesExtraRegistration (0.04s)
+    --- FAIL: TestReuseRefusesExtraRegistration/relative (0.02s)
+        guard3_test.go:104: refusal: <tmp> exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (<tmp> points at <tmp> not its registration)
+        guard3_test.go:104: second registration for the path accepted: <tmp> exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (<tmp> points at <tmp> not its registration)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.01s)
+    guard3_test.go:147: git older than 2.48 ignores worktree.useRelativePaths and writes an absolute registration; this test requires git 2.48 or newer (CI runs 2.55)
+--- FAIL: TestRunLimitsKillTheGroup (10.53s)
+    --- FAIL: TestRunLimitsKillTheGroup/max_tokens (5.05s)
+        run_test.go:202: grandchild 42152 survived
+    --- FAIL: TestRunLimitsKillTheGroup/timeout (5.48s)
+        run_test.go:202: grandchild 42208 survived
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	63.023s
+ok  	github.com/waggle-sh/waggle/internal/forge	15.608s
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.321s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	3.446s
+ok  	github.com/waggle-sh/waggle/internal/usage	1.042s
+FAIL
