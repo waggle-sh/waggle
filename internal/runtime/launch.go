@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 // MaxNudgeTokens caps an adapter's nudge_tokens and max_tokens, so token
@@ -90,8 +92,10 @@ var envAllowed = []string{"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", 
 // It does not catch: bare relative paths (including one reached through a
 // worker-made symlink), scp forms without git@ (host:path, user@host:path),
 // upper-case schemes (the prefix match is case-sensitive), <transport>::<address>
-// forms, remote.<name>.pushurl, and a longer pushInsteadOf from git -c or from
-// the Keeper's global git config.
+// forms, remote.<name>.pushurl, and a longer pushInsteadOf from the repo's own
+// .git/config (including an include.path the Keeper adds) or from a worker
+// shell that resets GIT_CONFIG_* or GIT_CONFIG_PARAMETERS. The Keeper's global
+// and system git config do not apply (envFixed).
 var pushBlocked = []string{"https://", "ssh://", "git@", "http://", "git://", "git+ssh://", "ssh+git://", "file://", "/", "."}
 
 // envFixed isolates the worker: no CLAUDE.md or auto-memory from any scope,
@@ -101,13 +105,21 @@ var pushBlocked = []string{"https://", "ssh://", "git@", "http://", "git://", "g
 // file:///dev/null/, a dead target that makes no network or ssh attempt.
 var envFixed = append([]string{"CLAUDE_CODE_DISABLE_CLAUDE_MDS=1", "CLAUDE_CODE_DISABLE_AUTO_MEMORY=1",
 	"ENABLE_CLAUDEAI_MCP_SERVERS=false", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1",
-	"DISABLE_AUTO_COMPACT=1", "GIT_TERMINAL_PROMPT=0", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1"}, tripwireEnv()...)
+	"DISABLE_AUTO_COMPACT=1", "GIT_TERMINAL_PROMPT=0", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1", "GIT_ATTR_NOSYSTEM=1"}, tripwireEnv()...)
 
+// tripwireEnv is the single emission of the GIT_CONFIG_COUNT/KEY/VALUE entries:
+// the push rewrites, then the home ignore and attributes files (which
+// GIT_CONFIG_GLOBAL does not cover) pointed at /dev/null.
 func tripwireEnv() []string {
-	env := []string{"GIT_CONFIG_COUNT=" + strconv.Itoa(len(pushBlocked))}
-	for i, prefix := range pushBlocked {
+	var keys [][2]string
+	for _, prefix := range pushBlocked {
+		keys = append(keys, [2]string{"url.file:///dev/null/.pushInsteadOf", prefix})
+	}
+	keys = append(keys, [2]string{"core.excludesFile", "/dev/null"}, [2]string{"core.attributesFile", "/dev/null"})
+	env := []string{"GIT_CONFIG_COUNT=" + strconv.Itoa(len(keys))}
+	for i, kv := range keys {
 		n := strconv.Itoa(i)
-		env = append(env, "GIT_CONFIG_KEY_"+n+"=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_"+n+"="+prefix)
+		env = append(env, "GIT_CONFIG_KEY_"+n+"="+kv[0], "GIT_CONFIG_VALUE_"+n+"="+kv[1])
 	}
 	return env
 }
@@ -245,11 +257,12 @@ func (c *ClaudeAdapter) claudeArgs(inv Invocation, s ContextSettings, settings, 
 	return append(args, c.cfg.DefaultArgs...), nil
 }
 
-// check refuses a partly set identity or a value with a control character. The
-// zero value is allowed: the worker then gets no identity variables.
+// check refuses a partly set identity (blank counts as unset), invalid UTF-8,
+// or a control character: C0, DEL, C1 and the U+2028/U+2029 line separators.
+// The zero value is allowed: the worker then gets no identity variables.
 func (g GitIdentity) check() error {
-	if (g.Name == "") != (g.Email == "") ||
-		strings.ContainsFunc(g.Name+g.Email, func(r rune) bool { return r < 0x20 || r == 0x7f }) {
+	if (strings.TrimSpace(g.Name) == "") != (strings.TrimSpace(g.Email) == "") || !utf8.ValidString(g.Name+g.Email) ||
+		strings.ContainsFunc(g.Name+g.Email, func(r rune) bool { return unicode.IsControl(r) || r == 0x2028 || r == 0x2029 }) {
 		return fmt.Errorf("%w: git identity needs a name and an email without control characters", ErrAdapterConfig)
 	}
 	return nil
@@ -293,7 +306,7 @@ func workerEnv(s ContextSettings, id GitIdentity) []string {
 		}
 	}
 	env = append(env, envFixed...)
-	if id != (GitIdentity{}) {
+	if strings.TrimSpace(id.Name) != "" { // check has made Name and Email both set or both blank
 		env = append(env, "GIT_AUTHOR_NAME="+id.Name, "GIT_AUTHOR_EMAIL="+id.Email,
 			"GIT_COMMITTER_NAME="+id.Name, "GIT_COMMITTER_EMAIL="+id.Email)
 	}

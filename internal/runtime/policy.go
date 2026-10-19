@@ -25,8 +25,10 @@ var (
 	ErrBelowMinimum = errors.New("level below roster minimum")
 	// ErrGuardFloor reports a guard override under the guard floor on a Tier 2, Tier 3 or unknown-tier task.
 	ErrGuardFloor = errors.New("guard level below floor")
-	// ErrNoCrossModel reports that no model at or above the guard's level differs from the builder's.
-	ErrNoCrossModel = errors.New("no model differs from the builder's")
+	// ErrNoCrossModel reports that no model differs from the builder's (and, for a
+	// second guard, the first guard's): none at or above the guard's level, and
+	// for a second guard none below it either (D-179).
+	ErrNoCrossModel = errors.New("no model differs from the builder's and the first guard's")
 	// ErrOverrideUnrecorded reports an override whose decision the lookup could not confirm.
 	ErrOverrideUnrecorded = errors.New("override has no recorded decision")
 	// ErrUnresolved reports an Invocation whose Selection did not come from Resolve for its role.
@@ -138,6 +140,17 @@ func (p Policy) Resolve(role string, task *TaskContext, decisionExists func(id i
 		}
 	}
 	model, err := p.pick(role, level, task, avoid...)
+	if err != nil && task.SecondGuard && role == roleGuard && errors.Is(err, ErrNoCrossModel) {
+		// D-179: nothing unused at or above the level, so take the highest unused model below it.
+		for l := level - 1; l >= LevelFast && model == ""; l-- {
+			for _, m := range []string{p.Models.Primary[l], p.Models.Alternate[l]} {
+				if m != "" && !slices.Contains(avoid, m) {
+					model, level, err = m, l, nil
+					break
+				}
+			}
+		}
+	}
 	if err != nil {
 		return Selection{}, err
 	}
@@ -200,7 +213,7 @@ func (p Policy) pick(role string, level Level, task *TaskContext, avoid ...strin
 			}
 		}
 	}
-	return "", fmt.Errorf("%w: role %s task %q level %s shares %q with the builder or first guard (set runtimes.adapters.%s.alternates.%s)",
+	return "", fmt.Errorf("%w: role %s task %q level %s shares %q with the builder or first guard (map a model not already used, for example runtimes.adapters.%s.alternates.%s)",
 		ErrNoCrossModel, role, task.TaskID, level, avoid, p.Models.Adapter, level)
 }
 
