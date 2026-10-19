@@ -4,10 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/waggle-sh/waggle/internal/layout"
 )
+
+// keeperIDPattern is the Comb keeper id pattern, so a bad id fails at config time
+// and not at the first claim write.
+var keeperIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._@+-]{0,127}$`)
 
 // LocalKeeperPlaceholder is the keeper_id the seeded local.yaml ships with.
 const LocalKeeperPlaceholder = "local-keeper"
@@ -42,6 +47,9 @@ func LoadKeeperID(repoDir string) (string, error) {
 	}
 	if id = strings.TrimSpace(id); id == "" {
 		return "", fmt.Errorf("%w: keeper_id is empty; set it to your GitHub login", ErrNoKeeperID)
+	}
+	if !keeperIDPattern.MatchString(id) {
+		return "", fmt.Errorf("%w: keeper_id %q must match %s", ErrNoKeeperID, id, keeperIDPattern)
 	}
 	if !strings.EqualFold(id, LocalKeeperPlaceholder) {
 		return id, nil

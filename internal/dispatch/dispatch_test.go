@@ -157,7 +157,7 @@ func TestAcquireClaim(t *testing.T) {
 	ctx := context.Background()
 	req := mustValid(t, okReq(dir))
 
-	c, err := AcquireClaim(ctx, b, req, "alice", *now)
+	c, err := AcquireClaim(ctx, b, &Git{Dir: dir}, req, "alice", *now)
 	if err != nil || c.Verb != "claim" || c.OID == "" || len(c.Notes) != 0 || c.Lease.KeeperID != "alice" {
 		t.Fatalf("fresh: %+v %v", c, err)
 	}
@@ -165,17 +165,17 @@ func TestAcquireClaim(t *testing.T) {
 	// Same Keeper renews; a changed gate prints old and new.
 	req2 := req
 	req2.Gate = "light"
-	c, err = AcquireClaim(ctx, b, req2, "alice", *now)
+	c, err = AcquireClaim(ctx, b, &Git{Dir: dir}, req2, "alice", *now)
 	if err != nil || c.Verb != "renew" || len(c.Notes) != 1 || !strings.Contains(c.Notes[0], "full") || !strings.Contains(c.Notes[0], "light") {
 		t.Fatalf("renew: %+v %v", c, err)
 	}
-	c, err = AcquireClaim(ctx, b, req2, "alice", *now)
+	c, err = AcquireClaim(ctx, b, &Git{Dir: dir}, req2, "alice", *now)
 	if err != nil || c.Verb != "renew" || len(c.Notes) != 0 {
 		t.Fatalf("plain renew: %+v %v", c, err)
 	}
 
 	// Another Keeper's active claim: exit 4, nothing else touched.
-	_, err = AcquireClaim(ctx, b, req, "bob", *now)
+	_, err = AcquireClaim(ctx, b, &Git{Dir: dir}, req, "bob", *now)
 	if code(err) != ExitClaim || !errors.Is(err, comb.ErrAlreadyClaimed) || !strings.Contains(err.Error(), "alice") {
 		t.Fatalf("held: %v", err)
 	}
@@ -185,13 +185,13 @@ func TestAcquireClaim(t *testing.T) {
 
 	// Overlap with another ticket.
 	other := mustValid(t, Request{RepoDir: dir, Ticket: "24", Role: "builder", Dirs: []string{"internal"}, Gate: "full"})
-	if _, err = AcquireClaim(ctx, b, other, "bob", *now); code(err) != ExitClaim || !errors.Is(err, comb.ErrLeaseOverlap) {
+	if _, err = AcquireClaim(ctx, b, &Git{Dir: dir}, other, "bob", *now); code(err) != ExitClaim || !errors.Is(err, comb.ErrLeaseOverlap) {
 		t.Fatalf("overlap: %v", err)
 	}
 
 	// Expired takeover names the previous owner.
 	*now = t0.Add(3 * time.Hour)
-	c, err = AcquireClaim(ctx, b, req, "bob", *now)
+	c, err = AcquireClaim(ctx, b, &Git{Dir: dir}, req, "bob", *now)
 	if err != nil || c.Verb != "takeover" || len(c.Notes) != 1 || !strings.Contains(c.Notes[0], "alice") || c.Lease.KeeperID != "bob" {
 		t.Fatalf("takeover: %+v %v", c, err)
 	}
@@ -199,13 +199,16 @@ func TestAcquireClaim(t *testing.T) {
 	// Tier 3 directory and guard are refused.
 	for _, d := range []string{".github", ".waggle/hive"} {
 		bad := mustValid(t, Request{RepoDir: dir, Ticket: "25", Role: "builder", Dirs: []string{d}, Gate: "full"})
-		if _, err = AcquireClaim(ctx, b, bad, "bob", *now); code(err) != ExitClaim {
+		if _, err = AcquireClaim(ctx, b, &Git{Dir: dir}, bad, "bob", *now); code(err) != ExitClaim {
 			t.Fatalf("%s: %v", d, err)
+		}
+		if refs := sh(t, dir, "for-each-ref", "refs/waggle/claims/ticket-25"); refs != "" {
+			t.Fatalf("%s: a refused claim wrote %s", d, refs)
 		}
 	}
 	g := req
 	g.Role = "guard"
-	if _, err = AcquireClaim(ctx, b, g, "bob", *now); code(err) != ExitUsage {
+	if _, err = AcquireClaim(ctx, b, &Git{Dir: dir}, g, "bob", *now); code(err) != ExitUsage {
 		t.Fatalf("guard: %v", err)
 	}
 }
@@ -217,7 +220,7 @@ func TestAcquireClaimMalformed(t *testing.T) {
 	tree := shIn(t, dir, "100644 blob "+blob+"\tlease.json\n", "mktree")
 	commit := sh(t, dir, "commit-tree", tree, "-m", "junk")
 	sh(t, dir, "update-ref", "refs/waggle/claims/ticket-23", commit)
-	_, err := AcquireClaim(context.Background(), b, mustValid(t, okReq(dir)), "alice", *now)
+	_, err := AcquireClaim(context.Background(), b, &Git{Dir: dir}, mustValid(t, okReq(dir)), "alice", *now)
 	if code(err) != ExitClaim || !errors.Is(err, comb.ErrMalformedClaim) || !strings.Contains(err.Error(), "force-release") {
 		t.Fatalf("malformed: %v", err)
 	}

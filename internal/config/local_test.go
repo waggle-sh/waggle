@@ -51,6 +51,8 @@ func TestLoadKeeperID(t *testing.T) {
 		{"key absent", "", str("runtime: claude\n"), "", "keeper_id is missing"},
 		{"key empty", "", str("keeper_id: \"\"\n"), "", "keeper_id is empty"},
 		{"nested not scalar", "", str("keeper_id:\n  a: b\n"), "", "keeper_id"},
+		{"id has a space", "", str("keeper_id: bad id\n"), "", "must match"},
+		{"id starts with dash", "", str("keeper_id: -x\n"), "", "must match"},
 		{"placeholder local-only", "", str(seeded), LocalKeeperPlaceholder, ""},
 		{"placeholder with remote", "origin", str(seeded), "", "collide"},
 		{"placeholder case-insensitive with remote", "origin", str("keeper_id: Local-Keeper\n"), "", "collide"},
