@@ -299,7 +299,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	res.Violations, commits = ck.run(pctx)
 	res.HeadOID = ck.head
 	if slices.ContainsFunc(res.Violations, func(v comb.Violation) bool { return v.Rule == ruleHost }) {
-		if err := os.WriteFile(w.Path+".tainted", []byte(filepath.Base(runDir)), 0o600); err != nil {
+		if err := writeFile(dir, filepath.Base(w.Path)+".tainted", []byte(filepath.Base(runDir))); err != nil {
 			res.Warnings = append(res.Warnings, "tainted_marker_failed: "+err.Error())
 		}
 	}
