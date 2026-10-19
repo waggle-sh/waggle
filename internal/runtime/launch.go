@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 // MaxNudgeTokens caps an adapter's nudge_tokens and max_tokens, so token
@@ -43,7 +45,8 @@ type LaunchSpec struct {
 
 // allowedDefaultArgs are the only default_args entries a worker may carry
 // (D-137, D-162), each in its exact form. The value says whether the flag takes
-// a value: --max-budget-usd=<positive decimal> needs one, --debug takes none.
+// a value: --max-budget-usd=<positive decimal> needs one, --debug takes none
+// (its logs land under the Keeper's HOME, outside the worktree).
 // Everything else is refused: other flags, bare words (Claude Code appends them
 // to the prompt), short flags, "--", and every flag the fixed argv sets or
 // T-012 owns (--effort). Verify also requires each allowed flag in --help.
@@ -89,23 +92,34 @@ var envAllowed = []string{"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", 
 // It does not catch: bare relative paths (including one reached through a
 // worker-made symlink), scp forms without git@ (host:path, user@host:path),
 // upper-case schemes (the prefix match is case-sensitive), <transport>::<address>
-// forms, remote.<name>.pushurl, and a longer pushInsteadOf from git -c or from
-// the Keeper's global git config.
+// forms, remote.<name>.pushurl, and a longer pushInsteadOf from the repo's own
+// .git/config (including an include.path the Keeper adds) or from a worker
+// shell that resets GIT_CONFIG_* or GIT_CONFIG_PARAMETERS. The Keeper's global
+// and system git config do not apply (envFixed).
 var pushBlocked = []string{"https://", "ssh://", "git@", "http://", "git://", "git+ssh://", "ssh+git://", "file://", "/", "."}
 
 // envFixed isolates the worker: no CLAUDE.md or auto-memory from any scope,
 // no claude.ai connectors, no auto-compaction (handoffs replace it, T-021 S5),
-// no git prompts, and a tripwire (tripwireEnv) that rewrites every push URL
-// to file:///dev/null/, a dead target that makes no network or ssh attempt.
+// no git prompts, no global or system git config, and a tripwire (tripwireEnv)
+// that rewrites every push URL it recognizes (see pushBlocked) to
+// file:///dev/null/, a dead target that makes no network or ssh attempt.
 var envFixed = append([]string{"CLAUDE_CODE_DISABLE_CLAUDE_MDS=1", "CLAUDE_CODE_DISABLE_AUTO_MEMORY=1",
 	"ENABLE_CLAUDEAI_MCP_SERVERS=false", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1",
-	"DISABLE_AUTO_COMPACT=1", "GIT_TERMINAL_PROMPT=0"}, tripwireEnv()...)
+	"DISABLE_AUTO_COMPACT=1", "GIT_TERMINAL_PROMPT=0", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1", "GIT_ATTR_NOSYSTEM=1"}, tripwireEnv()...)
 
+// tripwireEnv is the single emission of the GIT_CONFIG_COUNT/KEY/VALUE entries:
+// the push rewrites, then the home ignore and attributes files (which
+// GIT_CONFIG_GLOBAL does not cover) pointed at /dev/null.
 func tripwireEnv() []string {
-	env := []string{"GIT_CONFIG_COUNT=" + strconv.Itoa(len(pushBlocked))}
-	for i, prefix := range pushBlocked {
+	var keys [][2]string
+	for _, prefix := range pushBlocked {
+		keys = append(keys, [2]string{"url.file:///dev/null/.pushInsteadOf", prefix})
+	}
+	keys = append(keys, [2]string{"core.excludesFile", "/dev/null"}, [2]string{"core.attributesFile", "/dev/null"})
+	env := []string{"GIT_CONFIG_COUNT=" + strconv.Itoa(len(keys))}
+	for i, kv := range keys {
 		n := strconv.Itoa(i)
-		env = append(env, "GIT_CONFIG_KEY_"+n+"=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_"+n+"="+prefix)
+		env = append(env, "GIT_CONFIG_KEY_"+n+"="+kv[0], "GIT_CONFIG_VALUE_"+n+"="+kv[1])
 	}
 	return env
 }
@@ -135,7 +149,7 @@ func (c *ClaudeAdapter) Verify(ctx context.Context) error {
 	defer cancel()
 	var out capWriter
 	cmd := exec.CommandContext(ctx, c.cfg.Binary, "--help")
-	cmd.Env, cmd.Stdout, cmd.WaitDelay = workerEnv(ContextSettings{}), &out, time.Second
+	cmd.Env, cmd.Stdout, cmd.WaitDelay = workerEnv(ContextSettings{}, GitIdentity{}), &out, time.Second
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("%w: %s --help: %v", ErrUnverified, c.cfg.Binary, err)
 	}
@@ -150,7 +164,7 @@ func (c *ClaudeAdapter) Verify(ctx context.Context) error {
 		}
 	}
 	for _, tok := range tokens {
-		if !bytes.Contains(out.buf.Bytes(), []byte(tok)) {
+		if !helpHas(out.buf.Bytes(), tok) {
 			missing = append(missing, tok)
 		}
 	}
@@ -161,6 +175,22 @@ func (c *ClaudeAdapter) Verify(ctx context.Context) error {
 	c.cfg.DefaultArgs = slices.Clone(c.cfg.DefaultArgs)
 	c.verified.Store(true)
 	return nil
+}
+
+// helpHas reports whether help holds tok not followed by a flag-name character,
+// so --debug-file does not satisfy --debug. A quote or parenthesis may follow:
+// the real help prints "stream-json" and "dontAsk" quoted.
+func helpHas(help []byte, tok string) bool {
+	for rest := help; ; {
+		i := bytes.Index(rest, []byte(tok))
+		if i < 0 {
+			return false
+		}
+		rest = rest[i+len(tok):]
+		if len(rest) == 0 || !strings.ContainsRune("-_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", rune(rest[0])) {
+			return true
+		}
+	}
 }
 
 // capWriter keeps the first 1 MiB written to it and drops the rest.
@@ -198,7 +228,10 @@ func (c *ClaudeAdapter) Prepare(inv Invocation, s ContextSettings, stable, varia
 	case len(stable) > MaxStablePrompt || bytes.IndexByte(stable, 0) >= 0:
 		return LaunchSpec{}, fmt.Errorf("%w: stable prompt over %d bytes or holds NUL", ErrAdapterConfig, MaxStablePrompt)
 	}
-	settings, err := workerSettings(inv.Commands)
+	if err := inv.GitIdentity.check(); err != nil {
+		return LaunchSpec{}, err
+	}
+	settings, err := workerSettings(inv.Role, inv.Commands)
 	if err != nil {
 		return LaunchSpec{}, err
 	}
@@ -206,7 +239,7 @@ func (c *ClaudeAdapter) Prepare(inv Invocation, s ContextSettings, stable, varia
 	if err != nil {
 		return LaunchSpec{}, err
 	}
-	return LaunchSpec{Argv: argv, Env: workerEnv(s), Stdin: variable}, nil
+	return LaunchSpec{Argv: argv, Env: workerEnv(s, inv.GitIdentity), Stdin: variable}, nil
 }
 
 // claudeArgs assembles the argv. Every value flag uses the --flag=value form
@@ -224,13 +257,27 @@ func (c *ClaudeAdapter) claudeArgs(inv Invocation, s ContextSettings, settings, 
 	return append(args, c.cfg.DefaultArgs...), nil
 }
 
+// check refuses a partly set identity (blank counts as unset), invalid UTF-8,
+// or a control character: C0, DEL, C1 and the U+2028/U+2029 line separators.
+// The zero value is allowed: the worker then gets no identity variables.
+func (g GitIdentity) check() error {
+	if (strings.TrimSpace(g.Name) == "") != (strings.TrimSpace(g.Email) == "") || !utf8.ValidString(g.Name+g.Email) ||
+		strings.ContainsFunc(g.Name+g.Email, func(r rune) bool { return unicode.IsControl(r) || r == 0x2028 || r == 0x2029 }) {
+		return fmt.Errorf("%w: git identity needs a name and an email without control characters", ErrAdapterConfig)
+	}
+	return nil
+}
+
 // workerSettings renders the settings JSON: allow rules for the read tools, the
 // edit and write tools scoped to the working directory, each hive command in commands, and gitAllowed; deny rules from
 // deniedRules. A command must be plain words: no wildcard, quote, control
 // character, shell operator or rule syntax, and none of the denied programs.
-func workerSettings(commands []string) ([]byte, error) {
+func workerSettings(role string, commands []string) ([]byte, error) {
 	allow := []string{"Read", "Glob", "Grep", "Edit(./**)", "Write(./**)"}
 	for _, cmd := range append(append([]string(nil), commands...), gitAllowed...) {
+		if role == roleGuard && (cmd == "git add" || cmd == "git commit") {
+			continue // a guard reviews and never commits
+		}
 		f := strings.Fields(cmd)
 		if len(f) == 0 || strings.Join(f, " ") != cmd || strings.ContainsAny(cmd, "*()\"'`$;&|<>\\") ||
 			strings.ContainsFunc(cmd, func(r rune) bool { return r < 0x20 || r == 0x7f }) ||
@@ -251,7 +298,7 @@ func workerSettings(commands []string) ([]byte, error) {
 
 // workerEnv builds the environment from envAllowed (only when set in the
 // parent), envFixed and the settings values. It never copies os.Environ().
-func workerEnv(s ContextSettings) []string {
+func workerEnv(s ContextSettings, id GitIdentity) []string {
 	var env []string
 	for _, k := range envAllowed {
 		if v, ok := os.LookupEnv(k); ok {
@@ -259,6 +306,10 @@ func workerEnv(s ContextSettings) []string {
 		}
 	}
 	env = append(env, envFixed...)
+	if strings.TrimSpace(id.Name) != "" { // check has made Name and Email both set or both blank
+		env = append(env, "GIT_AUTHOR_NAME="+id.Name, "GIT_AUTHOR_EMAIL="+id.Email,
+			"GIT_COMMITTER_NAME="+id.Name, "GIT_COMMITTER_EMAIL="+id.Email)
+	}
 	if s.ToolOutputChars > 0 {
 		env = append(env, "BASH_MAX_OUTPUT_LENGTH="+strconv.Itoa(s.ToolOutputChars))
 	}

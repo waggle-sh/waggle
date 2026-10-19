@@ -22,10 +22,15 @@ type Invocation struct {
 	WorktreeDir string
 	PromptFile  string
 	BriefFile   string
-	SocketPath  string    // Path to waggled's .waggle/control/run.sock
-	Selection   Selection // Resolved model for Role; Prepare refuses a zero value
-	Commands    []string  // build, test, vet and format commands from WAGGLE.md section 3, allowed in Bash
+	SocketPath  string      // Path to waggled's .waggle/control/run.sock
+	Selection   Selection   // Resolved model for Role; Prepare refuses a zero value
+	Commands    []string    // build, test, vet and format commands from WAGGLE.md section 3, allowed in Bash
+	GitIdentity GitIdentity // author and committer of the worker's commits; the zero value sets none
 }
+
+// GitIdentity is a worker's git author and committer. Prepare refuses a value
+// with only one field set or with a control character in either.
+type GitIdentity struct{ Name, Email string }
 
 // UsageStats reports token consumption back to waggled so the daemon can enforce
 // NudgeTokens and MaxTokens boundaries between turns. TotalTokens is the sum
