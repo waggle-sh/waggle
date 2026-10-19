@@ -1,0 +1,236 @@
+//go:build unix
+
+package dispatch
+
+// Guard probes for T-023 phase C (fable). Uncommitted; each probe records what
+// a hostile fake agent achieves and whether the run ended exit 1 unpushed.
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+func probeLog(t *testing.T, format string, args ...any) {
+	t.Helper()
+	t.Logf("PROBE "+format, args...)
+}
+
+func exists(p string) bool { _, err := os.Stat(p); return err == nil }
+
+// wrapper writes an executable that touches canary and then execs prog with its arguments.
+func wrapper(t *testing.T, canary, prog string) string {
+	p := filepath.Join(t.TempDir(), "wrap")
+	body := "#!/bin/sh\ntouch '" + canary + "'\nexec " + prog + " \"$@\"\n"
+	if err := os.WriteFile(p, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+func summarize(res Result, err error, f *fixture) string {
+	return fmt.Sprintf("exit=%d end=%s err=%v pushed=%v remoteHasBranch=%v violations=%v warnings=%v",
+		res.ExitCode, res.End, err, res.Pushed, f.pushed("t-023"), res.Violations, res.Warnings)
+}
+
+// P1: the agent rewrites its own claim ref in local mode (widening the lease) and commits inside the original lease.
+func TestProbeOwnClaimRewrittenLocal(t *testing.T) {
+	f := newFixture(t, false, false)
+	res, err := f.run(okScenario + "git update-ref refs/waggle/claims/ticket-23 HEAD\n")
+	probeLog(t, "own claim ref rewritten, commit inside lease: %s", summarize(res, err, f))
+	probeLog(t, "claim ref after run points at: %s (branch head %s)", f.git("rev-parse", "refs/waggle/claims/ticket-23"), res.HeadOID)
+}
+
+// P2: own claim ref rewritten to a widened lease, plus a commit outside the original lease.
+func TestProbeOwnClaimWidenedAndCommitOutside(t *testing.T) {
+	f := newFixture(t, false, false)
+	res, err := f.run(okScenario + commitFile("docs/evil.md", "x") + "git update-ref refs/waggle/claims/ticket-23 HEAD\n")
+	probeLog(t, "widened own claim + outside commit: %s", summarize(res, err, f))
+}
+
+// P3/P4: own admin dir files: config.worktree written, HEAD detached.
+func TestProbeAdminFiles(t *testing.T) {
+	for name, tail := range map[string]func(f *fixture) string{
+		"config.worktree": func(f *fixture) string {
+			return "printf '[core]\\n\\thooksPath = /tmp/x\\n' > '" + f.common() + "/worktrees/T-023-builder/config.worktree'\n"
+		},
+		"HEAD detached": func(f *fixture) string {
+			return "echo \"$(git rev-parse HEAD)\" > '" + f.common() + "/worktrees/T-023-builder/HEAD'\n"
+		},
+		"info/attributes + filter": func(f *fixture) string {
+			return "echo '* filter=x' > '" + f.common() + "/info/attributes'\ntouch -t 203501010000 internal/x/a.go\ngit config filter.x.clean 'sh -c \"touch <tmp>/waggle-probe-canary-info; cat\"'\n"
+		},
+		"fsmonitor command": func(f *fixture) string {
+			return "touch -t 203501010000 internal/x/a.go\ngit config core.fsmonitor 'sh -c \"touch <tmp>/waggle-probe-canary-fsmon\"'\n"
+		},
+		"include.path planted": func(f *fixture) string {
+			return "printf '[filter \"x\"]\\n\\tclean = sh -c \"touch <tmp>/waggle-probe-canary-include; cat\"\\n' > '" + f.common() + "/../planted.inc'\n" +
+				"echo '* filter=x' > internal/x/.gitattributes\ngit add internal/x/.gitattributes\ngit -c user.name=a -c user.email=a@e.co commit -q -s -m 'T-023: attr'\n" +
+				"touch -t 203501010000 internal/x/a.go\ngit config include.path '" + f.common() + "/../planted.inc'\n"
+		},
+		"branch and tag": func(*fixture) string { return "git branch evil\ngit tag evil-tag\n" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			os.Remove("<tmp>/waggle-probe-canary-info")
+			os.Remove("<tmp>/waggle-probe-canary-fsmon")
+			os.Remove("<tmp>/waggle-probe-canary-include")
+			f := newFixture(t, true, false)
+			res, err := f.run(okScenario + tail(f))
+			probeLog(t, "%s: %s", name, summarize(res, err, f))
+			probeLog(t, "%s: tainted=%v canaries info=%v fsmon=%v include=%v", name, exists(res.Worktree+".tainted"),
+				exists("<tmp>/waggle-probe-canary-info"), exists("<tmp>/waggle-probe-canary-fsmon"), exists("<tmp>/waggle-probe-canary-include"))
+		})
+	}
+}
+
+// P8: a .gitattributes under the lease committed with a filter name and no config.
+func TestProbeGitattributesInLease(t *testing.T) {
+	f := newFixture(t, true, false)
+	res, err := f.run("echo '* filter=x' > internal/x/.gitattributes\ngit add internal/x/.gitattributes\ngit -c user.name=a -c user.email=a@e.co commit -q -s -m 'T-023: attr'\n" + okScenario)
+	probeLog(t, "committed .gitattributes inside lease: %s", summarize(res, err, f))
+}
+
+// P9: fake run record files, and result.json pre-planted as a symlink.
+func TestProbeRunRecordTamper(t *testing.T) {
+	f := newFixture(t, true, false)
+	target := filepath.Join(t.TempDir(), "symlink-target")
+	res, err := f.run(okScenario + "r=$(ls -d ../runs/T-023-builder-* | tail -1)\necho '{\"exit_code\":0,\"fake\":true}' > \"$r/final.md\"\nln -s '" + target + "' \"$r/result.json\"\n")
+	probeLog(t, "run record tamper: %s", summarize(res, err, f))
+	b, _ := os.ReadFile(target)
+	probeLog(t, "symlink target received %d bytes (starts %q); final.md=%q", len(b), firstN(string(b), 20), readFirst(filepath.Join(res.RunDir, "final.md")))
+}
+
+func firstN(s string, n int) string {
+	if len(s) > n {
+		return s[:n]
+	}
+	return s
+}
+func readFirst(p string) string { b, _ := os.ReadFile(p); return firstN(string(b), 40) }
+
+// P12a: a setsid survivor outlives the group kill and moves the local branch after the run.
+func TestProbeSetsidSurvivor(t *testing.T) {
+	f := newFixture(t, true, false)
+	marker := filepath.Join(t.TempDir(), "after")
+	res, err := f.run(okScenario + "perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' sh -c 'sleep 2; git update-ref refs/heads/t-023 HEAD~1; touch " + marker + "' </dev/null >/dev/null 2>&1 &\nsleep 1\n")
+	probeLog(t, "setsid survivor run: %s", summarize(res, err, f))
+	ok := wait(func() bool { return exists(marker) })
+	probeLog(t, "survivor acted after Run returned: %v; local branch now %s, pushed head %s", ok, f.git("rev-parse", "refs/heads/t-023"), res.HeadOID)
+}
+
+// P12b: push TOCTOU. A survivor flips refs/heads/t-023 between a checked good tip and an unchecked evil child.
+func TestProbePushRace(t *testing.T) {
+	evilPushed, runs := 0, 12
+	for i := 0; i < runs; i++ {
+		f := newFixture(t, true, false)
+		stop := filepath.Join(t.TempDir(), "stop")
+		script := okScenario + "good=$(git rev-parse HEAD)\n" + commitFile("docs/evil.md", "x") + "evil=$(git rev-parse HEAD)\ngit reset -q --hard $good\n" +
+			"perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' sh -c 'while [ ! -e " + stop + " ]; do git update-ref refs/heads/t-023 " + "'$evil'" + "; git update-ref refs/heads/t-023 " + "'$good'" + "; done' </dev/null >/dev/null 2>&1 &\nsleep 1\n"
+		res, err := f.run(script)
+		_ = os.WriteFile(stop, nil, 0o600)
+		time.Sleep(50 * time.Millisecond)
+		remote := ""
+		if f.pushed("t-023") {
+			remote = sh(t, f.origin, "rev-parse", "refs/heads/t-023")
+		}
+		evil := remote != "" && strings.Contains(sh(t, f.real, "log", "--format=%s", "-1", remote), "evil")
+		if evil {
+			evilPushed++
+		}
+		probeLog(t, "race %d: exit=%d end=%s err=%v pushed=%v remoteTip=%s evilOnRemote=%v violations=%v", i, res.ExitCode, res.End, err, res.Pushed, firstN(remote, 8), evil, res.Violations)
+	}
+	probeLog(t, "push race: %d of %d runs pushed the unchecked evil commit", evilPushed, runs)
+}
+
+// P13: macOS case folding: a path typed with another case than the lease directory.
+func TestProbeCaseFold(t *testing.T) {
+	f := newFixture(t, true, false)
+	res, err := f.run("mkdir -p internal/X\necho y > internal/X/e.go\ngit add internal/X/e.go\ngit -c user.name=a -c user.email=a@e.co commit -q -s -m 'T-023: case'\n" + emit(assistant(100), okResult))
+	probeLog(t, "internal/X/e.go on this volume: %s", summarize(res, err, f))
+	probeLog(t, "committed paths: %s", f.git("ls-tree", "-r", "--name-only", "refs/heads/t-023"))
+	probeLog(t, "branch log: %s", f.git("log", "--format=%s", "--stat", "-2", "refs/heads/t-023"))
+}
+
+// P14a: planted remote.origin.uploadpack, final claim sync (remote mode, path remote).
+func TestProbeFinalSyncUnderPlantedConfig(t *testing.T) {
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	w := wrapper(t, canary, "git-upload-pack")
+	res, err := f.run(okScenario + "git config remote.origin.uploadpack '" + w + "'\n")
+	probeLog(t, "final sync under planted uploadpack: %s", summarize(res, err, f))
+	probeLog(t, "canary fired by a host git call after the agent exited: %v", exists(canary))
+}
+
+// P14b: planted uploadpack, keepalive renewal during the session.
+func TestProbeKeepaliveUnderPlantedConfig(t *testing.T) {
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	w := wrapper(t, canary, "git-upload-pack")
+	res, err := f.run("git config remote.origin.uploadpack '"+w+"'\nsleep 1\n"+okScenario, func(_ *Request, d *Deps) { d.KeepaliveEvery = 200 * time.Millisecond })
+	probeLog(t, "keepalive under planted uploadpack: %s", summarize(res, err, f))
+	probeLog(t, "canary fired by the keepalive sync while the agent ran: %v", exists(canary))
+}
+
+// P15: a staged gitlink to a nested repo whose own config names a clean filter; does the post-run status enter it?
+func TestProbeSubmoduleStatusSpawn(t *testing.T) {
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	script := okScenario + `mkdir -p internal/x/sub && cd internal/x/sub && git init -q && echo a > f && git add f && git -c user.name=a -c user.email=a@e.co commit -q -m s
+git config filter.x.clean 'sh -c "[ -n \"$GIT_ATTR_NOSYSTEM\" ] && touch ` + canary + `; cat"'
+echo '* filter=x' > .gitattributes
+touch -t 203501010000 f
+cd ../../..
+git add internal/x/sub 2>/dev/null
+`
+	res, err := f.run(script)
+	probeLog(t, "staged gitlink with nested filter: %s", summarize(res, err, f))
+	probeLog(t, "canary fired by a pinned host status call entering the nested repo: %v", exists(canary))
+}
+
+// P16: log.showSignature plus gpg.program in the common config and a commit with a gpgsig header.
+func TestProbeLogShowSignature(t *testing.T) {
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	w := filepath.Join(t.TempDir(), "gpgwrap")
+	if err := os.WriteFile(w, []byte("#!/bin/sh\n{ echo \"args: $*\"; ps -o command= -p $PPID; env | grep -E '^GIT_' ; } >> '"+canary+"'\nexit 1\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	script := okScenario + `tree=$(git rev-parse HEAD^{tree}); p=$(git rev-parse HEAD)
+c=$(printf 'tree %s\nparent %s\nauthor a <a@e.co> 1700000000 +0000\ncommitter a <a@e.co> 1700000000 +0000\ngpgsig -----BEGIN PGP SIGNATURE-----\n xxx\n -----END PGP SIGNATURE-----\n\nT-023: signed\n\nSigned-off-by: a <a@e.co>\n' "$tree" "$p" | git hash-object -t commit -w --stdin --literally)
+git update-ref refs/heads/t-023 "$c"
+git config log.showSignature true
+git config gpg.program '` + w + `'
+`
+	res, err := f.run(script)
+	probeLog(t, "log.showSignature + gpg.program: %s", summarize(res, err, f))
+	probeLog(t, "canary fired by the post-run git log: %v", exists(canary))
+	b, _ := os.ReadFile(canary)
+	probeLog(t, "gpg wrapper log:\n%s", b)
+}
+
+// P17: the Keeper's global ignore file hides an untracked file from the dirty rule.
+func TestProbeGlobalIgnore(t *testing.T) {
+	xdg := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+	f := newFixture(t, true, false)
+	res, err := f.run(okScenario + "mkdir -p '" + xdg + "/git'\necho '*' > '" + xdg + "/git/ignore'\necho x > internal/x/hidden.go\n")
+	probeLog(t, "global ignore written, untracked file left: %s", summarize(res, err, f))
+	probeLog(t, "worktree still exists=%v", exists(res.Worktree))
+}
+
+// P18: main checkout touched through a path that only canonicalizes on macOS (/tmp vs /private/tmp is covered by test 26); here: a hard link into the main checkout.
+func TestProbeMainCheckoutHardlink(t *testing.T) {
+	f := newFixture(t, true, false)
+	res, err := f.run(okScenario + "ln internal/x/b.go '" + f.real + "/internal/x/linked.go'\n")
+	probeLog(t, "hard link into the main checkout: %s", summarize(res, err, f))
+}
+
+// P19: worktree .gitattributes committed outside the lease root via the lease dir, plus a config filter: order of agent calls means the agent itself never runs it.
+func TestProbeExport(t *testing.T) {
+	f := newFixture(t, true, false)
+	res, err := f.run(okScenario + "git update-ref refs/remotes/origin/t-023 HEAD\n")
+	probeLog(t, "remote-tracking ref created by the agent: %s", summarize(res, err, f))
+}

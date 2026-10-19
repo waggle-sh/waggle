@@ -1,0 +1,291 @@
+//go:build unix
+
+package dispatch
+
+// Guard re-review probes for T-023 phase C at 22ea50a (fable). Uncommitted.
+// Every probe asserts: canary silent, and nothing unchecked on the remote.
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+func rp(t *testing.T, format string, args ...any) { t.Helper(); t.Logf("PROBE "+format, args...) }
+
+func rexists(p string) bool { _, err := os.Stat(p); return err == nil }
+
+// rwrap writes an executable that touches canary and then execs prog with its arguments.
+func rwrap(t *testing.T, canary, prog string) string {
+	p := filepath.Join(t.TempDir(), "wrap")
+	body := "#!/bin/sh\ntouch '" + canary + "'\nexec " + prog + " \"$@\"\n"
+	if err := os.WriteFile(p, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+func rsum(res Result, err error, f *fixture) string {
+	return fmt.Sprintf("exit=%d end=%s err=%v pushed=%v remoteHasBranch=%v violations=%v warnings=%v",
+		res.ExitCode, res.End, err, res.Pushed, f.pushed("t-023"), res.Violations, res.Warnings)
+}
+
+func rfirst(s string, n int) string {
+	if len(s) > n {
+		return s[:n]
+	}
+	return s
+}
+
+// R-A: push race, 20 runs. A setsid survivor flips the branch between a checked
+// good tip and an unchecked evil child. The remote must never hold evil, and
+// the recorded head must equal the remote tip whenever something was pushed.
+func TestReprobePushRace(t *testing.T) {
+	evilPushed, mismatched, pushedRuns, runs := 0, 0, 0, 20
+	for i := 0; i < runs; i++ {
+		f := newFixture(t, true, false)
+		stop := filepath.Join(t.TempDir(), "stop")
+		script := okScenario + "good=$(git rev-parse HEAD)\n" + commitFile("docs/evil.md", "x") + "evil=$(git rev-parse HEAD)\ngit reset -q --hard $good\n" +
+			"perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' sh -c 'while [ ! -e " + stop + " ]; do git update-ref refs/heads/t-023 " + "'$evil'" + "; git update-ref refs/heads/t-023 " + "'$good'" + "; done' </dev/null >/dev/null 2>&1 &\nsleep 1\n"
+		res, err := f.run(script)
+		_ = os.WriteFile(stop, nil, 0o600)
+		time.Sleep(50 * time.Millisecond)
+		remote := ""
+		if f.pushed("t-023") {
+			remote = sh(t, f.origin, "rev-parse", "refs/heads/t-023")
+			pushedRuns++
+			if remote != res.HeadOID {
+				mismatched++
+			}
+		}
+		evil := remote != "" && strings.Contains(sh(t, f.real, "log", "--format=%s", "-1", remote), "evil")
+		if evil {
+			evilPushed++
+		}
+		rp(t, "race %d: exit=%d end=%s err=%v pushed=%v remoteTip=%s head=%s evilOnRemote=%v violations=%v", i, res.ExitCode, res.End, err, res.Pushed, rfirst(remote, 8), rfirst(res.HeadOID, 8), evil, res.Violations)
+	}
+	rp(t, "push race: %d of %d runs pushed; evil on remote in %d; head_oid differs from remote tip in %d", pushedRuns, runs, evilPushed, mismatched)
+	if evilPushed > 0 || mismatched > 0 {
+		t.Fatal("unchecked content reached the remote or head_oid lies")
+	}
+}
+
+// R-B: final claim sync (remote mode) under planted config naming a program:
+// uploadpack, core.sshCommand (with an scp-style url), ext:: transport,
+// core.fsmonitor. Each canary must stay silent after the fix.
+func TestReprobeFinalSyncPlanted(t *testing.T) {
+	cases := map[string]func(f *fixture, canary string) string{
+		"uploadpack": func(f *fixture, canary string) string {
+			return "git config remote.origin.uploadpack '" + rwrap(t, canary, "git-upload-pack") + "'\n"
+		},
+		"sshCommand": func(f *fixture, canary string) string {
+			return "git config remote.origin.url 'git@localhost:x/y.git'\ngit config core.sshCommand '" + rwrap(t, canary, "false") + "'\n"
+		},
+		"ext transport": func(f *fixture, canary string) string {
+			return "git config protocol.ext.allow always\ngit config remote.origin.url 'ext::sh -c \"touch " + canary + "; exit 1\"'\n"
+		},
+		"fsmonitor": func(f *fixture, canary string) string {
+			return "touch -t 203501010000 internal/x/a.go\ngit config core.fsmonitor 'sh -c \"touch " + canary + "; echo\"'\n"
+		},
+		"credential helper + http url": func(f *fixture, canary string) string {
+			return "git config remote.origin.url 'http://127.0.0.1:9/x.git'\ngit config credential.helper '!sh -c \"touch " + canary + "\"'\n"
+		},
+	}
+	for name, plant := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := newFixture(t, true, false)
+			canary := filepath.Join(t.TempDir(), "canary")
+			res, err := f.run(okScenario + plant(f, canary))
+			rp(t, "%s after session: %s", name, rsum(res, err, f))
+			rp(t, "%s: canary fired=%v tainted=%v", name, rexists(canary), rexists(res.Worktree+".tainted"))
+			if rexists(canary) || res.Pushed || res.ExitCode != 1 {
+				t.Fatalf("%s: canary=%v pushed=%v exit=%d", name, rexists(canary), res.Pushed, res.ExitCode)
+			}
+		})
+	}
+}
+
+// R-C: the same plants at the start of the session, with keepalive renewals every 200 ms.
+func TestReprobeKeepalivePlanted(t *testing.T) {
+	t.Setenv("REPROBE_HOST_MARK", "1") // present in host git calls, absent in the worker's scrubbed env
+	cases := map[string]func(f *fixture, canary string) string{
+		"uploadpack": func(f *fixture, canary string) string {
+			return "git config remote.origin.uploadpack '" + rwrap(t, canary, "git-upload-pack") + "'\n"
+		},
+		"sshCommand": func(f *fixture, canary string) string {
+			return "git config remote.origin.url 'git@localhost:x/y.git'\ngit config core.sshCommand '" + rwrap(t, canary, "false") + "'\n"
+		},
+		"fsmonitor": func(f *fixture, canary string) string {
+			return "touch -t 203501010000 internal/x/a.go\ngit config core.fsmonitor 'sh -c \"[ -n \\\"$REPROBE_HOST_MARK\\\" ] && touch " + canary + "; echo\"'\n"
+		},
+		"reference-transaction hook (local mode)": func(f *fixture, canary string) string {
+			return "printf '#!/bin/sh\\ntouch %s\\n' '" + canary + "' > '" + f.common() + "/hooks/reference-transaction'\nchmod +x '" + f.common() + "/hooks/reference-transaction'\n"
+		},
+	}
+	for name, plant := range cases {
+		t.Run(name, func(t *testing.T) {
+			remote := !strings.Contains(name, "local")
+			f := newFixture(t, remote, false)
+			canary := filepath.Join(t.TempDir(), "canary")
+			res, err := f.run(plant(f, canary)+"sleep 1\n"+okScenario, func(_ *Request, d *Deps) { d.KeepaliveEvery = 200 * time.Millisecond })
+			rp(t, "%s during session: %s", name, rsum(res, err, f))
+			rp(t, "%s: canary fired=%v", name, rexists(canary))
+			if rexists(canary) || res.Pushed {
+				t.Fatalf("%s: canary=%v pushed=%v", name, rexists(canary), res.Pushed)
+			}
+		})
+	}
+}
+
+// R-D: log.showSignature plus gpg.program in the repo config and a commit with a gpgsig header.
+func TestReprobeLogShowSignature(t *testing.T) {
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	w := filepath.Join(t.TempDir(), "gpgwrap")
+	if err := os.WriteFile(w, []byte("#!/bin/sh\n{ echo \"args: $*\"; ps -o command= -p $PPID; } >> '"+canary+"'\nexit 1\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	script := okScenario + `tree=$(git rev-parse HEAD^{tree}); p=$(git rev-parse HEAD)
+c=$(printf 'tree %s\nparent %s\nauthor a <a@e.co> 1700000000 +0000\ncommitter a <a@e.co> 1700000000 +0000\ngpgsig -----BEGIN PGP SIGNATURE-----\n xxx\n -----END PGP SIGNATURE-----\n\nT-023: signed\n\nSigned-off-by: a <a@e.co>\n' "$tree" "$p" | git hash-object -t commit -w --stdin --literally)
+git update-ref refs/heads/t-023 "$c"
+git config log.showSignature true
+git config gpg.program '` + w + `'
+`
+	res, err := f.run(script)
+	rp(t, "log.showSignature + gpg.program: %s", rsum(res, err, f))
+	rp(t, "canary fired by the post-run git log: %v", rexists(canary))
+	b, _ := os.ReadFile(canary)
+	rp(t, "gpg wrapper log:\n%s", b)
+	if rexists(canary) || res.Pushed {
+		t.Fatal("gpg.program ran or a push happened")
+	}
+}
+
+// R-E: a staged gitlink to a nested repo whose own config names a clean filter.
+func TestReprobeNestedRepoFilter(t *testing.T) {
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	script := okScenario + `mkdir -p internal/x/sub && cd internal/x/sub && git init -q && echo a > f && git add f && git -c user.name=a -c user.email=a@e.co commit -q -m s
+git config filter.x.clean 'sh -c "touch ` + canary + `; cat"'
+echo '* filter=x' > .gitattributes
+touch -t 203501010000 f
+cd ../../..
+git add internal/x/sub 2>/dev/null
+`
+	res, err := f.run(script)
+	rp(t, "staged gitlink with nested filter: %s", rsum(res, err, f))
+	rp(t, "canary fired by a pinned host status call entering the nested repo: %v", rexists(canary))
+	if rexists(canary) || res.Pushed || !hasViolation(res.Violations, ruleDirty, ".") {
+		t.Fatal("nested filter ran, or the staged gitlink was not reported dirty")
+	}
+}
+
+// R-E2: the same nested repo planted in the main checkout (mainState's status call).
+func TestReprobeNestedRepoFilterMainCheckout(t *testing.T) {
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	script := okScenario + `cd '` + f.real + `' && mkdir -p internal/x/sub && cd internal/x/sub && git init -q && echo a > f && git add f && git -c user.name=a -c user.email=a@e.co commit -q -m s
+git config filter.x.clean 'sh -c "touch ` + canary + `; cat"'
+echo '* filter=x' > .gitattributes
+touch -t 203501010000 f
+cd ../../..
+git add internal/x/sub 2>/dev/null
+`
+	res, err := f.run(script)
+	rp(t, "staged gitlink in the main checkout with nested filter: %s", rsum(res, err, f))
+	rp(t, "canary fired by the main checkout status call: %v", rexists(canary))
+	if rexists(canary) || res.Pushed {
+		t.Fatal("nested filter ran from the main checkout status, or a push happened")
+	}
+}
+
+// R-F: the Keeper's XDG global ignore file written by the agent, untracked files
+// left in the worktree and the main checkout.
+func TestReprobeGlobalIgnore(t *testing.T) {
+	xdg := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+	f := newFixture(t, true, false)
+	res, err := f.run(okScenario + "mkdir -p '" + xdg + "/git'\necho '*' > '" + xdg + "/git/ignore'\necho x > internal/x/hidden.go\necho x > '" + f.real + "/stray.go'\n")
+	rp(t, "global ignore written, untracked files left: %s", rsum(res, err, f))
+	rp(t, "worktree still exists=%v", rexists(res.Worktree))
+	if res.Pushed || res.ExitCode != 1 {
+		t.Fatal("global ignore hid the untracked files")
+	}
+}
+
+// R-G: global attributes file naming a filter whose command sits in the hashed
+// repo config written before the snapshot is impossible, so the agent writes
+// both: the attributes file alone must already be a host_state violation.
+func TestReprobeGlobalAttributes(t *testing.T) {
+	xdg := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	res, err := f.run(okScenario + "mkdir -p '" + xdg + "/git'\necho '* filter=x' > '" + xdg + "/git/attributes'\ntouch -t 203501010000 internal/x/a.go\ngit config filter.x.clean 'sh -c \"touch " + canary + "; cat\"'\n")
+	rp(t, "global attributes + filter: %s", rsum(res, err, f))
+	rp(t, "canary=%v", rexists(canary))
+	if rexists(canary) || res.Pushed || !hasViolation(res.Violations, ruleHost, "global:"+xdg+"/git/attributes") {
+		t.Fatal("global attributes not hashed or filter ran")
+	}
+}
+
+// R-H: a planted push.gpgSign plus gpg.program: the push must not run it (config hash blocks the push).
+func TestReprobePushGpgSign(t *testing.T) {
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	res, err := f.run(okScenario + "git config push.gpgSign true\ngit config gpg.program '" + rwrap(t, canary, "false") + "'\n")
+	rp(t, "push.gpgSign planted: %s", rsum(res, err, f))
+	rp(t, "canary=%v", rexists(canary))
+	if rexists(canary) || res.Pushed {
+		t.Fatal("gpg.program ran at push time")
+	}
+}
+
+// R-I: the worker moves the branch to a tag object or to another unchanged ref via symbolic-ref.
+func TestReprobeBranchSymref(t *testing.T) {
+	f := newFixture(t, true, false)
+	res, err := f.run(okScenario + "git symbolic-ref refs/heads/t-023 refs/remotes/origin/main\n")
+	rp(t, "branch turned into a symref to origin/main: %s", rsum(res, err, f))
+	if res.Pushed {
+		t.Fatal("pushed through a symref")
+	}
+}
+
+// R-K: remote mode, the agent rewrites another ticket's claim mirror and also
+// changes config, so the final sync is skipped: the mirror change must be
+// reported strictly (no remote-mode exemption without a sync).
+func TestReprobeStrictClaimCompareWhenUnsynced(t *testing.T) {
+	f := newFixture(t, true, false)
+	res, err := f.run(okScenario + "git update-ref refs/waggle/claims/ticket-24 HEAD\ngit config x.y z\n")
+	rp(t, "other claim mirror rewritten + config changed (sync skipped): %s", rsum(res, err, f))
+	if !hasViolation(res.Violations, ruleHost, "refs/waggle/claims/ticket-24") {
+		t.Fatal("the rewritten claim mirror was exempted although no sync ran")
+	}
+	f2 := newFixture(t, true, false)
+	res2, err2 := f2.run(okScenario + "git update-ref refs/waggle/claims/ticket-24 HEAD\n")
+	rp(t, "other claim mirror rewritten, config clean (sync runs, mirror overwritten): %s", rsum(res2, err2, f2))
+}
+
+// R-J: a survivor plants a hook after the checks passed (no taint); the next
+// dispatch's pre-launch git calls: does any run it? (Documented as not enforced; recorded here for the table.)
+func TestReprobeSurvivorPlantsHookForNextRun(t *testing.T) {
+	f := newFixture(t, true, false)
+	canary := filepath.Join(t.TempDir(), "canary")
+	marker := filepath.Join(t.TempDir(), "planted")
+	t.Setenv("REPROBE_HOST_MARK", "1")
+	script := okScenario + "perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' sh -c 'sleep 2; printf \"#!/bin/sh\\n[ -n \\\"$REPROBE_HOST_MARK\\\" ] && touch " + canary + "\\n\" > " + f.common() + "/hooks/reference-transaction; chmod +x " + f.common() + "/hooks/reference-transaction; touch " + marker + "' </dev/null >/dev/null 2>&1 &\nsleep 1\n"
+	res, err := f.run(script)
+	rp(t, "first run: %s", rsum(res, err, f))
+	if !wait(func() bool { return rexists(marker) }) {
+		t.Skip("survivor did not plant")
+	}
+	canary2 := filepath.Join(t.TempDir(), "canary2")
+	f.git("config", "remote.origin.uploadpack", rwrap(t, canary2, "git-upload-pack")) // what the survivor could also plant
+	res2, err2 := f.run(okScenario, func(r *Request, _ *Deps) { r.Ticket = "T-024"; r.Branch = "t-024"; r.Dirs = []string{"internal/y"} })
+	rp(t, "second run: uploadpack canary fired during the pre-launch fetch: %v", rexists(canary2))
+	rp(t, "second run (T-024) with a hook planted after the first run's checks: %s", rsum(res2, err2, f))
+	rp(t, "canary fired during the second run: %v", rexists(canary))
+}
