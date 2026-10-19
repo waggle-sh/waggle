@@ -49,7 +49,7 @@ func (g *Git) RunIn(ctx context.Context, dir string, args ...string) ([]byte, er
 		bin = "git"
 	}
 	// Hooks and fsmonitor never run from dispatch's own host calls.
-	full := append([]string{"-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "log.showSignature=false"}, args...)
+	full := append([]string{"-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "log.showSignature=false", "-c", "maintenance.auto=false", "-c", "gc.auto=0"}, args...)
 	cmd := exec.CommandContext(ctx, bin, full...)
 	cmd.Dir, cmd.Env = dir, gitEnv(os.Environ())
 	if g.Pinned {

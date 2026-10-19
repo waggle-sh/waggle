@@ -220,7 +220,8 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			opts, e := l.cfg.CombOptions(req.RepoDir)
 			opts.GitBinary = d.GitBin
 			// The agent controls repo config: never run hooks from the claim writes.
-			opts.ExtraEnv = []string{"GIT_CONFIG_COUNT=1", "GIT_CONFIG_KEY_0=core.hooksPath", "GIT_CONFIG_VALUE_0=/dev/null"}
+			opts.ExtraEnv = []string{"GIT_CONFIG_COUNT=3", "GIT_CONFIG_KEY_0=core.hooksPath", "GIT_CONFIG_VALUE_0=/dev/null",
+				"GIT_CONFIG_KEY_1=maintenance.auto", "GIT_CONFIG_VALUE_1=false", "GIT_CONFIG_KEY_2=gc.auto", "GIT_CONFIG_VALUE_2=0"}
 			if e == nil {
 				backend, e = comb.NewGitBackend(opts)
 			}
