@@ -42,21 +42,28 @@ func diagOne(t *testing.T, iter int, link bool) bool {
 	diag := filepath.Join(root, "diag.log")
 	planted := f.common() + "/worktrees/planted"
 	mark := func(s string) string { return "echo '" + s + "' >> '" + diag + "'\n" }
+	stamp := func(label string) string {
+		return "echo \"" + label + " $(date +%s%N)\" >> '" + diag + "'\n"
+	}
 	script := okScenario +
 		mark("after-commit") +
+		stamp("commit-done") +
 		"ls -la '" + f.common() + "/worktrees' >> '" + diag + "' 2>&1\n" +
 		"mkdir '" + planted + "' 2>> '" + diag + "'; echo \"mkdir rc=$?\" >> '" + diag + "'\n" +
 		"printf '%s\\n' \"$PWD/.git\" > '" + planted + "/gitdir' 2>> '" + diag + "'; echo \"printf rc=$?\" >> '" + diag + "'\n" +
+		stamp("planted-done") +
 		"ls -la '" + planted + "' >> '" + diag + "' 2>&1\n" +
-		mark("end")
-	res, err := f.run(script)
+		stamp("end")
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.KeepWorktree = true })
 	ok := err == nil && res.ExitCode == 1 && hasViolation(res.Violations, ruleHost, "worktrees/planted")
 	if ok {
 		return true
 	}
 	t.Logf("=== iteration %d link=%v FAILED: exit %d err %v violations %v end %q subtype %q", iter, link, res.ExitCode, err, res.Violations, res.End, res.ResultSubtype)
+	t.Logf("session returned at %d (EndedAt ns), started %d", res.EndedAt.UnixNano(), res.StartedAt.UnixNano())
 	t.Logf("warnings: %v", res.Warnings)
 	t.Logf("git: %s", strings.TrimSpace(gitVersion()))
+	t.Logf("common per git: %s ; fixture common: %s", strings.TrimSpace(f.git("rev-parse", "--path-format=absolute", "--git-common-dir")), f.common())
 	logFile(t, "diag.log (agent shell marks)", diag)
 	logFile(t, "stderr.log", filepath.Join(res.RunDir, "stderr.log"))
 	if fi, serr := os.Stat(planted); serr == nil {
