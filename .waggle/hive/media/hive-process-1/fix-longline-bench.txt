@@ -1,0 +1,3 @@
+# guard-longline-bench.sh 89778dd on macOS (was 20 s at 100 KB and over 11 minutes at 2 MB before the long-line rule).
+line of 100000 bytes: exit 1, 1 s (includes the go run gate)
+line of 2000000 bytes: exit 1, 1 s (includes the go run gate)
