@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/waggle-sh/waggle/internal/comb"
@@ -21,10 +22,11 @@ type ClaimBackend interface {
 // before it continues: a takeover names the previous owner, and a renewal that
 // changes role, gate or directories shows old and new.
 type Claim struct {
-	Lease comb.Lease // as requested; times are the backend's
-	OID   string     // claim commit
-	Verb  string     // claim, renew or takeover
-	Notes []string
+	Lease    comb.Lease // as requested; times are the backend's
+	OID      string     // claim commit
+	Verb     string     // claim, renew or takeover
+	Notes    []string
+	Warnings []string // read-back failures after the claim was written
 }
 
 // AcquireClaim claims the ticket for a builder or forager (T-023 section 6).
@@ -33,7 +35,7 @@ type Claim struct {
 // notes; AcquireLease stays the authority. Failures are *Error: ExitClaim for a held, overlapping,
 // malformed or refused claim, ExitEnv for git trouble. Nothing is written
 // when the claim is refused.
-func AcquireClaim(ctx context.Context, cb ClaimBackend, req Request, keeperID string, now time.Time) (Claim, error) {
+func AcquireClaim(ctx context.Context, cb ClaimBackend, g *Git, req Request, keeperID string, now time.Time) (Claim, error) {
 	if req.Role == "guard" {
 		return Claim{}, failf(ExitUsage, "guard does not claim; it reads the builder's claim")
 	}
@@ -62,11 +64,18 @@ func AcquireClaim(ctx context.Context, cb ClaimBackend, req Request, keeperID st
 	if err := cb.AcquireLease(ctx, want); err != nil {
 		return Claim{}, claimError(err)
 	}
+	// The claim is written. A failing read-back is a warning, never exit 4: the
+	// requested lease stands and the OID stays empty. The OID comes from the
+	// local ref (a rev-parse, no third fetch in remote mode).
 	if c.Lease, err = cb.ReadClaim(ctx, req.Ticket); err != nil {
-		return Claim{}, claimError(err)
+		c.Lease = want
+		c.Warnings = append(c.Warnings, "claim_read_failed: "+err.Error())
 	}
-	if c.OID, err = cb.ClaimOID(ctx, req.Ticket); err != nil {
-		return Claim{}, claimError(err)
+	ref, _ := comb.RefName(req.Ticket)
+	if out, err := g.Run(ctx, "rev-parse", "--verify", "--quiet", ref); err != nil {
+		c.Warnings = append(c.Warnings, "claim_oid_failed: "+err.Error())
+	} else {
+		c.OID = strings.TrimSpace(string(out))
 	}
 	return c, nil
 }
