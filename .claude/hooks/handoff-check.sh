@@ -31,7 +31,7 @@ if [ "$lines" -gt 40 ]; then
   exit 2
 fi
 last=$(git -C "$root" log -1 --format=%ct main 2>/dev/null) || exit 0
-mtime=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null) || exit 0
+mtime=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null) || exit 0  # GNU first: GNU stat -f means file system
 if [ "$mtime" -lt "$last" ]; then
   echo "Handoff $rel is older than the last commit on main ($(git -C "$root" log -1 --format='%h %s' main)). Rewrite its facts (live state, running agents, next work) before stopping." >&2
   exit 2
