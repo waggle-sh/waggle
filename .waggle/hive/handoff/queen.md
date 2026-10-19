@@ -15,7 +15,7 @@ Two layers. Product is Waggle itself (cmd/, internal/ including internal/scaffol
 - Hive pin `6a4886eb16e0de1d005a4ba354e72ecd1dd63756` (`.waggle/control/config.yaml`). `CLAUDE.md` is tracked.
 - Hooks: `.claude/settings.json` runs `.claude/hooks/session-start.sh` on startup, resume, clear and compact (prints this file and the live repo state) and `.claude/hooks/handoff-check.sh` on Stop (refuses to end a turn while this file is older than main's last commit, so refresh it after every merge batch; `touch` is not a refresh, rewrite the facts).
 - Hive records: every guard review, brief edit and handoff refresh is an uncommitted tracked change under `.waggle/hive/` until the next `hive-records-<n>` batch PR (Tier 3, Keeper card).
-- Every PR fails `verify-leases-and-tiers` on "no claim for T-<id>" (no claim refs on the remote until T-023 phase C, T-014 F10) and on any update-branch merge commit; merges go through `--admin`. Expected.
+- Every PR fails `verify-leases-and-tiers` on "no claim for T-<id>" (no claim refs on the remote until T-023 phase F sets `forge.remote`, D-119, D-168, T-014 F10) and on any update-branch merge commit; merges go through `--admin`. Expected.
 
 ## Habits that worked
 
@@ -23,7 +23,7 @@ Two layers. Product is Waggle itself (cmd/, internal/ including internal/scaffol
 - Open the draft PR yourself right after the build report so CI runs during review. Merge with `gh pr ready`, `gh pr update-branch` when main moved, require `product-ci` SUCCESS, then `gh pr merge --merge --admin --body-file` with the Intent Packet.
 - Tier 2: merge on guard pass without a card when the Keeper has said to keep building. Tier 3 and anything touching policy, budgets, schema limits or spend: card, recommended option first, cost and reversibility stated. Batch rulings on one card.
 - All open briefs use the new role names since T-020 phase C (D-142). Merged briefs, reviews and decisions keep the old names on purpose; tell builders that if they quote them.
-- Builders blow line budgets by 1.5x to 2.6x; D-089 sets the metric (physical non-test lines). Expect it and let the guard rule.
+- Builders blow line budgets by 1.5x to 3.3x (T-023 phase B hit 3.3x); D-136 sets the metric (added non-test lines). Expect it and let the guard rule.
 - Never switch the main checkout's branch; use a scratchpad worktree. On macOS never check out a branch holding both `go.mod` and `GO.MOD` (use `git commit-tree`).
 - `waggle decide` records only rulings the Keeper answered in the same session, so re-confirm carried rulings on a card.
 - Guards in worktrees cannot write the main checkout: copy their review files and scan them for home paths and emails. Run guard rounds in parallel with the next fix when a must-fix is unambiguous. Guards must check linux CI, since macOS `/var` symlinks hide path bugs.
@@ -41,17 +41,21 @@ Merged in the eighth session (2026-10-18):
 
 Scout readiness check of T-023 phase C done: brief `tasks/T-023.md` rewritten (section 10.5 carry list, phase C0 for D-137, section 3 sizes, tests 20 to 27). Keeper ruled Q-T023-13 to Q-T023-19 on cards, every default approved, recorded as D-162 to D-168 (section 15.1).
 
-Running: nothing. No open PRs. No worktrees; `main` is the only local branch (scout worktree and its branches removed 2026-10-19).
+In flight: hive-records-8 (PR #48, branch `hive-records-8`, worktree `hr8` in the queen's scratchpad): D-162 to D-168, T-023 brief, this handoff, `reviews/hive-records-7.md`, `reviews/hive-records-8.md` (opus guard, must-fix B1 to B5 at `0b184e5`, fixes then re-review). Then Keeper card, merge with `--admin`. If a worker's report is lost after a /clear, re-dispatch it fresh.
 
-Uncommitted in the main checkout for hive-records-8: `DECISIONS.md` (D-162 to D-168), `tasks/T-023.md`, this handoff, `reviews/hive-records-7.md` (B1's scratchpad uid redacted to `<uid>`; names no hostname or username). Open notes from that review: N1 (D-157 routes fable N1, a Go error-prefix change, to the phase F template edit; "sonnet note 3" is ambiguous; clarify in the phase F brief), N2 (T-014 AC7 line still says screenshots), `reviews/T-023b-fable.md` line 7 still points to the `ab68fb6` section as current.
+Open notes from `reviews/hive-records-7.md`: N1 (D-157 routes fable N1, a Go error-prefix change, to the phase F template edit; "sonnet note 3" is ambiguous; clarify in the phase F brief), N2 (T-014 AC7 line still says screenshots), `reviews/T-023b-fable.md` line 7 still points to the `ab68fb6` section as current.
 
-DECISIONS.md: 161 entries on main, plus D-162 to D-168 uncommitted. Next ID D-169.
+Open notes from `reviews/hive-records-8.md`: N1 (D-168 records `Supersedes: none` though it moves D-159's phase C placement; accepted, its title names D-159), N5 (T-023 phase A stream leftovers: sonnet N4, N5, N10, fable recommendation 7; list under 10.2 or 10.3 before phase E), N6 (opus phase B note 7 stale comment at `internal/dispatch/worktree.go:398`, fable phase B N6 assertions; one-liners for the phase C builder), N7 (same as hive-records-7 N1).
+
+Open notes carried: D-143 (every `waggle upgrade --apply` rewrites the gate workflow from the stale template until T-008; revert right after; run upgrade in a clean worktree). Redaction before the repo goes public (media/T-023a, any probe output with the machine hostname, temp-dir prefixes or `/var/folders` paths, media/T-014b p1 to p6, home paths in several reviews, protonmail address in reviews/hive-records-4 and commits; history rewrite is its own card). D-151 symlinked CLAUDE.md follow-up. T-025 phase C before any release. T-014b fable F6 and F8 for the next `cmd/waggle/` lease (F8 is the stale `main.go:90` usage line; phase C leases one `main.go` usage line, so hand it to that builder). RFC v0.2 Traditional Equivalent column undecided.
+
+DECISIONS.md: 168 entries once hive-records-8 merges (161 on main). Next ID D-169.
 
 Keeper status: `local.yaml` fixed (keeper_id `paulternate`). Repo-local git `user.email` is `27632860+paulternate@users.noreply.github.com` (D-160); global is still protonmail. Keeper to do: tick "Keep my email addresses private" in GitHub (leave push blocking off); optionally turn off Actions email notifications until T-023 phase C, then back on. Product follow-up: `internal/scaffold/templates/local.yaml.tmpl` ships `guard: sonnet`; fix in the next `internal/scaffold/` lease.
 
 ## Next work, in order (own honey stays after T-023 phase D, D-147)
 
 1. Land hive-records-8 (brief, D-162 to D-168, this handoff, `reviews/hive-records-7.md`) before or alongside C0 so the builder's worktree from `origin/main` carries the new brief.
-2. T-023 phase C0 (`t-023c0`, section 10.5.1, stop 130, D-164), then phase C (target 850, stop 1000). Both Tier 3: sonnet builder, two guards (D-100), Head Keeper card at merge.
+2. T-023 phase C0 (`t-023c0`, section 10.5.1, stop 130, D-164), then phase C (target 850, stop 1000). Both Tier 3: sonnet builder, two guards (opus and fable, D-100 as practiced since D-156), Head Keeper card at merge.
 3. T-023 D, then phase F own honey switch (section 10.4: trial, then cutover card).
 4. Off the critical path: T-008 (ends the D-143 revert), T-018 C, T-025 B then C, T-021 phase C after T-023. T-024 phases A to E after all of T-023 (D-123).
