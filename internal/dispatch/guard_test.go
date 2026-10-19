@@ -156,16 +156,16 @@ func TestAcquireClaimRemoteNotes(t *testing.T) {
 	ba, bb := backend(da), backend(db)
 	ctx := context.Background()
 	req := mustValid(t, okReq(da))
-	if _, err := AcquireClaim(ctx, ba, req, "alice", now); err != nil {
+	if _, err := AcquireClaim(ctx, ba, &Git{Dir: da}, req, "alice", now); err != nil {
 		t.Fatal(err)
 	}
 	// Bob's mirror has never fetched; after expiry he takes over and is told.
 	now = t0.Add(3 * time.Hour)
-	c, err := AcquireClaim(ctx, bb, req, "bob", now)
+	c, err := AcquireClaim(ctx, bb, &Git{Dir: db}, req, "bob", now)
 	if err != nil || c.Verb != "takeover" || len(c.Notes) != 1 || !strings.Contains(c.Notes[0], "alice") {
 		t.Fatalf("takeover: %+v %v", c, err)
 	}
-	c, err = AcquireClaim(ctx, bb, req, "bob", now)
+	c, err = AcquireClaim(ctx, bb, &Git{Dir: db}, req, "bob", now)
 	if err != nil || c.Verb != "renew" || len(c.Notes) != 0 {
 		t.Fatalf("renew: %+v %v", c, err)
 	}
