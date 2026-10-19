@@ -3233,3 +3233,159 @@
 **Keeper choice:** Phase C goes to the opus and fable guards at 1186 added non-test lines (D-136 metric). The stop for phase C, guard fix rounds included, is 1350; a fix round that would cross 1350 comes back to the Keeper before it is written. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
 
 **Rationale:** Every line traces to a brief item, the offered cuts total about 83 lines and still miss 1000, and two of them are carry items. Splitting interdependent run, check and CLI code adds a full Tier 3 review cycle and delays the own honey switch. Phase D and E estimates should assume a similar overrun.
+
+## D-170: Q-T023-20: phase D's runtime carry lands in a phase D0 PR leasing internal/runtime/ before phase D
+
+- **Date:** 2026-10-19
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Phase D's runtime carry (10.6 items 16 to 21: second guard, guard settings, worker git config, Config() clone, help match, comments) needs internal/runtime/ beyond policy.go. Where does it land?
+
+**Options considered:**
+1. A phase D0 PR leasing internal/runtime/ (launch.go, claude.go, runtime.go, policy.go, tests), stop 130, merged before D
+2. Widen phase D's lease to those files
+3. A separate T-021 or T-012 follow-up ticket
+
+**Hive recommendation:** A phase D0 PR leasing internal/runtime/ (launch.go, claude.go, runtime.go, policy.go, tests), stop 130, merged before D
+
+**Keeper choice:** Phase D0 (`t-023d0`) leases `internal/runtime/` (`launch.go`, `claude.go`, `runtime.go`, `policy.go` and their tests) for 10.6 items 16 to 21, estimate 60, target 90, stop 130, Tier 3 with two guards, and merges before phase D dispatches. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Same pattern as C0 before C: a small, separately reviewable Tier 3 diff. A separate ticket would leave the second guard and the worker git config out of the phase F trial.
+
+## D-171: Q-T023-21: workers run with GIT_CONFIG_GLOBAL=/dev/null and GIT_CONFIG_NOSYSTEM=1, identity passed as GIT_AUTHOR_* and GIT_COMMITTER_*
+
+- **Date:** 2026-10-19
+- **Kind:** credentials
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Should workers keep the Keeper's global and system git config, or run isolated from it with identity passed explicitly?
+
+**Options considered:**
+1. Isolate: GIT_CONFIG_GLOBAL=/dev/null, GIT_CONFIG_NOSYSTEM=1, identity from the repo's user.name and user.email, falling back to the Keeper's global
+2. Keep the global config and list the bypass in not_enforced
+
+**Hive recommendation:** Isolate: GIT_CONFIG_GLOBAL=/dev/null, GIT_CONFIG_NOSYSTEM=1, identity from the repo's user.name and user.email, falling back to the Keeper's global
+
+**Keeper choice:** `workerEnv` sets `GIT_CONFIG_GLOBAL=/dev/null` and `GIT_CONFIG_NOSYSTEM=1` and passes `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME` and `GIT_COMMITTER_EMAIL` from the repo's `user.name` and `user.email` (D-160 noreply), else the Keeper's global, else exit 3 (10.6 item 19). Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Closes the C0 fable probe where a dotfile pushInsteadOf beat the tripwire and hides global credential helpers from workers. Workers lose the Keeper's global aliases, ignore file and signing config; accepted.
+
+## D-172: Q-T023-22: end max_budget maps to itself in the usage ledger
+
+- **Date:** 2026-10-19
+- **Kind:** technical
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** A budget stop ends a run as `end: max_budget`. How does section 9.1 and the T-022 ledger record it?
+
+**Options considered:**
+1. Map it to itself, a limit stop like max_turns
+2. Map it to error
+
+**Hive recommendation:** Map it to itself, a limit stop like max_turns
+
+**Keeper choice:** `max_budget` maps to itself in section 9.1 and in `usage.Append` records. No `internal/usage/` code change; the `record.go` comment is fixed in that package's next lease. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** T-022's reader neither validates nor counts End, and mapping to error would hide budget stops from waggle status.
+
+## D-173: Q-T023-23: phase D re-estimated at 550, target 770, stop 960, built as one PR after D0
+
+- **Date:** 2026-10-19
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Phase D's first estimate (230, stop 520) predates the phase C reviews. Bottom up it is about 550. Size and split?
+
+**Options considered:**
+1. D0 then D at 550 / 770 / 960, fix rounds counted
+2. Three PRs: D0, D1 (about 380), D2 (about 170)
+3. Move list to a follow-up ticket
+
+**Hive recommendation:** D0 then D at 550 / 770 / 960, fix rounds counted
+
+**Keeper choice:** Phase D is one PR after D0, estimate 550, target 770, stop 960 added non-test lines (D-136), guard fix rounds counted (D-164). If the build passes 770 before review, it comes back to the Keeper with the D1 and D2 cut of section 3; a fix round that would cross 960 comes back before it is written. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Built bottom up with phase C's 1.75x overrun on its estimate in mind; a third PR adds a Tier 3 cycle before phase F.
+
+## D-174: Q-T023-24: a dispatched guard keeps read, Edit and Write in its worktree and the WAGGLE.md commands, but not git add or git commit
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** A dispatched guard today gets the builder's settings, including git add and git commit. What may it do?
+
+**Options considered:**
+1. Probes allowed, no git add or commit; a leftover probe fails rule 3 with the verdict recorded
+2. Read-only guard
+3. Builder settings unchanged
+
+**Hive recommendation:** Probes allowed, no git add or commit; a leftover probe fails rule 3 with the verdict recorded
+
+**Keeper choice:** `workerSettings` drops `git add` and `git commit` for the guard role; the guard keeps read tools, `Edit` and `Write` inside its worktree and the `WAGGLE.md` commands. A probe file left behind fails rule 3, exit 1, with the verdict still recorded (10.6 item 20). Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Hostile probes found phase C's worst defects, so a read-only guard would weaken reviews; removing commit rights keeps the guard from changing the branch.
+
+## D-175: Q-T023-25: dispatch exits 3 before the claim when .waggle/worktrees/ or the usage ledger is not gitignored
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Our hive's .gitignore lacks the ledger and handoffs lines the scaffold already ships. What does dispatch do when the worktrees or ledger path is not ignored?
+
+**Options considered:**
+1. Exit 3 before the claim; our hive gets the lines from phase F's waggle upgrade
+2. Warn and append anyway
+
+**Hive recommendation:** Exit 3 before the claim; our hive gets the lines from phase F's waggle upgrade
+
+**Keeper choice:** Before the claim, a pinned `git check-ignore -q` on `.waggle/worktrees/` and `layout.Usage`; either missing is exit 3 naming the `.gitignore` line, with nothing written (10.6 item 6). Our hive gets the lines through phase F's `waggle upgrade`. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Dispatch never leaves an untracked ledger in the main checkout that a hive records batch could commit.
+
+## D-176: Q-T023-26: the phase D builder probes whether Bash tool children stay in the worker's process group on the pinned Claude Code
+
+- **Date:** 2026-10-19
+- **Kind:** technical
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** When do we verify that real Claude Code keeps Bash tool children in the worker's process group, so the timeout kill reaches them (opus N9)?
+
+**Options considered:**
+1. Phase D builder runs an AC7-style manual probe and saves the output; a failure blocks phase F, not phase D
+2. Leave it to the phase F trial
+
+**Hive recommendation:** Phase D builder runs an AC7-style manual probe and saves the output; a failure blocks phase F, not phase D
+
+**Keeper choice:** The phase D builder runs a manual probe on the pinned Claude Code (a Bash tool sleep child, timeout kill, ESRCH) and saves the output under `media/T-023/`. A failure blocks phase F, not phase D's merge. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Finds a Cell-seam problem before the trial instead of costing the trial.
+
+## D-177: Q-T023-27: dispatch counts must-fix verdicts across the phase's review files for the T-012 builder step-up
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** The T-012 step-up counts must-fix verdicts in reviews/T-<nnn>.md, which our hive never writes, so it never fires. Fix?
+
+**Options considered:**
+1. Count Verdict: must-fix lines across reviews/T-<nnn><phase>-*.md at base
+2. Queen template appends every verdict to reviews/T-<nnn>.md
+3. Leave it
+
+**Hive recommendation:** Count Verdict: must-fix lines across reviews/T-<nnn><phase>-*.md at base
+
+**Keeper choice:** Dispatch counts `Verdict: must-fix` lines across every `reviews/T-<nnn><suffix>-*.md` at base, where `<suffix>` is the branch suffix, so the step-up counts this phase's rounds; two Tier 3 guards both must-fix in one round count 2 (10.6 item 22). Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Makes the T-012 step-up work with our hive's review naming in about 10 lines; a process habit would be easy to skip.
