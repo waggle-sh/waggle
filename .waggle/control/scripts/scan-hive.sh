@@ -5,10 +5,14 @@
 #   base defaults to origin/main, head to HEAD. Run from anywhere inside the
 #   repo; only committed content in merge-base(base, head)..head is scanned.
 #
-# Scanned: every added line of `git diff base...head` and of each non-merge
-# commit against its first parent (so a hit added then removed on the branch
-# is still reported), every changed path name, and each commit's author,
-# committer and message. Rules:
+# Scanned: every added line of `git diff base...head`, of each non-merge
+# commit against its first parent, and of each merge commit by remerge diff
+# (what the merge result changes against git's own automatic merge, so a
+# conflict resolution or an edit made during the merge counts and a clean
+# merge adds nothing), so a hit added then removed on the branch is still
+# reported; every changed path name, including paths a merge adds; and each
+# commit's author, committer and message. A NUL byte in a text line is read
+# as \001, so awk does not stop at it. Needs git 2.36 or later. Rules:
 #   email       any address except the D-160 noreply, noreply@github.com,
 #               git@ remote forms and the fixture domains example.test,
 #               example.com, e.co, evil.test, included.test (and subdomains)
@@ -70,6 +74,7 @@ g() { git -c core.quotePath=true "$@"; }
 # textconv, color, renames) must not change labels or hide content.
 dopts=(--no-color --no-ext-diff --no-textconv --no-renames --src-prefix=a/ --dst-prefix=b/)
 lopts=(--no-merges --no-show-signature)
+mopts=(--merges --no-show-signature --diff-merges=remerge)
 
 # Net changes with modes and status: :<old mode> <new mode> <old> <new> <status> TAB <path>
 g diff "${dopts[@]}" --raw "$mb" "$headsha" >"$tmp/raw"
@@ -80,6 +85,7 @@ cut -f 2- "$tmp/raw" >"$tmp/paths"
 {
   cat "$tmp/raw"
   g log "${lopts[@]}" "${dopts[@]}" --raw --format='commit %h' "$mb..$headsha"
+  g log "${mopts[@]}" "${dopts[@]}" --raw --format='commit %h' "$mb..$headsha"
 } | awk -F '\t' '
   /^commit [0-9a-f]+$/ { pre = $0 " "; next }
   /^:/ { split($1, m, " "); st = m[5]; p = $2
@@ -88,13 +94,15 @@ cut -f 2- "$tmp/raw" >"$tmp/paths"
          if (st == "A" && (b ~ /\.local$/ || b ~ /\.local\./)) printf "%s%s\t0\t\001local-file\n", pre, p }
 ' >"$stream"
 
-# Added lines of the net diff and of each non-merge commit against its first
-# parent. -U0 means every hunk line is + or -, plus header lines; a commit
-# line sets the label prefix for the per-commit part.
+# Added lines of the net diff, of each non-merge commit against its first
+# parent and of each merge by remerge diff. -U0 means every hunk line is + or
+# -, plus header lines; a commit line sets the label prefix for the
+# per-commit part. NUL becomes \001 because BSD awk ends a line at a NUL.
 {
   g diff "${dopts[@]}" -U0 "$mb" "$headsha"
   g log "${lopts[@]}" "${dopts[@]}" -p -U0 --format='commit %h' "$mb..$headsha"
-} | awk '
+  g log "${mopts[@]}" "${dopts[@]}" -p -U0 --format='commit %h' "$mb..$headsha"
+} | tr '\000' '\001' | awk '
   /^commit [0-9a-f]+$/ { pre = $0 " "; hdr = 1; path = ""; next }
   /^diff --git / { hdr = 1; path = ""; next }
   hdr && /^\+\+\+ / { path = substr($0, 5); sub(/\t$/, "", path); sub(/^b\//, "", path); next }
@@ -198,7 +206,7 @@ BEGIN {
   if (s == "\001local-file") { hit("local-file"); next }
   if (length(s) > 65536) { hit("long-line"); next }
   low = tolower(s)
-  t = s
+  t = index(s, "@") ? s : "" # no @, no address: skip the email regex
   while (match(t, /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z][A-Za-z]+/)) {
     if (!okmail(substr(t, RSTART, RLENGTH))) hit("email")
     t = substr(t, RSTART + RLENGTH)
@@ -236,7 +244,7 @@ awk -F '\t' '{
 }' "$tmp/raw" >"$tmp/class"
 held=$(awk -F '\t' '$1 != ""' "$tmp/class" | wc -l | tr -d ' ')
 
-echo "scan-hive: base $base (merge-base $(git rev-parse --short "$mb")), head $(git rev-parse --short "$headsha"), $(git rev-list --count --no-merges "$mb..$headsha") commit(s) scanned"
+echo "scan-hive: base $base (merge-base $(git rev-parse --short "$mb")), head $(git rev-parse --short "$headsha"), $(git rev-list --count "$mb..$headsha") commit(s) scanned"
 [ -z "$warn" ] || echo "$warn"
 echo "changed paths ($(wc -l <"$tmp/paths" | tr -d ' ')):"
 awk -F '\t' '{ print ($1 == "") ? "  " $2 : "  HOLD (" $1 ") " $2 }' "$tmp/class"
