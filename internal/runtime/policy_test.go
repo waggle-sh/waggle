@@ -254,3 +254,60 @@ func TestSecondGuard(t *testing.T) {
 	_, err = p.Resolve("guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
 	wantErr(t, err, ErrNoCrossModel, "T-1", "alternates.standard", "first guard")
 }
+
+// D-180: this hive's shape (opus/sonnet/haiku, builder and guard minimum
+// standard, no alternates), unstepped: the second guard never falls to haiku.
+func TestSecondGuardHiveShapeRefuses(t *testing.T) {
+	p := testPolicy()
+	_, err := p.Resolve("guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+	wantErr(t, err, ErrNoCrossModel, "alternates.standard")
+}
+
+// The D-179 walk: builder stepped to frontier, first guard on alternates.frontier,
+// the second guard at standard, bounded at the guard minimum (D-180).
+func walkPolicy(standard, fast, altStandard string) Policy {
+	p := testPolicy()
+	p.Minimums["builder"] = LevelFrontier
+	p.Models.Primary = map[Level]string{LevelFrontier: "opus", LevelStandard: standard, LevelFast: fast}
+	p.Models.Alternate = map[Level]string{LevelFrontier: "fable"}
+	if altStandard != "" {
+		p.Models.Alternate[LevelStandard] = altStandard
+	}
+	return p
+}
+
+func TestSecondGuardWalk(t *testing.T) {
+	second := &TaskContext{TaskID: "T-1", SecondGuard: true}
+	t.Run("motivating case", func(t *testing.T) {
+		p := walkPolicy("sonnet", "haiku", "")
+		b := mustResolve(t, p, "builder", &TaskContext{TaskID: "T-1"}, nil)
+		f := mustResolve(t, p, "guard", &TaskContext{TaskID: "T-1"}, nil)
+		s := mustResolve(t, p, "guard", second, nil)
+		if b.Model != "opus" || f.Model != "fable" || s.Model != "sonnet" || s.Level != LevelStandard {
+			t.Errorf("builder %q first %q second %q (%s); want opus, fable, sonnet (standard)", b.Model, f.Model, s.Model, s.Level)
+		}
+	})
+	t.Run("primary before alternate", func(t *testing.T) {
+		s := mustResolve(t, walkPolicy("sonnet", "haiku", "s2"), "guard", second, nil)
+		if s.Model != "sonnet" {
+			t.Errorf("second = %q; want sonnet", s.Model)
+		}
+	})
+	t.Run("avoid list inside the walk", func(t *testing.T) {
+		s := mustResolve(t, walkPolicy("opus", "haiku", "s2"), "guard", second, nil)
+		if s.Model != "s2" {
+			t.Errorf("second = %q; want s2", s.Model)
+		}
+	})
+	t.Run("walk exhaustion", func(t *testing.T) {
+		p := walkPolicy("opus", "fable", "")
+		p.Minimums["guard"] = LevelFast
+		_, err := p.Resolve("guard", second, nil)
+		wantErr(t, err, ErrNoCrossModel)
+	})
+	t.Run("floor", func(t *testing.T) {
+		p := walkPolicy("opus", "haiku", "")
+		_, err := p.Resolve("guard", second, nil)
+		wantErr(t, err, ErrNoCrossModel, "alternates.frontier")
+	})
+}
