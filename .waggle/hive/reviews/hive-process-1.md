@@ -101,3 +101,70 @@ Under `.waggle/hive/media/hive-process-1/`:
 - `guard-linux.sh`, `guard-linux-output.txt` (Debian bookworm container: mawk, dash, GNU grep 3.8; colima started and stopped for the run)
 
 All planted commits were detached and never pushed or branched.
+
+## Confirmation at 5c7ada6
+
+Verdict: must-fix
+Risk-Tier: 3
+
+Scope: `git diff 5e1c79d 5c7ada6` (fixes `519179d` and `5c7ada6`). B1 and B2 are fixed, and the notes are applied as described. One new blocking issue: the per-commit pass skips merge commits, so a hit that only a merge commit introduces, removed by a later commit, still exits 0. The fix is one line and is tested below.
+
+### Blocking Issues (Must-Fix Only)
+
+**B3. A hit introduced only by a merge commit and removed later passes with exit 0.**
+`lopts=(--no-merges ...)` drops merges from the per-commit content pass. Side-branch commits merged in are still scanned (probe `side-commit-merged-then-removed`: exit 1), but content that exists only in the merge result does not reach the scan. That covers a conflict resolution, or a manual edit made during `merge --no-commit`. Probes `evil-merge-then-removed` (new file) and `evil-merge-edit-then-restored` (edit to a file both parents have) both return exit 0, "clean records batch", on macOS and on Linux (`confirm-scan-output-macos.txt`, `confirm-linux-output.txt`). The queen role now says the scan covers "every commit, so a hit removed in a later commit still counts", and the script header says "a hit added then removed on the branch is still reported". Both are false for merges. Records branches do take merges: update-branch merges, and hand-resolved conflicts on `handoff/queen.md` or `DECISIONS.md`, which records batches and phase merges both edit. This is the B1 leak through a different door, on the path that merges without a guard.
+Fix (tested): after the per-commit `g log` in the content block, add
+`g log --merges --no-show-signature "${dopts[@]}" --diff-merges=remerge -p -U0 --format='commit %h' "$mb..$headsha"`
+A remerge diff shows only what the merge result changes against git's own automatic merge, so a clean update-branch merge adds nothing. The existing awk parses it unchanged. With that line, both evil-merge probes exit 1, and every other scenario keeps its exit code (`confirm-remerge-output-macos.txt`). A records branch built on 2ecd449 and merged with 5c7ada6 still exits 0 with no hits. Add the same `--merges --diff-merges=remerge --raw` pass to the path-name block, so a file added only by a merge has its name scanned too. Needs git 2.36 or later (2.54 here). Alternatively, fix the role and header text and say that records branches must not contain merges, then check for that in the script (`git rev-list --merges` non-empty means exit 2). The one-line fix is simpler.
+
+### Confirmed
+
+1. **B1 fixed.** Probe `added-then-removed` exits 1 on macOS and Linux, and so do the scout's `token-added-then-removed` and `local-added-then-removed`. New evasions:
+   - added then undone by `git revert`: exit 1.
+   - a side-branch commit merged as the second parent, then removed: exit 1.
+   - amended history, where the hit commit is no longer reachable from head: exit 0. That is correct, because the commit never reaches main.
+   - binary then text, and text then binary: exit 1 (a binary hit on the flipping commit, plus the email on the text commit).
+   - a `.gitattributes` with `-diff` turns the file binary: exit 1. This fails safe.
+   - merge-only content: B3.
+2. **B2 fixed.** The "Hooks:", "Hive records:" and last "Habits" lines of `handoff/queen.md` now match WAGGLE.md section 4, the queen role and the hooks' behavior. No other line in the summary describes the old rules.
+3. **Records path still exits 0.** Probe `records-batch` exits 0 with no hits and no HOLD lines on macOS, with the real decisions gate. It combines a pure-append D-187, a new review, a new media file and a new nested media file, and a `handoff/queen.md` edit.
+4. **Exit 0 set matches the text.** The script's class awk, its header, WAGGLE.md section 4 and the queen role all name the same set. Exit 0 needs an added regular file under `reviews/` or `media/`, a `DECISIONS.md` modification (the gate fails a non-append with exit 1), or a `handoff/queen.md` modification. Everything else holds with exit 2: other added, modified or deleted hive files, renames (which `--no-renames` splits into a delete and an add), symlinks, submodules and `.gitattributes`. Test results:
+   - rewriting an existing DECISIONS entry at 5c7ada6: exit 1 (gate).
+   - moving an existing media file: exit 2.
+   The scout's N10 set reproduces at base 2ecd449, apart from base artifacts. Its `append-decisions` uses D-187, which is not the next ID at 2ecd449, so it exits 1 there. Its `rename-existing-media` file does not exist at 2ecd449, so it makes an empty commit.
+   The guard probe's `decisions-edit` sed no longer matches at 2ecd449, so its exit 0 there is an empty commit. The 5c7ada6 rewrite probe above replaces it.
+5. **Rerun of the planted probes against the 5c7ada6 script (macOS).**
+   - `guard-plant-probe.sh` (base 2ecd449): every exit code matches `fix-plant-output-macos.txt`. JWT and AWS shapes now exit 1. The 2 MB line exits 1 at once (long-line).
+   - `fix-new-probe.sh`: every exit code matches `fix-new-output-macos.txt`. The names warning prints when `scan-names.local` is missing, and is absent under `CI=1` and when the file exists. Hostile diff config does not change labels.
+6. **Token rules, false positives.** `scan-hive.sh 2ecd449 5c7ada6` gives 0 hits and exit 2, holding 7 control and hook paths (`confirm-branch-scan.txt`). Over the whole history (root to 5c7ada6, 241 commits, 16 s), the 30 token hits are all `ghp_` test fixtures under the pre-existing rule. The new JWT, AWS, Slack, `sbp_` and `re_` rules have 0 hits. The `local-file` rule matches only the existing `T-023a/probe-repo/CLAUDE.local.md` fixture, which hits only if a scanned range adds it (`confirm-history-scan.txt`).
+7. **Linux stat order in `handoff-check.sh`.**
+   - macOS `/bin/sh` and bash: all hook cases are unchanged, and the older-than-main case exits 2 (`confirm-hooks-output-macos.txt`).
+   - Linux dash and bash with GNU stat, `golang:1.23-bookworm` via `docker run --rm` on the running colima, which I did not start or stop: older-than-main now exits 2. N1 is fixed.
+   - The direct check prints only the mtime in the new order. The old order prints the file-system block and then the mtime.
+8. **Privacy and dashes on the added lines of 5e1c79d..5c7ada6.**
+   - Emails are only `example.test` fixtures and `git@github.com`.
+   - Path and provider literals appear only as the probe's split variables and as the review's placeholders.
+   - Hostname and first name: 0.
+   - The scout's `<planted-email>` redaction holds: 8 occurrences, and no real address remains in any `fix-*` output.
+   - U+2013 and U+2014: 0.
+   - The commit author, committer and sign-off are the D-160 handle.
+   My new files pass the same checks.
+
+### Notes (not blocking)
+
+- **C1. NUL bytes hide text from BSD awk.** Git treats a file as text when its first NUL comes after byte 8000. BSD awk on macOS stops reading a line at a NUL, so a hit later on that line is missed. Probe `nul-after-8000-bytes`: exit 0 on macOS, exit 1 on Linux mawk. The hive runs on macOS. Piping the content stream through `tr '\000' '\001'`, or treating any NUL as a binary hit, closes this. Accidental leaks rarely carry a NUL, so this does not block.
+- **C2. The evidence head differs from the committed head.** Every `fix-*` output is labeled `89778dd`. That commit differs from `5c7ada6` by one line: 5c7ada6 drops the email fast path `t = index(s, "@") ? s : ""`. The exit codes are the same at 5c7ada6, but timing is not. A 65536-byte line just under the cap now takes 19 s on macOS (`fix-new-probe.sh` N2 rerun), not the 1 s in `fix-longline-bench.txt`. Either restore the fast path, which is correct because a line with no `@` cannot hold an address, or relabel the bench.
+- **C3.** A mode change on `handoff/queen.md` and an added `.gitignore` under `media/` both exit 0. Both are harmless and consistent with "an edit" and "an added file". No action.
+- **C4.** `.waggle/control/scan-names.local` still does not exist in the main checkout, so the Keeper's surname is not checked. The new warning says so on every run (N5 carried). Create it before the first exit 0 merge.
+
+### Evidence
+
+Under `.waggle/hive/media/hive-process-1/`:
+- `confirm-scan-probe.sh` and `confirm-scan-output-macos.txt` (5c7ada6 as committed)
+- `confirm-remerge-output-macos.txt` (the same probe with the B3 line added)
+- `confirm-linux.sh` and `confirm-linux-output.txt`
+- `confirm-hooks-output-macos.txt`
+- `confirm-branch-scan.txt`
+- `confirm-history-scan.txt`
+
+All planted commits were detached and never pushed or branched. The `guard-*` and `fix-*` probes were rerun against a copy of the 5c7ada6 script, because the base 2ecd449 checkout predates it.
