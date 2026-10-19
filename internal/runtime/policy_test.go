@@ -237,7 +237,20 @@ func TestSecondGuard(t *testing.T) {
 	if first.Model != "opus" || second.Model != "other-frontier" {
 		t.Errorf("first %q second %q; want opus then other-frontier", first.Model, second.Model)
 	}
+	// D-179: a frontier builder leaves frontier taken by builder and first guard,
+	// so the second guard takes the highest unused model below, at its own level.
+	ctx := func(second bool) *TaskContext {
+		return &TaskContext{TaskID: "T-1", GuardMustFix: 2, SecondGuard: second}
+	}
+	builder, first2 := mustResolve(t, p, "builder", ctx(false), nil), mustResolve(t, p, "guard", ctx(false), nil)
+	second2 := mustResolve(t, p, "guard", ctx(true), nil)
+	var err error
+	if builder.Model != "opus" || first2.Model != "other-frontier" || second2.Model != "sonnet" || second2.Level != LevelStandard {
+		t.Errorf("builder %q first %q second %q (%s); want opus, other-frontier, sonnet (standard)", builder.Model, first2.Model, second2.Model, second2.Level)
+	}
+	// Every model taken (one model at all three levels): still an error.
+	p.Models.Primary = map[Level]string{LevelFrontier: "m", LevelStandard: "m", LevelFast: "m"}
 	p.Models.Alternate = nil
-	_, err := p.Resolve("guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
-	wantErr(t, err, ErrNoCrossModel, "T-1", "alternates.standard")
+	_, err = p.Resolve("guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+	wantErr(t, err, ErrNoCrossModel, "T-1", "alternates.standard", "first guard")
 }
