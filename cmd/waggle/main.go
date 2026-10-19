@@ -62,6 +62,9 @@ func main() {
 	case "uninstall":
 		os.Exit(runUninstall(os.Args[2:], os.Stdout, os.Stderr))
 
+	case "dispatch":
+		os.Exit(runDispatch(os.Args[2:], os.Stdout, os.Stderr))
+
 	case "status":
 		os.Exit(runStatus(os.Args[2:], os.Stdout, os.Stderr))
 
@@ -87,7 +90,8 @@ Usage:
 Commands (v0.1 Bootstrap):
   init      Scaffold .waggle/control/, .waggle/hive/, the gate workflow, and local runtime shims
   decide    Append one decision entry to .waggle/hive/DECISIONS.md from a JSON file (--file)
-  gate      Merge-gate checks (v0.1: 'gate decisions' rejects non-append DECISIONS.md changes)
+  gate      Merge-gate checks CI runs against a pull request: verify, decisions, leases, tiers
+  dispatch  Claim a ticket, run a worker in a worktree, check its changes against the claim (waggle dispatch <ticket> --help)
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, waggled state, and per-ticket token use
   upgrade   Print the plan to re-render managed files from this build and move waggle.pin; --apply executes it
