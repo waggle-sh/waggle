@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -39,18 +41,30 @@ type LaunchSpec struct {
 	Stdin     []byte
 }
 
-// refusedArgs are flags default_args may not carry: resume paths (T-021 S1),
-// flags the adapter sets itself, ways to widen tools, settings, MCP or plugins,
-// model or effort overrides (T-012 owns both), and remote, cloud, browser or IDE channels.
-var refusedArgs = toSet("--continue", "--resume", "--session-id", "--fork-session", "--from-pr",
-	"--teleport", "--max-turns", "--model", "--mcp-config", "--print", "--output-format",
-	"--input-format", "--settings", "--setting-sources", "--permission-mode",
-	"--dangerously-skip-permissions", "--allow-dangerously-skip-permissions", "--allowedTools",
-	"--allowed-tools", "--disallowedTools", "--disallowed-tools", "--tools", "--append-system-prompt",
-	"--append-system-prompt-file", "--system-prompt", "--system-prompt-file", "--add-dir",
-	"--agent", "--agents", "--plugin-dir", "--plugin-url", "--bg", "--background", "--cloud",
-	"--worktree", "--strict-mcp-config", "--effort", "--fallback-model", "--remote-control",
-	"--environment", "--chrome", "--ide", "--")
+// allowedDefaultArgs are the only default_args entries a worker may carry
+// (D-137, D-162), each in its exact form. The value says whether the flag takes
+// a value: --max-budget-usd=<positive decimal> needs one, --debug takes none.
+// Everything else is refused: other flags, bare words (Claude Code appends them
+// to the prompt), short flags, "--", and every flag the fixed argv sets or
+// T-012 owns (--effort). Verify also requires each allowed flag in --help.
+var allowedDefaultArgs = map[string]bool{"--max-budget-usd": true, "--debug": false}
+
+var decimalRe = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?$`)
+
+// checkDefaultArg returns nil when a is an allowed default_args entry.
+func checkDefaultArg(a string) error {
+	flag, val, hasVal := strings.Cut(a, "=")
+	needsVal, ok := allowedDefaultArgs[flag]
+	if ok && needsVal == hasVal {
+		if !hasVal {
+			return nil
+		}
+		if f, err := strconv.ParseFloat(val, 64); decimalRe.MatchString(val) && err == nil && f > 0 {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: default_args contains %q", ErrRefusedArg, a)
+}
 
 // workerTools are the only built-in tools a worker gets (D-110).
 const workerTools = "Bash,Edit,Glob,Grep,Read,Write"
@@ -70,21 +84,35 @@ var deniedRules = []string{"Bash(git push)", "Bash(git push *)", "Bash(gh)", "Ba
 var envAllowed = []string{"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "TERM", "TZ",
 	"LANG", "LC_ALL", "LC_CTYPE", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL"}
 
+// pushBlocked are the remote spellings the tripwire rewrites: every URL scheme
+// and path form a push could use. Not caught (the 7.2 rule 4 ref check and
+// config hash still apply): a bare relative path such as bare.git or
+// sub/bare.git, which matches no prefix; remote.<name>.pushurl, and a longer
+// pushInsteadOf passed with git -c, both of which override the rewrite.
+var pushBlocked = []string{"https://", "ssh://", "git@", "http://", "git://", "file://", "/", "."}
+
 // envFixed isolates the worker: no CLAUDE.md or auto-memory from any scope,
 // no claude.ai connectors, no auto-compaction (handoffs replace it, T-021 S5),
-// no git prompts, and a tripwire that rewrites every push URL to a dead scheme.
-var envFixed = []string{"CLAUDE_CODE_DISABLE_CLAUDE_MDS=1", "CLAUDE_CODE_DISABLE_AUTO_MEMORY=1",
+// no git prompts, and a tripwire (tripwireEnv) that rewrites every push URL
+// to file:///dev/null/, a dead target that makes no network or ssh attempt.
+var envFixed = append([]string{"CLAUDE_CODE_DISABLE_CLAUDE_MDS=1", "CLAUDE_CODE_DISABLE_AUTO_MEMORY=1",
 	"ENABLE_CLAUDEAI_MCP_SERVERS=false", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1",
-	"DISABLE_AUTO_COMPACT=1", "GIT_TERMINAL_PROMPT=0", "GIT_CONFIG_COUNT=3",
-	"GIT_CONFIG_KEY_0=url.waggle-push-blocked:.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
-	"GIT_CONFIG_KEY_1=url.waggle-push-blocked:.pushInsteadOf", "GIT_CONFIG_VALUE_1=ssh://",
-	"GIT_CONFIG_KEY_2=url.waggle-push-blocked:.pushInsteadOf", "GIT_CONFIG_VALUE_2=git@"}
+	"DISABLE_AUTO_COMPACT=1", "GIT_TERMINAL_PROMPT=0"}, tripwireEnv()...)
+
+func tripwireEnv() []string {
+	env := []string{"GIT_CONFIG_COUNT=" + strconv.Itoa(len(pushBlocked))}
+	for i, prefix := range pushBlocked {
+		n := strconv.Itoa(i)
+		env = append(env, "GIT_CONFIG_KEY_"+n+"=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_"+n+"="+prefix)
+	}
+	return env
+}
 
 // helpTokens must all appear in `claude --help` before Prepare runs. --max-turns
 // is hidden from help; an unknown flag makes Claude Code exit, so it fails loudly.
 var helpTokens = []string{"--print", "--output-format", "stream-json", "--verbose", "--model",
 	"--strict-mcp-config", "--setting-sources", "--settings", "--permission-mode", "dontAsk",
-	"--tools", "--append-system-prompt", "--restricted"}
+	"--tools", "--append-system-prompt", "--restricted", "--no-session-persistence", "--disable-slash-commands"}
 
 // thinkingTokens maps the Thinking step to Claude Code's MAX_THINKING_TOKENS.
 var thinkingTokens = map[Profile]int{ProfileLean: 4000, ProfileBalanced: 12000, ProfileThorough: 32000}
@@ -110,7 +138,16 @@ func (c *ClaudeAdapter) Verify(ctx context.Context) error {
 		return fmt.Errorf("%w: %s --help: %v", ErrUnverified, c.cfg.Binary, err)
 	}
 	var missing []string
-	for _, tok := range helpTokens {
+	// An allowed default_args flag the help does not list is a renamed flag: fail closed.
+	// (The adapter has no field for the help text, so the check lives here.)
+	tokens := slices.Clone(helpTokens)
+	for _, a := range c.cfg.DefaultArgs {
+		flag, _, _ := strings.Cut(a, "=")
+		if _, ok := allowedDefaultArgs[flag]; ok {
+			tokens = append(tokens, flag)
+		}
+	}
+	for _, tok := range tokens {
 		if !bytes.Contains(out.buf.Bytes(), []byte(tok)) {
 			missing = append(missing, tok)
 		}
@@ -172,16 +209,13 @@ func (c *ClaudeAdapter) Prepare(inv Invocation, s ContextSettings, stable, varia
 // so a value can never be read as a flag. It never emits a resume flag.
 func (c *ClaudeAdapter) claudeArgs(inv Invocation, s ContextSettings, settings, stable []byte) ([]string, error) {
 	for _, a := range c.cfg.DefaultArgs {
-		flag, _, _ := strings.Cut(a, "=")
-		short := len(flag) > 1 && flag[0] == '-' && flag[1] != '-' && strings.ContainsAny(flag[1:], "cprw")
-		// A bare word is a positional argument, which Claude Code appends to the prompt.
-		if refusedArgs[flag] || short || !strings.HasPrefix(flag, "-") {
-			return nil, fmt.Errorf("%w: default_args contains %q", ErrRefusedArg, a)
+		if err := checkDefaultArg(a); err != nil {
+			return nil, err
 		}
 	}
 	args := []string{c.cfg.Binary, "--print", "--output-format=stream-json", "--verbose",
 		"--model=" + inv.Selection.Model, "--setting-sources=", "--settings=" + string(settings),
-		"--strict-mcp-config", "--restricted", "--tools=" + workerTools, "--permission-mode=dontAsk",
+		"--strict-mcp-config", "--restricted", "--no-session-persistence", "--disable-slash-commands", "--tools=" + workerTools, "--permission-mode=dontAsk",
 		"--max-turns=" + strconv.Itoa(s.MaxTurns), "--append-system-prompt=" + string(stable)}
 	return append(args, c.cfg.DefaultArgs...), nil
 }
