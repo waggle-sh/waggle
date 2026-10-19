@@ -15,7 +15,8 @@ import (
 
 // fullHelp lists every token Verify looks for, as the pinned Claude Code does.
 const fullHelp = "--print --output-format stream-json --verbose --model --strict-mcp-config " +
-	"--setting-sources --settings --permission-mode dontAsk --tools --append-system-prompt --restricted"
+	"--setting-sources --settings --permission-mode dontAsk --tools --append-system-prompt --restricted " +
+	"--no-session-persistence --disable-slash-commands --debug --max-budget-usd"
 
 // fakeClaude installs an executable `claude` shell script on a temp PATH, so
 // no test ever runs the real binary.
@@ -74,13 +75,14 @@ func argValue(argv []string, flag string) (string, bool) {
 // Test 1: print mode, stream-json, model, strict MCP, max turns, isolation
 // flags and settings; never a resume flag; every refused default arg fails.
 func TestPrepareArgv(t *testing.T) {
-	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug", "-d"}})
+	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--max-budget-usd=2.50", "--debug"}})
 	argv := mustPrepare(t, a, "T-5", []byte("brief")).Argv
-	if argv[0] != "claude" || argv[len(argv)-1] != "-d" {
+	if argv[0] != "claude" || argv[len(argv)-1] != "--debug" || argv[len(argv)-2] != "--max-budget-usd=2.50" {
 		t.Errorf("argv must start with the binary and end with default_args: %q", argv)
 	}
 	for _, want := range []string{"--print", "--output-format=stream-json", "--verbose", "--model=sonnet",
-		"--setting-sources=", "--strict-mcp-config", "--restricted", "--permission-mode=dontAsk", "--max-turns=40",
+		"--setting-sources=", "--strict-mcp-config", "--restricted", "--no-session-persistence", "--disable-slash-commands",
+		"--permission-mode=dontAsk", "--max-turns=40",
 		"--tools=Bash,Edit,Glob,Grep,Read,Write"} {
 		if !slices.Contains(argv, want) {
 			t.Errorf("argv lacks %q: %q", want, argv)
@@ -117,19 +119,6 @@ func TestPrepareArgv(t *testing.T) {
 		}
 	}
 
-	inv, s := testLaunch(t, "T-5")
-	for _, bad := range []string{"--continue", "-c", "--resume", "-r", "-rabc", "-pc", "-w", "--session-id=1",
-		"--fork-session", "--from-pr", "--teleport", "--max-turns=9999", "--model", "--mcp-config", "--print",
-		"-p", "--output-format", "--settings", "--setting-sources=user", "--permission-mode",
-		"--dangerously-skip-permissions", "--allowedTools", "--allowed-tools", "--disallowedTools",
-		"--tools", "--append-system-prompt", "--system-prompt", "--add-dir", "--plugin-dir", "--agents", "--",
-		"--effort=high", "--effort", "--fallback-model=opus", "--remote-control", "--environment=x", "--chrome",
-		"--ide", "high", "fix the bug", ""} {
-		a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug", bad}})
-		if _, err := a.Prepare(inv, s, nil, nil); !errors.Is(err, ErrRefusedArg) || !strings.Contains(err.Error(), bad) {
-			t.Errorf("default arg %q: err = %v; want ErrRefusedArg", bad, err)
-		}
-	}
 }
 
 func TestPrepareRefusesBadInputs(t *testing.T) {
@@ -204,8 +193,8 @@ func TestPrepareEnv(t *testing.T) {
 		t.Errorf("env carries a dropped variable:\n%s", joined)
 	}
 	for _, want := range []string{"HOME=/home/keeper", "ANTHROPIC_API_KEY=model-key", "GIT_TERMINAL_PROMPT=0",
-		"GIT_CONFIG_COUNT=3", "GIT_CONFIG_KEY_0=url.waggle-push-blocked:.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
-		"GIT_CONFIG_VALUE_1=ssh://", "GIT_CONFIG_VALUE_2=git@", "CLAUDE_CODE_DISABLE_CLAUDE_MDS=1",
+		"GIT_CONFIG_COUNT=10", "GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
+		"GIT_CONFIG_VALUE_1=ssh://", "GIT_CONFIG_VALUE_2=git@", "GIT_CONFIG_VALUE_5=git+ssh://", "GIT_CONFIG_VALUE_6=ssh+git://", "GIT_CONFIG_VALUE_8=/", "GIT_CONFIG_VALUE_9=.", "CLAUDE_CODE_DISABLE_CLAUDE_MDS=1",
 		"DISABLE_AUTO_COMPACT=1", "BASH_MAX_OUTPUT_LENGTH=10000", "MAX_THINKING_TOKENS=4000"} {
 		if !slices.Contains(env, want) {
 			t.Errorf("env lacks %q", want)
@@ -275,5 +264,99 @@ case ",$src," in *,project,*) [ -f .claude/settings.json ] && sh .claude/hooks/h
 	run(slices.DeleteFunc(slices.Clone(spec.Argv), func(s string) bool { return s == "--setting-sources=" }))
 	if _, err := os.Stat(marker); err != nil {
 		t.Fatal("control run without --setting-sources did not fire the hook; the test proves nothing")
+	}
+}
+
+// Phase C0 (D-137, D-162): the default_args allowlist, each form and each refusal class.
+func TestDefaultArgsAllowlist(t *testing.T) {
+	inv, s := testLaunch(t, "T-5")
+	for _, ok := range []string{"--debug", "--max-budget-usd=5", "--max-budget-usd=0.25", "--max-budget-usd=10.50"} {
+		a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{ok}})
+		if _, err := a.Prepare(inv, s, nil, nil); err != nil {
+			t.Errorf("default arg %q refused: %v", ok, err)
+		}
+	}
+	for _, bad := range []string{"--continue", "-c", "--resume", "-r", "-rabc", "-pc", "-w", "-d", "--session-id=1",
+		"--max-turns=9999", "--model", "--model=opus", "--print", "-p", "--output-format", "--settings",
+		"--setting-sources=user", "--permission-mode", "--dangerously-skip-permissions", "--allowedTools",
+		"--tools", "--append-system-prompt", "--add-dir", "--plugin-dir", "--agents", "--", "--effort=high",
+		"--effort", "--fallback-model=opus", "--remote-control", "--chrome", "--ide", "--restricted",
+		"--strict-mcp-config", "--no-session-persistence", "--disable-slash-commands", "--verbose",
+		"--max-budget-usd", "--max-budget-usd=", "--max-budget-usd=0", "--max-budget-usd=0.0", "--max-budget-usd=-1",
+		"--max-budget-usd=+1", "--max-budget-usd=1e3", "--max-budget-usd=inf", "--max-budget-usd=NaN",
+		"--max-budget-usd=1.", "--max-budget-usd=.5", "--max-budget-usd= 1", "--max-budget-usd=1 2", "--max-budget-usd=abc",
+		"--debug=api", "--debug=", "--Debug", "high", "fix the bug", ""} {
+		a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug", bad}})
+		if _, err := a.Prepare(inv, s, nil, nil); !errors.Is(err, ErrRefusedArg) || !strings.Contains(err.Error(), `"`+bad+`"`) {
+			t.Errorf("default arg %q: err = %v; want ErrRefusedArg naming it", bad, err)
+		}
+	}
+}
+
+// An allowed flag the --help output does not list fails closed (a renamed flag).
+func TestDefaultArgsMissingFromHelp(t *testing.T) {
+	fakeClaude(t, "echo '"+strings.ReplaceAll(fullHelp, "--max-budget-usd", "--max-cost")+"'\n")
+	a := NewClaudeAdapter(AdapterConfig{DefaultArgs: []string{"--max-budget-usd=3"}, NudgeTokens: 200000, MaxTokens: 300000})
+	wantErr(t, a.Verify(context.Background()), ErrUnverified, "--max-budget-usd")
+	inv, s := testLaunch(t, "T-5")
+	if _, err := a.Prepare(inv, s, nil, nil); !errors.Is(err, ErrUnverified) {
+		t.Errorf("Prepare after failed Verify = %v; want ErrUnverified", err)
+	}
+	// The same help is fine when the flag is not used.
+	b := NewClaudeAdapter(AdapterConfig{NudgeTokens: 200000, MaxTokens: 300000})
+	if err := b.Verify(context.Background()); err != nil {
+		t.Errorf("Verify without default_args: %v", err)
+	}
+}
+
+// The caller mutating its DefaultArgs after Verify cannot skip the help check.
+func TestDefaultArgsMutatedAfterVerify(t *testing.T) {
+	fakeClaude(t, "echo '"+strings.ReplaceAll(fullHelp, "--max-budget-usd", "--max-cost")+"'\n")
+	args := []string{"--debug"}
+	a := NewClaudeAdapter(AdapterConfig{DefaultArgs: args, NudgeTokens: 200000, MaxTokens: 300000})
+	if err := a.Verify(context.Background()); err != nil {
+		t.Fatalf("Verify: %v", err)
+	}
+	args[0] = "--max-budget-usd=3"
+	argv := mustPrepare(t, a, "T-5", nil).Argv
+	if slices.Contains(argv, "--max-budget-usd=3") || !slices.Contains(argv, "--debug") {
+		t.Errorf("Prepare used the mutated slice: %q", argv)
+	}
+}
+
+// The tripwire holds under the exact worker env: a push to an http, git, absolute
+// path or ../ relative path remote fails and the bare remote stays empty.
+func TestTripwireBlocksPush(t *testing.T) {
+	env := append(mustPrepare(t, verifiedAdapter(t, AdapterConfig{}), "T-5", nil).Env,
+		"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1")
+	git := func(dir string, env []string, args ...string) (string, error) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir, cmd.Env = dir, env
+		out, err := cmd.CombinedOutput()
+		return string(out), err
+	}
+	root := t.TempDir()
+	work, bare := filepath.Join(root, "work"), filepath.Join(root, "bare.git")
+	setup := append(slices.Clone(env), "GIT_CONFIG_COUNT=0")
+	for _, c := range [][]string{{"init", "-q", bare, "--bare"}, {"init", "-q", work}} {
+		if out, err := git(root, setup, c...); err != nil {
+			t.Fatalf("git %v: %v\n%s", c, err, out)
+		}
+	}
+	writeFile(t, filepath.Join(work, "f.txt"), "x\n")
+	for _, c := range [][]string{{"add", "f.txt"}, {"-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "m"}} {
+		if out, err := git(work, setup, c...); err != nil {
+			t.Fatalf("git %v: %v\n%s", c, err, out)
+		}
+	}
+	for name, url := range map[string]string{"http": "http://127.0.0.1:1/x.git", "git": "git://127.0.0.1:1/x.git",
+		"absolute": bare, "relative": "../bare.git"} {
+		out, err := git(work, env, "push", url, "HEAD:refs/heads/pushed")
+		if err == nil || !strings.Contains(out, "/dev/null/") {
+			t.Errorf("%s push: err = %v, output %q; want a failure at the file:///dev/null/ target", name, err, out)
+		}
+		if refs, _ := git(bare, setup, "for-each-ref"); refs != "" {
+			t.Errorf("%s push moved a ref in the bare remote: %s", name, refs)
+		}
 	}
 }
