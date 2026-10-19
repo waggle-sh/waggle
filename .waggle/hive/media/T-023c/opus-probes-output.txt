@@ -1,0 +1,29 @@
+=== RUN   TestProbeKeepaliveRunsPlantedHook
+    zz_probe_test.go:26: exit 1 end lease_violation err <nil> violations [{host_state hooks/reference-transaction changed during the run}]
+    zz_probe_test.go:27: canary fired=true secret_seen=true
+--- PASS: TestProbeKeepaliveRunsPlantedHook (1.65s)
+=== RUN   TestProbeFinalSyncRunsPlantedConfig
+    zz_probe_test.go:44: exit 1 end lease_violation pushed false err <nil> violations [{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    zz_probe_test.go:45: canary fired=true secret_seen=true
+--- PASS: TestProbeFinalSyncRunsPlantedConfig (1.05s)
+=== RUN   TestProbeSetsidEscape
+    zz_probe_test.go:55: exit 0 end done err <nil>
+    zz_probe_test.go:58: escaped process wrote after Run returned: true
+--- PASS: TestProbeSetsidEscape (4.69s)
+=== RUN   TestProbeEscapeHoldsPipe
+    zz_probe_test.go:68: exit 5 end timeout err <nil> after 9s (timeout 2s, kill grace 10s)
+--- PASS: TestProbeEscapeHoldsPipe (8.62s)
+=== RUN   TestProbePushRaceTimed
+    zz_probe_test.go:123: run 0 delay 0.005s: exit 0 end done pushed true head_oid 8d48fb64 remote 8d48fb64 evil_on_remote true violations 0
+    zz_probe_test.go:123: run 1 delay 0.015s: exit 0 end done pushed true head_oid 64756291 remote 1d8e36f5 evil_on_remote true violations 0
+    zz_probe_test.go:123: run 2 delay 0.03s: exit 0 end done pushed true head_oid 455afe4a remote 455afe4a evil_on_remote false violations 0
+    zz_probe_test.go:123: run 3 delay 0.05s: exit 0 end done pushed true head_oid 256e9bc4 remote 256e9bc4 evil_on_remote false violations 0
+    zz_probe_test.go:123: run 4 delay 0.08s: exit 0 end done pushed true head_oid 36c88d89 remote 36c88d89 evil_on_remote false violations 0
+    zz_probe_test.go:123: run 5 delay 0.12s: exit 0 end done pushed true head_oid aa8808ce remote aa8808ce evil_on_remote false violations 0
+    zz_probe_test.go:126: runs where the remote got a commit outside the lease after a clean check: 2 of 6
+--- PASS: TestProbePushRaceTimed (25.75s)
+=== RUN   TestProbeXDGIgnoreHidesWrites
+    zz_probe_test.go:139: exit 0 end done pushed true err <nil> violations []
+--- PASS: TestProbeXDGIgnoreHidesWrites (1.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	42.840s

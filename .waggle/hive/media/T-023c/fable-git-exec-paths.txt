@@ -1,0 +1,122 @@
+# Git exec-path experiments (fable guard, T-023 phase C), git 2.54 on darwin
+
+Which host git commands execute agent-controlled config values, with and without dispatch's pinned -c flags. Companion to fable-probe-output.txt, which holds the in-dispatch probes (the Go test fixture with a hostile fake claude). The scripts lived in the guard's scratch directory and built their own throwaway repos.
+
+## fsm.sh output: core.fsmonitor hook command per command, submodule spawn, log.showSignature, core.excludesFile
+
+pinned   [status --porcelain] canary=no
+unpinned [status --porcelain] canary=FIRED
+pinned   [log -1 --format=%H] canary=no
+unpinned [log -1 --format=%H] canary=no
+pinned   [rev-parse HEAD] canary=no
+unpinned [rev-parse HEAD] canary=no
+pinned   [for-each-ref] canary=no
+unpinned [for-each-ref] canary=no
+pinned   [diff-tree -r --raw HEAD] canary=no
+unpinned [diff-tree -r --raw HEAD] canary=FIRED
+pinned   [fetch --prune --no-tags --quiet origin +refs/waggle/claims/*:refs/waggle/claims/*] canary=no
+unpinned [fetch --prune --no-tags --quiet origin +refs/waggle/claims/*:refs/waggle/claims/*] canary=FIRED
+pinned   [worktree prune] canary=no
+unpinned [worktree prune] canary=no
+pinned   [push origin refs/heads/main:refs/heads/main] canary=no
+unpinned [push origin refs/heads/main:refs/heads/main] canary=no
+--- submodule spawn with --ignore-submodules=all
+status default: sub canary=FIRED
+status --ignore-submodules=all: sub canary=no
+--- log.showSignature=false override
+log default: gpg canary=no
+log -c log.showSignature=false: gpg canary=no
+rev-list --format: gpg canary=no
+--- core.excludesFile override for the global ignore
+status with global ignore: 0 lines
+status with core.excludesFile=/dev/null: 1 lines
+
+Reading: "pinned" is git with -c core.hooksPath=/dev/null -c core.fsmonitor=false (dispatch's RunIn); "unpinned" is the Comb's own child (the keepalive and final claim sync). The unpinned fetch runs the repo's core.fsmonitor command, which is how the fsmonitor canary in the in-dispatch probe fired: the final claim sync, not a pinned check. The gpg canary did not fire in this shell repro (gpg.program given as an sh -c string); it did fire in the in-dispatch probe (gpg.program given as an executable wrapper), which captured the calling command line: the exact pinned `git log --reverse -z -n 501 --format=... <checkBase>..refs/heads/t-023` of check.go.
+
+## fsm2.sh output: the exact dispatch log format under log.showSignature, --ignore-submodules=dirty, worktree remove with a staged gitlink
+
+dispatch log format []: gpg canary=no
+dispatch log format [-c log.showSignature=false]: gpg canary=no
+dispatch log format [-c gpg.program=/usr/bin/true]: gpg canary=no
+plain log -1: gpg canary=no
+dispatch diff-tree: gpg canary=no
+for-each-ref: gpg canary=no
+rev-parse: gpg canary=no
+--- submodule: --ignore-submodules=dirty
+  line: A  sub
+  line: ?? hidden
+status --ignore-submodules=dirty: sub canary=no
+  line: ?? hidden
+status --ignore-submodules=all: sub canary=no
+--- worktree remove with a staged gitlink
+  remove: fatal: working trees containing submodules cannot be moved or removed
+
+Reading: --ignore-submodules=dirty stops git status from spawning into a nested repository and still reports the staged gitlink ("A  sub"); =all hides the gitlink. git worktree remove without --force refuses a worktree holding a gitlink, so a staged nested repo cannot make the success path delete it.
+
+## Verification of the proposed one-line fixes inside dispatch
+
+With -c log.showSignature=false added to RunIn's pinned argv and --ignore-submodules=dirty added to the three status calls (a temporary local patch, reverted), the in-dispatch probes TestProbeLogShowSignature and TestProbeSubmoduleStatusSpawn both reported "canary fired: false", and go test -race ./internal/dispatch/ ./cmd/waggle/ stayed green.
+
+## fsm.sh source
+
+#!/bin/sh
+set -u
+S=$(cd "$(dirname "$0")" && pwd)
+rm -rf "$S/fsm"; mkdir "$S/fsm"; cd "$S/fsm" || exit 1
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+git init -q -b main r; cd r || exit 1
+echo a > f; git add f; git -c user.name=a -c user.email=a@e.co commit -q -m i
+git init -q --bare ../o.git; git remote add origin ../o.git; git push -q origin main
+CAN=$S/fsm/canary
+git config core.fsmonitor "sh -c 'touch $CAN; echo'"
+touch -t 203501010000 f
+for c in "status --porcelain" "log -1 --format=%H" "rev-parse HEAD" "for-each-ref" "diff-tree -r --raw HEAD" "fetch --prune --no-tags --quiet origin +refs/waggle/claims/*:refs/waggle/claims/*" "worktree prune" "push origin refs/heads/main:refs/heads/main"; do
+  rm -f "$CAN"; git -c core.hooksPath=/dev/null -c core.fsmonitor=false $c >/dev/null 2>&1
+  echo "pinned   [$c] canary=$([ -e "$CAN" ] && echo FIRED || echo no)"
+  rm -f "$CAN"; git $c >/dev/null 2>&1
+  echo "unpinned [$c] canary=$([ -e "$CAN" ] && echo FIRED || echo no)"
+done
+echo "--- submodule spawn with --ignore-submodules=all"
+mkdir sub; cd sub; git init -q; echo a > g; git add g; git -c user.name=a -c user.email=a@e.co commit -q -m s
+git config filter.x.clean "sh -c 'touch $CAN.sub; cat'"; echo '* filter=x' > .gitattributes; touch -t 203501010000 g; cd ..
+git add sub 2>/dev/null
+rm -f "$CAN.sub"; git -c core.fsmonitor=false status --porcelain=v1 -z --untracked-files=all >/dev/null 2>&1; echo "status default: sub canary=$([ -e "$CAN.sub" ] && echo FIRED || echo no)"
+rm -f "$CAN.sub"; git -c core.fsmonitor=false status --porcelain=v1 -z --untracked-files=all --ignore-submodules=all >/dev/null 2>&1; echo "status --ignore-submodules=all: sub canary=$([ -e "$CAN.sub" ] && echo FIRED || echo no)"
+echo "--- log.showSignature=false override"
+tree=$(git rev-parse HEAD^{tree}); p=$(git rev-parse HEAD)
+c=$(printf 'tree %s\nparent %s\nauthor a <a@e.co> 1700000000 +0000\ncommitter a <a@e.co> 1700000000 +0000\ngpgsig -----BEGIN PGP SIGNATURE-----\n xxx\n -----END PGP SIGNATURE-----\n\nsigned\n' "$tree" "$p" | git hash-object -t commit -w --stdin --literally)
+git update-ref refs/heads/main "$c"
+git config log.showSignature true; git config gpg.program "sh -c 'touch $CAN.gpg; exit 1'"
+rm -f "$CAN.gpg"; git -c core.fsmonitor=false log -1 --format=%H >/dev/null 2>&1; echo "log default: gpg canary=$([ -e "$CAN.gpg" ] && echo FIRED || echo no)"
+rm -f "$CAN.gpg"; git -c core.fsmonitor=false -c log.showSignature=false log -1 --format=%H >/dev/null 2>&1; echo "log -c log.showSignature=false: gpg canary=$([ -e "$CAN.gpg" ] && echo FIRED || echo no)"
+rm -f "$CAN.gpg"; git -c core.fsmonitor=false rev-list -1 --format=%H HEAD >/dev/null 2>&1; echo "rev-list --format: gpg canary=$([ -e "$CAN.gpg" ] && echo FIRED || echo no)"
+echo "--- core.excludesFile override for the global ignore"
+export XDG_CONFIG_HOME=$S/fsm/xdg; mkdir -p "$XDG_CONFIG_HOME/git"; echo '*' > "$XDG_CONFIG_HOME/git/ignore"; echo x > hidden
+echo "status with global ignore: $(git -c core.fsmonitor=false status --porcelain --ignore-submodules=all | wc -l | tr -d ' ') lines"
+echo "status with core.excludesFile=/dev/null: $(git -c core.fsmonitor=false -c core.excludesFile=/dev/null status --porcelain --ignore-submodules=all | wc -l | tr -d ' ') lines"
+
+## fsm2.sh source
+
+#!/bin/sh
+set -u
+S=$(cd "$(dirname "$0")" && pwd)
+cd "$S/fsm/r" || exit 1
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+CAN=$S/fsm/canary
+git config core.fsmonitor false
+FMT='--format=%H%x1f%P%x1f%an <%ae>%x1f%s%x1f%(trailers:key=Signed-off-by,valueonly,unfold)'
+base=$(git rev-parse HEAD~1)
+for extra in "" "-c log.showSignature=false" "-c gpg.program=/usr/bin/true"; do
+  rm -f "$CAN.gpg"; git -c core.hooksPath=/dev/null $extra log --reverse -z -n 501 "$FMT" "$base..refs/heads/main" >/dev/null 2>&1; echo "dispatch log format [$extra]: gpg canary=$([ -e "$CAN.gpg" ] && echo FIRED || echo no)"
+done
+rm -f "$CAN.gpg"; git log -1 >/dev/null 2>&1; echo "plain log -1: gpg canary=$([ -e "$CAN.gpg" ] && echo FIRED || echo no)"
+rm -f "$CAN.gpg"; git -c core.hooksPath=/dev/null diff-tree -r -z --no-renames --raw --root --no-commit-id HEAD >/dev/null 2>&1; echo "dispatch diff-tree: gpg canary=$([ -e "$CAN.gpg" ] && echo FIRED || echo no)"
+rm -f "$CAN.gpg"; git -c core.hooksPath=/dev/null for-each-ref >/dev/null 2>&1; echo "for-each-ref: gpg canary=$([ -e "$CAN.gpg" ] && echo FIRED || echo no)"
+rm -f "$CAN.gpg"; git -c core.hooksPath=/dev/null rev-parse --path-format=absolute --git-common-dir >/dev/null 2>&1; echo "rev-parse: gpg canary=$([ -e "$CAN.gpg" ] && echo FIRED || echo no)"
+echo "--- submodule: --ignore-submodules=dirty"
+rm -f "$CAN.sub"; git status --porcelain=v1 --untracked-files=all --ignore-submodules=dirty | sed 's/^/  line: /'; echo "status --ignore-submodules=dirty: sub canary=$([ -e "$CAN.sub" ] && echo FIRED || echo no)"
+rm -f "$CAN.sub"; git status --porcelain=v1 --untracked-files=all --ignore-submodules=all | sed 's/^/  line: /'; echo "status --ignore-submodules=all: sub canary=$([ -e "$CAN.sub" ] && echo FIRED || echo no)"
+echo "--- worktree remove with a staged gitlink"
+git worktree add -q ../wt -b wt 2>&1 | head -2
+cd ../wt && mkdir s2 && cd s2 && git init -q && echo a > g && git add g && git -c user.name=a -c user.email=a@e.co commit -q -m s && cd .. && git add s2 2>/dev/null; cd ../r
+git worktree remove ../wt 2>&1 | sed 's/^/  remove: /'

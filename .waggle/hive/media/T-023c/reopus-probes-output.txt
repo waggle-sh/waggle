@@ -1,0 +1,29 @@
+    zz_reprobe_test.go:34: exit 1 end lease_violation err <nil> violations [{host_state hooks/reference-transaction changed during the run}] warnings [claim_renew_failed: host files changed; renewal skipped (repeated) ]
+    zz_reprobe_test.go:35: canary fired=true secret_seen=false
+--- PASS: TestReprobeKeepalivePlantedHook (1.88s)
+    zz_reprobe_test.go:52: exit 1 end lease_violation pushed false err <nil> warnings [claim_renew_failed: host files changed; renewal skipped (repeated) claim_sync_skipped: host files changed]
+    zz_reprobe_test.go:53: canary fired=false
+--- PASS: TestReprobeKeepaliveRemotePlantedConfig (1.92s)
+    zz_reprobe_test.go:69: exit 1 end lease_violation pushed false err <nil> violations [{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] warnings [claim_sync_skipped: host files changed]
+    zz_reprobe_test.go:70: canary fired=false
+--- PASS: TestReprobeFinalSyncPlantedConfig (0.91s)
+    zz_reprobe_test.go:92: run 0: exit 1 pushed false head 17127dab remote  evil false violations 1
+    zz_reprobe_test.go:92: run 1: exit 1 pushed false head ad98d0cb remote  evil false violations 1
+    zz_reprobe_test.go:92: run 2: exit 1 pushed false head 1456396c remote  evil false violations 1
+    zz_reprobe_test.go:92: run 3: exit 1 pushed false head d4a9699c remote  evil false violations 1
+    zz_reprobe_test.go:92: run 4: exit 1 pushed false head dbbfba47 remote  evil false violations 1
+    zz_reprobe_test.go:92: run 5: exit 1 pushed false head e824eecf remote  evil false violations 1
+    zz_reprobe_test.go:95: BAD runs: 0 of 6
+--- PASS: TestReprobePushRaceToggle (33.67s)
+    zz_reprobe_test.go:144: exit 1 end lease_violation pushed false err <nil> violations [{host_state global:<tmp>/TestReprobeXDGIgnore1488757905/001/git/ignore changed during the run}]
+--- PASS: TestReprobeXDGIgnore (0.94s)
+    zz_reprobe_test.go:154: exit 0 end done pushed true err <nil> violations []
+--- PASS: TestReprobeSelfIgnoringGitignore (1.07s)
+    zz_reprobe_test.go:200: exit 0 err <nil>; result.json elsewhere true final.md elsewhere true
+--- PASS: TestReprobeSymlinkedRunDir (0.67s)
+    zz_reprobe_test.go:214: end no_change err <nil>; keeper GIT_CONFIG_PARAMETERS hook ran=true
+--- PASS: TestReprobeConfigParametersPrecedence (1.23s)
+    zz_reprobe_test.go:225: many objects: exit 1 end lease_violation err <nil> violations [{host_state info/refs changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    zz_reprobe_test.go:228: update-server-info: exit 1 end lease_violation err <nil> violations [{host_state info/refs changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+--- PASS: TestReprobeAutoMaintenance (4.93s)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	47.433s

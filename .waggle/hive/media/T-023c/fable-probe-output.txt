@@ -1,0 +1,88 @@
+=== RUN   TestProbeOwnClaimRewrittenLocal
+    probe_guard_test.go:43: PROBE own claim ref rewritten, commit inside lease: exit=0 end=done err=<nil> pushed=false remoteHasBranch=false violations=[] warnings=[]
+    probe_guard_test.go:44: PROBE claim ref after run points at: 18ac234a465621573b7dd6f93be6a1f670c77fc4 (branch head 18ac234a465621573b7dd6f93be6a1f670c77fc4)
+--- PASS: TestProbeOwnClaimRewrittenLocal (0.56s)
+=== RUN   TestProbeOwnClaimWidenedAndCommitOutside
+    probe_guard_test.go:51: PROBE widened own claim + outside commit: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{outside_lease docs/evil.md path is outside the claim directories}] warnings=[]
+--- PASS: TestProbeOwnClaimWidenedAndCommitOutside (0.53s)
+=== RUN   TestProbeAdminFiles
+=== RUN   TestProbeAdminFiles/fsmonitor_command
+    probe_guard_test.go:82: PROBE fsmonitor command: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] warnings=[]
+    probe_guard_test.go:83: PROBE fsmonitor command: tainted=true canaries info=false fsmon=true include=false
+=== RUN   TestProbeAdminFiles/include.path_planted
+    probe_guard_test.go:82: PROBE include.path planted: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] warnings=[]
+    probe_guard_test.go:83: PROBE include.path planted: tainted=true canaries info=false fsmon=false include=false
+=== RUN   TestProbeAdminFiles/branch_and_tag
+    probe_guard_test.go:82: PROBE branch and tag: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state refs/heads/evil ref changed during the run} {host_state refs/tags/evil-tag ref changed during the run}] warnings=[]
+    probe_guard_test.go:83: PROBE branch and tag: tainted=true canaries info=false fsmon=false include=false
+=== RUN   TestProbeAdminFiles/config.worktree
+    probe_guard_test.go:82: PROBE config.worktree: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state worktrees/T-023-builder/config.worktree changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] warnings=[]
+    probe_guard_test.go:83: PROBE config.worktree: tainted=true canaries info=false fsmon=false include=false
+=== RUN   TestProbeAdminFiles/HEAD_detached
+    probe_guard_test.go:82: PROBE HEAD detached: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state HEAD worktree HEAD no longer names the branch}] warnings=[]
+    probe_guard_test.go:83: PROBE HEAD detached: tainted=true canaries info=false fsmon=false include=false
+=== RUN   TestProbeAdminFiles/info/attributes_+_filter
+    probe_guard_test.go:82: PROBE info/attributes + filter: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state config changed during the run} {host_state info/attributes changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] warnings=[]
+    probe_guard_test.go:83: PROBE info/attributes + filter: tainted=true canaries info=false fsmon=false include=false
+--- PASS: TestProbeAdminFiles (4.64s)
+=== RUN   TestProbeGitattributesInLease
+    probe_guard_test.go:93: PROBE committed .gitattributes inside lease: exit=0 end=done err=<nil> pushed=true remoteHasBranch=true violations=[] warnings=[]
+--- PASS: TestProbeGitattributesInLease (0.89s)
+=== RUN   TestProbeRunRecordTamper
+    probe_guard_test.go:101: PROBE run record tamper: exit=0 end=done err=<nil> pushed=true remoteHasBranch=true violations=[] warnings=[]
+    probe_guard_test.go:103: PROBE symlink target received 1936 bytes (starts "{\n  \"schema\": 1,\n  \""); final.md="all done"
+--- PASS: TestProbeRunRecordTamper (0.85s)
+=== RUN   TestProbeSetsidSurvivor
+    probe_guard_test.go:119: PROBE setsid survivor run: exit=0 end=done err=<nil> pushed=true remoteHasBranch=true violations=[] warnings=[]
+    probe_guard_test.go:121: PROBE survivor acted after Run returned: true; local branch now 61c2f56534dbf08a206e86f0d949be8fe6f219d7, pushed head 61c2f56534dbf08a206e86f0d949be8fe6f219d7
+--- PASS: TestProbeSetsidSurvivor (2.77s)
+=== RUN   TestProbePushRace
+    probe_guard_test.go:143: PROBE race 0: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{dirty . uncommitted or untracked change; the builder must commit}]
+    probe_guard_test.go:143: PROBE race 1: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{dirty . uncommitted or untracked change; the builder must commit} {outside_lease docs/evil.md path is outside the claim directories}]
+    probe_guard_test.go:143: PROBE race 2: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{dirty . uncommitted or untracked change; the builder must commit}]
+    probe_guard_test.go:143: PROBE race 3: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{outside_lease docs/evil.md path is outside the claim directories}]
+    probe_guard_test.go:143: PROBE race 4: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{dirty . uncommitted or untracked change; the builder must commit}]
+    probe_guard_test.go:143: PROBE race 5: exit=0 end=done err=<nil> pushed=true remoteTip=8a5fa2f3 evilOnRemote=true violations=[]
+    probe_guard_test.go:143: PROBE race 6: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{outside_lease docs/evil.md path is outside the claim directories}]
+    probe_guard_test.go:143: PROBE race 7: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{outside_lease docs/evil.md path is outside the claim directories}]
+    probe_guard_test.go:143: PROBE race 8: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{outside_lease docs/evil.md path is outside the claim directories}]
+    probe_guard_test.go:143: PROBE race 9: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{outside_lease docs/evil.md path is outside the claim directories}]
+    probe_guard_test.go:143: PROBE race 10: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{dirty . uncommitted or untracked change; the builder must commit}]
+    probe_guard_test.go:143: PROBE race 11: exit=1 end=lease_violation err=<nil> pushed=false remoteTip= evilOnRemote=false violations=[{dirty . uncommitted or untracked change; the builder must commit}]
+    probe_guard_test.go:145: PROBE push race: 1 of 12 runs pushed the unchecked evil commit
+--- PASS: TestProbePushRace (23.26s)
+=== RUN   TestProbeCaseFold
+    probe_guard_test.go:152: PROBE internal/X/e.go on this volume: exit=0 end=done err=<nil> pushed=true remoteHasBranch=true violations=[] warnings=[]
+    probe_guard_test.go:153: PROBE committed paths: .github/workflows/waggle-gate.yml
+    probe_guard_test.go:154: PROBE branch log: T-023: case
+--- PASS: TestProbeCaseFold (0.87s)
+=== RUN   TestProbeFinalSyncUnderPlantedConfig
+    probe_guard_test.go:163: PROBE final sync under planted uploadpack: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] warnings=[]
+    probe_guard_test.go:164: PROBE canary fired by a host git call after the agent exited: true
+--- PASS: TestProbeFinalSyncUnderPlantedConfig (0.91s)
+=== RUN   TestProbeKeepaliveUnderPlantedConfig
+    probe_guard_test.go:173: PROBE keepalive under planted uploadpack: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] warnings=[]
+    probe_guard_test.go:174: PROBE canary fired by the keepalive sync while the agent ran: true
+--- PASS: TestProbeKeepaliveUnderPlantedConfig (2.00s)
+=== RUN   TestProbeSubmoduleStatusSpawn
+    probe_guard_test.go:189: PROBE staged gitlink with nested filter: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{dirty . uncommitted or untracked change; the builder must commit}] warnings=[]
+    probe_guard_test.go:190: PROBE canary fired by a pinned host status call entering the nested repo: true
+--- PASS: TestProbeSubmoduleStatusSpawn (0.86s)
+=== RUN   TestProbeLogShowSignature
+    probe_guard_test.go:208: PROBE log.showSignature + gpg.program: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] warnings=[]
+    probe_guard_test.go:209: PROBE canary fired by the post-run git log: true
+    probe_guard_test.go:211: PROBE gpg wrapper log:
+        args: --keyid-format=long --status-fd=1 --verify <tmp> -
+        git -c core.hooksPath=/dev/null -c core.fsmonitor=false log --reverse -z -n 501 --format=%H%x1f%P%x1f%an <%ae>%x1f%s%x1f%(trailers:key=Signed-off-by,valueonly,unfold) a79c2f5045cfc74a11c6d110379f91fe2e6ff5a1..refs/heads/t-023
+--- PASS: TestProbeLogShowSignature (0.96s)
+=== RUN   TestProbeGlobalIgnore
+    probe_guard_test.go:220: PROBE global ignore written, untracked file left: exit=0 end=done err=<nil> pushed=true remoteHasBranch=true violations=[] warnings=[]
+    probe_guard_test.go:221: PROBE worktree still exists=false
+--- PASS: TestProbeGlobalIgnore (0.86s)
+=== RUN   TestProbeMainCheckoutHardlink
+    probe_guard_test.go:228: PROBE hard link into the main checkout: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state . main checkout status or HEAD changed}] warnings=[]
+--- PASS: TestProbeMainCheckoutHardlink (0.78s)
+=== RUN   TestProbeExport
+    probe_guard_test.go:235: PROBE remote-tracking ref created by the agent: exit=1 end=lease_violation err=<nil> pushed=false remoteHasBranch=false violations=[{host_state refs/remotes/origin/t-023 ref changed during the run}] warnings=[]
+--- PASS: TestProbeExport (0.79s)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	41.702s
