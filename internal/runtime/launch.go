@@ -109,13 +109,16 @@ var envFixed = append([]string{"CLAUDE_CODE_DISABLE_CLAUDE_MDS=1", "CLAUDE_CODE_
 
 // tripwireEnv is the single emission of the GIT_CONFIG_COUNT/KEY/VALUE entries:
 // the push rewrites, then the home ignore and attributes files (which
-// GIT_CONFIG_GLOBAL does not cover) pointed at /dev/null.
+// GIT_CONFIG_GLOBAL does not cover) pointed at /dev/null, then auto maintenance
+// and auto gc off so no detached git daemon outlives the worker's process group
+// and edits the common dir (worktree-prune) around the post-run checks.
 func tripwireEnv() []string {
 	var keys [][2]string
 	for _, prefix := range pushBlocked {
 		keys = append(keys, [2]string{"url.file:///dev/null/.pushInsteadOf", prefix})
 	}
-	keys = append(keys, [2]string{"core.excludesFile", "/dev/null"}, [2]string{"core.attributesFile", "/dev/null"})
+	keys = append(keys, [2]string{"core.excludesFile", "/dev/null"}, [2]string{"core.attributesFile", "/dev/null"},
+		[2]string{"maintenance.auto", "false"}, [2]string{"gc.auto", "0"})
 	env := []string{"GIT_CONFIG_COUNT=" + strconv.Itoa(len(keys))}
 	for i, kv := range keys {
 		n := strconv.Itoa(i)
