@@ -1,0 +1,221 @@
+=== RUN   TestFableProbeWorkerGit
+    fable_probe_test.go:136: env: HOME=<tmp>/keeperhome
+    fable_probe_test.go:136: env: GIT_TERMINAL_PROMPT=0
+    fable_probe_test.go:136: env: GIT_CONFIG_GLOBAL=/dev/null
+    fable_probe_test.go:136: env: GIT_CONFIG_NOSYSTEM=1
+    fable_probe_test.go:136: env: GIT_CONFIG_COUNT=10
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_0=https://
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_1=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_1=ssh://
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_2=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_2=git@
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_3=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_3=http://
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_4=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_4=git://
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_5=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_5=git+ssh://
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_6=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_6=ssh+git://
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_7=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_7=file://
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_8=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_8=/
+    fable_probe_test.go:136: env: GIT_CONFIG_KEY_9=url.file:///dev/null/.pushInsteadOf
+    fable_probe_test.go:136: env: GIT_CONFIG_VALUE_9=.
+    fable_probe_test.go:165: control keeper env probe.scope:
+        file:<tmp>/xdg/git/config	xdg-config
+        file:<tmp>/keeperhome/.gitconfig	home-gitconfig
+        command line:	parent-parameters
+    fable_probe_test.go:167: control keeper env probe.included: "yes\nyes"
+    fable_probe_test.go:169: control keeper env push url: git@evil.test:example/repo
+=== RUN   TestFableProbeWorkerGit/zero
+    fable_probe_test.go:187: worker git: git version 2.54.0 (Apple Git-157)
+    fable_probe_test.go:189: worker probe.scope (expect only parent-parameters absent, nothing from home, xdg, system):
+        ""
+    fable_probe_test.go:191: worker probe.included: ""
+    fable_probe_test.go:193: worker core.hooksPath: ""
+    fable_probe_test.go:195: worker credential.helper: ""
+    fable_probe_test.go:197: worker push url (tripwire expects file:///dev/null/...): file:///dev/null/github.com/example/repo
+    fable_probe_test.go:199: worker fetch url (insteadOf from global must not apply): https://github.com/example/repo
+    fable_probe_test.go:201: worker alias probe: "git: 'probe' is not a git command. See 'git --help'.\n\nThe most similar command is\n\tprune" err=exit status 1
+    fable_probe_test.go:203: worker status --ignored (!! means hidden by an ignore file):
+        ?? a.txt
+        ?? hidden-by-xdg-ignore.txt
+        !! hidden-by-global-ignore.txt
+    fable_probe_test.go:205: worker check-attr (home attributes file): a.txt: filter: probe
+    fable_probe_test.go:207: worker user.name config: "file:.git/config\tRepo Local"
+    fable_probe_test.go:209: worker GIT_AUTHOR_IDENT: Repo Local <local@example.test> 1792436155 -0700
+    fable_probe_test.go:211: worker GIT_COMMITTER_IDENT: Repo Local <local@example.test> 1792436155 -0700
+    fable_probe_test.go:214: worker commit -s: err=<nil> out=""
+    fable_probe_test.go:217: worker commit identity and trailer:
+        author=Repo Local <local@example.test> committer=Repo Local <local@example.test>
+        Signed-off-by: Repo Local <local@example.test>
+    fable_probe_test.go:224: hooks or helpers that ran under the worker env: []
+    fable_probe_test.go:226: worker push: err=exit status 128 out="fatal: '/dev/null/github.com/example/repo' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists."
+    fable_probe_test.go:228: remote refs after push: ""
+    fable_probe_test.go:242: worker env plus GIT_CONFIG_SYSTEM (NOSYSTEM should win): ""
+    fable_probe_test.go:245: worker env plus a later duplicate GIT_CONFIG_GLOBAL (os/exec last wins; shows what a later append would do): "file:<tmp>/keeperhome/.gitconfig\thome-gitconfig"
+=== RUN   TestFableProbeWorkerGit/set
+    fable_probe_test.go:187: worker git: git version 2.54.0 (Apple Git-157)
+    fable_probe_test.go:189: worker probe.scope (expect only parent-parameters absent, nothing from home, xdg, system):
+        ""
+    fable_probe_test.go:191: worker probe.included: ""
+    fable_probe_test.go:193: worker core.hooksPath: ""
+    fable_probe_test.go:195: worker credential.helper: ""
+    fable_probe_test.go:197: worker push url (tripwire expects file:///dev/null/...): file:///dev/null/github.com/example/repo
+    fable_probe_test.go:199: worker fetch url (insteadOf from global must not apply): https://github.com/example/repo
+    fable_probe_test.go:201: worker alias probe: "git: 'probe' is not a git command. See 'git --help'.\n\nThe most similar command is\n\tprune" err=exit status 1
+    fable_probe_test.go:203: worker status --ignored (!! means hidden by an ignore file):
+        ?? hidden-by-xdg-ignore.txt
+        !! hidden-by-global-ignore.txt
+    fable_probe_test.go:205: worker check-attr (home attributes file): a.txt: filter: probe
+    fable_probe_test.go:207: worker user.name config: "file:.git/config\tRepo Local"
+    fable_probe_test.go:209: worker GIT_AUTHOR_IDENT: Hive Worker <worker@example.test> 1792436155 -0700
+    fable_probe_test.go:211: worker GIT_COMMITTER_IDENT: Hive Worker <worker@example.test> 1792436155 -0700
+    fable_probe_test.go:214: worker commit -s: err=<nil> out=""
+    fable_probe_test.go:217: worker commit identity and trailer:
+        author=Hive Worker <worker@example.test> committer=Hive Worker <worker@example.test>
+        Signed-off-by: Hive Worker <worker@example.test>
+    fable_probe_test.go:224: hooks or helpers that ran under the worker env: []
+    fable_probe_test.go:226: worker push: err=exit status 128 out="fatal: '/dev/null/github.com/example/repo' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists."
+    fable_probe_test.go:228: remote refs after push: ""
+    fable_probe_test.go:233: worker with repo-local include.path to the global: "file:<tmp>/keeperhome/.gitconfig\thome-gitconfig"
+    fable_probe_test.go:235: worker push url with repo-local include of the global: git@evil.test:example/repo
+=== RUN   TestFableProbeWorkerGit/spaces
+    fable_probe_test.go:187: worker git: git version 2.54.0 (Apple Git-157)
+    fable_probe_test.go:189: worker probe.scope (expect only parent-parameters absent, nothing from home, xdg, system):
+        ""
+    fable_probe_test.go:191: worker probe.included: ""
+    fable_probe_test.go:193: worker core.hooksPath: ""
+    fable_probe_test.go:195: worker credential.helper: ""
+    fable_probe_test.go:197: worker push url (tripwire expects file:///dev/null/...): file:///dev/null/github.com/example/repo
+    fable_probe_test.go:199: worker fetch url (insteadOf from global must not apply): https://github.com/example/repo
+    fable_probe_test.go:201: worker alias probe: "git: 'probe' is not a git command. See 'git --help'.\n\nThe most similar command is\n\tprune" err=exit status 1
+    fable_probe_test.go:203: worker status --ignored (!! means hidden by an ignore file):
+        ?? hidden-by-xdg-ignore.txt
+        !! hidden-by-global-ignore.txt
+    fable_probe_test.go:205: worker check-attr (home attributes file): a.txt: filter: probe
+    fable_probe_test.go:207: worker user.name config: "file:.git/config\tRepo Local"
+    fable_probe_test.go:209: worker GIT_AUTHOR_IDENT: fatal: name consists only of disallowed characters:
+    fable_probe_test.go:211: worker GIT_COMMITTER_IDENT: fatal: name consists only of disallowed characters:
+    fable_probe_test.go:214: worker commit -s: err=exit status 128 out="fatal: name consists only of disallowed characters:"
+    fable_probe_test.go:224: hooks or helpers that ran under the worker env: []
+    fable_probe_test.go:226: worker push: err=exit status 128 out="fatal: '/dev/null/github.com/example/repo' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists."
+    fable_probe_test.go:228: remote refs after push: ""
+=== RUN   TestFableProbeWorkerGit/brackets
+    fable_probe_test.go:187: worker git: git version 2.54.0 (Apple Git-157)
+    fable_probe_test.go:189: worker probe.scope (expect only parent-parameters absent, nothing from home, xdg, system):
+        ""
+    fable_probe_test.go:191: worker probe.included: ""
+    fable_probe_test.go:193: worker core.hooksPath: ""
+    fable_probe_test.go:195: worker credential.helper: ""
+    fable_probe_test.go:197: worker push url (tripwire expects file:///dev/null/...): file:///dev/null/github.com/example/repo
+    fable_probe_test.go:199: worker fetch url (insteadOf from global must not apply): https://github.com/example/repo
+    fable_probe_test.go:201: worker alias probe: "git: 'probe' is not a git command. See 'git --help'.\n\nThe most similar command is\n\tprune" err=exit status 1
+    fable_probe_test.go:203: worker status --ignored (!! means hidden by an ignore file):
+        ?? hidden-by-xdg-ignore.txt
+        !! hidden-by-global-ignore.txt
+    fable_probe_test.go:205: worker check-attr (home attributes file): a.txt: filter: probe
+    fable_probe_test.go:207: worker user.name config: "file:.git/config\tRepo Local"
+    fable_probe_test.go:209: worker GIT_AUTHOR_IDENT: A b <x@y> 1792436155 -0700
+    fable_probe_test.go:211: worker GIT_COMMITTER_IDENT: A b <x@y> 1792436155 -0700
+    fable_probe_test.go:214: worker commit -s: err=<nil> out=""
+    fable_probe_test.go:217: worker commit identity and trailer:
+        author=A b <x@y> committer=A b <x@y>
+        Signed-off-by: A b <x@y>
+    fable_probe_test.go:224: hooks or helpers that ran under the worker env: []
+    fable_probe_test.go:226: worker push: err=exit status 128 out="fatal: '/dev/null/github.com/example/repo' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists."
+    fable_probe_test.go:228: remote refs after push: ""
+--- PASS: TestFableProbeWorkerGit (0.87s)
+    --- PASS: TestFableProbeWorkerGit/zero (0.20s)
+    --- PASS: TestFableProbeWorkerGit/set (0.21s)
+    --- PASS: TestFableProbeWorkerGit/spaces (0.16s)
+    --- PASS: TestFableProbeWorkerGit/brackets (0.17s)
+=== RUN   TestFableProbeHelpHas
+    fable_probe_test.go:259: real help --print                    helpHas=true
+    fable_probe_test.go:259: real help --output-format            helpHas=true
+    fable_probe_test.go:259: real help stream-json                helpHas=true
+    fable_probe_test.go:259: real help --verbose                  helpHas=true
+    fable_probe_test.go:259: real help --model                    helpHas=true
+    fable_probe_test.go:259: real help --strict-mcp-config        helpHas=true
+    fable_probe_test.go:259: real help --setting-sources          helpHas=true
+    fable_probe_test.go:259: real help --settings                 helpHas=true
+    fable_probe_test.go:259: real help --permission-mode          helpHas=true
+    fable_probe_test.go:259: real help dontAsk                    helpHas=true
+    fable_probe_test.go:259: real help --tools                    helpHas=true
+    fable_probe_test.go:259: real help --append-system-prompt     helpHas=true
+    fable_probe_test.go:259: real help --restricted               helpHas=true
+    fable_probe_test.go:259: real help --no-session-persistence   helpHas=true
+    fable_probe_test.go:259: real help --disable-slash-commands   helpHas=true
+    fable_probe_test.go:259: real help --debug                    helpHas=true
+    fable_probe_test.go:259: real help --max-budget-usd           helpHas=true
+    fable_probe_test.go:270: helpHas("--debug-file", "--debug") = false
+    fable_probe_test.go:270: helpHas("--debugx", "--debug") = false
+    fable_probe_test.go:270: helpHas("--debug_x", "--debug") = false
+    fable_probe_test.go:270: helpHas("--debug9", "--debug") = false
+    fable_probe_test.go:270: helpHas("--debug.", "--debug") = true
+    fable_probe_test.go:270: helpHas("--debug\"", "--debug") = true
+    fable_probe_test.go:270: helpHas("--debug)", "--debug") = true
+    fable_probe_test.go:270: helpHas("--debug\n", "--debug") = true
+    fable_probe_test.go:270: helpHas("--debug", "--debug") = true
+    fable_probe_test.go:270: helpHas("--debug\t", "--debug") = true
+    fable_probe_test.go:270: helpHas("--debug=", "--debug") = true
+    fable_probe_test.go:270: helpHas("--debugé", "--debug") = true
+    fable_probe_test.go:270: helpHas("--no-debug", "--debug") = false
+    fable_probe_test.go:270: helpHas("x--debug y", "--debug") = true
+    fable_probe_test.go:270: helpHas("--debug-file --debug", "--debug") = true
+    fable_probe_test.go:270: helpHas("", "--debug") = false
+    fable_probe_test.go:270: helpHas("--debu", "--debug") = false
+    fable_probe_test.go:270: helpHas("--DEBUG", "--debug") = false
+    fable_probe_test.go:270: helpHas("--debug-file\n  --debugging", "--debug") = false
+    fable_probe_test.go:270: helpHas("--print-only", "--print") = false
+    fable_probe_test.go:270: helpHas("--no-print", "--print") = false
+    fable_probe_test.go:270: helpHas("stream-jsonx", "stream-json") = false
+    fable_probe_test.go:270: helpHas("\"stream-json\"", "stream-json") = true
+    fable_probe_test.go:275: real Verify: <nil>
+--- PASS: TestFableProbeHelpHas (0.06s)
+=== RUN   TestFableProbeGuardRole
+    fable_probe_test.go:283: role "guard": err=<nil> git add=false git commit=false
+    fable_probe_test.go:283: role "Guard": err=<nil> git add=true git commit=true
+    fable_probe_test.go:283: role "GUARD": err=<nil> git add=true git commit=true
+    fable_probe_test.go:283: role "guard ": err=<nil> git add=true git commit=true
+    fable_probe_test.go:283: role " guard": err=<nil> git add=true git commit=true
+    fable_probe_test.go:283: role "second-guard": err=<nil> git add=true git commit=true
+    fable_probe_test.go:283: role "guard2": err=<nil> git add=true git commit=true
+    fable_probe_test.go:283: role "": err=<nil> git add=true git commit=true
+    fable_probe_test.go:283: role "builder": err=<nil> git add=true git commit=true
+    fable_probe_test.go:288: guard with commands ["git add"]: err=<nil> settings={"permissions":{"allow":["Read","Glob","Grep","Edit(./**)","Write(./**)","Bash(git status)","Bash(git status *)","Bash(git diff)","Bash(git diff *)","Bash(git log)","Bash(git log *)","Bash(git show)","Bash(git show *)"],"deny":["Bash(git push)","Bash(git push *)","Bash(gh)","Bash(gh *)","Bash(curl)","Bash(curl *)","Bash(wget)","Bash(wget *)","Bash(ssh)","Bash(ssh *)","WebFetch","WebSearch"],"defaultMode":"dontAsk"}}
+    fable_probe_test.go:288: guard with commands ["git commit"]: err=<nil> settings={"permissions":{"allow":["Read","Glob","Grep","Edit(./**)","Write(./**)","Bash(git status)","Bash(git status *)","Bash(git diff)","Bash(git diff *)","Bash(git log)","Bash(git log *)","Bash(git show)","Bash(git show *)"],"deny":["Bash(git push)","Bash(git push *)","Bash(gh)","Bash(gh *)","Bash(curl)","Bash(curl *)","Bash(wget)","Bash(wget *)","Bash(ssh)","Bash(ssh *)","WebFetch","WebSearch"],"defaultMode":"dontAsk"}}
+    fable_probe_test.go:288: guard with commands ["git commit --amend"]: err=<nil> settings={"permissions":{"allow":["Read","Glob","Grep","Edit(./**)","Write(./**)","Bash(git commit --amend)","Bash(git commit --amend *)","Bash(git status)","Bash(git status *)","Bash(git diff)","Bash(git diff *)","Bash(git log)","Bash(git log *)","Bash(git show)","Bash(git show *)"],"deny":["Bash(git push)","Bash(git push *)","Bash(gh)","Bash(gh *)","Bash(curl)","Bash(curl *)","Bash(wget)","Bash(wget *)","Bash(ssh)","Bash(ssh *)","WebFetch","WebSearch"],"defaultMode":"dontAsk"}}
+    fable_probe_test.go:288: guard with commands ["git"]: err=<nil> settings={"permissions":{"allow":["Read","Glob","Grep","Edit(./**)","Write(./**)","Bash(git)","Bash(git *)","Bash(git status)","Bash(git status *)","Bash(git diff)","Bash(git diff *)","Bash(git log)","Bash(git log *)","Bash(git show)","Bash(git show *)"],"deny":["Bash(git push)","Bash(git push *)","Bash(gh)","Bash(gh *)","Bash(curl)","Bash(curl *)","Bash(wget)","Bash(wget *)","Bash(ssh)","Bash(ssh *)","WebFetch","WebSearch"],"defaultMode":"dontAsk"}}
+    fable_probe_test.go:288: guard with commands ["git cherry-pick"]: err=<nil> settings={"permissions":{"allow":["Read","Glob","Grep","Edit(./**)","Write(./**)","Bash(git cherry-pick)","Bash(git cherry-pick *)","Bash(git status)","Bash(git status *)","Bash(git diff)","Bash(git diff *)","Bash(git log)","Bash(git log *)","Bash(git show)","Bash(git show *)"],"deny":["Bash(git push)","Bash(git push *)","Bash(gh)","Bash(gh *)","Bash(curl)","Bash(curl *)","Bash(wget)","Bash(wget *)","Bash(ssh)","Bash(ssh *)","WebFetch","WebSearch"],"defaultMode":"dontAsk"}}
+    fable_probe_test.go:288: guard with commands ["git -c core.hooksPath=/x commit"]: err=<nil> settings={"permissions":{"allow":["Read","Glob","Grep","Edit(./**)","Write(./**)","Bash(git -c core.hooksPath=/x commit)","Bash(git -c core.hooksPath=/x commit *)","Bash(git status)","Bash(git status *)","Bash(git diff)","Bash(git diff *)","Bash(git log)","Bash(git log *)","Bash(git show)","Bash(git show *)"],"deny":["Bash(git push)","Bash(git push *)","Bash(gh)","Bash(gh *)","Bash(curl)","Bash(curl *)","Bash(wget)","Bash(wget *)","Bash(ssh)","Bash(ssh *)","WebFetch","WebSearch"],"defaultMode":"dontAsk"}}
+    fable_probe_test.go:294: Resolve("Guard"): err=unknown role: role Guard task "T-1"
+    fable_probe_test.go:294: Resolve("GUARD"): err=unknown role: role GUARD task "T-1"
+    fable_probe_test.go:294: Resolve("guard"): err=<nil>
+    fable_probe_test.go:298: Resolve("Guard") with a roster entry "Guard": sel={Role:Guard Adapter:claude-code Model:sonnet Level:standard SteppedUp:false resolved:true} err=<nil> (no floor, no cross-model, commit rights kept)
+--- PASS: TestFableProbeGuardRole (0.00s)
+=== RUN   TestFableProbeSecondGuard
+    fable_probe_test.go:304: policy: primary=map[fast:haiku standard:sonnet frontier:opus] alternate=map[] minimums=map[builder:standard forager:fast guard:standard queen:frontier scout:frontier]
+    fable_probe_test.go:307: builder with SecondGuard (ignored?): model="sonnet" level=standard err=<nil>
+    fable_probe_test.go:307: nil task guard: model="opus" level=standard err=<nil>
+    fable_probe_test.go:307: first guard: model="alt-standard" level=standard err=<nil>
+    fable_probe_test.go:307: second guard: model="opus" level=standard err=<nil>
+    fable_probe_test.go:307: first guard, builder stepped up: model="alt-frontier" level=frontier err=<nil>
+    fable_probe_test.go:307: second guard, builder stepped up: model="" level=invalid(0) err=no model differs from the builder's: role guard task "T-1" level frontier shares ["opus" "alt-frontier"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.frontier)
+    fable_probe_test.go:307: first guard, alt-standard == primary-frontier: model="opus" level=standard err=<nil>
+    fable_probe_test.go:307: second guard, alt-standard == primary-frontier: model="" level=invalid(0) err=no model differs from the builder's: role guard task "T-1" level standard shares ["sonnet" "opus"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.standard)
+    fable_probe_test.go:307: first guard override fast tier1: model="haiku" level=fast err=<nil>
+    fable_probe_test.go:307: second guard override fast tier1: model="alt-fast" level=fast err=<nil>
+    fable_probe_test.go:307: all same, first guard: model="" level=invalid(0) err=no model differs from the builder's: role guard task "T-1" level standard shares ["same"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.standard)
+    fable_probe_test.go:307: all same, second guard: model="" level=invalid(0) err=no model differs from the builder's: role guard task "T-1" level standard shares ["same"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.standard)
+--- PASS: TestFableProbeSecondGuard (0.00s)
+=== RUN   TestFableProbeZeroIdentityNoLocal
+    fable_probe_test.go:359: zero identity, no local identity: commit err=<nil> out=""
+    fable_probe_test.go:361: log: "author=<gecos> <<user>@<host>>\nSigned-off-by: <gecos> <<user>@<host>>"
+    fable_probe_test.go:363: GIT_COMMITTER_IDENT: "<gecos> <<user>@<host>> 1792436156 -0700"
+--- PASS: TestFableProbeZeroIdentityNoLocal (0.11s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.122s

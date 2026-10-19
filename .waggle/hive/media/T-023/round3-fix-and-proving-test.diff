@@ -1,0 +1,76 @@
+diff --git a/internal/dispatch/round3_test.go b/internal/dispatch/round3_test.go
+new file mode 100644
+index 0000000..5d371ff
+--- /dev/null
++++ b/internal/dispatch/round3_test.go
+@@ -0,0 +1,30 @@
++//go:build unix
++
++package dispatch
++
++// T-023 item 23 (D-178): a worker commit must not start a detached git
++// maintenance daemon that changes host state around the post-run check.
++
++import (
++	"os"
++	"testing"
++)
++
++// TestRunPlantDuringAutoMaintenance is the proving test for item 23: the plant
++// still follows the result line, and a second worker commit starts git's
++// detached auto maintenance while the entry has no gitdir file yet. Without
++// maintenance.auto=false in the worker's git config, that daemon (which left
++// the worker's process group) prunes the entry before the post-run check.
++func TestRunPlantDuringAutoMaintenance(t *testing.T) {
++	eachRepoSpelling(t, func(t *testing.T, link bool) {
++		f := newFixture(t, true, link)
++		planted := f.common() + "/worktrees/planted"
++		scen := okScenario + "mkdir '" + planted + "'\n" + commitFile("internal/x/c.go", "two") +
++			"sleep 1\nprintf '%s\\n' \"$PWD/.git\" > '" + planted + "/gitdir'\n"
++		res, err := f.run(scen)
++		if err != nil || res.ExitCode != 1 || !hasViolation(res.Violations, ruleHost, "worktrees/planted") {
++			_, serr := os.Stat(planted)
++			t.Fatalf("exit %d err %v violations %v (planted stat after run: %v)", res.ExitCode, err, res.Violations, serr)
++		}
++	})
++}
+diff --git a/internal/dispatch/worktree.go b/internal/dispatch/worktree.go
+index 5a63ae1..65600c4 100644
+--- a/internal/dispatch/worktree.go
++++ b/internal/dispatch/worktree.go
+@@ -49,7 +49,7 @@ func (g *Git) RunIn(ctx context.Context, dir string, args ...string) ([]byte, er
+ 		bin = "git"
+ 	}
+ 	// Hooks and fsmonitor never run from dispatch's own host calls.
+-	full := append([]string{"-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "log.showSignature=false"}, args...)
++	full := append([]string{"-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "log.showSignature=false", "-c", "maintenance.auto=false"}, args...)
+ 	cmd := exec.CommandContext(ctx, bin, full...)
+ 	cmd.Dir, cmd.Env = dir, gitEnv(os.Environ())
+ 	if g.Pinned {
+diff --git a/internal/runtime/launch.go b/internal/runtime/launch.go
+index f451db5..35d8be4 100644
+--- a/internal/runtime/launch.go
++++ b/internal/runtime/launch.go
+@@ -115,7 +115,8 @@ func tripwireEnv() []string {
+ 	for _, prefix := range pushBlocked {
+ 		keys = append(keys, [2]string{"url.file:///dev/null/.pushInsteadOf", prefix})
+ 	}
+-	keys = append(keys, [2]string{"core.excludesFile", "/dev/null"}, [2]string{"core.attributesFile", "/dev/null"})
++	keys = append(keys, [2]string{"core.excludesFile", "/dev/null"}, [2]string{"core.attributesFile", "/dev/null"},
++		[2]string{"maintenance.auto", "false"}, [2]string{"gc.auto", "0"}) // no detached daemon outlives the group and races the checks
+ 	env := []string{"GIT_CONFIG_COUNT=" + strconv.Itoa(len(keys))}
+ 	for i, kv := range keys {
+ 		n := strconv.Itoa(i)
+diff --git a/internal/runtime/launch_test.go b/internal/runtime/launch_test.go
+index 0163fbb..a4c8862 100644
+--- a/internal/runtime/launch_test.go
++++ b/internal/runtime/launch_test.go
+@@ -193,7 +193,7 @@ func TestPrepareEnv(t *testing.T) {
+ 		t.Errorf("env carries a dropped variable:\n%s", joined)
+ 	}
+ 	for _, want := range []string{"HOME=/home/keeper", "ANTHROPIC_API_KEY=model-key", "GIT_TERMINAL_PROMPT=0",
+-		"GIT_CONFIG_COUNT=12", "GIT_ATTR_NOSYSTEM=1", "GIT_CONFIG_KEY_10=core.excludesFile", "GIT_CONFIG_KEY_11=core.attributesFile", "GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
++		"GIT_CONFIG_COUNT=14", "GIT_CONFIG_KEY_12=maintenance.auto", "GIT_CONFIG_VALUE_13=0", "GIT_ATTR_NOSYSTEM=1", "GIT_CONFIG_KEY_10=core.excludesFile", "GIT_CONFIG_KEY_11=core.attributesFile", "GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
+ 		"GIT_CONFIG_VALUE_1=ssh://", "GIT_CONFIG_VALUE_2=git@", "GIT_CONFIG_VALUE_5=git+ssh://", "GIT_CONFIG_VALUE_6=ssh+git://", "GIT_CONFIG_VALUE_8=/", "GIT_CONFIG_VALUE_9=.", "CLAUDE_CODE_DISABLE_CLAUDE_MDS=1",
+ 		"DISABLE_AUTO_COMPACT=1", "BASH_MAX_OUTPUT_LENGTH=10000", "MAX_THINKING_TOKENS=4000"} {
+ 		if !slices.Contains(env, want) {

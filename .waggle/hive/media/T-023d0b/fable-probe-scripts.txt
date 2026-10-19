@@ -1,0 +1,178 @@
+##### setup.sh
+#!/bin/sh
+# container setup: tools and the two trees (main 53941e6 plus the proving test, fix 1599c2b)
+apk add --no-cache git go >/dev/null 2>&1
+uname -m
+git --version
+go version
+mkdir -p <tree-main> <tree-fix>
+tar -xf /s/main.tar -C <tree-main>
+tar -xf /s/fix.tar -C <tree-fix>
+cp <tree-fix>/internal/dispatch/maintenance_test.go <tree-main>/internal/dispatch/
+ls <tree-main>/internal/dispatch/maintenance_test.go
+cd <tree-fix> && go mod download 2>&1 | tail -2
+echo setup done
+
+##### probe1.sh
+#!/bin/sh
+# usage: probe1.sh <tree: fix|main>
+# runs the fable probe test in /w/<tree>/internal/dispatch
+T=$1
+cp /s/fable_probe_test.go /w/$T/internal/dispatch/fable_probe_test.go
+cd /w/$T || exit 1
+echo "== tree $T: $(uname -m) $(git --version) $(go version | cut -d' ' -f3)"
+go test -count=1 -v -run 'TestFableProbe' ./internal/dispatch/ 2>&1
+rm -f /w/$T/internal/dispatch/fable_probe_test.go
+
+##### probe3.sh
+#!/bin/sh
+# proving test determinism and timing, linux container
+P='TestRunPlantDuringAutoMaintenance'
+echo "== main 53941e6 + proving test only: -count=5 (expect every subtest to fail)"
+cd <tree-main> && go test -count=5 -run "$P" ./internal/dispatch/ 2>&1 | grep -c -- '--- FAIL: TestRunPlantDuringAutoMaintenance/' | sed 's/^/failed subtests (10 = all): /'
+echo "== fix 1599c2b: -race -count=20 (expect ok)"
+cd <tree-fix> && go test -race -count=20 -run "$P" ./internal/dispatch/ 2>&1 | tail -2
+echo "== fix: whole dispatch and runtime packages -race -count=3"
+cd <tree-fix> && go test -race -count=3 ./internal/dispatch/ ./internal/runtime/ 2>&1 | tail -3
+# timing variants: the fixture's sleep between the commit and the gitdir write
+for s in 0 3; do
+  for T in main fix; do
+    mkdir -p /w/t$s && rm -rf /w/t$s/* && cp -r /w/$T/. /w/t$s/
+    sed -i "s/sleep 1\\\\n/sleep $s\\\\n/" /w/t$s/internal/dispatch/maintenance_test.go
+    grep -o 'sleep [0-9]' /w/t$s/internal/dispatch/maintenance_test.go | head -1 | sed "s/^/== $T with /"
+    cd /w/t$s && go test -count=3 -run "$P" ./internal/dispatch/ 2>&1 | grep -E -- '^(ok|FAIL|--- FAIL: TestRunPlantDuringAutoMaintenance/|.*planted stat)' | sort | uniq -c
+  done
+done
+echo "== load: fix, -race -count=10 with 4 parallel package runs in the background (slow-runner stand-in)"
+cd <tree-fix>
+for i in 1 2 3 4; do (go test -race -count=3 ./internal/comb/ >/dev/null 2>&1 &) ; done
+go test -race -count=10 -run "$P" ./internal/dispatch/ 2>&1 | tail -1
+wait
+echo probe3 done
+
+##### probe4.sh
+#!/bin/sh
+# mutants: revert each product change on its own and see which tests pin it
+P='TestRunPlantDuringAutoMaintenance|TestRunInDisablesAutoMaintenance|TestPrepareEnv'
+for f in internal/runtime/launch.go internal/dispatch/worktree.go internal/dispatch/run.go; do
+  rm -rf <tree-mut> && cp -r <tree-fix> <tree-mut> && cp <tree-main>/$f <tree-mut>/$f
+  echo "== fix with $f reverted to main"
+  cd <tree-mut> && go test -count=2 -run "$P" ./internal/dispatch/ ./internal/runtime/ 2>&1 | grep -E -- '^(ok|FAIL|--- FAIL)' | sort | uniq -c
+done
+echo "== fix with gc.auto=0 dropped from launch.go only (maintenance.auto=false kept)"
+rm -rf <tree-mut> && cp -r <tree-fix> <tree-mut> && cd <tree-mut> && sed -i 's/, \[2\]string{"gc.auto", "0"}//' internal/runtime/launch.go && grep -c '"gc.auto"' internal/runtime/launch.go | sed 's/^/gc.auto mentions left: /'; go test -count=2 -run "$P" ./internal/dispatch/ 2>&1 | grep -E -- '^(ok|FAIL)' | sort | uniq -c
+echo "== fix with maintenance.auto dropped from launch.go, gc.auto=0 kept"
+rm -rf <tree-mut> && cp -r <tree-fix> <tree-mut> && cd <tree-mut> && sed -i 's/\[2\]string{"maintenance.auto", "false"}, //' internal/runtime/launch.go && grep -c 'maintenance.auto' internal/runtime/launch.go | sed 's/^/maintenance.auto mentions left: /' && go test -count=2 -run "$P" ./internal/dispatch/ 2>&1 | grep -E -- '^(ok|FAIL|--- FAIL: TestRunPlant)' | sort | uniq -c
+echo probe4 done
+
+##### probe5.sh
+#!/bin/sh
+# which test failed in the whole-package -race -count=3 run; is it on main too
+for T in fix main; do
+  echo "== $T: internal/dispatch -race -count=3, failing tests"
+  cd /w/$T && go test -race -count=3 ./internal/dispatch/ 2>&1 | grep -E -- '--- FAIL|_test.go:[0-9]+:|^(ok|FAIL)' | sed 's#<tmp> ]*#<tmp>#g' | cut -c1-300 | sort | uniq -c
+done
+echo probe5 done
+
+##### probe6.sh
+#!/bin/sh
+# git-level: which key does the work. Trace a commit (and a direct auto run) under
+# each key alone and both, listing every process the trace sees, children included.
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+git --version
+echo "maintenance.strategy default: '$(git config maintenance.strategy)' maintenance.auto default: '$(git config maintenance.auto)' gc.auto default: '$(git config gc.auto)'"
+run_case() {
+  label=$1; shift
+  S=<tree-g6>/$label; rm -rf "$S"; mkdir -p "$S"; cd "$S" || exit 1
+  git init -q r && cd r && git -c user.name=a -c user.email=a@e.co commit -q --allow-empty -m i
+  git worktree add -q ../w -b b
+  cd ../w && echo x > f && git add f
+  mkdir "$S/r/.git/worktrees/planted"
+  env "$@" GIT_TRACE2_EVENT=$S/tr.json git -c user.name=a -c user.email=a@e.co commit -q -m x
+  sleep 2
+  printf '%s\n' "$PWD/.git" > "$S/r/.git/worktrees/planted/gitdir" 2>/dev/null
+  echo "== $label: entries after: $(ls "$S/r/.git/worktrees" | tr '\n' ' ')"
+  grep -o '"argv":\[[^]]*\]' "$S/tr.json" | grep -v '"commit"' | tr '\n' ' '; echo
+}
+run_case none GIT_CONFIG_COUNT=0
+run_case both GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=maintenance.auto GIT_CONFIG_VALUE_0=false GIT_CONFIG_KEY_1=gc.auto GIT_CONFIG_VALUE_1=0
+run_case only-maintenance-auto GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=maintenance.auto GIT_CONFIG_VALUE_0=false
+run_case only-gc-auto GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=gc.auto GIT_CONFIG_VALUE_0=0
+run_case dash-c-override GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=maintenance.auto GIT_CONFIG_VALUE_0=false GIT_CONFIG_KEY_1=gc.auto GIT_CONFIG_VALUE_1=0 GIT_CONFIG_PARAMETERS="'maintenance.auto=true' 'gc.auto=1'"
+echo "== direct: git maintenance run --auto --no-detach, no keys, traced (which tasks run)"
+S=<tree-g6>/direct; rm -rf $S; mkdir -p $S; cd $S && git init -q r && cd r && git -c user.name=a -c user.email=a@e.co commit -q --allow-empty -m i
+GIT_TRACE2_EVENT=$S/tr.json git maintenance run --auto --no-detach; grep -o '"argv":\[[^]]*\]' $S/tr.json | tr '\n' ' '; echo
+echo "== direct with gc.auto=0 only"
+GIT_TRACE2_EVENT=$S/tr2.json git -c gc.auto=0 maintenance run --auto --no-detach; grep -o '"argv":\[[^]]*\]' $S/tr2.json | tr '\n' ' '; echo
+echo "== direct with maintenance.auto=false only (run itself is explicit, so it should still run)"
+GIT_TRACE2_EVENT=$S/tr3.json git -c maintenance.auto=false maintenance run --auto --no-detach; grep -o '"argv":\[[^]]*\]' $S/tr3.json | tr '\n' ' '; echo
+echo "== direct with maintenance.strategy=incremental, no keys"
+GIT_TRACE2_EVENT=$S/tr4.json git -c maintenance.strategy=incremental maintenance run --auto --no-detach; grep -o '"argv":\[[^]]*\]' $S/tr4.json | tr '\n' ' '; echo
+echo "== fetch under the comb env form (COUNT=3) and RunIn -c form, traced"
+S=<tree-g6>/fetch; rm -rf $S; mkdir -p $S; cd $S && git init -q --bare o && git init -q r && cd r && git -c user.name=a -c user.email=a@e.co commit -q --allow-empty -m i && git remote add origin ../o && git push -q origin HEAD:refs/heads/main 2>/dev/null
+GIT_TRACE2_EVENT=$S/f1.json env GIT_CONFIG_COUNT=3 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null GIT_CONFIG_KEY_1=maintenance.auto GIT_CONFIG_VALUE_1=false GIT_CONFIG_KEY_2=gc.auto GIT_CONFIG_VALUE_2=0 git fetch --prune --no-tags --quiet origin; sleep 1
+echo "comb form fetch: $(grep -o '"argv":\[[^]]*\]' $S/f1.json | tr '\n' ' ')"
+GIT_TRACE2_EVENT=$S/f2.json git -c core.hooksPath=/dev/null -c core.fsmonitor=false -c log.showSignature=false -c maintenance.auto=false -c gc.auto=0 fetch origin; sleep 1
+echo "RunIn form fetch: $(grep -o '"argv":\[[^]]*\]' $S/f2.json | tr '\n' ' ')"
+GIT_TRACE2_EVENT=$S/f3.json env GIT_CONFIG_COUNT=0 git fetch origin; sleep 1
+echo "no keys fetch: $(grep -o '"argv":\[[^]]*\]' $S/f3.json | tr '\n' ' ')"
+echo "== push to a local bare under the comb env form: receive-pack side"
+echo y > g && git add g && git -c user.name=a -c user.email=a@e.co -c maintenance.auto=false commit -q -m y
+GIT_TRACE2_EVENT=$S/p1.json env GIT_CONFIG_COUNT=3 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null GIT_CONFIG_KEY_1=maintenance.auto GIT_CONFIG_VALUE_1=false GIT_CONFIG_KEY_2=gc.auto GIT_CONFIG_VALUE_2=0 git push -q origin HEAD:refs/heads/main; sleep 1
+echo "comb form push: $(grep -o '"argv":\[[^]]*\]' $S/p1.json | tr '\n' ' ')"
+echo "receive-pack saw GIT_CONFIG_COUNT: $(grep -o '"name":"GIT_CONFIG_COUNT"[^}]*' $S/p1.json | head -2 | tr '\n' ' ')"
+echo probe6 done
+
+##### probe7.sh
+#!/bin/sh
+# TestRunLimitsKillTheGroup under a container that has a reaping init (docker --init):
+# is the "grandchild survived" failure a PID 1 zombie artifact of the first container?
+apk add --no-cache git go >/dev/null 2>&1
+mkdir -p <tree-fix> && tar -xf /s/fix.tar -C <tree-fix>
+echo "pid1: $(cat /proc/1/comm) $(uname -m) $(git --version)"
+cd <tree-fix> && go test -race -count=3 -run 'TestRunLimitsKillTheGroup' ./internal/dispatch/ 2>&1 | grep -E -- '--- FAIL|survived|^(ok|FAIL)' | sort | uniq -c
+echo probe7 done
+
+##### runall.sh
+#!/bin/sh
+echo "##### probe1 fix"; sh /s/probe1.sh fix
+echo "##### probe1 main"; sh /s/probe1.sh main
+echo "##### probe3"; sh /s/probe3.sh
+echo "##### probe4"; sh /s/probe4.sh
+echo "##### all done"
+
+##### runall2.sh
+#!/bin/sh
+echo "##### probe6"; sh /s/probe6.sh
+echo "##### probe5"; sh /s/probe5.sh
+echo "##### all2 done"
+
+##### darwin.sh
+#!/bin/sh
+# darwin side: Apple git, proving test on main plus test only, and on fix; -c precedence over GIT_CONFIG_COUNT
+S=<tmp>
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+mkdir -p $S/trees/main $S/trees/fix
+tar -xf $S/main.tar -C $S/trees/main && tar -xf $S/fix.tar -C $S/trees/fix
+cp $S/trees/fix/internal/dispatch/maintenance_test.go $S/trees/main/internal/dispatch/
+echo "== darwin $(uname -m) $(git --version)"
+P='TestRunPlantDuringAutoMaintenance'
+echo "== main + proving test, -count=3 (expect fail)"
+cd $S/trees/main && go test -count=3 -run "$P" ./internal/dispatch/ 2>&1 | grep -E -- '^(ok|FAIL|--- FAIL: TestRunPlantDuringAutoMaintenance/)' | sort | uniq -c
+echo "== fix, -race -count=5 (expect ok)"
+cd $S/trees/fix && go test -race -count=5 -run "$P" ./internal/dispatch/ 2>&1 | tail -1
+echo "== precedence on Apple git: GIT_CONFIG_COUNT key vs -c vs GIT_CONFIG_PARAMETERS vs repo-local"
+d=$(mktemp -d) && cd $d && git init -q r && cd r && git config maintenance.auto true
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=maintenance.auto GIT_CONFIG_VALUE_0=false
+echo "local true + env false: effective=$(git config maintenance.auto)"
+echo "plus -c true: effective=$(git -c maintenance.auto=true config maintenance.auto)"
+echo "plus GIT_CONFIG_PARAMETERS true: effective=$(GIT_CONFIG_PARAMETERS="'maintenance.auto=true'" git config maintenance.auto)"
+echo "-c false with env true: effective=$(GIT_CONFIG_VALUE_0=true git -c maintenance.auto=false config maintenance.auto)"
+git config --show-scope --get-all maintenance.auto | sed 's/^/  scope order: /'
+git -c maintenance.auto=true config --show-scope --get-all maintenance.auto | sed 's/^/  scope order with -c: /'
+echo "== strategy and auto tasks on Apple git: trace of a bare commit without the fix"
+cd $d/r && echo x > f && git add f && GIT_TRACE2_EVENT=$d/t.json env -u GIT_CONFIG_COUNT git -c user.name=a -c user.email=a@e.co commit -q -m x; sleep 2
+grep -o '"argv":\[[^]]*\]' $d/t.json | tr '\n' ' '; echo
+rm -rf $d
+echo darwin done
+

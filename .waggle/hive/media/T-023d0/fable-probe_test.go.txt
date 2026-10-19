@@ -1,0 +1,364 @@
+package runtime
+
+// Fable guard probes for T-023 phase D0 (PR #53). Not for merge: this file is
+// saved under .waggle/hive/media/T-023d0/ and deleted from the worktree.
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"os/user"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+var probeRoot, gecos string
+
+func redact(s string) string {
+	if probeRoot != "" {
+		s = strings.ReplaceAll(s, probeRoot, "<tmp>")
+	}
+	if gecos != "" {
+		s = strings.ReplaceAll(s, gecos, "<gecos>")
+	}
+	if u := os.Getenv("USER"); u != "" {
+		s = strings.ReplaceAll(s, u, "<user>")
+	}
+	if h, _ := os.UserHomeDir(); h != "" {
+		s = strings.ReplaceAll(s, h, "<home>")
+	}
+	if hn, _ := os.Hostname(); hn != "" {
+		s = strings.ReplaceAll(s, hn, "<host>")
+	}
+	return s
+}
+
+func logf(t *testing.T, format string, a ...any) {
+	t.Helper()
+	t.Log(redact(fmt.Sprintf(format, a...)))
+}
+
+func runGit(t *testing.T, env []string, dir string, args ...string) (string, error) {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir, cmd.Env = dir, env
+	out, err := cmd.CombinedOutput()
+	return strings.TrimSpace(string(out)), err
+}
+
+func keeperEnv(home, xdg string) []string {
+	return []string{"PATH=/usr/bin:/bin", "HOME=" + home, "XDG_CONFIG_HOME=" + xdg}
+}
+
+// P1: end to end worker git under a hostile Keeper global, XDG and parent env.
+func TestFableProbeWorkerGit(t *testing.T) {
+	root := t.TempDir()
+	probeRoot = root
+	home := filepath.Join(root, "keeperhome")
+	xdg := filepath.Join(root, "xdg")
+	hooks := filepath.Join(root, "hooks")
+	marker := filepath.Join(root, "markers")
+	for _, d := range []string{home, filepath.Join(xdg, "git"), hooks, marker, filepath.Join(home, ".config", "git")} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	hook := "#!/bin/sh\necho ran-$(basename $0) >> " + marker + "/$(basename $0)\nexit 0\n"
+	for _, h := range []string{"pre-commit", "post-commit", "pre-push", "commit-msg"} {
+		writeFile(t, filepath.Join(hooks, h), hook)
+		os.Chmod(filepath.Join(hooks, h), 0o755)
+	}
+	cred := filepath.Join(root, "credhelper.sh")
+	writeFile(t, cred, "#!/bin/sh\necho ran-credhelper >> "+marker+"/credhelper\n")
+	os.Chmod(cred, 0o755)
+	included := filepath.Join(root, "included.gitconfig")
+	writeFile(t, included, "[probe]\n\tincluded = yes\n[url \"git@included.test:\"]\n\tpushInsteadOf = https://github.com/\n")
+	globalCfg := "[user]\n\tname = Keeper Global\n\temail = keeper@example.test\n" +
+		"[url \"git@evil.test:\"]\n\tpushInsteadOf = https://github.com/\n\tinsteadOf = https://github.com/\n" +
+		"[core]\n\thooksPath = " + hooks + "\n" +
+		"[credential]\n\thelper = " + cred + "\n" +
+		"[include]\n\tpath = " + included + "\n" +
+		"[includeIf \"gitdir:**\"]\n\tpath = " + included + "\n" +
+		"[alias]\n\tprobe = !echo alias-ran\n" +
+		"[probe]\n\tscope = home-gitconfig\n"
+	writeFile(t, filepath.Join(home, ".gitconfig"), globalCfg)
+	writeFile(t, filepath.Join(xdg, "git", "config"), "[probe]\n\tscope = xdg-config\n[core]\n\thooksPath = "+hooks+"\n")
+	// Non-config dotfiles git reads from HOME regardless of GIT_CONFIG_GLOBAL.
+	writeFile(t, filepath.Join(home, ".config", "git", "ignore"), "hidden-by-global-ignore.txt\n")
+	writeFile(t, filepath.Join(home, ".config", "git", "attributes"), "*.txt filter=probe\n")
+	writeFile(t, filepath.Join(xdg, "git", "ignore"), "hidden-by-xdg-ignore.txt\n")
+	system := filepath.Join(root, "system.gitconfig")
+	writeFile(t, system, "[probe]\n\tscope = system\n[core]\n\thooksPath = "+hooks+"\n")
+
+	// Parent (Keeper) environment: hostile values on every git config channel.
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+	t.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(home, ".gitconfig"))
+	t.Setenv("GIT_CONFIG_SYSTEM", system)
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "0")
+	t.Setenv("GIT_CONFIG_PARAMETERS", "'probe.scope=parent-parameters' 'core.hooksPath="+hooks+"'")
+	t.Setenv("GIT_CONFIG_COUNT", "1")
+	t.Setenv("GIT_CONFIG_KEY_0", "core.hooksPath")
+	t.Setenv("GIT_CONFIG_VALUE_0", hooks)
+	t.Setenv("GIT_AUTHOR_NAME", "Parent Author")
+	t.Setenv("GIT_AUTHOR_EMAIL", "parent@example.test")
+	t.Setenv("GIT_COMMITTER_NAME", "Parent Committer")
+	t.Setenv("GIT_COMMITTER_EMAIL", "parent@example.test")
+	t.Setenv("EMAIL", "emailvar@example.test")
+	t.Setenv("GIT_SSH_COMMAND", "/nonexistent/ssh")
+	t.Setenv("GIT_ASKPASS", "/nonexistent/askpass")
+
+	a := verifiedAdapter(t, AdapterConfig{})
+	inv, s := testLaunch(t, "T-9")
+
+	// Duplicate keys and leaked GIT_* in the produced env.
+	spec, err := a.Prepare(inv, s, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]int{}
+	for _, kv := range spec.Env {
+		k, _, _ := strings.Cut(kv, "=")
+		seen[k]++
+	}
+	for k, n := range seen {
+		if n > 1 {
+			logf(t, "DUPLICATE env key %s x%d", k, n)
+		}
+	}
+	for _, kv := range spec.Env {
+		if strings.HasPrefix(kv, "GIT_") || strings.HasPrefix(kv, "XDG_") || strings.HasPrefix(kv, "EMAIL") || strings.HasPrefix(kv, "HOME") {
+			logf(t, "env: %s", kv)
+		}
+	}
+	for _, kv := range spec.Env {
+		k, _, _ := strings.Cut(kv, "=")
+		if slices.Contains([]string{"GIT_CONFIG_PARAMETERS", "GIT_CONFIG_SYSTEM", "GIT_AUTHOR_NAME", "GIT_SSH_COMMAND", "GIT_ASKPASS", "EMAIL", "XDG_CONFIG_HOME"}, k) {
+			logf(t, "LEAK: parent %s reached the worker env", k)
+		}
+	}
+
+	// A repo with an https origin and a bare remote to show the push target.
+	remote := filepath.Join(root, "remote.git")
+	if out, err := runGit(t, keeperEnv(home, xdg), root, "init", "--bare", "-q", remote); err != nil {
+		t.Fatal(out, err)
+	}
+	repo := filepath.Join(root, "repo")
+	if out, err := runGit(t, keeperEnv(home, xdg), root, "init", "-q", "-b", "main", repo); err != nil {
+		t.Fatal(out, err)
+	}
+	runGit(t, keeperEnv(home, xdg), repo, "remote", "add", "origin", "https://github.com/example/repo")
+	runGit(t, keeperEnv(home, xdg), repo, "config", "--local", "user.name", "Repo Local")
+	runGit(t, keeperEnv(home, xdg), repo, "config", "--local", "user.email", "local@example.test")
+	writeFile(t, filepath.Join(repo, "a.txt"), "a\n")
+	writeFile(t, filepath.Join(repo, "hidden-by-global-ignore.txt"), "x\n")
+	writeFile(t, filepath.Join(repo, "hidden-by-xdg-ignore.txt"), "x\n")
+
+	// Control: the Keeper's own env sees every hostile value.
+	kenv := append(keeperEnv(home, xdg), "GIT_CONFIG_PARAMETERS='probe.scope=parent-parameters'")
+	out, _ := runGit(t, kenv, repo, "config", "--show-origin", "--get-all", "probe.scope")
+	logf(t, "control keeper env probe.scope:\n%s", out)
+	out, _ = runGit(t, kenv, repo, "config", "--get-all", "probe.included")
+	logf(t, "control keeper env probe.included: %q", out)
+	out, _ = runGit(t, kenv, repo, "remote", "get-url", "--push", "origin")
+	logf(t, "control keeper env push url: %s", out)
+
+	cases := []struct {
+		name string
+		id   GitIdentity
+	}{{"zero", GitIdentity{}}, {"set", GitIdentity{Name: "Hive Worker", Email: "worker@example.test"}}, {"spaces", GitIdentity{Name: "  ", Email: " "}}, {"brackets", GitIdentity{Name: "A <b>", Email: "<x@y>"}}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			inv.GitIdentity = c.id
+			spec, err := a.Prepare(inv, s, nil, nil)
+			if err != nil {
+				logf(t, "Prepare refused: %v", err)
+				return
+			}
+			env := spec.Env
+			os.RemoveAll(marker)
+			os.MkdirAll(marker, 0o755)
+			out, _ := runGit(t, env, repo, "--version")
+			logf(t, "worker git: %s", out)
+			out, _ = runGit(t, env, repo, "config", "--show-origin", "--get-all", "probe.scope")
+			logf(t, "worker probe.scope (expect only parent-parameters absent, nothing from home, xdg, system):\n%q", out)
+			out, _ = runGit(t, env, repo, "config", "--get-all", "probe.included")
+			logf(t, "worker probe.included: %q", out)
+			out, _ = runGit(t, env, repo, "config", "--show-origin", "--get-all", "core.hooksPath")
+			logf(t, "worker core.hooksPath: %q", out)
+			out, _ = runGit(t, env, repo, "config", "--get-all", "credential.helper")
+			logf(t, "worker credential.helper: %q", out)
+			out, _ = runGit(t, env, repo, "remote", "get-url", "--push", "origin")
+			logf(t, "worker push url (tripwire expects file:///dev/null/...): %s", out)
+			out, _ = runGit(t, env, repo, "remote", "get-url", "origin")
+			logf(t, "worker fetch url (insteadOf from global must not apply): %s", out)
+			out, err = runGit(t, env, repo, "probe")
+			logf(t, "worker alias probe: %q err=%v", out, err)
+			out, _ = runGit(t, env, repo, "status", "--porcelain", "--ignored")
+			logf(t, "worker status --ignored (!! means hidden by an ignore file):\n%s", out)
+			out, _ = runGit(t, env, repo, "check-attr", "filter", "a.txt")
+			logf(t, "worker check-attr (home attributes file): %s", out)
+			out, _ = runGit(t, env, repo, "config", "--show-origin", "--get-all", "user.name")
+			logf(t, "worker user.name config: %q", out)
+			out, _ = runGit(t, env, repo, "var", "GIT_AUTHOR_IDENT")
+			logf(t, "worker GIT_AUTHOR_IDENT: %s", out)
+			out, _ = runGit(t, env, repo, "var", "GIT_COMMITTER_IDENT")
+			logf(t, "worker GIT_COMMITTER_IDENT: %s", out)
+			runGit(t, env, repo, "add", "a.txt")
+			out, err = runGit(t, env, repo, "commit", "-q", "-s", "--allow-empty", "-m", "probe "+c.name)
+			logf(t, "worker commit -s: err=%v out=%q", err, out)
+			if err == nil {
+				out, _ = runGit(t, env, repo, "log", "-1", "--format=author=%an <%ae> committer=%cn <%ce>%n%b")
+				logf(t, "worker commit identity and trailer:\n%s", out)
+			}
+			ents, _ := os.ReadDir(marker)
+			var ran []string
+			for _, e := range ents {
+				ran = append(ran, e.Name())
+			}
+			logf(t, "hooks or helpers that ran under the worker env: %v", ran)
+			out, err = runGit(t, env, repo, "push", "origin", "HEAD:refs/heads/probe")
+			logf(t, "worker push: err=%v out=%q", err, out)
+			out, _ = runGit(t, keeperEnv(home, xdg), remote, "for-each-ref")
+			logf(t, "remote refs after push: %q", out)
+			// Local config include.path to the Keeper's global: not an item 19 claim, record what happens.
+			if c.name == "set" {
+				runGit(t, keeperEnv(home, xdg), repo, "config", "--local", "include.path", filepath.Join(home, ".gitconfig"))
+				out, _ = runGit(t, env, repo, "config", "--show-origin", "--get-all", "probe.scope")
+				logf(t, "worker with repo-local include.path to the global: %q", out)
+				out, _ = runGit(t, env, repo, "remote", "get-url", "--push", "origin")
+				logf(t, "worker push url with repo-local include of the global: %s", out)
+				runGit(t, keeperEnv(home, xdg), repo, "config", "--local", "--unset", "include.path")
+			}
+			// NOSYSTEM wins over an explicit GIT_CONFIG_SYSTEM even if one were present.
+			if c.name == "zero" {
+				env2 := append(slices.Clone(env), "GIT_CONFIG_SYSTEM="+system)
+				out, _ = runGit(t, env2, repo, "config", "--show-origin", "--get-all", "probe.scope")
+				logf(t, "worker env plus GIT_CONFIG_SYSTEM (NOSYSTEM should win): %q", out)
+				env3 := append(slices.Clone(env), "GIT_CONFIG_GLOBAL="+filepath.Join(home, ".gitconfig"))
+				out, _ = runGit(t, env3, repo, "config", "--show-origin", "--get-all", "probe.scope")
+				logf(t, "worker env plus a later duplicate GIT_CONFIG_GLOBAL (os/exec last wins; shows what a later append would do): %q", out)
+			}
+		})
+	}
+}
+
+// P2: helpHas against the real pinned help and adversarial strings.
+func TestFableProbeHelpHas(t *testing.T) {
+	help, err := os.ReadFile(os.Getenv("FABLE_HELP"))
+	if err != nil {
+		t.Skip("set FABLE_HELP to a saved claude --help")
+	}
+	tokens := append(slices.Clone(helpTokens), "--debug", "--max-budget-usd")
+	for _, tok := range tokens {
+		logf(t, "real help %-26s helpHas=%v", tok, helpHas(help, tok))
+	}
+	cases := []struct{ help, tok string }{
+		{"--debug-file", "--debug"}, {"--debugx", "--debug"}, {"--debug_x", "--debug"}, {"--debug9", "--debug"},
+		{"--debug.", "--debug"}, {"--debug\"", "--debug"}, {"--debug)", "--debug"}, {"--debug\n", "--debug"},
+		{"--debug", "--debug"}, {"--debug\t", "--debug"}, {"--debug=", "--debug"}, {"--debugé", "--debug"},
+		{"--no-debug", "--debug"}, {"x--debug y", "--debug"}, {"--debug-file --debug", "--debug"}, {"", "--debug"},
+		{"--debu", "--debug"}, {"--DEBUG", "--debug"}, {"--debug-file\n  --debugging", "--debug"},
+		{"--print-only", "--print"}, {"--no-print", "--print"}, {"stream-jsonx", "stream-json"}, {"\"stream-json\"", "stream-json"},
+	}
+	for _, c := range cases {
+		logf(t, "helpHas(%q, %q) = %v", c.help, c.tok, helpHas([]byte(c.help), c.tok))
+	}
+	// Real binary Verify with the default args the hive may carry.
+	if os.Getenv("FABLE_REAL") != "" {
+		a := NewClaudeAdapter(AdapterConfig{Binary: "claude", DefaultArgs: []string{"--debug", "--max-budget-usd=1"}})
+		logf(t, "real Verify: %v", a.Verify(context.Background()))
+	}
+}
+
+// P3: guard settings by role string.
+func TestFableProbeGuardRole(t *testing.T) {
+	for _, role := range []string{"guard", "Guard", "GUARD", "guard ", " guard", "second-guard", "guard2", "", "builder"} {
+		b, err := workerSettings(role, []string{"go test"})
+		logf(t, "role %q: err=%v git add=%v git commit=%v", role, err, strings.Contains(string(b), "Bash(git add"), strings.Contains(string(b), "Bash(git commit"))
+	}
+	// Hive command list that names git add or commit itself, or a wider git.
+	for _, cmds := range [][]string{{"git add"}, {"git commit"}, {"git commit --amend"}, {"git"}, {"git cherry-pick"}, {"git -c core.hooksPath=/x commit"}} {
+		b, err := workerSettings("guard", cmds)
+		logf(t, "guard with commands %q: err=%v settings=%s", cmds, err, b)
+	}
+	// What Resolve does with a differently cased role.
+	p := testPolicy()
+	for _, role := range []string{"Guard", "GUARD", "guard"} {
+		_, err := p.Resolve(role, &TaskContext{TaskID: "T-1"}, nil)
+		logf(t, "Resolve(%q): err=%v", role, err)
+	}
+	p.Minimums["Guard"] = LevelStandard
+	sel, err := p.Resolve("Guard", &TaskContext{TaskID: "T-1"}, nil)
+	logf(t, "Resolve(\"Guard\") with a roster entry \"Guard\": sel=%+v err=%v (no floor, no cross-model, commit rights kept)", sel, err)
+}
+
+// P4: second guard edge cases.
+func TestFableProbeSecondGuard(t *testing.T) {
+	p := testPolicy()
+	logf(t, "policy: primary=%v alternate=%v minimums=%v", p.Models.Primary, p.Models.Alternate, p.Minimums)
+	show := func(name string, p Policy, role string, task *TaskContext, dec func(int) bool) {
+		sel, err := p.Resolve(role, task, dec)
+		logf(t, "%s: model=%q level=%v err=%v", name, sel.Model, sel.Level, err)
+	}
+	show("builder with SecondGuard (ignored?)", p, "builder", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+	show("nil task guard", p, "guard", nil, nil)
+	p.Models.Alternate = map[Level]string{LevelStandard: "alt-standard", LevelFrontier: "alt-frontier"}
+	show("first guard", p, "guard", &TaskContext{TaskID: "T-1"}, nil)
+	show("second guard", p, "guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+	// Builder stepped up to frontier: the guard floor follows.
+	show("first guard, builder stepped up", p, "guard", &TaskContext{TaskID: "T-1", GuardMustFix: 2}, nil)
+	show("second guard, builder stepped up", p, "guard", &TaskContext{TaskID: "T-1", GuardMustFix: 2, SecondGuard: true}, nil)
+	// Alternate at standard equals primary at frontier: second guard must not collide.
+	p.Models.Alternate = map[Level]string{LevelStandard: p.Models.Primary[LevelFrontier]}
+	show("first guard, alt-standard == primary-frontier", p, "guard", &TaskContext{TaskID: "T-1"}, nil)
+	show("second guard, alt-standard == primary-frontier", p, "guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+	// Guard override to fast on a low tier task with a second guard.
+	tier := func(t comb.RiskTier) *comb.RiskTier { return &t }(comb.Tier1Isolated)
+	dec := func(int) bool { return true }
+	p.Models.Alternate = map[Level]string{LevelFast: "alt-fast", LevelStandard: "alt-standard", LevelFrontier: "alt-frontier"}
+	show("first guard override fast tier1", p, "guard", &TaskContext{TaskID: "T-1", Tier: tier, Overrides: map[string]Override{"guard": {Level: LevelFast, DecisionID: 1}}}, dec)
+	show("second guard override fast tier1", p, "guard", &TaskContext{TaskID: "T-1", Tier: tier, SecondGuard: true, Overrides: map[string]Override{"guard": {Level: LevelFast, DecisionID: 1}}}, dec)
+	// Every model identical: error text.
+	p.Models.Primary = map[Level]string{LevelFast: "same", LevelStandard: "same", LevelFrontier: "same"}
+	p.Models.Alternate = nil
+	show("all same, first guard", p, "guard", &TaskContext{TaskID: "T-1"}, nil)
+	show("all same, second guard", p, "guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+}
+
+// P5: zero identity in a repo with no local user.name or user.email: what git
+// does under GIT_CONFIG_GLOBAL=/dev/null (the D0 interim state, before phase D
+// resolves an identity).
+func TestFableProbeZeroIdentityNoLocal(t *testing.T) {
+	root := t.TempDir()
+	probeRoot = root
+	home := filepath.Join(root, "home")
+	os.MkdirAll(home, 0o755)
+	writeFile(t, filepath.Join(home, ".gitconfig"), "[user]\n\tname = Keeper Global\n\temail = keeper@example.test\n")
+	t.Setenv("HOME", home)
+	t.Setenv("EMAIL", "emailvar@example.test")
+	a := verifiedAdapter(t, AdapterConfig{})
+	inv, s := testLaunch(t, "T-9")
+	spec, err := a.Prepare(inv, s, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo := filepath.Join(root, "repo")
+	if out, err := runGit(t, keeperEnv(home, home), root, "init", "-q", "-b", "main", repo); err != nil {
+		t.Fatal(out, err)
+	}
+	if u, err := user.Current(); err == nil {
+		gecos = u.Name
+	}
+	out, err := runGit(t, spec.Env, repo, "commit", "-q", "-s", "--allow-empty", "-m", "zero")
+	logf(t, "zero identity, no local identity: commit err=%v out=%q", err, out)
+	out, _ = runGit(t, spec.Env, repo, "log", "-1", "--format=author=%an <%ae>%n%b")
+	logf(t, "log: %q", out)
+	out, _ = runGit(t, spec.Env, repo, "var", "GIT_COMMITTER_IDENT")
+	logf(t, "GIT_COMMITTER_IDENT: %q", out)
+}

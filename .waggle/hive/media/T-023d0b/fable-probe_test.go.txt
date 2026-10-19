@@ -1,0 +1,184 @@
+//go:build unix
+
+package dispatch
+
+// Guard probe (fable, T-023 phase D0b). Not part of the PR. Runs the real
+// fixture end to end and traces every git process (worker, host RunIn, comb)
+// with GIT_TRACE2_EVENT, then reports which ones started auto maintenance or
+// gc, which config scope wins for maintenance.auto, and what the post-run
+// check sees when the worker prunes worktrees itself.
+
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"testing"
+)
+
+type t2ev struct {
+	Event string   `json:"event"`
+	Argv  []string `json:"argv"`
+	Name  string   `json:"name"`
+	Sid   string   `json:"sid"`
+}
+
+// traceSummary lists the commands in a trace2 event file as "name: argv".
+func traceSummary(t *testing.T, path string) (cmds []string, maint []string) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return []string{"(no trace: " + err.Error() + ")"}, nil
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		var ev t2ev
+		if json.Unmarshal([]byte(line), &ev) != nil || ev.Event != "start" {
+			continue
+		}
+		args := ev.Argv
+		if len(args) > 0 && strings.HasSuffix(args[0], "git") {
+			args = args[1:]
+		}
+		s := strings.Join(args, " ")
+		cmds = append(cmds, s)
+		for _, a := range args {
+			if a == "maintenance" || a == "gc" || a == "repack" || a == "prune" || a == "pack-refs" || a == "commit-graph" {
+				maint = append(maint, s)
+				break
+			}
+		}
+	}
+	return cmds, maint
+}
+
+// parents maps each start event's sid to its argv so a maintenance process can
+// be traced to the command that spawned it (trace2 sids nest as parent/child).
+func parents(path string) map[string]string {
+	m := map[string]string{}
+	b, _ := os.ReadFile(path)
+	for _, line := range strings.Split(string(b), "\n") {
+		var ev t2ev
+		if json.Unmarshal([]byte(line), &ev) == nil && ev.Event == "start" {
+			m[ev.Sid] = strings.Join(ev.Argv, " ")
+		}
+	}
+	return m
+}
+
+func report(t *testing.T, label, path string) {
+	cmds, maint := traceSummary(t, path)
+	t.Logf("[%s] %d git processes; maintenance-class: %d", label, len(cmds), len(maint))
+	for _, m := range maint {
+		t.Logf("[%s]   MAINT %s", label, m)
+	}
+	ps := parents(path)
+	for sid, argv := range ps {
+		if !strings.Contains(argv, "maintenance run") && !strings.Contains(argv, " gc ") {
+			continue
+		}
+		chain := argv
+		for i := strings.LastIndex(sid, "/"); i > 0; i = strings.LastIndex(sid, "/") {
+			sid = sid[:i]
+			chain = ps[sid] + "  =>  " + chain
+		}
+		t.Logf("[%s]   CHAIN %s", label, chain)
+	}
+	seen := map[string]bool{}
+	var tops []string
+	for _, c := range cmds {
+		f := strings.Fields(c)
+		top := ""
+		for i := 0; i < len(f); i++ {
+			if f[i] == "-c" || f[i] == "-C" {
+				i++
+				continue
+			}
+			if strings.HasPrefix(f[i], "-") {
+				continue
+			}
+			top = f[i]
+			break
+		}
+		if !seen[top] {
+			seen[top] = true
+			tops = append(tops, top)
+		}
+	}
+	sort.Strings(tops)
+	t.Logf("[%s]   top-level commands: %s", label, strings.Join(tops, ","))
+}
+
+func cat(t *testing.T, label, path string) {
+	b, _ := os.ReadFile(path)
+	t.Logf("[%s]\n%s", label, strings.TrimSpace(string(b)))
+}
+
+const probeCommit = "git -c user.name=a -c user.email=a@e.co commit -q -s -m 'T-023: probe'\n"
+
+func probeFile(n string) string {
+	return "mkdir -p internal/x\necho " + n + " > internal/x/" + n + ".go\ngit add internal/x/" + n + ".go\n"
+}
+
+// TestFableProbeEnvAndTrace: worker git under the Prepare env (plain, repo-local
+// override, git -c, GIT_CONFIG_PARAMETERS, unset count), plus host RunIn and comb
+// fetch and push, all traced.
+func TestFableProbeEnvAndTrace(t *testing.T) {
+	f := newFixture(t, true, false)
+	out := t.TempDir()
+	host := filepath.Join(out, "host.json")
+	t.Setenv("GIT_TRACE2_EVENT", host)
+	scen := "env | grep -E '^GIT_' | sort > " + out + "/env.txt\n" +
+		"git config --show-scope --show-origin --get-all maintenance.auto > " + out + "/cfg-plain.txt 2>&1; git config --show-scope --get-all gc.auto >> " + out + "/cfg-plain.txt 2>&1; echo effective=$(git config maintenance.auto) >> " + out + "/cfg-plain.txt\n" +
+		probeFile("p1") + "GIT_TRACE2_EVENT=" + out + "/w1-plain.json " + probeCommit +
+		"git config maintenance.auto true; git config gc.auto 1; git config maintenance.autoDetach true\n" +
+		"git config --show-scope --show-origin --get-all maintenance.auto > " + out + "/cfg-local.txt 2>&1; git config --show-scope --get-all gc.auto >> " + out + "/cfg-local.txt 2>&1; echo effective=$(git config maintenance.auto) >> " + out + "/cfg-local.txt\n" +
+		probeFile("p2") + "GIT_TRACE2_EVENT=" + out + "/w2-local.json " + probeCommit +
+		"git -c maintenance.auto=true -c gc.auto=1 config --show-scope --get-all maintenance.auto > " + out + "/cfg-dashc.txt 2>&1; echo effective=$(git -c maintenance.auto=true config maintenance.auto) >> " + out + "/cfg-dashc.txt\n" +
+		probeFile("p3") + "GIT_TRACE2_EVENT=" + out + "/w3-dashc.json git -c maintenance.auto=true -c gc.auto=1 -c user.name=a -c user.email=a@e.co commit -q -s -m 'T-023: dashc'\n" +
+		"GIT_CONFIG_PARAMETERS=\"'maintenance.auto=true' 'gc.auto=1'\" git config --show-scope --get-all maintenance.auto > " + out + "/cfg-params.txt 2>&1; echo effective=$(GIT_CONFIG_PARAMETERS=\"'maintenance.auto=true'\" git config maintenance.auto) >> " + out + "/cfg-params.txt\n" +
+		probeFile("p4") + "GIT_TRACE2_EVENT=" + out + "/w4-params.json GIT_CONFIG_PARAMETERS=\"'maintenance.auto=true' 'gc.auto=1'\" " + probeCommit +
+		probeFile("p5") + "GIT_TRACE2_EVENT=" + out + "/w5-unset.json env -u GIT_CONFIG_COUNT " + probeCommit +
+		"sleep 2\n" + emit(assistant(100), okResult)
+	res, err := f.run(scen)
+	t.Logf("run: exit %d err %v violations %v", res.ExitCode, err, res.Violations)
+	cat(t, "worker env GIT_*", filepath.Join(out, "env.txt"))
+	cat(t, "cfg plain (command scope only)", filepath.Join(out, "cfg-plain.txt"))
+	cat(t, "cfg with repo-local maintenance.auto=true", filepath.Join(out, "cfg-local.txt"))
+	cat(t, "cfg with git -c maintenance.auto=true", filepath.Join(out, "cfg-dashc.txt"))
+	cat(t, "cfg with GIT_CONFIG_PARAMETERS", filepath.Join(out, "cfg-params.txt"))
+	for _, n := range []string{"w1-plain", "w2-local", "w3-dashc", "w4-params", "w5-unset"} {
+		report(t, "worker "+n, filepath.Join(out, n+".json"))
+	}
+	report(t, "host (RunIn + comb, remote mode)", host)
+}
+
+// TestFableProbeManualPrune: the NotEnforced class. The worker runs git worktree
+// prune itself. Case own: a planted duplicate that sorts before the run's own id
+// makes prune_dups delete the run's own entry. Case planted: the plant sorts
+// after and is the one deleted.
+func TestFableProbeManualPrune(t *testing.T) {
+	for _, c := range []struct{ name, id, cmd string }{
+		{"own-entry-pruned-as-dup", "A-dup", "git worktree prune -v"},
+		{"planted-pruned", "planted", "git worktree prune -v"},
+		{"maintenance-run-own", "A-dup", "git maintenance run --task=worktree-prune"},
+		{"maintenance-run-planted-early", "planted-early", ""},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f := newFixture(t, true, false)
+			planted := f.common() + "/worktrees/" + c.id
+			scen := okScenario
+			if c.cmd == "" {
+				scen += "mkdir '" + planted + "'\ngit maintenance run --auto --quiet\nsleep 1\nprintf '%s\\n' \"$PWD/.git\" > '" + planted + "/gitdir' 2>&1\n"
+			} else {
+				scen += "mkdir '" + planted + "'\nprintf '%s\\n' \"$PWD/.git\" > '" + planted + "/gitdir'\n" + c.cmd + "\n"
+			}
+			res, err := f.run(scen)
+			ents, _ := os.ReadDir(f.common() + "/worktrees")
+			var names []string
+			for _, e := range ents {
+				names = append(names, e.Name())
+			}
+			t.Logf("exit %d err %v entries-after %v violations %v", res.ExitCode, err, names, res.Violations)
+		})
+	}
+}

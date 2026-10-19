@@ -1,0 +1,15 @@
+--- FAIL: TestPrepareEnv (0.05s)
+    launch_test.go:200: env lacks "GIT_CONFIG_COUNT=12"
+    launch_test.go:200: env lacks "GIT_ATTR_NOSYSTEM=1"
+    launch_test.go:200: env lacks "GIT_CONFIG_KEY_10=core.excludesFile"
+    launch_test.go:200: env lacks "GIT_CONFIG_KEY_11=core.attributesFile"
+--- FAIL: TestPrepareGitIdentity (0.05s)
+    launch_test.go:394: err = <nil>; want invalid adapter launch config
+--- FAIL: TestEnvIgnoresHomeIgnoreAndAttributes (0.12s)
+    launch_test.go:468: home ignore file still applies under the worker env
+    launch_test.go:471: home attributes still apply under the worker env: "a.txt: filter: probe"
+--- FAIL: TestSecondGuard (0.00s)
+    policy_test.go:246: Resolve(guard): no model differs from the builder's: role guard task "T-1" level frontier shares ["opus" "other-frontier"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.frontier)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/runtime	0.434s
+FAIL

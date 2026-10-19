@@ -1,0 +1,191 @@
+package runtime
+
+// Fable confirmation probe 2 at d969d57 (D-180 bound). Deleted after the run;
+// a copy lives in .waggle/hive/media/T-023d0/fable-confirm2-probe_test.go.txt.
+
+import (
+	"testing"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+func c2logf(t *testing.T, format string, args ...any) {
+	t.Helper()
+	t.Logf(format, args...)
+}
+
+func TestFableConfirm2D180(t *testing.T) {
+	show := func(name string, p Policy, role string, task *TaskContext, dec func(int) bool) {
+		sel, err := p.Resolve(role, task, dec)
+		if err != nil {
+			c2logf(t, "%-64s err=%v", name, err)
+			return
+		}
+		c2logf(t, "%-64s model=%q level=%s steppedUp=%v", name, sel.Model, sel.Level, sel.SteppedUp)
+	}
+	first := &TaskContext{TaskID: "T-1"}
+	second := &TaskContext{TaskID: "T-1", SecondGuard: true}
+	up := &TaskContext{TaskID: "T-1", GuardMustFix: 2}
+	upSecond := &TaskContext{TaskID: "T-1", GuardMustFix: 2, SecondGuard: true}
+
+	p := testPolicy()
+	c2logf(t, "A: primary fast=haiku standard=sonnet frontier=opus, no alternates, builder and guard standard")
+	show("A builder", p, "builder", first, nil)
+	show("A first guard", p, "guard", first, nil)
+	show("A second guard (bound at standard: refuses)", p, "guard", second, nil)
+	show("A builder stepped up", p, "builder", up, nil)
+	show("A first guard, builder stepped up", p, "guard", up, nil)
+	show("A second guard, builder stepped up", p, "guard", upSecond, nil)
+
+	p = testPolicy()
+	p.Models.Alternate = map[Level]string{}
+	show("A2 second guard, empty (non-nil) alternates", p, "guard", second, nil)
+
+	p = testPolicy()
+	p.Minimums["builder"], p.Minimums["guard"] = LevelFast, LevelFast
+	c2logf(t, "B: fast-level builder and guard, no alternates")
+	show("B first guard", p, "guard", first, nil)
+	show("B second guard (no walk needed, frontier free)", p, "guard", second, nil)
+	p.Models.Primary = map[Level]string{LevelFast: "a", LevelStandard: "b", LevelFrontier: "b"}
+	c2logf(t, "B2: fast guard, primaries a/b/b")
+	show("B2 first guard", p, "guard", first, nil)
+	show("B2 second guard (nothing below fast: error at fast)", p, "guard", second, nil)
+	p = testPolicy()
+	p.Minimums["builder"], p.Minimums["guard"] = LevelFast, LevelFast
+	p.Models.Primary = map[Level]string{LevelFast: "haiku", LevelStandard: "opus", LevelFrontier: "opus"}
+	c2logf(t, "B3: fast guard, primaries haiku/opus/opus, builder stepped up to standard")
+	show("B3 builder stepped up", p, "builder", up, nil)
+	show("B3 first guard", p, "guard", up, nil)
+	show("B3 second guard (walks to fast; guard min fast allows)", p, "guard", upSecond, nil)
+
+	p = testPolicy()
+	p.Models.Primary = map[Level]string{LevelFast: "haiku", LevelStandard: "sonnet", LevelFrontier: "sonnet"}
+	c2logf(t, "C: primaries duplicated standard=frontier=sonnet, no alternates, guard standard")
+	show("C first guard (fails itself)", p, "guard", first, nil)
+	show("C second guard (first guard failure propagates, no walk)", p, "guard", second, nil)
+	p.Models.Alternate = map[Level]string{LevelFrontier: "opus"}
+	show("C2 first guard with alt frontier opus", p, "guard", first, nil)
+	show("C2 second guard (bound at standard: refuses)", p, "guard", second, nil)
+
+	p = testPolicy()
+	p.Models.Alternate = map[Level]string{LevelFrontier: "sonnet"}
+	c2logf(t, "D: alt frontier equals standard primary (sonnet); builder stepped up to frontier")
+	show("D builder", p, "builder", up, nil)
+	show("D first guard", p, "guard", up, nil)
+	show("D second guard (standard sonnet taken, bound: refuses)", p, "guard", upSecond, nil)
+
+	p = testPolicy()
+	p.Models.Alternate = map[Level]string{LevelFrontier: "haiku"}
+	c2logf(t, "E: alt frontier duplicates fast primary (haiku); builder stepped up")
+	show("E first guard", p, "guard", up, nil)
+	show("E second guard (standard sonnet unused)", p, "guard", upSecond, nil)
+
+	p = testPolicy()
+	p.Models.Alternate = map[Level]string{LevelFast: "alt-fast", LevelStandard: "alt-standard", LevelFrontier: "alt-frontier"}
+	c2logf(t, "F: alternates at every level; builder stepped up")
+	show("F first guard", p, "guard", up, nil)
+	show("F second guard (primary before alternate at standard)", p, "guard", upSecond, nil)
+	p.Models.Alternate = map[Level]string{LevelFast: "alt-fast", LevelStandard: "alt-standard", LevelFrontier: "alt-frontier"}
+	p.Models.Primary = map[Level]string{LevelFast: "haiku", LevelStandard: "opus", LevelFrontier: "opus"}
+	c2logf(t, "F2: standard primary equals frontier primary (opus), alternates everywhere; builder stepped up")
+	show("F2 builder", p, "builder", up, nil)
+	show("F2 first guard", p, "guard", up, nil)
+	show("F2 second guard (standard primary taken, takes alt-standard)", p, "guard", upSecond, nil)
+	p.Models.Alternate = map[Level]string{LevelFast: "alt-fast", LevelStandard: "alt-frontier", LevelFrontier: "alt-frontier"}
+	c2logf(t, "F3: alt standard equals alt frontier, standard primary = frontier primary; builder stepped up")
+	show("F3 first guard", p, "guard", up, nil)
+	show("F3 second guard (standard both taken, fast below bound: refuses)", p, "guard", upSecond, nil)
+
+	tier1 := func() *comb.RiskTier { t := comb.Tier1Isolated; return &t }()
+	dec := func(int) bool { return true }
+	ovFirst := &TaskContext{TaskID: "T-1", Tier: tier1, Overrides: map[string]Override{"guard": {Level: LevelFast, DecisionID: 1}}}
+	ovSecond := &TaskContext{TaskID: "T-1", Tier: tier1, SecondGuard: true, Overrides: map[string]Override{"guard": {Level: LevelFast, DecisionID: 1}}}
+	p = testPolicy()
+	c2logf(t, "G: recorded guard override to fast on a Tier 1 task, no alternates")
+	show("G first guard", p, "guard", ovFirst, dec)
+	show("G second guard (frontier opus free, no walk)", p, "guard", ovSecond, dec)
+	p.Models.Primary = map[Level]string{LevelFast: "haiku", LevelStandard: "sonnet", LevelFrontier: "sonnet"}
+	show("G2 second guard, frontier=standard (nothing below fast)", p, "guard", ovSecond, dec)
+	p = testPolicy()
+	p.Models.Primary = map[Level]string{LevelFast: "haiku", LevelStandard: "sonnet", LevelFrontier: "haiku"}
+	p.Models.Alternate = map[Level]string{LevelFrontier: "x"}
+	c2logf(t, "G3: override to fast on Tier 1, frontier primary=haiku (same as fast), alt frontier x")
+	show("G3 first guard", p, "guard", ovFirst, dec)
+	show("G3 second guard", p, "guard", ovSecond, dec)
+
+	p = testPolicy()
+	ovUpFirst := &TaskContext{TaskID: "T-1", Overrides: map[string]Override{"guard": {Level: LevelFrontier, DecisionID: 1}}}
+	ovUpSecond := &TaskContext{TaskID: "T-1", SecondGuard: true, Overrides: map[string]Override{"guard": {Level: LevelFrontier, DecisionID: 1}}}
+	c2logf(t, "H: recorded guard override UP to frontier on a standard builder, no alternates")
+	show("H first guard", p, "guard", ovUpFirst, dec)
+	show("H second guard (walk bound at standard; sonnet taken: refuses)", p, "guard", ovUpSecond, dec)
+	p.Models.Alternate = map[Level]string{LevelStandard: "alt-standard"}
+	show("H2 second guard with alt standard (walks one level to alt-standard)", p, "guard", ovUpSecond, dec)
+	p = testPolicy()
+	p.Minimums["builder"] = LevelFast
+	c2logf(t, "H3: override UP to frontier, builder min fast, guard min standard, no alternates")
+	show("H3 builder", p, "builder", ovUpFirst, dec)
+	show("H3 first guard", p, "guard", ovUpFirst, dec)
+	show("H3 second guard (walks to standard sonnet, stops above fast)", p, "guard", ovUpSecond, dec)
+
+	p = testPolicy()
+	p.Models.Primary = map[Level]string{LevelFast: "m", LevelStandard: "m", LevelFrontier: "m"}
+	c2logf(t, "I: one model at every level")
+	show("I first guard", p, "guard", first, nil)
+	show("I second guard", p, "guard", second, nil)
+
+	p = testPolicy()
+	c2logf(t, "J: SecondGuard on non-guard roles")
+	for _, role := range []string{"builder", "scout", "forager", "queen", "waggled", "Guard", "second-guard"} {
+		show("J "+role+" with SecondGuard", p, role, &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+	}
+	show("J builder stepped up with SecondGuard", p, "builder", upSecond, nil)
+	show("J nil task guard", p, "guard", nil, nil)
+
+	c2logf(t, "K: the bound's source: guard minimum missing, zero, invalid, frontier")
+	p = testPolicy()
+	delete(p.Minimums, "guard")
+	show("K1 second guard, guard minimum absent (Minimums[guard]=0)", p, "guard", second, nil)
+	show("K1 first guard, guard minimum absent", p, "guard", first, nil)
+	show("K1 builder, guard minimum absent", p, "builder", first, nil)
+	p = testPolicy()
+	p.Minimums["guard"] = Level(0)
+	show("K2 second guard, guard minimum explicitly 0", p, "guard", second, nil)
+	c2logf(t, "K2 Validate: %v", p.Validate())
+	p = testPolicy()
+	p.Minimums["guard"] = Level(7)
+	show("K3 second guard, guard minimum 7 (invalid)", p, "guard", second, nil)
+	c2logf(t, "K3 Validate: %v", p.Validate())
+	p = testPolicy()
+	p.Minimums["guard"] = LevelFrontier
+	p.Models.Alternate = map[Level]string{LevelStandard: "alt-standard"}
+	c2logf(t, "K4: guard minimum frontier, builder standard, alt standard set")
+	show("K4 first guard", p, "guard", first, nil)
+	show("K4 second guard (frontier taken, walk bound at frontier: refuses)", p, "guard", second, nil)
+	p.Models.Alternate = map[Level]string{LevelStandard: "alt-standard", LevelFrontier: "alt-frontier"}
+	show("K4b second guard with alt frontier (no walk needed)", p, "guard", second, nil)
+	p = testPolicy()
+	p.Minimums["guard"] = LevelFast
+	p.Models.Alternate = map[Level]string{LevelFrontier: "alt-frontier"}
+	c2logf(t, "K5: guard minimum fast, builder standard, alt frontier; builder stepped up")
+	show("K5 first guard, builder stepped up", p, "guard", up, nil)
+	show("K5 second guard (standard sonnet free)", p, "guard", upSecond, nil)
+	p.Models.Primary = map[Level]string{LevelFast: "haiku", LevelStandard: "opus", LevelFrontier: "opus"}
+	show("K5b second guard, standard=frontier=opus (walks to haiku, min fast)", p, "guard", upSecond, nil)
+	p = testPolicy()
+	p.Minimums["guard"] = LevelFast
+	p.Models.Alternate = map[Level]string{LevelFrontier: "alt-frontier"}
+	p.Models.Primary = map[Level]string{LevelFast: "", LevelStandard: "opus", LevelFrontier: "opus"}
+	show("K5c second guard, fast primary empty, min fast (walk exhausts)", p, "guard", upSecond, nil)
+
+	c2logf(t, "L: hive-shaped config from the real roster and config (D-180 motivating case)")
+	p = Policy{Models: Models{Adapter: "claude-code", Primary: map[Level]string{LevelFast: "haiku", LevelStandard: "sonnet", LevelFrontier: "opus"}},
+		Minimums: map[string]Level{"builder": LevelStandard, "guard": LevelStandard, "scout": LevelFrontier, "queen": LevelFrontier, "forager": LevelFast}}
+	t3 := func() *comb.RiskTier { t := comb.Tier3ControlPlane; return &t }()
+	show("L builder unstepped Tier 3", p, "builder", &TaskContext{TaskID: "T-023", Tier: t3}, nil)
+	show("L first guard unstepped Tier 3", p, "guard", &TaskContext{TaskID: "T-023", Tier: t3}, nil)
+	show("L second guard unstepped Tier 3 (refuses with hint)", p, "guard", &TaskContext{TaskID: "T-023", Tier: t3, SecondGuard: true}, nil)
+	p.Models.Alternate = map[Level]string{LevelFrontier: "fable"}
+	show("L2 first guard stepped Tier 3, alt frontier fable", p, "guard", &TaskContext{TaskID: "T-023", Tier: t3, GuardMustFix: 2}, nil)
+	show("L2 second guard stepped Tier 3 (sonnet at standard)", p, "guard", &TaskContext{TaskID: "T-023", Tier: t3, GuardMustFix: 2, SecondGuard: true}, nil)
+}

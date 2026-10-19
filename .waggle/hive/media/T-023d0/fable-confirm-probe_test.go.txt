@@ -1,0 +1,501 @@
+package runtime
+
+// Fable guard confirmation probes for T-023 phase D0 fix round (PR #53 at
+// ebce792). Not for merge: saved under .waggle/hive/media/T-023d0/ and deleted
+// from the worktree.
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"os/user"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+var confirmRoot, confirmGecos string
+
+func credact(s string) string {
+	if confirmRoot != "" {
+		s = strings.ReplaceAll(s, confirmRoot, "<tmp>")
+	}
+	if confirmGecos != "" {
+		s = strings.ReplaceAll(s, confirmGecos, "<gecos>")
+	}
+	if u := os.Getenv("USER"); u != "" {
+		s = strings.ReplaceAll(s, u, "<user>")
+	}
+	if h, _ := os.UserHomeDir(); h != "" {
+		s = strings.ReplaceAll(s, h, "<home>")
+	}
+	if hn, _ := os.Hostname(); hn != "" {
+		s = strings.ReplaceAll(s, hn, "<host>")
+	}
+	return s
+}
+
+func clogf(t *testing.T, format string, a ...any) {
+	t.Helper()
+	t.Log(credact(fmt.Sprintf(format, a...)))
+}
+
+func cgit(t *testing.T, env []string, dir string, args ...string) (string, error) {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir, cmd.Env = dir, env
+	out, err := cmd.CombinedOutput()
+	return strings.TrimSpace(string(out)), err
+}
+
+func ckeeperEnv(home, xdg string) []string {
+	return []string{"PATH=/usr/bin:/bin", "HOME=" + home, "XDG_CONFIG_HOME=" + xdg}
+}
+
+// P1 rerun: worker git under a hostile Keeper global, XDG, system, parent env,
+// plus the home ignore and attributes files, a system attributes probe, and a
+// repo-local core.excludesFile / core.attributesFile.
+func TestFableConfirmWorkerGit(t *testing.T) {
+	root := t.TempDir()
+	confirmRoot = root
+	home := filepath.Join(root, "keeperhome")
+	xdg := filepath.Join(root, "xdg")
+	hooks := filepath.Join(root, "hooks")
+	marker := filepath.Join(root, "markers")
+	for _, d := range []string{home, filepath.Join(xdg, "git"), hooks, marker, filepath.Join(home, ".config", "git")} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	hook := "#!/bin/sh\necho ran-$(basename $0) >> " + marker + "/$(basename $0)\nexit 0\n"
+	for _, h := range []string{"pre-commit", "post-commit", "pre-push", "commit-msg"} {
+		writeFile(t, filepath.Join(hooks, h), hook)
+		os.Chmod(filepath.Join(hooks, h), 0o755)
+	}
+	cred := filepath.Join(root, "credhelper.sh")
+	writeFile(t, cred, "#!/bin/sh\necho ran-credhelper >> "+marker+"/credhelper\n")
+	os.Chmod(cred, 0o755)
+	included := filepath.Join(root, "included.gitconfig")
+	writeFile(t, included, "[probe]\n\tincluded = yes\n[url \"git@included.test:\"]\n\tpushInsteadOf = https://github.com/\n")
+	globalCfg := "[user]\n\tname = Keeper Global\n\temail = keeper@example.test\n" +
+		"[url \"git@evil.test:\"]\n\tpushInsteadOf = https://github.com/\n\tinsteadOf = https://github.com/\n" +
+		"[core]\n\thooksPath = " + hooks + "\n\texcludesFile = " + filepath.Join(root, "global-excludes") + "\n\tattributesFile = " + filepath.Join(root, "global-attributes") + "\n" +
+		"[credential]\n\thelper = " + cred + "\n" +
+		"[include]\n\tpath = " + included + "\n" +
+		"[includeIf \"gitdir:**\"]\n\tpath = " + included + "\n" +
+		"[alias]\n\tprobe = !echo alias-ran\n" +
+		"[probe]\n\tscope = home-gitconfig\n"
+	writeFile(t, filepath.Join(home, ".gitconfig"), globalCfg)
+	writeFile(t, filepath.Join(root, "global-excludes"), "hidden-by-global-excludesfile.txt\n")
+	writeFile(t, filepath.Join(root, "global-attributes"), "*.md filter=global-attr\n")
+	writeFile(t, filepath.Join(xdg, "git", "config"), "[probe]\n\tscope = xdg-config\n[core]\n\thooksPath = "+hooks+"\n")
+	// Non-config dotfiles git reads from HOME regardless of GIT_CONFIG_GLOBAL (fable N2).
+	writeFile(t, filepath.Join(home, ".config", "git", "ignore"), "hidden-by-home-ignore.txt\n")
+	writeFile(t, filepath.Join(home, ".config", "git", "attributes"), "*.txt filter=home-attr\n")
+	writeFile(t, filepath.Join(xdg, "git", "ignore"), "hidden-by-xdg-ignore.txt\n")
+	writeFile(t, filepath.Join(xdg, "git", "attributes"), "*.txt filter=xdg-attr\n")
+	system := filepath.Join(root, "system.gitconfig")
+	writeFile(t, system, "[probe]\n\tscope = system\n[core]\n\thooksPath = "+hooks+"\n")
+
+	// Parent (Keeper) environment: hostile values on every git channel.
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+	t.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(home, ".gitconfig"))
+	t.Setenv("GIT_CONFIG_SYSTEM", system)
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "0")
+	t.Setenv("GIT_ATTR_NOSYSTEM", "0")
+	t.Setenv("GIT_CONFIG_PARAMETERS", "'probe.scope=parent-parameters' 'core.hooksPath="+hooks+"'")
+	t.Setenv("GIT_CONFIG_COUNT", "99")
+	t.Setenv("GIT_CONFIG_KEY_0", "core.hooksPath")
+	t.Setenv("GIT_CONFIG_VALUE_0", hooks)
+	t.Setenv("GIT_CONFIG_KEY_10", "core.excludesFile")
+	t.Setenv("GIT_CONFIG_VALUE_10", filepath.Join(root, "global-excludes"))
+	t.Setenv("GIT_AUTHOR_NAME", "Parent Author")
+	t.Setenv("GIT_AUTHOR_EMAIL", "parent@example.test")
+	t.Setenv("GIT_COMMITTER_NAME", "Parent Committer")
+	t.Setenv("GIT_COMMITTER_EMAIL", "parent@example.test")
+	t.Setenv("EMAIL", "emailvar@example.test")
+	t.Setenv("GIT_SSH_COMMAND", "/nonexistent/ssh")
+	t.Setenv("GIT_ASKPASS", "/nonexistent/askpass")
+
+	a := verifiedAdapter(t, AdapterConfig{})
+	inv, s := testLaunch(t, "T-9")
+
+	// Env shape: duplicate keys, GIT_* listing, COUNT/KEY/VALUE consistency, leaks.
+	spec, err := a.Prepare(inv, s, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]int{}
+	vals := map[string]string{}
+	for _, kv := range spec.Env {
+		k, v, _ := strings.Cut(kv, "=")
+		seen[k]++
+		vals[k] = v
+	}
+	dups := 0
+	for k, n := range seen {
+		if n > 1 {
+			dups++
+			clogf(t, "DUPLICATE env key %s x%d", k, n)
+		}
+	}
+	clogf(t, "env entries=%d distinct keys=%d duplicates=%d", len(spec.Env), len(seen), dups)
+	for _, kv := range spec.Env {
+		if strings.HasPrefix(kv, "GIT_") || strings.HasPrefix(kv, "XDG_") || strings.HasPrefix(kv, "EMAIL") || strings.HasPrefix(kv, "HOME") {
+			clogf(t, "env: %s", kv)
+		}
+	}
+	count, _ := strconv.Atoi(vals["GIT_CONFIG_COUNT"])
+	for i := 0; i < count; i++ {
+		n := strconv.Itoa(i)
+		if _, ok := vals["GIT_CONFIG_KEY_"+n]; !ok {
+			clogf(t, "MISSING GIT_CONFIG_KEY_%s", n)
+		}
+		if _, ok := vals["GIT_CONFIG_VALUE_"+n]; !ok {
+			clogf(t, "MISSING GIT_CONFIG_VALUE_%s", n)
+		}
+	}
+	for k := range vals {
+		if strings.HasPrefix(k, "GIT_CONFIG_KEY_") {
+			if i, _ := strconv.Atoi(strings.TrimPrefix(k, "GIT_CONFIG_KEY_")); i >= count {
+				clogf(t, "KEY beyond COUNT: %s", k)
+			}
+		}
+	}
+	clogf(t, "GIT_CONFIG_COUNT=%d, keys 0..%d all present with values: checked", count, count-1)
+	for _, k := range []string{"GIT_CONFIG_PARAMETERS", "GIT_CONFIG_SYSTEM", "GIT_AUTHOR_NAME", "GIT_SSH_COMMAND", "GIT_ASKPASS", "EMAIL", "XDG_CONFIG_HOME"} {
+		if _, ok := vals[k]; ok {
+			clogf(t, "LEAK: parent %s reached the worker env", k)
+		}
+	}
+	if vals["GIT_ATTR_NOSYSTEM"] != "1" || vals["GIT_CONFIG_NOSYSTEM"] != "1" || vals["GIT_CONFIG_GLOBAL"] != "/dev/null" {
+		clogf(t, "UNEXPECTED isolation values: %q %q %q", vals["GIT_ATTR_NOSYSTEM"], vals["GIT_CONFIG_NOSYSTEM"], vals["GIT_CONFIG_GLOBAL"])
+	}
+
+	remote := filepath.Join(root, "remote.git")
+	if out, err := cgit(t, ckeeperEnv(home, xdg), root, "init", "--bare", "-q", remote); err != nil {
+		t.Fatal(out, err)
+	}
+	repo := filepath.Join(root, "repo")
+	if out, err := cgit(t, ckeeperEnv(home, xdg), root, "init", "-q", "-b", "main", repo); err != nil {
+		t.Fatal(out, err)
+	}
+	kenv := ckeeperEnv(home, xdg)
+	cgit(t, kenv, repo, "remote", "add", "origin", "https://github.com/example/repo")
+	cgit(t, kenv, repo, "config", "--local", "user.name", "Repo Local")
+	cgit(t, kenv, repo, "config", "--local", "user.email", "local@example.test")
+	writeFile(t, filepath.Join(repo, "a.txt"), "a\n")
+	writeFile(t, filepath.Join(repo, "b.md"), "b\n")
+	writeFile(t, filepath.Join(repo, "hidden-by-home-ignore.txt"), "x\n")
+	writeFile(t, filepath.Join(repo, "hidden-by-xdg-ignore.txt"), "x\n")
+	writeFile(t, filepath.Join(repo, "hidden-by-global-excludesfile.txt"), "x\n")
+	writeFile(t, filepath.Join(repo, "hidden-by-gitignore.txt"), "x\n")
+	writeFile(t, filepath.Join(repo, "hidden-by-info-exclude.txt"), "x\n")
+	writeFile(t, filepath.Join(repo, "hidden-by-local-excludesfile.txt"), "x\n")
+	writeFile(t, filepath.Join(repo, ".gitignore"), "hidden-by-gitignore.txt\n")
+	writeFile(t, filepath.Join(repo, ".git", "info", "exclude"), "hidden-by-info-exclude.txt\n")
+	writeFile(t, filepath.Join(repo, ".gitattributes"), "a.txt diff=tree-attr\n")
+	writeFile(t, filepath.Join(repo, ".git", "info", "attributes"), "a.txt merge=info-attr\n")
+
+	// Control under the Keeper's env.
+	kenvP := append(ckeeperEnv(home, xdg), "GIT_CONFIG_PARAMETERS='probe.scope=parent-parameters'")
+	out, _ := cgit(t, kenvP, repo, "config", "--show-origin", "--get-all", "probe.scope")
+	clogf(t, "control keeper probe.scope:\n%s", out)
+	out, _ = cgit(t, kenv, repo, "remote", "get-url", "--push", "origin")
+	clogf(t, "control keeper push url: %s", out)
+	out, _ = cgit(t, kenv, repo, "status", "--porcelain", "--ignored")
+	clogf(t, "control keeper status --ignored:\n%s", out)
+	out, _ = cgit(t, kenv, repo, "check-attr", "-a", "a.txt", "b.md")
+	clogf(t, "control keeper check-attr -a:\n%s", out)
+	out, _ = cgit(t, kenv, repo, "var", "GIT_ATTR_SYSTEM")
+	clogf(t, "control keeper git var GIT_ATTR_SYSTEM: %q", out)
+	out, _ = cgit(t, kenv, repo, "var", "GIT_ATTR_GLOBAL")
+	clogf(t, "control keeper git var GIT_ATTR_GLOBAL: %q", out)
+	if st, err := os.Stat("/etc/gitattributes"); err == nil {
+		clogf(t, "system attributes file exists (%d bytes); not writable without root, so its content is not planted", st.Size())
+	} else {
+		clogf(t, "system attributes file /etc/gitattributes: %v (not plantable without root; evidence is git var under the worker env)", err)
+	}
+
+	inv.GitIdentity = GitIdentity{Name: "Hive Worker", Email: "worker@example.test"}
+	spec, err = a.Prepare(inv, s, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := spec.Env
+	os.RemoveAll(marker)
+	os.MkdirAll(marker, 0o755)
+	out, _ = cgit(t, env, repo, "--version")
+	clogf(t, "worker git: %s", out)
+	out, _ = cgit(t, env, repo, "config", "--show-origin", "--get-all", "probe.scope")
+	clogf(t, "worker probe.scope: %q", out)
+	out, _ = cgit(t, env, repo, "config", "--get-all", "probe.included")
+	clogf(t, "worker probe.included: %q", out)
+	out, _ = cgit(t, env, repo, "config", "--show-origin", "--get-all", "core.hooksPath")
+	clogf(t, "worker core.hooksPath: %q", out)
+	out, _ = cgit(t, env, repo, "config", "--get-all", "credential.helper")
+	clogf(t, "worker credential.helper: %q", out)
+	out, _ = cgit(t, env, repo, "config", "--show-scope", "--show-origin", "--get-all", "core.excludesFile")
+	clogf(t, "worker core.excludesFile: %q", out)
+	out, _ = cgit(t, env, repo, "config", "--show-scope", "--show-origin", "--get-all", "core.attributesFile")
+	clogf(t, "worker core.attributesFile: %q", out)
+	out, _ = cgit(t, env, repo, "var", "GIT_ATTR_SYSTEM")
+	clogf(t, "worker git var GIT_ATTR_SYSTEM (empty means GIT_ATTR_NOSYSTEM applied): %q", out)
+	out, _ = cgit(t, env, repo, "var", "GIT_ATTR_GLOBAL")
+	clogf(t, "worker git var GIT_ATTR_GLOBAL: %q", out)
+	out, _ = cgit(t, env, repo, "remote", "get-url", "--push", "origin")
+	clogf(t, "worker push url: %s", out)
+	out, _ = cgit(t, env, repo, "remote", "get-url", "origin")
+	clogf(t, "worker fetch url: %s", out)
+	out, err = cgit(t, env, repo, "probe")
+	clogf(t, "worker alias probe: %q err=%v", out, err)
+	out, _ = cgit(t, env, repo, "status", "--porcelain", "--ignored")
+	clogf(t, "worker status --ignored (!! = ignored; ?? = visible untracked):\n%s", out)
+	for _, f := range []string{"hidden-by-home-ignore.txt", "hidden-by-xdg-ignore.txt", "hidden-by-global-excludesfile.txt", "hidden-by-gitignore.txt", "hidden-by-info-exclude.txt"} {
+		out, err = cgit(t, env, repo, "check-ignore", "-v", "--no-index", f)
+		clogf(t, "worker check-ignore -v %s: ignored=%v %q", f, err == nil, out)
+	}
+	out, _ = cgit(t, env, repo, "check-attr", "-a", "a.txt", "b.md")
+	clogf(t, "worker check-attr -a (tree and info attributes should remain; home, xdg, global ones should not):\n%s", out)
+	out, _ = cgit(t, env, repo, "var", "GIT_AUTHOR_IDENT")
+	clogf(t, "worker GIT_AUTHOR_IDENT: %s", out)
+	out, _ = cgit(t, env, repo, "var", "GIT_COMMITTER_IDENT")
+	clogf(t, "worker GIT_COMMITTER_IDENT: %s", out)
+	cgit(t, env, repo, "add", "a.txt", "b.md", ".gitignore", ".gitattributes")
+	out, err = cgit(t, env, repo, "commit", "-q", "-s", "-m", "probe set")
+	clogf(t, "worker commit -s: err=%v out=%q", err, out)
+	if err == nil {
+		out, _ = cgit(t, env, repo, "log", "-1", "--format=author=%an <%ae> committer=%cn <%ce>%n%b")
+		clogf(t, "worker commit identity and trailer:\n%s", out)
+	}
+	ents, _ := os.ReadDir(marker)
+	var ran []string
+	for _, e := range ents {
+		ran = append(ran, e.Name())
+	}
+	clogf(t, "hooks or helpers that ran under the worker env: %v", ran)
+	out, err = cgit(t, env, repo, "push", "origin", "HEAD:refs/heads/probe")
+	clogf(t, "worker push: err=%v out=%q", err, out)
+	out, _ = cgit(t, kenv, remote, "for-each-ref")
+	clogf(t, "remote refs after push: %q", out)
+
+	// Repo-local core.excludesFile and core.attributesFile set by the Keeper:
+	// does the command-line scope /dev/null override them for the worker?
+	localEx := filepath.Join(root, "local-excludes")
+	localAt := filepath.Join(root, "local-attributes")
+	writeFile(t, localEx, "hidden-by-local-excludesfile.txt\n")
+	writeFile(t, localAt, "b.md filter=local-attr\n")
+	cgit(t, kenv, repo, "config", "--local", "core.excludesFile", localEx)
+	cgit(t, kenv, repo, "config", "--local", "core.attributesFile", localAt)
+	out, _ = cgit(t, kenv, repo, "check-ignore", "-v", "--no-index", "hidden-by-local-excludesfile.txt")
+	clogf(t, "control keeper with local core.excludesFile: %q", out)
+	out, _ = cgit(t, kenv, repo, "check-attr", "filter", "b.md")
+	clogf(t, "control keeper with local core.attributesFile: %q", out)
+	out, _ = cgit(t, env, repo, "config", "--show-scope", "--show-origin", "--get-all", "core.excludesFile")
+	clogf(t, "worker core.excludesFile with a local one set (all scopes):\n%s", out)
+	out, _ = cgit(t, env, repo, "config", "--show-scope", "--get", "core.excludesFile")
+	clogf(t, "worker core.excludesFile effective (last wins): %q", out)
+	out, err = cgit(t, env, repo, "check-ignore", "-v", "--no-index", "hidden-by-local-excludesfile.txt")
+	clogf(t, "worker with local core.excludesFile: ignored=%v %q", err == nil, out)
+	out, _ = cgit(t, env, repo, "check-attr", "filter", "b.md")
+	clogf(t, "worker with local core.attributesFile: %q", out)
+	out, _ = cgit(t, env, repo, "status", "--porcelain", "--ignored")
+	clogf(t, "worker status --ignored with local excludesFile set:\n%s", out)
+	cgit(t, kenv, repo, "config", "--local", "--unset", "core.excludesFile")
+	cgit(t, kenv, repo, "config", "--local", "--unset", "core.attributesFile")
+
+	// A worktree's info/exclude lives in the common dir; confirm it still applies to a worker worktree.
+	wt := filepath.Join(root, "wt")
+	out, err = cgit(t, kenv, repo, "worktree", "add", "-q", "--detach", wt)
+	if err != nil {
+		clogf(t, "worktree add: %v %q", err, out)
+	} else {
+		writeFile(t, filepath.Join(wt, "hidden-by-info-exclude.txt"), "x\n")
+		writeFile(t, filepath.Join(wt, "hidden-by-home-ignore.txt"), "x\n")
+		out, _ = cgit(t, env, wt, "status", "--porcelain", "--ignored")
+		clogf(t, "worker status --ignored in a linked worktree:\n%s", out)
+	}
+}
+
+// P2: whitespace, unicode space and control identity cases: what check does,
+// what the env carries, and what git stores for the ones that pass.
+func TestFableConfirmIdentity(t *testing.T) {
+	root := t.TempDir()
+	confirmRoot = root
+	home := filepath.Join(root, "home")
+	os.MkdirAll(home, 0o755)
+	t.Setenv("HOME", home)
+	if u, err := user.Current(); err == nil {
+		confirmGecos = u.Name
+	}
+	a := verifiedAdapter(t, AdapterConfig{})
+	inv, s := testLaunch(t, "T-9")
+	repo := filepath.Join(root, "repo")
+	if out, err := cgit(t, ckeeperEnv(home, home), root, "init", "-q", "-b", "main", repo); err != nil {
+		t.Fatal(out, err)
+	}
+	cases := []struct {
+		name string
+		id   GitIdentity
+	}{
+		{"nbsp name, email set", GitIdentity{Name: "\u00a0", Email: "a@example.test"}},
+		{"nbsp name, nbsp email", GitIdentity{Name: "\u00a0", Email: "\u00a0"}},
+		{"nbsp name, empty email", GitIdentity{Name: "\u00a0", Email: ""}},
+		{"ideographic space name, empty email", GitIdentity{Name: "\u3000", Email: ""}},
+		{"em space name, space email", GitIdentity{Name: "\u2003 ", Email: " "}},
+		{"name with inner nbsp", GitIdentity{Name: "A\u00a0B", Email: "a@example.test"}},
+		{"name padded with nbsp", GitIdentity{Name: "\u00a0A\u00a0", Email: "a@example.test"}},
+		{"email with leading nbsp", GitIdentity{Name: "A", Email: "\u00a0a@example.test"}},
+		{"zero width space name", GitIdentity{Name: "\u200b", Email: "a@example.test"}},
+		{"BOM name", GitIdentity{Name: "\ufeff", Email: "a@example.test"}},
+		{"RLO in name", GitIdentity{Name: "A\u202eB", Email: "a@example.test"}},
+		{"dot only name", GitIdentity{Name: ".", Email: "a@example.test"}},
+		{"angle only name", GitIdentity{Name: "<>", Email: "a@example.test"}},
+		{"NEL only name, empty email", GitIdentity{Name: "\u0085", Email: ""}},
+		{"NEL in email", GitIdentity{Name: "A", Email: "a@example.test\u0085"}},
+		{"tab padded name", GitIdentity{Name: "\tA\t", Email: "a@example.test"}},
+		{"space padded both", GitIdentity{Name: " A ", Email: " a@example.test "}},
+		{"DEL in email", GitIdentity{Name: "A", Email: "a@example.test\x7f"}},
+		{"overlong NUL in name", GitIdentity{Name: "A\xc0\x80", Email: "a@example.test"}},
+		{"encoded surrogate in name", GitIdentity{Name: "A\xed\xa0\x80", Email: "a@example.test"}},
+		{"invalid byte, blank email", GitIdentity{Name: "\xff", Email: " "}},
+		{"U+2029 only name, empty email", GitIdentity{Name: "\u2029", Email: ""}},
+		{"form feed name", GitIdentity{Name: "\fA", Email: "a@example.test"}},
+		{"vertical tab in email", GitIdentity{Name: "A", Email: "a@\vexample.test"}},
+		{"plain", GitIdentity{Name: "Hive Worker", Email: "worker@example.test"}},
+	}
+	for _, c := range cases {
+		inv.GitIdentity = c.id
+		spec, err := a.Prepare(inv, s, nil, nil)
+		if err != nil {
+			clogf(t, "%-40s refused: %v", c.name, err)
+			continue
+		}
+		var ident []string
+		for _, kv := range spec.Env {
+			if strings.HasPrefix(kv, "GIT_AUTHOR_") || strings.HasPrefix(kv, "GIT_COMMITTER_") {
+				ident = append(ident, kv)
+			}
+		}
+		if len(ident) == 0 {
+			clogf(t, "%-40s accepted as zero identity: no GIT_AUTHOR_* or GIT_COMMITTER_* in env", c.name)
+			continue
+		}
+		out, err := cgit(t, spec.Env, repo, "commit", "-q", "-s", "--allow-empty", "-m", "probe")
+		if err != nil {
+			clogf(t, "%-40s accepted (env %q); git commit refused: %q", c.name, ident[:2], out)
+			continue
+		}
+		out, _ = cgit(t, spec.Env, repo, "log", "-1", "--format=%an|%ae|%cn")
+		clogf(t, "%-40s accepted (env %q); git stored %q", c.name, ident[:2], out)
+	}
+}
+
+// P3: D-179 downward walk edge cases and SecondGuard on non-guard roles.
+func TestFableConfirmD179(t *testing.T) {
+	show := func(name string, p Policy, role string, task *TaskContext, dec func(int) bool) {
+		sel, err := p.Resolve(role, task, dec)
+		if err != nil {
+			clogf(t, "%-58s err=%v", name, err)
+			return
+		}
+		clogf(t, "%-58s model=%q level=%s steppedUp=%v", name, sel.Model, sel.Level, sel.SteppedUp)
+	}
+	first := &TaskContext{TaskID: "T-1"}
+	second := &TaskContext{TaskID: "T-1", SecondGuard: true}
+	up := &TaskContext{TaskID: "T-1", GuardMustFix: 2}
+	upSecond := &TaskContext{TaskID: "T-1", GuardMustFix: 2, SecondGuard: true}
+
+	p := testPolicy()
+	clogf(t, "A: primary fast=haiku standard=sonnet frontier=opus, no alternates, builder and guard standard")
+	show("A builder", p, "builder", first, nil)
+	show("A first guard", p, "guard", first, nil)
+	show("A second guard (walks down to fast)", p, "guard", second, nil)
+	show("A builder stepped up", p, "builder", up, nil)
+	show("A first guard, builder stepped up", p, "guard", up, nil)
+	show("A second guard, builder stepped up", p, "guard", upSecond, nil)
+
+	p = testPolicy()
+	p.Models.Alternate = map[Level]string{}
+	show("A2 second guard, empty (non-nil) alternates", p, "guard", second, nil)
+
+	p = testPolicy()
+	p.Minimums["builder"], p.Minimums["guard"] = LevelFast, LevelFast
+	clogf(t, "B: fast-level builder and guard, no alternates")
+	show("B first guard", p, "guard", first, nil)
+	show("B second guard (no walk needed, frontier free)", p, "guard", second, nil)
+	p.Models.Primary = map[Level]string{LevelFast: "a", LevelStandard: "b", LevelFrontier: "b"}
+	clogf(t, "B2: fast guard, primaries a/b/b")
+	show("B2 first guard", p, "guard", first, nil)
+	show("B2 second guard (nothing below fast: error at fast)", p, "guard", second, nil)
+
+	p = testPolicy()
+	p.Models.Primary = map[Level]string{LevelFast: "haiku", LevelStandard: "sonnet", LevelFrontier: "sonnet"}
+	clogf(t, "C: primaries duplicated standard=frontier=sonnet, no alternates, guard standard")
+	show("C first guard (fails itself)", p, "guard", first, nil)
+	show("C second guard (first guard failure propagates, no walk)", p, "guard", second, nil)
+	p.Models.Alternate = map[Level]string{LevelFrontier: "opus"}
+	show("C2 first guard with alt frontier opus", p, "guard", first, nil)
+	show("C2 second guard (walks down to haiku)", p, "guard", second, nil)
+
+	p = testPolicy()
+	p.Models.Alternate = map[Level]string{LevelFrontier: "sonnet"}
+	clogf(t, "D: alt frontier equals standard primary (sonnet); builder stepped up to frontier")
+	show("D builder", p, "builder", up, nil)
+	show("D first guard", p, "guard", up, nil)
+	show("D second guard (standard sonnet taken, falls to fast)", p, "guard", upSecond, nil)
+
+	p = testPolicy()
+	p.Models.Alternate = map[Level]string{LevelFrontier: "haiku"}
+	clogf(t, "E: alt frontier duplicates fast primary (haiku); builder stepped up")
+	show("E first guard", p, "guard", up, nil)
+	show("E second guard (standard sonnet unused)", p, "guard", upSecond, nil)
+
+	p = testPolicy()
+	p.Models.Alternate = map[Level]string{LevelFast: "alt-fast", LevelStandard: "alt-standard", LevelFrontier: "alt-frontier"}
+	clogf(t, "F: alternates at every level; builder stepped up")
+	show("F first guard", p, "guard", up, nil)
+	show("F second guard (primary before alternate at standard)", p, "guard", upSecond, nil)
+	p.Models.Alternate = map[Level]string{LevelFast: "alt-fast", LevelStandard: "alt-standard", LevelFrontier: "alt-frontier"}
+	p.Models.Primary = map[Level]string{LevelFast: "haiku", LevelStandard: "opus", LevelFrontier: "opus"}
+	clogf(t, "F2: standard primary equals frontier primary (opus), alternates everywhere; builder stepped up")
+	show("F2 builder", p, "builder", up, nil)
+	show("F2 first guard", p, "guard", up, nil)
+	show("F2 second guard (standard primary taken, takes alt-standard)", p, "guard", upSecond, nil)
+
+	tier1 := func() *comb.RiskTier { t := comb.Tier1Isolated; return &t }()
+	dec := func(int) bool { return true }
+	ovFirst := &TaskContext{TaskID: "T-1", Tier: tier1, Overrides: map[string]Override{"guard": {Level: LevelFast, DecisionID: 1}}}
+	ovSecond := &TaskContext{TaskID: "T-1", Tier: tier1, SecondGuard: true, Overrides: map[string]Override{"guard": {Level: LevelFast, DecisionID: 1}}}
+	p = testPolicy()
+	clogf(t, "G: recorded guard override to fast on a Tier 1 task, no alternates")
+	show("G first guard", p, "guard", ovFirst, dec)
+	show("G second guard (frontier opus free, no walk)", p, "guard", ovSecond, dec)
+	p.Models.Primary = map[Level]string{LevelFast: "haiku", LevelStandard: "sonnet", LevelFrontier: "sonnet"}
+	show("G2 second guard, frontier=standard (nothing below fast)", p, "guard", ovSecond, dec)
+
+	p = testPolicy()
+	ovUpFirst := &TaskContext{TaskID: "T-1", Overrides: map[string]Override{"guard": {Level: LevelFrontier, DecisionID: 1}}}
+	ovUpSecond := &TaskContext{TaskID: "T-1", SecondGuard: true, Overrides: map[string]Override{"guard": {Level: LevelFrontier, DecisionID: 1}}}
+	clogf(t, "H: recorded guard override UP to frontier on a standard builder, no alternates")
+	show("H first guard", p, "guard", ovUpFirst, dec)
+	show("H second guard (override level not honored: falls to fast)", p, "guard", ovUpSecond, dec)
+
+	p = testPolicy()
+	p.Models.Primary = map[Level]string{LevelFast: "m", LevelStandard: "m", LevelFrontier: "m"}
+	clogf(t, "I: one model at every level")
+	show("I first guard", p, "guard", first, nil)
+	show("I second guard", p, "guard", second, nil)
+
+	p = testPolicy()
+	clogf(t, "J: SecondGuard on non-guard roles")
+	for _, role := range []string{"builder", "scout", "forager", "queen", "waggled", "Guard", "second-guard"} {
+		show("J "+role+" with SecondGuard", p, role, &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+	}
+	show("J builder stepped up with SecondGuard", p, "builder", upSecond, nil)
+	show("J nil task guard", p, "guard", nil, nil)
+}

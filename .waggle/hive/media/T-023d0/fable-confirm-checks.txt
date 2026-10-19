@@ -1,0 +1,48 @@
+Fable guard confirmation checks, T-023 phase D0 fix round, PR #53 at ebce792 (base 2ee74d9).
+
+== gh pr checks 53 (head ebce7926f731bda703c8a7e8d413da9b52d1046f)
+verify-leases-and-tiers  fail   leases: no claim for T-023; claims must stay until merge (expected, D-168)
+product-ci               pass
+relay-claim              skipping
+
+== gh pr view 53 --json files
+internal/runtime/claude.go
+internal/runtime/launch.go
+internal/runtime/launch_test.go
+internal/runtime/policy.go
+internal/runtime/policy_test.go
+internal/runtime/runtime.go
+
+== git diff 2ee74d9 --numstat (non-test, D-136)
+4	1	internal/runtime/claude.go
+66	15	internal/runtime/launch.go
+35	11	internal/runtime/policy.go
+8	3	internal/runtime/runtime.go
+added non-test: 113 (stop 130)
+
+== gofmt -l internal/runtime/
+(none)
+
+== en or em dashes in git diff 2ee74d9
+0
+
+== sign-off
+ebce792 Signed-off-by present
+79171ec Signed-off-by present
+
+== go build ./...
+rc=0
+== go vet ./...
+rc=0
+== go test -race -count=1 ./...
+ok  	github.com/waggle-sh/waggle/cmd/waggle	16.130s
+ok  	github.com/waggle-sh/waggle/internal/comb	28.161s
+ok  	github.com/waggle-sh/waggle/internal/config	1.459s
+ok  	github.com/waggle-sh/waggle/internal/decisions	3.682s
+ok  	github.com/waggle-sh/waggle/internal/dispatch	70.385s
+ok  	github.com/waggle-sh/waggle/internal/forge	11.794s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	5.629s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	10.575s
+ok  	github.com/waggle-sh/waggle/internal/usage	1.207s
+rc=0
