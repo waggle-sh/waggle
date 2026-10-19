@@ -121,14 +121,15 @@ func offBranch(ctx context.Context, g *Git, req Request, baseOID string) error {
 	return err
 }
 
-// waggleCommands returns the commands of WAGGLE.md section 3 (the first
-// backtick span of each bullet) that the worker may run through Bash.
-// An unfilled placeholder such as <build command> is skipped.
+// waggleCommands returns the commands of the WAGGLE.md section titled "Build
+// and Verification Commands" (the first backtick span of each bullet) that the
+// worker may run through Bash. An unfilled placeholder such as <build command>
+// is skipped. The section is found by its title, so renumbering is harmless.
 func waggleCommands(md []byte) (cmds []string) {
 	in := false
 	for _, line := range strings.Split(string(md), "\n") {
 		if strings.HasPrefix(line, "## ") {
-			in = strings.HasPrefix(line, "## 3.")
+			in = strings.Contains(line, "Build and Verification Commands")
 		} else if _, rest, ok := strings.Cut(line, "`"); ok && in && strings.HasPrefix(line, "- ") {
 			if cmd, _, ok := strings.Cut(rest, "`"); ok && !strings.HasPrefix(cmd, "<") {
 				cmds = append(cmds, cmd)
@@ -137,6 +138,13 @@ func waggleCommands(md []byte) (cmds []string) {
 	}
 	return cmds
 }
+
+// combEnv is the Comb's extra environment. The agent controls repo config, so
+// the claim writes run no hooks and no auto maintenance. The Keeper's own
+// GIT_CONFIG_COUNT entries are replaced (the last value of a variable wins in
+// os/exec), and GIT_CONFIG_PARAMETERS is emptied so a parent's cannot add keys.
+var combEnv = []string{"GIT_CONFIG_PARAMETERS=", "GIT_CONFIG_COUNT=3", "GIT_CONFIG_KEY_0=core.hooksPath", "GIT_CONFIG_VALUE_0=/dev/null",
+	"GIT_CONFIG_KEY_1=maintenance.auto", "GIT_CONFIG_VALUE_1=false", "GIT_CONFIG_KEY_2=gc.auto", "GIT_CONFIG_VALUE_2=0"}
 
 // Run is the dispatch sequence of T-023 section 5 for a builder or forager. It
 // returns an *Error before a run record exists. After that it returns the
@@ -151,19 +159,13 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	switch {
 	case d.Cell == nil:
 		return res, failf(ExitEnv, "no cell runtime; the CLI passes the host cell")
-	case req.Role == "guard":
-		return res, failf(ExitUsage, "guard runs arrive in phase D")
 	}
 	if err = refuseDirs(req.Dirs); err != nil {
 		return res, err
 	}
 	var l loaded
-	var dir string
 	if req.RepoDir, err = filepath.Abs(req.RepoDir); err == nil {
 		l, err = load(req.RepoDir)
-	}
-	if err == nil {
-		dir, err = worktreesDir(req.RepoDir)
 	}
 	if err != nil {
 		return res, err
@@ -182,7 +184,15 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	}
 	// Verify runs exactly once per adapter, before any Prepare. Every runtime
 	// refusal (unverified binary, refused argument, bad config) exits 3.
-	if err = rt.Verify(ctx); err != nil {
+	// Everything that can refuse a run comes before the first write (item 4).
+	var id runtime.GitIdentity
+	var dir, common string
+	if err = seq(
+		func() error { return rt.Verify(ctx) },
+		func() error { return ownGroup(new(exec.Cmd)) },
+		func() error { return checkIgnored(ctx, pg) },
+		func() (e error) { id, e = resolveIdentity(ctx, g); return },
+		func() (e error) { dir, e = worktreesDir(req.RepoDir); return }); err != nil {
 		return res, err
 	}
 	lock := filepath.Join(dir, "dispatch.lock")
@@ -191,13 +201,25 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		return res, failf(ExitEnv, "another dispatch run is in progress in this repo: %w", err)
 	}
 	defer os.Remove(lock)
-	if err = (&Worktree{Path: filepath.Join(dir, req.Ticket+"-"+req.Role)}).taintedErr(); err != nil {
+	wtPath := filepath.Join(dir, req.Ticket+"-"+req.Role)
+	if err = (&Worktree{Path: wtPath}).taintedErr(); err != nil {
 		return res, err
 	}
+	out, err := pg.Run(ctx, "rev-parse", "--path-format=absolute", "--git-common-dir")
+	if common = strings.TrimSpace(string(out)); err == nil {
+		err = checkHostRecord(dir, common) // before ResolveBase's fetch, the first unpinned call
+	}
+	if err != nil {
+		return res, err
+	}
+	guard := req.Role == "guard"
+	ownRef, _ := comb.RefName(req.Ticket)
 	var (
 		baseOID, runDir  string
 		in               Inputs
-		task             = &runtime.TaskContext{TaskID: req.Ticket, Tier: req.Tier}
+		cmds             []string
+		want             = comb.Lease{TicketID: req.Ticket, Directories: req.Dirs, Gate: req.Gate}
+		task             = &runtime.TaskContext{TaskID: req.Ticket, Tier: req.Tier, SecondGuard: req.Second}
 		sel              runtime.Selection
 		cs               runtime.ContextSettings
 		backend          = d.Backend
@@ -205,7 +227,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		w                *Worktree
 		stable, variable []byte
 		spec             runtime.LaunchSpec
-		ck               = &checker{g: pg, remoteMode: g.Remote != ""}
+		ck               = &checker{g: pg, remoteMode: g.Remote != "", common: common, guard: guard}
 	)
 	err = seq(
 		func() (e error) { baseOID, e = ResolveBase(ctx, g, g.Remote, req.Base); return },
@@ -219,33 +241,44 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			}
 			opts, e := l.cfg.CombOptions(req.RepoDir)
 			opts.GitBinary = d.GitBin
-			// The agent controls repo config: never run hooks from the claim writes.
-			opts.ExtraEnv = []string{"GIT_CONFIG_COUNT=3", "GIT_CONFIG_KEY_0=core.hooksPath", "GIT_CONFIG_VALUE_0=/dev/null",
-				"GIT_CONFIG_KEY_1=maintenance.auto", "GIT_CONFIG_VALUE_1=false", "GIT_CONFIG_KEY_2=gc.auto", "GIT_CONFIG_VALUE_2=0"}
+			opts.ExtraEnv = combEnv
 			if e == nil {
 				backend, e = comb.NewGitBackend(opts)
 			}
 			return e
 		},
-		func() (e error) { claim, e = AcquireClaim(ctx, backend, g, req, l.keeper, now()); return },
+		func() (e error) { // the guard reads the builder's claim and writes none
+			if guard {
+				want, req.Head, e = guardTarget(ctx, backend, g, req)
+				claim.Verb = "read"
+			}
+			return
+		},
+		func() (e error) {
+			lines := TaskLines(req, baseOID, want)
+			if guard {
+				lines = guardTaskLines(req, baseOID, want)
+			}
+			stable, variable = BuildPrompts(in, lines, cs)
+			cmds = waggleCommands(in.WaggleMD)
+			spec, e = rt.Prepare(runtime.Invocation{Role: req.Role, TaskID: req.Ticket, WorktreeDir: wtPath,
+				Selection: sel, Commands: cmds, GitIdentity: id}, cs, stable, variable)
+			return
+		},
+		func() (e error) {
+			if !guard {
+				claim, e = AcquireClaim(ctx, backend, g, req, l.keeper, now())
+				want = claim.Lease
+			}
+			return
+		},
 		func() (e error) { w, e = Provision(ctx, g, req, baseOID, time.Now()); return },
 		func() (e error) { runDir, e = NewRunDir(req.RepoDir, req.Ticket, req.Role); return },
+		func() error { return SavePrompts(runDir, stable, variable) },
 		func() (e error) {
-			stable, variable, e = WritePrompts(runDir, in, TaskLines(req, baseOID, claim.Lease), cs)
+			ck.w, ck.lease, ck.claimOID, ck.head = w, want, claim.OID, req.Head
+			ck.before, e = takeSnap(ctx, pg, common, w.Admin)
 			return
-		},
-		func() (e error) {
-			spec, e = rt.Prepare(runtime.Invocation{Role: req.Role, TaskID: req.Ticket, WorktreeDir: w.Path,
-				Selection: sel, Commands: waggleCommands(in.WaggleMD)}, cs, stable, variable)
-			return
-		},
-		func() error {
-			out, e := pg.Run(ctx, "rev-parse", "--path-format=absolute", "--git-common-dir")
-			ck.w, ck.lease, ck.common = w, claim.Lease, strings.TrimSpace(string(out))
-			if e == nil {
-				ck.before, e = takeSnap(ctx, pg, ck.common, w.Admin)
-			}
-			return e
 		})
 	if w != nil {
 		defer w.Unlock()
@@ -260,9 +293,12 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	}
 	res = Result{Schema: 1, Ticket: req.Ticket, Role: req.Role, Branch: req.Branch, BaseOID: baseOID, CheckBaseOID: w.CheckBase,
 		Worktree: w.Path, RunDir: runDir, KeeperID: l.keeper, ClaimOID: claim.OID, ClaimVerb: claim.Verb, ClaimNotes: claim.Notes,
-		Cell: d.Cell.Name(), RuntimeVersion: runtimeVersion(ctx, rt.Config().Binary), Model: sel.Model, Profile: cs.Profile.String(),
+		Second: req.Second, Cell: d.Cell.Name(), RuntimeVersion: runtimeVersion(ctx, rt.Config().Binary), Model: sel.Model, Profile: cs.Profile.String(),
 		Floored: cs.Floored, StartedAt: now().UTC(), Final: "final.md", Transcript: "transcript.jsonl", StderrLog: "stderr.log"}
 	res.Warnings = slices.Concat(lockWarns, w.Warnings, claim.Warnings)
+	if len(cmds) == 0 {
+		res.Warnings = append(res.Warnings, "no_waggle_commands: WAGGLE.md has no \"Build and Verification Commands\" bullets; the worker may run no build or test command")
+	}
 	d.emit("claimed", "%s %s by %s", claim.Verb, req.Ticket, l.keeper)
 	d.emit("worktree", "%s on %s", filepath.Base(w.Path), w.Branch)
 	every := d.KeepaliveEvery
@@ -273,7 +309,14 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		if len(diffKeys(ck.before.files, hostFiles(ck.common, w.Admin))) > 0 { // the agent changed what git trusts
 			return errors.New("host files changed; renewal skipped")
 		}
-		return backend.AcquireLease(ctx, comb.Lease{TicketID: req.Ticket, KeeperID: l.keeper, Role: req.Role, Gate: req.Gate, Directories: req.Dirs})
+		if guard {
+			return nil
+		}
+		err := backend.AcquireLease(ctx, comb.Lease{TicketID: req.Ticket, KeeperID: l.keeper, Role: req.Role, Gate: req.Gate, Directories: req.Dirs})
+		if oid, e := pg.Run(ctx, "rev-parse", "--verify", "--quiet", ownRef); err == nil && e == nil {
+			ck.claimOID = strings.TrimSpace(string(oid)) // the renewal's own write; the check wants this ref at the end
+		}
+		return err
 	}
 	d.emit("launched", "%s in %s", sel.Model, d.Cell.Name())
 	s, err := runSession(ctx, d, CellSpec{Worktree: w.Path, LeaseRW: req.Dirs}, spec, rt, runDir, renew, every)
@@ -286,6 +329,10 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	res.Usage = Usage{Input: u.InputTokens, CacheWrite: u.CacheWriteTokens, CacheRead: u.CacheReadTokens, Output: u.OutputTokens}
 	d.emit("ended", "%s, %d tokens", s.End, u.TotalTokens)
 	_ = writeFile(runDir, "final.md", s.Final)
+	if guard { // the review is the final message; the queen commits it (D-057)
+		res.Verdict = parseVerdict(s.Final)
+		_ = writeFile(runDir, "review.md", s.Final)
+	}
 	pctx := context.WithoutCancel(ctx) // the checks run even when ctx was cancelled
 	if g.Remote != "" {                // the final sync overwrites a tampered claim mirror, but never runs on changed host files
 		if len(diffKeys(ck.before.files, hostFiles(ck.common, w.Admin))) > 0 {
@@ -304,9 +351,15 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			res.Warnings = append(res.Warnings, "tainted_marker_failed: "+err.Error())
 		}
 	}
+	if guard {
+		commits = 1 // a guard commits nothing: only the verdict decides between done and no_verdict
+	}
 	res.End, res.ExitCode = outcome(s, res.Violations, commits)
+	if guard && res.End == "done" && res.Verdict == "" {
+		res.End, res.ExitCode = "no_verdict", ExitNeedsKeeper
+	}
 	d.emit("checked", "%d violations, %d commits", len(res.Violations), commits)
-	if ref := "refs/heads/" + req.Branch; res.ExitCode == 0 && g.Remote != "" && !d.NoPush {
+	if ref := "refs/heads/" + req.Branch; res.ExitCode == 0 && g.Remote != "" && !d.NoPush && !guard {
 		if _, err := g.Run(pctx, "push", g.Remote, ck.head+":"+ref); err != nil { // the checked OID, never the ref
 			res.End, res.ExitCode, res.Error = "error", ExitEnv, err.Error()
 		} else {
@@ -319,7 +372,17 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			res.Warnings = append(res.Warnings, "worktree_remove_failed: "+err.Error())
 		}
 	}
-	if err := res.Write(); err != nil {
+	if res.ExitCode == 0 { // a clean run: the next one compares the host files with these hashes
+		if err := saveHostRecord(dir, common, filepath.Base(runDir)); err != nil {
+			res.Warnings = append(res.Warnings, "host_record_failed: "+err.Error())
+		}
+	}
+	err = res.Write()
+	if aerr := appendLedger(req.RepoDir, l.policy.Models.Adapter, s.SessionID, res); aerr != nil && err == nil {
+		res.Warnings = append(res.Warnings, "ledger_append_failed: "+aerr.Error())
+		err = res.Write()
+	}
+	if err != nil {
 		return res, err
 	}
 	d.emit("recorded", "%s", filepath.Base(runDir))
@@ -390,7 +453,7 @@ func (t *tap) Read(p []byte) (int, error) {
 	_, _ = t.f.Write(p[:n])
 	for _, b := range p[:n] {
 		if b != '\n' {
-			if len(t.line) < 64<<10 {
+			if len(t.line) < runtime.MaxStreamLine {
 				t.line = append(t.line, b)
 			}
 			continue
@@ -473,10 +536,35 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 			}
 		}
 	}()
+	// An escaped child (setsid) can hold the pipe open after the leader is
+	// reaped, so Collect would never see EOF: once the leader is gone and the
+	// timeout or cancel has fired, the read end is closed after a short grace.
+	collected, held := make(chan struct{}), false
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _, c := range []<-chan struct{}{exited, tctx.Done()} {
+			select {
+			case <-c:
+			case <-collected:
+				return
+			}
+		}
+		select {
+		case <-collected:
+		case <-time.After(time.Second):
+			held = true
+			pr.Close()
+		}
+	}()
 	tp := &tap{r: pr, f: tf}
 	s.RunResult, err = rt.Collect(tctx, tp, runtime.Limits{MaxTokens: rt.Config().MaxTokens}, stop)
+	close(collected)
 	cancel()
 	wg.Wait()
+	if held {
+		s.Warnings = append(s.Warnings, "stdout_held: a process outside the group held the output open; its stream was cut")
+	}
 	select {
 	case <-exited:
 	default:

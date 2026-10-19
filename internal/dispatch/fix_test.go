@@ -103,7 +103,7 @@ func TestFixGlobalIgnore(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", xdg)
 	f := newFixture(t, true, false)
 	res, err := f.run(okScenario + "mkdir -p '" + xdg + "/git'\necho '*' > '" + xdg + "/git/ignore'\necho x > '" + f.real + "/stray.txt'\n")
-	if err != nil || res.ExitCode != 1 || res.Pushed || !hasViolation(res.Violations, ruleHost, "global:"+xdg+"/git/ignore") {
+	if err != nil || res.ExitCode != 1 || res.Pushed || !hasViolation(res.Violations, ruleHost, "global:xdg/ignore") {
 		t.Fatalf("exit %d err %v violations %v", res.ExitCode, err, res.Violations)
 	}
 }
