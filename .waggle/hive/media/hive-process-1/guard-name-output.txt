@@ -1,0 +1,27 @@
+guard-name-probe.sh 5e1c79d (macOS). Line 1 plants a fixture name, line 2 the
+fixture as part of a longer word, line 3 the home directory component.
+== no extra names (home component only):
+   hits (1):
+     .waggle/hive/media/guard-plant/n.md:3: name
+   result: FAIL, 1 hit(s): guard and card
+== SCAN_HIVE_NAMES=Zorblax:
+   hits (2):
+     .waggle/hive/media/guard-plant/n.md:1: name
+     .waggle/hive/media/guard-plant/n.md:3: name
+   result: FAIL, 2 hit(s): guard and card
+== scan-names.local with Zorblax:
+   (scan-names.local is ignored)
+   hits (2):
+     .waggle/hive/media/guard-plant/n.md:1: name
+     .waggle/hive/media/guard-plant/n.md:3: name
+   result: FAIL, 2 hit(s): guard and card
+== CI=1 (names and hostname skipped):
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== decisions edit, full gate output:
+   decisions gate (exit 1):
+     decisions: FAIL: decisions: change is not a pure append: head: entries removed or rewritten (base has 186 entries, head has 186)
+     exit status 1
+   hits (1):
+     decisions gate: decisions (exit 1)
+   result: FAIL, 1 hit(s): guard and card
