@@ -122,7 +122,7 @@ func TaskLines(req Request, baseOID string, lease comb.Lease) []string {
 		"Base: " + baseOID,
 		"Lease directories: " + strings.Join(lease.Directories, ", "),
 		"Gate: " + lease.Gate,
-		fmt.Sprintf("Rules: commit every change with subject prefix %q; do not push and do not open PRs; end with your report as the final message.", prefix),
+		fmt.Sprintf("Rules: commit every change with git commit -s (sign-off) and subject prefix %q; do not push and do not open PRs; end with your report as the final message.", prefix),
 	}
 }
 
