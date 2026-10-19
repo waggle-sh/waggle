@@ -17,8 +17,10 @@
 #   hostname    this machine's `hostname -s`, whole word, any case (skipped
 #               when CI is set)
 #   name        each word (3+ letters) of the local and global git user.name,
-#               whole word, any case, minus the D-160 noreply handle
-#               (skipped when CI is set)
+#               the home directory's last component, $SCAN_HIVE_NAMES and the
+#               gitignored .waggle/control/scan-names.local (the Keeper's
+#               names, never committed); whole word, any case, minus the
+#               D-160 noreply handle (skipped when CI is set)
 #   token       ghp_, gho_, github_pat_, sk-ant-, sk- followed by a long run
 #   dash        en or em dash
 #   personal-mail  the Keeper's personal mail provider name, any case
@@ -60,6 +62,7 @@ awk '{ printf "%s\t0\t%s\n", $0, $0 }' "$tmp/paths" >"$stream"
 g diff --no-color --no-ext-diff --no-textconv --no-renames -U0 "$mb" "$headsha" | awk '
   /^diff --git / { hdr = 1; path = ""; next }
   hdr && /^\+\+\+ / { path = substr($0, 5); sub(/^b\//, "", path); next }
+  hdr && /^Binary files .* and \/dev\/null differ$/ { next }
   hdr && /^Binary files / { p = $0; sub(/^Binary files .* and b\//, "", p); sub(/ differ$/, "", p)
                             printf "%s\t0\t\001binary\n", p; next }
   /^@@ / { hdr = 0; split($3, a, ","); ln = substr(a[1], 2) + 0; next }
@@ -79,6 +82,8 @@ host="" name=""
 if [ -z "${CI:-}" ]; then
   host=$(hostname -s 2>/dev/null || true)
   name="$(git config --global user.name 2>/dev/null || true) $(git config user.name 2>/dev/null || true)"
+  name="$name ${HOME##*/} ${SCAN_HIVE_NAMES:-}"
+  [ -f .waggle/control/scan-names.local ] && name="$name $(tr '\n' ' ' <.waggle/control/scan-names.local)"
 fi
 en=$(printf '\342\200\223')
 em=$(printf '\342\200\224')
@@ -97,7 +102,7 @@ function word(s, w,   i, b, a) {
 function okmail(m,   at, local, dom, n, k) {
   m = tolower(m); at = index(m, "@"); local = substr(m, 1, at - 1); dom = substr(m, at + 1)
   if (m == "27632860+paulternate@users.noreply.github.com" || m == "noreply@github.com") return 1
-  if (local == "git") return 1
+  if (local == "git" || local ~ /\.git$/) return 1 # git@host remotes, url.git@host config keys
   for (k in fixture) { n = length(k)
     if (dom == k || (length(dom) > n && substr(dom, length(dom) - n) == "." k)) return 1 }
   return 0
