@@ -1,0 +1,123 @@
+package runtime
+
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+)
+
+// Temporary guard probe (not committed): git+ssh:// and ssh+git:// pushes under
+// the exact worker env fail at file:///dev/null/ without any ssh invocation.
+func TestProbeSSHSchemes(t *testing.T) {
+	baseEnv := mustPrepare(t, verifiedAdapter(t, AdapterConfig{}), "T-5", nil).Env
+	root := t.TempDir()
+	marker := filepath.Join(root, "ssh-called")
+	stub := filepath.Join(root, "ssh-stub.sh")
+	writeFile(t, stub, "#!/bin/sh\necho called \"$@\" >> "+marker+"\nexit 255\n")
+	if err := os.Chmod(stub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	env := append(slices.Clone(baseEnv), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1",
+		"GIT_SSH_COMMAND="+stub, "GIT_SSH="+stub, "GIT_TRACE=1")
+	git := func(dir string, env []string, args ...string) (string, error) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir, cmd.Env = dir, env
+		out, err := cmd.CombinedOutput()
+		return string(out), err
+	}
+	work := filepath.Join(root, "work")
+	setup := append(slices.Clone(env), "GIT_CONFIG_COUNT=0")
+	if out, err := git(root, setup, "init", "-q", work); err != nil {
+		t.Fatalf("init: %v\n%s", err, out)
+	}
+	writeFile(t, filepath.Join(work, "f.txt"), "x\n")
+	for _, c := range [][]string{{"add", "f.txt"}, {"-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "m"}} {
+		if out, err := git(work, setup, c...); err != nil {
+			t.Fatalf("git %v: %v\n%s", c, err, out)
+		}
+	}
+	// Control: with the tripwire off, the stub ssh is what git runs, so the marker proves the stub is live.
+	out, err := git(work, setup, "push", "git+ssh://127.0.0.1/x.git", "HEAD:refs/heads/pushed")
+	if _, statErr := os.Stat(marker); statErr != nil || err == nil {
+		t.Fatalf("control push did not reach the stub ssh: err=%v\n%s", err, out)
+	}
+	t.Logf("control (tripwire off): stub ssh was invoked, push err=%v", err)
+	if err := os.Remove(marker); err != nil {
+		t.Fatal(err)
+	}
+	for name, url := range map[string]string{
+		"git+ssh": "git+ssh://127.0.0.1/x.git", "ssh+git": "ssh+git://127.0.0.1/x.git",
+		"git+ssh-user": "git+ssh://user@127.0.0.1:22/x.git", "ssh": "ssh://127.0.0.1/x.git", "scp-git@": "git@127.0.0.1:x.git"} {
+		out, err := git(work, env, "push", url, "HEAD:refs/heads/pushed")
+		if err == nil || !strings.Contains(out, "/dev/null/") {
+			t.Errorf("%s push: err = %v, output %q; want a failure at the file:///dev/null/ target", name, err, out)
+		}
+		if _, statErr := os.Stat(marker); statErr == nil {
+			t.Errorf("%s push invoked the stub ssh", name)
+		}
+		if strings.Contains(out, "ssh-stub") || strings.Contains(strings.ToLower(out), "run_command: ssh") {
+			t.Errorf("%s push trace shows an ssh invocation:\n%s", name, out)
+		}
+		t.Logf("%s: err=%v\n%s", name, err, out)
+	}
+}
+
+// Temporary guard probe (not committed): each gap the pushBlocked comment lists
+// is real, that is, the tripwire does not rewrite it.
+func TestProbeStatedGaps(t *testing.T) {
+	baseEnv := mustPrepare(t, verifiedAdapter(t, AdapterConfig{}), "T-5", nil).Env
+	root := t.TempDir()
+	stub := filepath.Join(root, "ssh-stub.sh")
+	writeFile(t, stub, "#!/bin/sh\necho STUB-SSH-CALLED \"$@\" >&2\nexit 255\n")
+	if err := os.Chmod(stub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	gconfig := filepath.Join(root, "gconfig")
+	writeFile(t, gconfig, "[url \"file:///REAL-OVERRIDE/\"]\n\tpushInsteadOf = https://127.0.0.1:1/\n")
+	env := append(slices.Clone(baseEnv), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1", "GIT_SSH_COMMAND="+stub)
+	git := func(dir string, env []string, args ...string) string {
+		cmd := exec.Command("git", args...)
+		cmd.Dir, cmd.Env = dir, env
+		out, _ := cmd.CombinedOutput()
+		return string(out)
+	}
+	work, real := filepath.Join(root, "work"), filepath.Join(root, "real.git")
+	setup := append(slices.Clone(env), "GIT_CONFIG_COUNT=0")
+	t.Log(git(root, setup, "init", "-q", work))
+	t.Log(git(root, setup, "init", "-q", "--bare", real))
+	writeFile(t, filepath.Join(work, "f.txt"), "x\n")
+	t.Log(git(work, setup, "add", "f.txt"))
+	t.Log(git(work, setup, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "m"))
+	if err := os.Symlink(real, filepath.Join(work, "link.git")); err != nil {
+		t.Fatal(err)
+	}
+	t.Log(git(work, setup, "remote", "add", "o", "file:///dev/null/"))
+	t.Log(git(work, setup, "config", "remote.o.pushurl", "file:///REAL-PUSHURL/"))
+	cases := []struct {
+		name string
+		env  []string
+		args []string
+	}{
+		{"upper-case HTTPS://", env, []string{"push", "HTTPS://127.0.0.1:1/x.git", "HEAD:refs/heads/p"}},
+		{"upper-case SSH://", env, []string{"push", "SSH://127.0.0.1/x.git", "HEAD:refs/heads/p"}},
+		{"transport::address", env, []string{"push", "https::http://127.0.0.1:1/x.git", "HEAD:refs/heads/p"}},
+		{"scp host:path", env, []string{"push", "127.0.0.1:x.git", "HEAD:refs/heads/p"}},
+		{"scp user@host:path", env, []string{"push", "user@127.0.0.1:x.git", "HEAD:refs/heads/p"}},
+		{"global longer pushInsteadOf", append(slices.Clone(baseEnv), "GIT_CONFIG_GLOBAL="+gconfig, "GIT_CONFIG_NOSYSTEM=1"), []string{"push", "https://127.0.0.1:1/x.git", "HEAD:refs/heads/p"}},
+		{"-c longer pushInsteadOf", env, []string{"-c", "url.file:///REAL-C/.pushInsteadOf=https://127.0.0.1:1/", "push", "https://127.0.0.1:1/x.git", "HEAD:refs/heads/p"}},
+		{"remote pushurl", env, []string{"push", "o", "HEAD:refs/heads/p"}},
+		{"symlink bare relative", env, []string{"push", "link.git", "HEAD:refs/heads/p"}},
+	}
+	for _, c := range cases {
+		out := git(work, c.env, c.args...)
+		lines := strings.Split(strings.TrimSpace(out), "\n")
+		if len(lines) > 3 {
+			lines = lines[:3]
+		}
+		t.Logf("%s: rewritten-to-dev-null=%v\n    %s", c.name, strings.Contains(out, "/dev/null/"), strings.Join(lines, "\n    "))
+	}
+	t.Logf("symlink target refs after push: %q", git(real, setup, "for-each-ref"))
+}

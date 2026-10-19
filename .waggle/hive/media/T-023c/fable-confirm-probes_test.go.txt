@@ -1,0 +1,153 @@
+//go:build unix
+
+package dispatch
+
+import (
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+)
+
+// P1: the info/refs skip is exact at the hostFiles level.
+func TestProbeInfoRefsSkipExact(t *testing.T) {
+	common := t.TempDir()
+	must := func(err error) {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	must(os.MkdirAll(filepath.Join(common, "info"), 0o755))
+	must(os.MkdirAll(filepath.Join(common, "hooks"), 0o755))
+	must(os.WriteFile(filepath.Join(common, "info", "exclude"), []byte("a\n"), 0o644))
+	must(os.WriteFile(filepath.Join(common, "config"), []byte(""), 0o644))
+	before := hostFiles(common, filepath.Join(common, "worktrees", "none"))
+
+	// exact file: skipped
+	must(os.WriteFile(filepath.Join(common, "info", "refs"), []byte("x\n"), 0o644))
+	if d := diffKeys(before, hostFiles(common, "")); len(d) != 0 {
+		t.Fatalf("info/refs file should be skipped, got %v", d)
+	}
+	// info/refs as a directory holding a file: the file is hashed
+	must(os.Remove(filepath.Join(common, "info", "refs")))
+	must(os.MkdirAll(filepath.Join(common, "info", "refs"), 0o755))
+	must(os.WriteFile(filepath.Join(common, "info", "refs", "hide"), []byte("x\n"), 0o644))
+	if d := diffKeys(before, hostFiles(common, "")); !slices.Contains(d, "info/refs/hide") {
+		t.Fatalf("info/refs/hide should be hashed, got %v", d)
+	}
+	must(os.RemoveAll(filepath.Join(common, "info", "refs")))
+	// prefix and suffix variants are hashed
+	for _, n := range []string{"refs.bak", "refs ", " refs", "refsx", "Refs", "REFS"} {
+		p := filepath.Join(common, "info", n)
+		must(os.WriteFile(p, []byte("x\n"), 0o644))
+		d := diffKeys(before, hostFiles(common, ""))
+		must(os.Remove(p))
+		if !slices.Contains(d, "info/"+n) {
+			t.Fatalf("info/%q should be hashed, got %v", n, d)
+		}
+	}
+	// a symlink at info/exclude pointing at refs reads as other
+	must(os.Remove(filepath.Join(common, "info", "exclude")))
+	must(os.Symlink("refs", filepath.Join(common, "info", "exclude")))
+	if d := diffKeys(before, hostFiles(common, "")); !slices.Contains(d, "info/exclude") {
+		t.Fatalf("symlinked info/exclude should differ, got %v", d)
+	}
+	must(os.Remove(filepath.Join(common, "info", "exclude")))
+	must(os.WriteFile(filepath.Join(common, "info", "exclude"), []byte("a\n"), 0o644))
+	// hooks/info/refs is hashed (the skip is keyed on the full relative path)
+	must(os.MkdirAll(filepath.Join(common, "hooks", "info"), 0o755))
+	must(os.WriteFile(filepath.Join(common, "hooks", "info", "refs"), []byte("x\n"), 0o644))
+	if d := diffKeys(before, hostFiles(common, "")); !slices.Contains(d, "hooks/info/refs") {
+		t.Fatalf("hooks/info/refs should be hashed, got %v", d)
+	}
+}
+
+// P2: real git maintenance in the session (gc, repack, pack-refs,
+// update-server-info) is not host state, local and remote mode.
+func TestProbeMaintenanceIsClean(t *testing.T) {
+	for _, remote := range []bool{false, true} {
+		f := newFixture(t, remote, false)
+		res, err := f.run(okScenario +
+			"git gc -q\ngit repack -adq\ngit pack-refs --all\ngit update-server-info\ngit maintenance run --quiet\n" +
+			commitFile("internal/x/c.go", "ok2") + "git gc -q\n")
+		if err != nil || res.ExitCode != 0 || len(res.Violations) != 0 {
+			t.Fatalf("remote=%v exit %d err %v violations %v warnings %v", remote, res.ExitCode, err, res.Violations, res.Warnings)
+		}
+		for _, w := range res.Warnings {
+			if strings.HasPrefix(w, "claim_") {
+				t.Fatalf("remote=%v warning %q", remote, w)
+			}
+		}
+		if remote && !res.Pushed {
+			t.Fatalf("not pushed")
+		}
+	}
+}
+
+// P3: info/refs turned into a directory that hides a file is host state.
+func TestProbeInfoRefsDirIsHostState(t *testing.T) {
+	f := newFixture(t, false, false)
+	c := f.common()
+	res, err := f.run(okScenario + "rm -f '" + c + "/info/refs'\nmkdir '" + c + "/info/refs'\necho x > '" + c + "/info/refs/hide'\n")
+	if err != nil || res.ExitCode != 1 || !hasViolation(res.Violations, ruleHost, "info/refs/hide") {
+		t.Fatalf("exit %d err %v violations %v", res.ExitCode, err, res.Violations)
+	}
+}
+
+// P4: a differently cased name next to info/refs is hashed, and on a
+// case-insensitive volume a write through INFO/REFS lands in the same skipped
+// file git never reads.
+func TestProbeInfoRefsCase(t *testing.T) {
+	f := newFixture(t, false, false)
+	c := f.common()
+	res, err := f.run(okScenario + "echo x > '" + c + "/info/REFS'\n")
+	if err != nil || res.ExitCode != 1 || !hasViolation(res.Violations, ruleHost, "info/REFS") {
+		t.Fatalf("exit %d err %v violations %v", res.ExitCode, err, res.Violations)
+	}
+	f = newFixture(t, false, false)
+	c = f.common()
+	res, err = f.run("git update-server-info\n" + okScenario + "echo x > '" + c + "/INFO/REFS'\n")
+	t.Logf("case-insensitive write through INFO/REFS: exit %d violations %v", res.ExitCode, res.Violations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ents, _ := os.ReadDir(filepath.Join(c, "info"))
+	names := []string{}
+	for _, e := range ents {
+		names = append(names, e.Name())
+	}
+	t.Logf("info/ entries: %v", names)
+}
+
+// P5: a planted gitignore self-ignoring directory in the main checkout is
+// still hidden (R1 is wording only), to confirm the not_enforced line holds.
+func TestProbeSelfIgnoringGitignore(t *testing.T) {
+	f := newFixture(t, false, false)
+	res, err := f.run(okScenario + "mkdir -p '" + f.real + "/.claude/commands'\necho '*' > '" + f.real + "/.claude/commands/.gitignore'\necho evil > '" + f.real + "/.claude/commands/evil.md'\n")
+	t.Logf("exit %d violations %v", res.ExitCode, res.Violations)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// P6: a FIFO at the tainted marker is replaced by a regular file, and the next
+// run refuses with the taint message rather than blocking.
+func TestProbeTaintedFIFOReplaced(t *testing.T) {
+	f := newFixture(t, false, false)
+	marker := f.real + "/.waggle/worktrees/T-023-builder.tainted"
+	res, err := f.run(okScenario + "mkfifo '" + marker + "'\ngit update-ref refs/heads/evil HEAD\n")
+	if err != nil || res.ExitCode != 1 {
+		t.Fatalf("exit %d err %v", res.ExitCode, err)
+	}
+	fi, err := os.Lstat(marker)
+	if err != nil || !fi.Mode().IsRegular() {
+		t.Fatalf("marker not regular: %v %v", fi, err)
+	}
+	by, _ := os.ReadFile(marker)
+	t.Logf("marker content %q", by)
+	_, err = f.run(okScenario)
+	if err == nil || !strings.Contains(err.Error(), "host state was changed by run") {
+		t.Fatalf("second run err %v", err)
+	}
+}
