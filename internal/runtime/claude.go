@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync/atomic"
 
@@ -44,7 +45,9 @@ func (c *ClaudeAdapter) Name() string {
 
 // Config returns the adapter's thresholds and default arguments.
 func (c *ClaudeAdapter) Config() AdapterConfig {
-	return c.cfg
+	cfg := c.cfg
+	cfg.DefaultArgs = slices.Clone(cfg.DefaultArgs)
+	return cfg
 }
 
 // IsGeneratedShim reports whether content carries GeneratedMarker on a line of its own.

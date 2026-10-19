@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/waggle-sh/waggle/internal/comb"
@@ -24,8 +25,10 @@ var (
 	ErrBelowMinimum = errors.New("level below roster minimum")
 	// ErrGuardFloor reports a guard override under the guard floor on a Tier 2, Tier 3 or unknown-tier task.
 	ErrGuardFloor = errors.New("guard level below floor")
-	// ErrNoCrossModel reports that no model at or above the guard's level differs from the builder's.
-	ErrNoCrossModel = errors.New("no model differs from the builder's")
+	// ErrNoCrossModel reports that no model differs from the builder's (and, for a
+	// second guard, the first guard's): none at or above the guard's level, and
+	// for a second guard none below it either (D-179).
+	ErrNoCrossModel = errors.New("no model differs from the builder's and the first guard's")
 	// ErrOverrideUnrecorded reports an override whose decision the lookup could not confirm.
 	ErrOverrideUnrecorded = errors.New("override has no recorded decision")
 	// ErrUnresolved reports an Invocation whose Selection did not come from Resolve for its role.
@@ -62,6 +65,7 @@ type TaskContext struct {
 	TaskID       string
 	Tier         *comb.RiskTier      // nil means unknown and is treated as Tier 3
 	GuardMustFix int                 // must-fix verdicts on this task so far
+	SecondGuard  bool                // guard role only: also avoid the first guard's model (D-100)
 	Overrides    map[string]Override // by role id
 }
 
@@ -120,13 +124,34 @@ func (p Policy) Resolve(role string, task *TaskContext, decisionExists func(id i
 	if err != nil {
 		return Selection{}, err
 	}
-	avoid := ""
+	var avoid []string
 	if role == roleGuard {
-		if level, avoid, err = p.guardLevel(level, task, decisionExists); err != nil {
+		var builderModel string
+		if level, builderModel, err = p.guardLevel(level, task, decisionExists); err != nil {
 			return Selection{}, err
 		}
+		avoid = []string{builderModel}
+		if task.SecondGuard { // the first guard is re-resolved from policy, never read from a run record
+			first, err := p.pick(role, level, task, builderModel)
+			if err != nil {
+				return Selection{}, err
+			}
+			avoid = append(avoid, first)
+		}
 	}
-	model, err := p.pick(role, level, task, avoid)
+	model, err := p.pick(role, level, task, avoid...)
+	if err != nil && task.SecondGuard && role == roleGuard && errors.Is(err, ErrNoCrossModel) {
+		// D-179, bounded by D-180: nothing unused at or above the level, so take the
+		// highest unused model below it, going no lower than the roster guard minimum.
+		for l := level - 1; l >= max(LevelFast, p.Minimums[roleGuard]) && model == ""; l-- {
+			for _, m := range []string{p.Models.Primary[l], p.Models.Alternate[l]} {
+				if m != "" && !slices.Contains(avoid, m) {
+					model, level, err = m, l, nil
+					break
+				}
+			}
+		}
+	}
 	if err != nil {
 		return Selection{}, err
 	}
@@ -168,15 +193,15 @@ func (p Policy) guardLevel(level Level, task *TaskContext, decisionExists func(i
 	} else if level < floor && !lowTier(task.Tier) {
 		return 0, "", fmt.Errorf("%w: role %s task %q level %s is below floor %s", ErrGuardFloor, roleGuard, task.TaskID, level, floor)
 	}
-	builderModel, err := p.pick(roleBuilder, builderLevel, task, "")
+	builderModel, err := p.pick(roleBuilder, builderLevel, task)
 	return level, builderModel, err
 }
 
 // pick returns the primary model for level (rule 6). With avoid set it walks
 // from level up to frontier, trying each primary then alternate, and returns
-// the first model that differs from avoid (rule 7).
-func (p Policy) pick(role string, level Level, task *TaskContext, avoid string) (string, error) {
-	if avoid == "" {
+// the first model not in avoid (rule 7).
+func (p Policy) pick(role string, level Level, task *TaskContext, avoid ...string) (string, error) {
+	if len(avoid) == 0 {
 		if m := p.Models.Primary[level]; m != "" {
 			return m, nil
 		}
@@ -184,12 +209,12 @@ func (p Policy) pick(role string, level Level, task *TaskContext, avoid string) 
 	}
 	for l := level; l <= LevelFrontier; l++ {
 		for _, m := range []string{p.Models.Primary[l], p.Models.Alternate[l]} {
-			if m != "" && m != avoid {
+			if m != "" && !slices.Contains(avoid, m) {
 				return m, nil
 			}
 		}
 	}
-	return "", fmt.Errorf("%w: role %s task %q level %s shares model %q with the builder (set runtimes.adapters.%s.alternates.%s)",
+	return "", fmt.Errorf("%w: role %s task %q level %s shares %q with the builder or first guard (map a model not already used, for example runtimes.adapters.%s.alternates.%s)",
 		ErrNoCrossModel, role, task.TaskID, level, avoid, p.Models.Adapter, level)
 }
 
