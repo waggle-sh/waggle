@@ -47,3 +47,59 @@ Hive-layer PR, base `main` at `236de39` (hive-records-9 merged), four commits, a
 - **N6 (10.6 wording).** The intro defines `[R]` as needing `internal/runtime/` "beyond `policy.go`"; item 21 is `policy.go` only and is correctly in D0 under D-170. Reword to "needs `internal/runtime/` (phase D0, D-170)". The heading "(each with ... its test)" and the handoff's "22 carry items each with a test" overstate: 15 and 18 have none, by design.
 - **N7 (handoff count).** "The two guard worktrees from phase C were removed": the base handoff named four (two detached and locked, two with `worktree-agent-*` branches). All four and their branches are gone, so the state is right; "the four" would match the base text.
 - **N8 (small brief gaps).** 9.1's `result.json` field list lacks the `second` field that 10.2 now records. Depends-on serializes "phases C0 and E with any open `internal/runtime/` lease" but not D0. The D0 lease line still says "(Q-T023-20 default)" where "(D-170)" is now accurate.
+
+## Confirmation at f22258f
+
+Verdict: must-fix
+Risk-Tier: 2
+
+Scope: `git diff 185ac8d f22258f` (3 files, +64 / -14): `578c317` commits this review and a handoff worktree count; `f22258f` applies B1 and N1 to N8 to `tasks/T-023.md` and the handoff. Hive layer only, no Tier 3 path.
+
+### B1 at 185ac8d: fixed
+
+Item 19 now splits cleanly. Runtime half (D0): `Prepare` refuses a partly set `GitIdentity` or a control character, and a zero `GitIdentity` still sets `GIT_CONFIG_GLOBAL=/dev/null` and `GIT_CONFIG_NOSYSTEM=1` with no `GIT_AUTHOR_*`/`GIT_COMMITTER_*`. Dispatch half (D): pinned `git config --local`, else an explicit `--global` read, else exit 3, with an empty resolved identity exit 3 before the claim (with item 4). The D0 tests and the D test "a repo with no identity at either scope exits 3 with no claim ref" are named. Checked against `origin/main`:
+
+- `internal/dispatch/run.go` builds `runtime.Invocation{Role, TaskID, WorktreeDir, Selection, Commands}` with no identity and calls the real `ClaudeAdapter.Prepare` (`internal/runtime/launch.go`). A zero `GitIdentity` that is not refused leaves that call working, so D0 needs no edit outside its lease.
+- `workerEnv` on main adds `envAllowed`, `envFixed` and the settings values. Adding the two `GIT_CONFIG_*` values changes nothing the phase C tests rely on: `newRepo` and the fixtures already `t.Setenv` `GIT_CONFIG_GLOBAL=/dev/null` and `GIT_CONFIG_NOSYSTEM=1` (`dispatch_test.go`, `fixture_test.go`, `guard_test.go`, `cmd/waggle/dispatch_test.go`), and every fixture agent commit passes `-c user.name=a -c user.email=a@e.co` (`fixture_test.go` `commitFile`, `run_test.go` plumbing and `sign`, `fix_test.go`, `host_test.go`). The test helper `sh` sets the identity through env. No test in `internal/dispatch/` or `cmd/waggle/` asserts the worker env.
+- So `go test -race ./internal/dispatch/ ./cmd/waggle/` stays green at D0's head, and the refusal lands in phase D before the claim, inside the D lease. N2's wording (`--local`, then an explicit `--global` read) is in.
+
+### N1 to N8 as applied
+
+- N1: item 23 `[D]` added (host-state flake, test under `-race -count=50` on linux), and it appears in the D row, the estimate paragraph ("items 22 and 23 about 115"), the D1 cut and the 10.6 intro. Fixed.
+- N3: D1 now lists items 1 to 12, 14, 19, 22 and 23; the paragraph says a build past 770 before review "returns to the Keeper with this cut (D-173)". Fixed.
+- N4: item 20's test asserts no `Bash(git add` and no `Bash(git commit` rule. 10.2 resets the shared guard worktree to `head_oid` and removes untracked files before the second guard. Fixed.
+- N5: 10.2 makes the D-176 probe a phase D builder deliverable under `media/T-023/` that the guards check; the 10.6 trailer now opens "Other phase D work outside the carry list" and calls it a deliverable. Matches D-176 (builder runs it, failure blocks phase F). Fixed.
+- N6: `[R]` reads "needs `internal/runtime/` (phase D0, D-170)"; the 10.6 heading says "its test where one applies" and the intro says 15 and 18 carry no test by design. Fixed.
+- N7: the handoff says "the four guard worktrees the previous handoff named, and their branches". Fixed.
+- N8: 9.1 lists `verdict` and `second` (guard); Depends-on serializes "phases C0, D0 and E" with any open `internal/runtime/` lease; the D0 lease line cites D-170. Fixed.
+- Ranges: the section 3 D0 row (16 to 21) and D row (1 to 15, 19 in part, 22, 23), the estimate paragraph, the 10.6 intro, 15.2 Q-T023-20 (16 to 21) and Q-T023-27 (item 22), and the handoff's "Phase D carry" paragraph (1 to 15, 22 and 23 phase D) all agree with 23 items. One handoff line does not (C-B1).
+
+### Handoff at f22258f
+
+- In-flight paragraph: PR #52 is OPEN (draft) on `hive-records-10` at `f22258f`; `hr10` in the queen's scratchpad is on `hive-records-10` at `f22258f`. None of the four phase C guard worktrees or their branches remain. The `agent-*` worktrees present are this batch's first guard (detached at `185ac8d`) and this confirmation's, each with a `worktree-agent-*` branch, so "any `agent-*` worktree left ... is this batch's guard" is true. Counts read 23 in the in-flight and "Phase D carry" paragraphs.
+- Stale: "Next work" item 3 (C-B1).
+
+### Blocking
+
+- **C-B1 (handoff next-work range).** `handoff/queen.md` "Next work" item 3 still reads "10.6 items 1 to 15, 19 in part, 22" for phase D, dropping item 23. The section 3 D row, the estimate paragraph, the D1 cut and the handoff's own "Phase D carry" paragraph all include 23, and that line is what the next queen reads when she writes the phase D task. Item 23 is a security check that passed a tampered host on linux, so it should not fall out of the dispatch list. Fix: "10.6 items 1 to 15, 19 in part, 22 and 23". One line, no other change needed.
+
+### Non-blocking
+
+- **C-N1 (in-flight list punctuation).** "new 10.6 with 23 carry items, each with a test where one applies; item 23 is the linux ... flake from the hive-records-10 review, 9.1 `max_budget`, AC8 ledger exception, 15.2" puts the 9.1, AC8 and 15.2 entries after the semicolon, so they read as part of the item 23 clause. Move the item 23 clause to the end of the parenthesis or into its own sentence.
+- **C-N2 (guard cleanup wording).** "remove it with `git worktree remove -f -f` after merge": there are now two guard worktrees, each with a `worktree-agent-*` branch. "remove them and delete their branches" matches the state.
+- **C-N3 (phase D test file name).** The D lease names a new `guard.go` with tests, but `internal/dispatch/guard_test.go` already exists on main (phase B safety tests such as `TestPlantedRepoNotReused`), as do `guard2_test.go` and `guard3_test.go`. Say whether the builder adds to it or picks another name, so the guards do not read an edit to an existing test file as outside the lease's "new ... tests". Pre-existing at `185ac8d`, not introduced here.
+- **C-N4 (brief length).** `tasks/T-023.md` is 414 lines against the 400-line brief limit (413 at `185ac8d`). Carry, do not block: the overage is history of merged phases A to C (10.1, 10.5, 10.5.1, 10.5.2, the section 15 rulings), and trimming it now would churn a brief two Tier 3 builders are about to read. Trim when phase D closes, moving phase A to C detail into pointers to the phase reviews.
+
+### Privacy and dashes
+
+Every added line in the three files and both commit messages and author fields scanned. The only addresses are the D-160 noreply in commit metadata and the SSH remote fixture already in item 19's test. No home path, encoded home segment, temp prefix, hostname, personal address, full name or token shape. The words "email" and "full name" in the committed first review are descriptions, not values. Zero U+2013 or U+2014 in the diff, the commit messages, or this section.
+
+### CI on PR #52
+
+- Product CI run 39300338293 (head `185ac8d`), attempt 2: SUCCESS. The first attempt's `TestRunHostState/new_admin_entry/plain` failure did not repeat, consistent with a flake now tracked as item 23.
+- Product CI run 39301474400 (head `f22258f`): SUCCESS (`product-ci` pass, 1m53s).
+- `verify-leases-and-tiers` (run 39301474259) fails on "commit has no T-<id>: prefix" for all six commits: the expected hive-records failure. `relay-claim` skipped.
+
+### Re-check after fix
+
+Read "Next work" item 3 in `handoff/queen.md` at the new head and confirm it names items 22 and 23. Nothing else needs re-review.
