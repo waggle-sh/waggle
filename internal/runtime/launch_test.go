@@ -193,7 +193,7 @@ func TestPrepareEnv(t *testing.T) {
 		t.Errorf("env carries a dropped variable:\n%s", joined)
 	}
 	for _, want := range []string{"HOME=/home/keeper", "ANTHROPIC_API_KEY=model-key", "GIT_TERMINAL_PROMPT=0",
-		"GIT_CONFIG_COUNT=12", "GIT_ATTR_NOSYSTEM=1", "GIT_CONFIG_KEY_10=core.excludesFile", "GIT_CONFIG_KEY_11=core.attributesFile", "GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
+		"GIT_CONFIG_COUNT=14", "GIT_CONFIG_KEY_12=maintenance.auto", "GIT_CONFIG_KEY_13=gc.auto", "GIT_CONFIG_VALUE_12=false", "GIT_CONFIG_VALUE_13=0", "GIT_ATTR_NOSYSTEM=1", "GIT_CONFIG_KEY_10=core.excludesFile", "GIT_CONFIG_KEY_11=core.attributesFile", "GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
 		"GIT_CONFIG_VALUE_1=ssh://", "GIT_CONFIG_VALUE_2=git@", "GIT_CONFIG_VALUE_5=git+ssh://", "GIT_CONFIG_VALUE_6=ssh+git://", "GIT_CONFIG_VALUE_8=/", "GIT_CONFIG_VALUE_9=.", "CLAUDE_CODE_DISABLE_CLAUDE_MDS=1",
 		"DISABLE_AUTO_COMPACT=1", "BASH_MAX_OUTPUT_LENGTH=10000", "MAX_THINKING_TOKENS=4000"} {
 		if !slices.Contains(env, want) {
