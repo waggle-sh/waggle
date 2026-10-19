@@ -37,12 +37,14 @@ func TestFixPushesCheckedOID(t *testing.T) {
 	f := newFixture(t, true, false)
 	dir := t.TempDir()
 	late, mark, wrap := filepath.Join(dir, "late"), filepath.Join(dir, "mark"), filepath.Join(dir, "gitwrap")
-	body := "#!/bin/sh\ncase \"$*\" in *diff-tree*) if [ ! -e '" + mark + "' ]; then touch '" + mark + "'; git -C '" + f.real +
+	body := "#!/bin/sh\ncase \"$*\" in *--reverse*) if [ ! -e '" + mark + "' ]; then touch '" + mark + "'; git -C '" + f.real +
 		"' update-ref refs/heads/t-023 $(cat '" + late + "'); fi;; esac\nexec git \"$@\"\n"
 	if err := os.WriteFile(wrap, []byte(body), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	script := okScenario + "git -c user.name=a -c user.email=a@e.co commit-tree 'HEAD^{tree}' -p HEAD -m 'T-023: late' -m 'Signed-off-by: a <a@e.co>' > '" + late + "'\n"
+	// The late commit holds an out-of-lease file: a log range by ref name would see it.
+	mk := "export GIT_INDEX_FILE='" + dir + "/idx'\ngit read-tree HEAD\ngit update-index --add --cacheinfo 100644,$(echo x | git hash-object -w --stdin),docs/late.md\ntree=$(git write-tree)\nunset GIT_INDEX_FILE\n"
+	script := okScenario + mk + "git -c user.name=a -c user.email=a@e.co commit-tree \"$tree\" -p HEAD -m 'T-023: late' -m 'Signed-off-by: a <a@e.co>' > '" + late + "'\n"
 	res, err := f.run(script, func(_ *Request, d *Deps) { d.GitBin = wrap })
 	if err != nil || res.ExitCode != 0 || !res.Pushed {
 		t.Fatalf("exit %d err %v violations %v", res.ExitCode, err, res.Violations)
@@ -154,6 +156,46 @@ func TestFixResultSymlink(t *testing.T) {
 	}
 	if fi, err := os.Lstat(filepath.Join(runDir, "result.json")); err != nil || !fi.Mode().IsRegular() {
 		t.Fatalf("result.json is not a regular file: %v", err)
+	}
+}
+
+// R2: git maintenance rewrites info/refs; a clean run must not read as host_state.
+func TestFixInfoRefsIsNotHostState(t *testing.T) {
+	f := newFixture(t, false, false)
+	res, err := f.run("git update-server-info\n" + okScenario + "git update-server-info\n")
+	if err != nil || res.ExitCode != 0 || len(res.Violations) != 0 {
+		t.Fatalf("exit %d err %v violations %v", res.ExitCode, err, res.Violations)
+	}
+}
+
+// A FIFO planted at the tainted marker cannot block Run while it holds dispatch.lock.
+func TestFixTaintedMarkerFIFO(t *testing.T) {
+	f := newFixture(t, false, false)
+	type out struct {
+		res Result
+		err error
+	}
+	done := make(chan out, 1)
+	go func() {
+		res, err := f.run(okScenario + "mkfifo '" + f.real + "/.waggle/worktrees/T-023-builder.tainted'\ngit update-ref refs/heads/evil HEAD\n")
+		done <- out{res, err}
+	}()
+	select {
+	case o := <-done:
+		if o.err != nil || o.res.ExitCode != 1 || !hasViolation(o.res.Violations, ruleHost, "refs/heads/evil") {
+			t.Fatalf("exit %d err %v violations %v", o.res.ExitCode, o.err, o.res.Violations)
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatal("Run blocked on a FIFO planted at the tainted marker")
+	}
+}
+
+// With the final sync skipped, another ticket's claim ref is compared strictly.
+func TestFixSkippedSyncIsStrict(t *testing.T) {
+	f := newFixture(t, true, false)
+	res, err := f.run(okScenario + "git config some.key value\ngit update-ref refs/waggle/claims/ticket-24 HEAD\n")
+	if err != nil || res.ExitCode != 1 || !hasViolation(res.Violations, ruleHost, "refs/waggle/claims/ticket-24") {
+		t.Fatalf("exit %d err %v violations %v", res.ExitCode, err, res.Violations)
 	}
 }
 
