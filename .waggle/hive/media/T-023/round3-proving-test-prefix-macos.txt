@@ -1,0 +1,20 @@
+# macOS arm64, git 2.54.0 (auto maintenance defaults to the geometric strategy since 2.54),
+# go test -race -count=3 -run TestRunPlantDuringAutoMaintenance, product code at origin/main 53941e6 plus only the proving test
+--- FAIL: TestRunPlantDuringAutoMaintenance (4.12s)
+    --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.11s)
+        round3_test.go:27: exit 0 err <nil> violations [] (planted stat after run: stat <tmp>: no such file or directory)
+    --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.01s)
+        round3_test.go:27: exit 0 err <nil> violations [] (planted stat after run: stat <tmp>: no such file or directory)
+--- FAIL: TestRunPlantDuringAutoMaintenance (4.00s)
+    --- FAIL: TestRunPlantDuringAutoMaintenance/plain (1.99s)
+        round3_test.go:27: exit 0 err <nil> violations [] (planted stat after run: stat <tmp>: no such file or directory)
+    --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.01s)
+        round3_test.go:27: exit 0 err <nil> violations [] (planted stat after run: stat <tmp>: no such file or directory)
+--- FAIL: TestRunPlantDuringAutoMaintenance (4.26s)
+    --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.03s)
+        round3_test.go:27: exit 0 err <nil> violations [] (planted stat after run: stat <tmp>: no such file or directory)
+    --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.23s)
+        round3_test.go:27: exit 0 err <nil> violations [] (planted stat after run: stat <tmp>: no such file or directory)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	12.645s
+FAIL
