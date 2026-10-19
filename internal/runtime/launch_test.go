@@ -193,7 +193,7 @@ func TestPrepareEnv(t *testing.T) {
 		t.Errorf("env carries a dropped variable:\n%s", joined)
 	}
 	for _, want := range []string{"HOME=/home/keeper", "ANTHROPIC_API_KEY=model-key", "GIT_TERMINAL_PROMPT=0",
-		"GIT_CONFIG_COUNT=10", "GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
+		"GIT_CONFIG_COUNT=12", "GIT_ATTR_NOSYSTEM=1", "GIT_CONFIG_KEY_10=core.excludesFile", "GIT_CONFIG_KEY_11=core.attributesFile", "GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
 		"GIT_CONFIG_VALUE_1=ssh://", "GIT_CONFIG_VALUE_2=git@", "GIT_CONFIG_VALUE_5=git+ssh://", "GIT_CONFIG_VALUE_6=ssh+git://", "GIT_CONFIG_VALUE_8=/", "GIT_CONFIG_VALUE_9=.", "CLAUDE_CODE_DISABLE_CLAUDE_MDS=1",
 		"DISABLE_AUTO_COMPACT=1", "BASH_MAX_OUTPUT_LENGTH=10000", "MAX_THINKING_TOKENS=4000"} {
 		if !slices.Contains(env, want) {
@@ -358,5 +358,116 @@ func TestTripwireBlocksPush(t *testing.T) {
 		if refs, _ := git(bare, setup, "for-each-ref"); refs != "" {
 			t.Errorf("%s push moved a ref in the bare remote: %s", name, refs)
 		}
+	}
+}
+
+// Item 16: editing Config().DefaultArgs after Verify leaves the next argv unchanged.
+func TestConfigDoesNotAliasDefaultArgs(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug"}})
+	a.Config().DefaultArgs[0] = "--max-budget-usd=3"
+	if argv := mustPrepare(t, a, "T-5", nil).Argv; slices.Contains(argv, "--max-budget-usd=3") || !slices.Contains(argv, "--debug") {
+		t.Errorf("argv follows the edited copy: %q", argv)
+	}
+}
+
+// Item 17: --debug-file in the help does not satisfy --debug, and a quote or
+// parenthesis after a token (as in the real help) still counts.
+func TestVerifyHelpTokenBoundary(t *testing.T) {
+	fakeClaude(t, "echo '"+strings.ReplaceAll(fullHelp, "--debug", "--debug-file")+"'\n")
+	a := NewClaudeAdapter(AdapterConfig{DefaultArgs: []string{"--debug"}})
+	wantErr(t, a.Verify(context.Background()), ErrUnverified, "--debug")
+	if !helpHas([]byte("(--debug, \"dontAsk\")"), "dontAsk") || helpHas([]byte("--debug-file"), "--debug") {
+		t.Error("helpHas boundary wrong")
+	}
+}
+
+// Item 19, runtime half: partly set or control-character identities are refused;
+// a zero identity sets both GIT_CONFIG_* values and no author or committer.
+func TestPrepareGitIdentity(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{})
+	inv, s := testLaunch(t, "T-5")
+	for _, id := range []GitIdentity{{Name: "A"}, {Email: "a@example.test"}, {Name: "A\nB", Email: "a@example.test"}, {Name: "A", Email: "a@example.test\x00"},
+		{Name: "A\u0085B", Email: "a@example.test"}, {Name: "A\u009bB", Email: "a@example.test"}, {Name: "A\xffB", Email: "a@example.test"},
+		{Name: "A\u2028B", Email: "a@example.test"}, {Name: "A", Email: "a@example.test\u2029"}, {Name: "  ", Email: "a@example.test"}, {Name: "A", Email: " "}} {
+		inv.GitIdentity = id
+		_, err := a.Prepare(inv, s, nil, nil)
+		wantErr(t, err, ErrAdapterConfig, "git identity")
+	}
+	for _, id := range []GitIdentity{{}, {Name: "  ", Email: " "}} {
+		inv.GitIdentity = id
+		spec, err := a.Prepare(inv, s, nil, nil)
+		if err != nil {
+			t.Fatalf("identity %q: %v", id, err)
+		}
+		for _, kv := range spec.Env {
+			if strings.HasPrefix(kv, "GIT_AUTHOR_") || strings.HasPrefix(kv, "GIT_COMMITTER_") {
+				t.Errorf("zero identity %q sets %s", id, kv)
+			}
+		}
+	}
+	spec, err := a.Prepare(inv, s, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1"} {
+		if !slices.Contains(spec.Env, want) {
+			t.Errorf("env lacks %q", want)
+		}
+	}
+	inv.GitIdentity = GitIdentity{Name: "Hive Worker", Email: "worker@example.test"}
+	spec, err = a.Prepare(inv, s, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"GIT_AUTHOR_NAME=Hive Worker", "GIT_AUTHOR_EMAIL=worker@example.test", "GIT_COMMITTER_NAME=Hive Worker", "GIT_COMMITTER_EMAIL=worker@example.test"} {
+		if !slices.Contains(spec.Env, want) {
+			t.Errorf("env lacks %q", want)
+		}
+	}
+}
+
+// Item 20: the guard gets no git add or git commit rule; the builder keeps both.
+func TestGuardSettingsDropGitWrites(t *testing.T) {
+	guard, err := workerSettings("guard", []string{"go test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(guard), "Bash(git add") || strings.Contains(string(guard), "Bash(git commit") || !strings.Contains(string(guard), "Bash(git diff") {
+		t.Errorf("guard settings: %s", guard)
+	}
+	builder, _ := workerSettings("builder", []string{"go test"})
+	if !strings.Contains(string(builder), "Bash(git add") || !strings.Contains(string(builder), "Bash(git commit") {
+		t.Errorf("builder settings: %s", builder)
+	}
+}
+
+// Fable N2: the home ignore and attributes files do not apply under the produced env.
+func TestEnvIgnoresHomeIgnoreAndAttributes(t *testing.T) {
+	home, repo := t.TempDir(), t.TempDir()
+	t.Setenv("HOME", home) // Prepare passes HOME through
+	writeFile(t, filepath.Join(home, ".config", "git", "ignore"), "hidden.txt\n")
+	writeFile(t, filepath.Join(home, ".config", "git", "attributes"), "a.txt filter=probe\n")
+	run := func(env []string, args ...string) (string, error) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir, cmd.Env = repo, env
+		out, err := cmd.CombinedOutput()
+		return strings.TrimSpace(string(out)), err
+	}
+	base := []string{"PATH=" + os.Getenv("PATH"), "HOME=" + home, "XDG_CONFIG_HOME="}
+	if out, err := run(base, "init", "-q"); err != nil {
+		t.Fatalf("git init: %v\n%s", err, out)
+	}
+	if _, err := run(base, "check-ignore", "-q", "hidden.txt"); err != nil {
+		t.Fatalf("control: home ignore does not apply to a plain env: %v", err)
+	}
+	if out, _ := run(base, "check-attr", "filter", "a.txt"); !strings.HasSuffix(out, "probe") {
+		t.Fatalf("control: home attributes do not apply to a plain env: %q", out)
+	}
+	env := append(base, mustPrepare(t, verifiedAdapter(t, AdapterConfig{}), "T-5", nil).Env...)
+	if _, err := run(env, "check-ignore", "-q", "hidden.txt"); err == nil {
+		t.Error("home ignore file still applies under the worker env")
+	}
+	if out, _ := run(env, "check-attr", "filter", "a.txt"); !strings.HasSuffix(out, "unspecified") {
+		t.Errorf("home attributes still apply under the worker env: %q", out)
 	}
 }
