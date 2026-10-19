@@ -84,12 +84,14 @@ var deniedRules = []string{"Bash(git push)", "Bash(git push *)", "Bash(gh)", "Ba
 var envAllowed = []string{"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "TERM", "TZ",
 	"LANG", "LC_ALL", "LC_CTYPE", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL"}
 
-// pushBlocked are the remote spellings the tripwire rewrites: every URL scheme
-// and path form a push could use. Not caught (the 7.2 rule 4 ref check and
-// config hash still apply): a bare relative path such as bare.git or
-// sub/bare.git, which matches no prefix; remote.<name>.pushurl, and a longer
-// pushInsteadOf passed with git -c, both of which override the rewrite.
-var pushBlocked = []string{"https://", "ssh://", "git@", "http://", "git://", "file://", "/", "."}
+// pushBlocked are the remote prefixes the tripwire rewrites to a dead target.
+// It is best effort, defense in depth behind the Bash deny rules and 7.2 rule 4.
+// It does not catch: bare relative paths (including one reached through a
+// worker-made symlink), scp forms without git@ (host:path, user@host:path),
+// upper-case schemes (the prefix match is case-sensitive), <transport>::<address>
+// forms, remote.<name>.pushurl, and a longer pushInsteadOf from git -c or from
+// the Keeper's global git config.
+var pushBlocked = []string{"https://", "ssh://", "git@", "http://", "git://", "git+ssh://", "ssh+git://", "file://", "/", "."}
 
 // envFixed isolates the worker: no CLAUDE.md or auto-memory from any scope,
 // no claude.ai connectors, no auto-compaction (handoffs replace it, T-021 S5),
@@ -155,6 +157,8 @@ func (c *ClaudeAdapter) Verify(ctx context.Context) error {
 	if len(missing) > 0 {
 		return fmt.Errorf("%w: %s --help lacks %s", ErrUnverified, c.cfg.Binary, strings.Join(missing, ", "))
 	}
+	// Later changes to the caller's slice must not skip the help check above.
+	c.cfg.DefaultArgs = slices.Clone(c.cfg.DefaultArgs)
 	c.verified.Store(true)
 	return nil
 }
