@@ -193,8 +193,8 @@ func TestPrepareEnv(t *testing.T) {
 		t.Errorf("env carries a dropped variable:\n%s", joined)
 	}
 	for _, want := range []string{"HOME=/home/keeper", "ANTHROPIC_API_KEY=model-key", "GIT_TERMINAL_PROMPT=0",
-		"GIT_CONFIG_COUNT=8", "GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
-		"GIT_CONFIG_VALUE_1=ssh://", "GIT_CONFIG_VALUE_2=git@", "GIT_CONFIG_VALUE_6=/", "GIT_CONFIG_VALUE_7=.", "CLAUDE_CODE_DISABLE_CLAUDE_MDS=1",
+		"GIT_CONFIG_COUNT=10", "GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf", "GIT_CONFIG_VALUE_0=https://",
+		"GIT_CONFIG_VALUE_1=ssh://", "GIT_CONFIG_VALUE_2=git@", "GIT_CONFIG_VALUE_5=git+ssh://", "GIT_CONFIG_VALUE_6=ssh+git://", "GIT_CONFIG_VALUE_8=/", "GIT_CONFIG_VALUE_9=.", "CLAUDE_CODE_DISABLE_CLAUDE_MDS=1",
 		"DISABLE_AUTO_COMPACT=1", "BASH_MAX_OUTPUT_LENGTH=10000", "MAX_THINKING_TOKENS=4000"} {
 		if !slices.Contains(env, want) {
 			t.Errorf("env lacks %q", want)
@@ -306,6 +306,21 @@ func TestDefaultArgsMissingFromHelp(t *testing.T) {
 	b := NewClaudeAdapter(AdapterConfig{NudgeTokens: 200000, MaxTokens: 300000})
 	if err := b.Verify(context.Background()); err != nil {
 		t.Errorf("Verify without default_args: %v", err)
+	}
+}
+
+// The caller mutating its DefaultArgs after Verify cannot skip the help check.
+func TestDefaultArgsMutatedAfterVerify(t *testing.T) {
+	fakeClaude(t, "echo '"+strings.ReplaceAll(fullHelp, "--max-budget-usd", "--max-cost")+"'\n")
+	args := []string{"--debug"}
+	a := NewClaudeAdapter(AdapterConfig{DefaultArgs: args, NudgeTokens: 200000, MaxTokens: 300000})
+	if err := a.Verify(context.Background()); err != nil {
+		t.Fatalf("Verify: %v", err)
+	}
+	args[0] = "--max-budget-usd=3"
+	argv := mustPrepare(t, a, "T-5", nil).Argv
+	if slices.Contains(argv, "--max-budget-usd=3") || !slices.Contains(argv, "--debug") {
+		t.Errorf("Prepare used the mutated slice: %q", argv)
 	}
 }
 
