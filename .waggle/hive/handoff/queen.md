@@ -13,8 +13,8 @@ Two layers. Product is Waggle itself (cmd/, internal/ including internal/scaffol
 - GitHub `waggle-sh/waggle`, private, Team plan (D-084). Ruleset `main` (id 25310890) requires up-to-date branches, the required CI checks and one code owner review; force-push blocked, deletion restricted, admin bypass always (D-098, D-131 for `dco`). GitHub never counts the author's own approval and auto-merge is off, so every merge is `gh pr merge <n> --merge --admin` from a polling loop.
 - Auth: in zsh `unset GITHUB_TOKEN GH_TOKEN` (or `env -u GITHUB_TOKEN -u GH_TOKEN gh ...`) from the main checkout; inside a worker worktree push with `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push ...`.
 - Hive pin `6a4886eb16e0de1d005a4ba354e72ecd1dd63756` (`.waggle/control/config.yaml`). `CLAUDE.md` is tracked.
-- Hooks: `.claude/settings.json` runs `.claude/hooks/session-start.sh` on startup, resume, clear and compact (prints this file and the live repo state) and `.claude/hooks/handoff-check.sh` on Stop (refuses to end a turn while this file is older than main's last commit, so refresh it after every merge batch; `touch` is not a refresh, rewrite the facts).
-- Hive records: every guard review, brief edit and handoff refresh is an uncommitted tracked change under `.waggle/hive/` until the next `hive-records-<n>` batch PR (Tier 3, Keeper card).
+- Hooks: `.claude/settings.json` runs `.claude/hooks/session-start.sh` on startup, resume, clear and compact (prints the local handoff `queen.local.md`, or this summary if it is missing, plus the live repo state) and `.claude/hooks/handoff-check.sh` on Stop (refuses to end a turn while `queen.local.md` is missing, over 40 lines, or older than main's last commit; rewrite the facts, `touch` is not a refresh). Nothing checks this summary (D-182, WAGGLE.md section 4).
+- Hive records: guard reviews, probes, brief edits and decisions are uncommitted tracked changes under `.waggle/hive/` until the next records batch; the local handoff is never committed. Run `.waggle/control/scripts/scan-hive.sh` on the batch: exit 0 merges with `--admin` and a one-line note to the Keeper, exit 1 or 2 keeps the guard and the Keeper card (D-183).
 - Every PR fails `verify-leases-and-tiers` on "no claim for T-<id>" (no claim refs on the remote until T-023 phase F sets `forge.remote`, D-119, D-168, T-014 F10) and on any update-branch merge commit; merges go through `--admin`. Expected.
 
 ## Habits that worked
@@ -29,7 +29,7 @@ Two layers. Product is Waggle itself (cmd/, internal/ including internal/scaffol
 - Guards in worktrees cannot write the main checkout: copy their review files and scan them for home paths and emails. Run guard rounds in parallel with the next fix when a must-fix is unambiguous. Guards must check linux CI, since macOS `/var` symlinks hide path bugs.
 - Agents cannot be resumed after /clear; re-dispatch fresh.
 - Keep Keeper messages short, lead with the answer, no em or en dashes anywhere.
-- Hand off again before context passes about 200k, and refresh this file after every merge batch.
+- Hand off again before context passes about 200k. Rewrite `queen.local.md` after every merge; refresh this summary at phase merges and in records batches (D-182).
 
 ## State at this summary (main at `2ecd449`)
 
