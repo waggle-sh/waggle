@@ -1,0 +1,140 @@
+//go:build unix
+
+package dispatch
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+// P1: local mode keepalive runs the comb's update-ref under the repo hooks.
+// The worker plants hooks/reference-transaction; the renew runs it on the
+// host with dispatch's own environment (GITHUB_TOKEN present).
+func TestProbeKeepaliveRunsPlantedHook(t *testing.T) {
+	f := newFixture(t, false, false)
+	t.Setenv("GITHUB_TOKEN", "probe-secret-token")
+	canary := filepath.Join(t.TempDir(), "canary")
+	hook := "#!/bin/sh\nenv >> " + canary + "\nexit 0\n"
+	script := "c=$(git rev-parse --path-format=absolute --git-common-dir)\n" +
+		"printf '%s' '" + hook + "' > $c/hooks/reference-transaction\nchmod +x $c/hooks/reference-transaction\n" +
+		"sleep 1\n" + okScenario
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.KeepaliveEvery = 200 * time.Millisecond })
+	b, _ := os.ReadFile(canary)
+	t.Logf("exit %d end %s err %v violations %v", res.ExitCode, res.End, err, res.Violations)
+	t.Logf("canary fired=%v secret_seen=%v", len(b) > 0, strings.Contains(string(b), "probe-secret-token"))
+}
+
+// P2: remote mode final claim sync runs `git fetch` under the repo config
+// before the files step: a planted remote.origin.uploadpack runs on the host.
+func TestProbeFinalSyncRunsPlantedConfig(t *testing.T) {
+	f := newFixture(t, true, false)
+	t.Setenv("GITHUB_TOKEN", "probe-secret-token")
+	dir := t.TempDir()
+	canary := filepath.Join(dir, "canary")
+	up := filepath.Join(dir, "up.sh")
+	if err := os.WriteFile(up, []byte("#!/bin/sh\nenv | grep GITHUB_TOKEN >> "+canary+"\nexec git-upload-pack \"$@\"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	script := "git config remote.origin.uploadpack " + up + "\n" + okScenario
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.KeepaliveEvery = time.Hour })
+	b, _ := os.ReadFile(canary)
+	t.Logf("exit %d end %s pushed %v err %v violations %v", res.ExitCode, res.End, res.Pushed, err, res.Violations)
+	t.Logf("canary fired=%v secret_seen=%v", len(b) > 0, strings.Contains(string(b), "probe-secret-token"))
+}
+
+// P3: a process that leaves the group (setsid) survives the kill and keeps
+// acting after Run returns.
+func TestProbeSetsidEscape(t *testing.T) {
+	f := newFixture(t, false, false)
+	marker := filepath.Join(t.TempDir(), "alive")
+	script := "python3 -c 'import os,time,sys\nif os.fork()==0:\n os.setsid()\n time.sleep(3)\n open(sys.argv[1],\"w\").write(\"x\")' " + marker + " </dev/null >/dev/null 2>&1\n" + okScenario
+	res, err := f.run(script)
+	t.Logf("exit %d end %s err %v", res.ExitCode, res.End, err)
+	time.Sleep(4 * time.Second)
+	_, serr := os.Stat(marker)
+	t.Logf("escaped process wrote after Run returned: %v", serr == nil)
+}
+
+// P4: an escaped process that keeps the stdout pipe open holds Run past the
+// timeout until it exits.
+func TestProbeEscapeHoldsPipe(t *testing.T) {
+	f := newFixture(t, false, false)
+	script := "python3 -c 'import os,time\nif os.fork()==0:\n os.setsid()\n time.sleep(8)' </dev/null 2>/dev/null\n" + emit(assistant(100)) + "sleep 30\n"
+	start := time.Now()
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.Timeout = 2 * time.Second })
+	t.Logf("exit %d end %s err %v after %v (timeout 2s, kill grace %v)", res.ExitCode, res.End, err, time.Since(start).Round(time.Second), killGrace)
+}
+
+// P5: an escaped process toggles the branch between a clean commit and an
+// out-of-lease commit; the push sends whatever the ref names at push time.
+func TestProbePushRace(t *testing.T) {
+	hits := 0
+	for i := 0; i < 8; i++ {
+		f := newFixture(t, true, false)
+		script := commitFile("internal/x/b.go", "ok") +
+			"good=$(git rev-parse HEAD)\n" + commitFile("docs/evil.md", "bad") + "bad=$(git rev-parse HEAD)\ngit reset -q --hard $good\n" +
+			"python3 -c 'import os,time,subprocess,sys\nif os.fork()==0:\n os.setsid()\n end=time.time()+6\n i=0\n while time.time()<end:\n  subprocess.call([\"git\",\"update-ref\",\"refs/heads/t-023\",sys.argv[1+i%2]]); i+=1' $good $bad </dev/null >/dev/null 2>&1\n" +
+			emit(assistant(100), okResult)
+		res, _ := f.run(script)
+		remote := ""
+		if f.pushed("t-023") {
+			remote = sh(t, f.origin, "rev-parse", "refs/heads/t-023")
+		}
+		bad := remote != "" && remote != res.HeadOID
+		if bad || (remote != "" && strings.Contains(sh(t, f.origin, "ls-tree", "-r", "--name-only", remote), "docs/evil.md")) {
+			hits++
+		}
+		t.Logf("run %d: exit %d pushed %v head_oid %s remote %s mismatch %v", i, res.ExitCode, res.Pushed, short(res.HeadOID), short(remote), bad)
+		time.Sleep(6 * time.Second)
+	}
+	t.Logf("runs where the remote got a commit outside the lease: %d of 8", hits)
+}
+
+func short(s string) string {
+	if len(s) > 8 {
+		return s[:8]
+	}
+	return s
+}
+
+// P6: the escaped process waits for dispatch's own worktree status call (it
+// rewrites the admin index), then moves the branch to an out-of-lease commit.
+func TestProbePushRaceTimed(t *testing.T) {
+	hits := 0
+	for i, delay := range []string{"0.005", "0.015", "0.03", "0.05", "0.08", "0.12"} {
+		f := newFixture(t, true, false)
+		script := commitFile("internal/x/b.go", "ok") +
+			"good=$(git rev-parse HEAD)\n" + commitFile("docs/evil.md", "bad") + "bad=$(git rev-parse HEAD)\ngit reset -q --hard $good\n" +
+			"idx=$(git rev-parse --path-format=absolute --git-dir)/index\nsleep 1.1; touch internal/x/b.go\n" +
+			"python3 -c 'import os,time,subprocess,sys\nif os.fork()==0:\n os.setsid()\n m=os.stat(sys.argv[1]).st_mtime_ns\n end=time.time()+8\n while time.time()<end and os.stat(sys.argv[1]).st_mtime_ns==m: time.sleep(0.0005)\n time.sleep(float(sys.argv[3]))\n subprocess.call([\"git\",\"update-ref\",\"refs/heads/t-023\",sys.argv[2]])' $idx $bad " + delay + " </dev/null >/dev/null 2>&1\n" +
+			emit(assistant(100), okResult)
+		res, _ := f.run(script)
+		remote := ""
+		if f.pushed("t-023") {
+			remote = sh(t, f.origin, "rev-parse", "refs/heads/t-023")
+		}
+		evil := remote != "" && strings.Contains(sh(t, f.origin, "ls-tree", "-r", "--name-only", remote), "docs/evil.md")
+		if evil {
+			hits++
+		}
+		t.Logf("run %d delay %ss: exit %d end %s pushed %v head_oid %s remote %s evil_on_remote %v violations %d", i, delay, res.ExitCode, res.End, res.Pushed, short(res.HeadOID), short(remote), evil, len(res.Violations))
+		time.Sleep(2 * time.Second)
+	}
+	t.Logf("runs where the remote got a commit outside the lease after a clean check: %d of 6", hits)
+}
+
+// P7: the default global excludes file ($XDG_CONFIG_HOME/git/ignore) is read
+// even under GIT_CONFIG_GLOBAL=/dev/null and is not hashed: a '*' there hides
+// an untracked file in the main checkout and in the worktree.
+func TestProbeXDGIgnoreHidesWrites(t *testing.T) {
+	f := newFixture(t, true, false)
+	xdg := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+	script := okScenario + "mkdir -p " + xdg + "/git\necho '*' > " + xdg + "/git/ignore\n" +
+		"echo planted > '" + f.real + "/CLAUDE.local.md'\necho x > internal/x/loose.go\n"
+	res, err := f.run(script)
+	t.Logf("exit %d end %s pushed %v err %v violations %v", res.ExitCode, res.End, res.Pushed, err, res.Violations)
+}

@@ -1,0 +1,229 @@
+//go:build unix
+
+package dispatch
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+func short(s string) string {
+	if len(s) > 8 {
+		return s[:8]
+	}
+	return s
+}
+
+// R-P1: the worker plants a reference-transaction hook; keepalive renewals
+// must not run it (fixes 3 and 4).
+func TestReprobeKeepalivePlantedHook(t *testing.T) {
+	f := newFixture(t, false, false)
+	t.Setenv("GITHUB_TOKEN", "probe-secret-token")
+	canary := filepath.Join(t.TempDir(), "canary")
+	hook := "#!/bin/sh\nenv >> " + canary + "\nexit 0\n"
+	script := "c=$(git rev-parse --path-format=absolute --git-common-dir)\n" +
+		"printf '%s' '" + hook + "' > $c/hooks/reference-transaction\nchmod +x $c/hooks/reference-transaction\n" +
+		"sleep 1\n" + okScenario
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.KeepaliveEvery = 200 * time.Millisecond })
+	b, _ := os.ReadFile(canary)
+	t.Logf("exit %d end %s err %v violations %v warnings %v", res.ExitCode, res.End, err, res.Violations, res.Warnings)
+	t.Logf("canary fired=%v secret_seen=%v", len(b) > 0, strings.Contains(string(b), "probe-secret-token"))
+}
+
+// R-P1b: same hook, but the planted hook is renamed away again before the
+// renewal tick hashes (written and reverted): only the not_enforced residual.
+// Instead check the hook planted by the worker in remote mode keepalive.
+func TestReprobeKeepaliveRemotePlantedConfig(t *testing.T) {
+	f := newFixture(t, true, false)
+	dir := t.TempDir()
+	canary := filepath.Join(dir, "canary")
+	up := filepath.Join(dir, "up.sh")
+	if err := os.WriteFile(up, []byte("#!/bin/sh\ntouch "+canary+"\nexec git-upload-pack \"$@\"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	script := "git config remote.origin.uploadpack " + up + "\nsleep 1\n" + okScenario
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.KeepaliveEvery = 200 * time.Millisecond })
+	_, cerr := os.Stat(canary)
+	t.Logf("exit %d end %s pushed %v err %v warnings %v", res.ExitCode, res.End, res.Pushed, err, res.Warnings)
+	t.Logf("canary fired=%v", cerr == nil)
+}
+
+// R-P2: final sync under a planted uploadpack.
+func TestReprobeFinalSyncPlantedConfig(t *testing.T) {
+	f := newFixture(t, true, false)
+	t.Setenv("GITHUB_TOKEN", "probe-secret-token")
+	dir := t.TempDir()
+	canary := filepath.Join(dir, "canary")
+	up := filepath.Join(dir, "up.sh")
+	if err := os.WriteFile(up, []byte("#!/bin/sh\nenv | grep GITHUB_TOKEN >> "+canary+"\nexec git-upload-pack \"$@\"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	script := "git config remote.origin.uploadpack " + up + "\n" + okScenario
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.KeepaliveEvery = time.Hour })
+	b, _ := os.ReadFile(canary)
+	t.Logf("exit %d end %s pushed %v err %v violations %v warnings %v", res.ExitCode, res.End, res.Pushed, err, res.Violations, res.Warnings)
+	t.Logf("canary fired=%v", len(b) > 0)
+}
+
+// R-P5: an escaped process toggles the branch between a clean commit and an
+// out-of-lease commit for 4 s.
+func TestReprobePushRaceToggle(t *testing.T) {
+	bad := 0
+	for i := 0; i < 6; i++ {
+		f := newFixture(t, true, false)
+		script := commitFile("internal/x/b.go", "ok") +
+			"good=$(git rev-parse HEAD)\n" + commitFile("docs/evil.md", "bad") + "bad=$(git rev-parse HEAD)\ngit reset -q --hard $good\n" +
+			"python3 -c 'import os,time,subprocess,sys\nif os.fork()==0:\n os.setsid()\n end=time.time()+4\n i=0\n while time.time()<end:\n  subprocess.call([\"git\",\"update-ref\",\"refs/heads/t-023\",sys.argv[1+i%2]]); i+=1' $good $bad </dev/null >/dev/null 2>&1\n" +
+			emit(assistant(100), okResult)
+		res, _ := f.run(script)
+		remote := ""
+		if f.pushed("t-023") {
+			remote = sh(t, f.origin, "rev-parse", "refs/heads/t-023")
+		}
+		evil := remote != "" && strings.Contains(sh(t, f.origin, "ls-tree", "-r", "--name-only", remote), "docs/evil.md")
+		if evil || (remote != "" && remote != res.HeadOID) {
+			bad++
+		}
+		t.Logf("run %d: exit %d pushed %v head %s remote %s evil %v violations %d", i, res.ExitCode, res.Pushed, short(res.HeadOID), short(remote), evil, len(res.Violations))
+		time.Sleep(4500 * time.Millisecond)
+	}
+	t.Logf("BAD runs: %d of 6", bad)
+}
+
+// R-P6: timed move after dispatch's worktree status call, many delays.
+func TestReprobePushRaceTimed(t *testing.T) {
+	delays := []string{"0", "0.001", "0.002", "0.004", "0.006", "0.008", "0.01", "0.013", "0.016", "0.02", "0.025", "0.03", "0.04", "0.05", "0.07", "0.1"}
+	bad, pushedEvilChecked := 0, 0
+	for r := 0; r < 1; r++ {
+		for i, delay := range delays {
+			f := newFixture(t, true, false)
+			done := filepath.Join(t.TempDir(), "done")
+			script := commitFile("internal/x/b.go", "ok") +
+				"good=$(git rev-parse HEAD)\n" + commitFile("docs/evil.md", "bad") + "bad=$(git rev-parse HEAD)\ngit reset -q --hard $good\n" +
+				"idx=$(git rev-parse --path-format=absolute --git-dir)/index\nsleep 1.1; touch internal/x/b.go\n" +
+				"python3 -c 'import os,time,subprocess,sys\nif os.fork()==0:\n os.setsid()\n m=os.stat(sys.argv[1]).st_mtime_ns\n end=time.time()+8\n while time.time()<end and os.stat(sys.argv[1]).st_mtime_ns==m: time.sleep(0.0003)\n time.sleep(float(sys.argv[3]))\n subprocess.call([\"git\",\"update-ref\",\"refs/heads/t-023\",sys.argv[2]])\n open(sys.argv[4],\"w\").write(\"x\")' $idx $bad " + delay + " " + done + " </dev/null >/dev/null 2>&1\n" +
+				emit(assistant(100), okResult)
+			res, _ := f.run(script)
+			for w := 0; w < 90; w++ {
+				if _, err := os.Stat(done); err == nil {
+					break
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
+			remote := ""
+			if f.pushed("t-023") {
+				remote = sh(t, f.origin, "rev-parse", "refs/heads/t-023")
+			}
+			evil := remote != "" && strings.Contains(sh(t, f.origin, "ls-tree", "-r", "--name-only", remote), "docs/evil.md")
+			if evil || (remote != "" && remote != res.HeadOID) {
+				bad++
+			}
+			if !res.Pushed && len(res.Violations) > 0 {
+				pushedEvilChecked++
+			}
+			t.Logf("moved %v", f.git("rev-parse", "refs/heads/t-023") != res.HeadOID)
+			t.Logf("round %d run %d delay %s: exit %d pushed %v head %s remote %s evil %v violations %v", r, i, delay, res.ExitCode, res.Pushed, short(res.HeadOID), short(remote), evil, res.Violations)
+		}
+	}
+	t.Logf("BAD runs: %d of %d; runs where the move landed before the check (caught): %d", bad, 3*len(delays), pushedEvilChecked)
+}
+
+// R-P7: XDG ignore.
+func TestReprobeXDGIgnore(t *testing.T) {
+	xdg := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+	f := newFixture(t, true, false)
+	script := okScenario + "mkdir -p " + xdg + "/git\necho '*' > " + xdg + "/git/ignore\n" +
+		"echo planted > '" + f.real + "/CLAUDE.local.md'\necho x > internal/x/loose.go\n"
+	res, err := f.run(script)
+	t.Logf("exit %d end %s pushed %v err %v violations %v", res.ExitCode, res.End, res.Pushed, err, res.Violations)
+}
+
+// New: a self-ignoring .gitignore in a new main checkout directory hides a new
+// file there from the main checkout status check.
+func TestReprobeSelfIgnoringGitignore(t *testing.T) {
+	f := newFixture(t, true, false)
+	script := okScenario + "mkdir -p '" + f.real + "/.claude/commands'\nprintf '*\\n' > '" + f.real + "/.claude/commands/.gitignore'\n" +
+		"echo evil > '" + f.real + "/.claude/commands/evil.md'\n"
+	res, err := f.run(script)
+	t.Logf("exit %d end %s pushed %v err %v violations %v", res.ExitCode, res.End, res.Pushed, err, res.Violations)
+}
+
+// New: a FIFO planted at the tainted marker path blocks dispatch after a host
+// violation.
+func TestReprobeTaintedFIFO(t *testing.T) {
+	f := newFixture(t, false, false)
+	wt := filepath.Join(f.real, ".waggle/worktrees/T-023-builder")
+	script := "mkfifo '" + wt + ".tainted'\necho x > '" + f.common() + "/hooks/zz'\n" + okScenario
+	done := make(chan string, 1)
+	go func() {
+		res, err := f.run(script)
+		done <- res.End + " " + func() string {
+			if err != nil {
+				return err.Error()
+			}
+			return ""
+		}()
+	}()
+	select {
+	case s := <-done:
+		t.Logf("returned: %s", s)
+	case <-time.After(15 * time.Second):
+		t.Logf("Run still blocked after 15 s (FIFO at the tainted marker)")
+		// unblock it
+		if fd, err := syscall.Open(wt+".tainted", syscall.O_RDONLY|syscall.O_NONBLOCK, 0); err == nil {
+			time.Sleep(time.Second)
+			syscall.Close(fd)
+		}
+		select {
+		case s := <-done:
+			t.Logf("after unblocking: %s", s)
+		case <-time.After(5 * time.Second):
+		}
+	}
+}
+
+// New: a symlinked run dir sends result.json and final.md elsewhere.
+func TestReprobeSymlinkedRunDir(t *testing.T) {
+	f := newFixture(t, false, false)
+	elsewhere := t.TempDir()
+	runDir := filepath.Join(f.real, ".waggle/worktrees/runs/T-023-builder-1")
+	script := "mv '" + runDir + "' '" + runDir + ".moved'\nln -s '" + elsewhere + "' '" + runDir + "'\n" + okScenario
+	res, err := f.run(script)
+	_, e1 := os.Stat(filepath.Join(elsewhere, "result.json"))
+	_, e2 := os.Stat(filepath.Join(elsewhere, "final.md"))
+	t.Logf("exit %d err %v; result.json elsewhere %v final.md elsewhere %v", res.ExitCode, err, e1 == nil, e2 == nil)
+}
+
+// New: the Keeper's own GIT_CONFIG_PARAMETERS naming a hooks path wins over
+// ExtraEnv (Keeper env only; not agent reachable).
+func TestReprobeConfigParametersPrecedence(t *testing.T) {
+	f := newFixture(t, false, false)
+	canary := filepath.Join(t.TempDir(), "ran")
+	hooks := filepath.Join(t.TempDir(), "hooks")
+	os.Mkdir(hooks, 0o755)
+	os.WriteFile(filepath.Join(hooks, "reference-transaction"), []byte("#!/bin/sh\ntouch "+canary+"\n"), 0o755)
+	t.Setenv("GIT_CONFIG_PARAMETERS", "'core.hooksPath'='"+hooks+"'")
+	res, err := f.run("sleep 0.5\n"+emit(assistant(100), okResult), func(_ *Request, d *Deps) { d.KeepaliveEvery = 100 * time.Millisecond })
+	_, cerr := os.Stat(canary)
+	t.Logf("end %s err %v; keeper GIT_CONFIG_PARAMETERS hook ran=%v", res.End, err, cerr == nil)
+	_ = context.Background
+}
+
+// New: a worker session that writes many objects triggers git's detached auto
+// maintenance, whose repack writes info/refs in the common dir.
+func TestReprobeAutoMaintenance(t *testing.T) {
+	f := newFixture(t, false, false)
+	script := "mkdir -p internal/x/many\ni=0\nwhile [ $i -lt 1200 ]; do echo $i > internal/x/many/f$i; i=$((i+1)); done\n" +
+		"git add internal/x/many\ngit -c user.name=a -c user.email=a@e.co commit -q -s -m 'T-023: many'\nsleep 3\n" + emit(assistant(100), okResult)
+	res, err := f.run(script)
+	t.Logf("many objects: exit %d end %s err %v violations %v", res.ExitCode, res.End, err, res.Violations)
+	f2 := newFixture(t, false, false)
+	res, err = f2.run("git update-server-info\n" + okScenario)
+	t.Logf("update-server-info: exit %d end %s err %v violations %v", res.ExitCode, res.End, err, res.Violations)
+}
