@@ -93,7 +93,7 @@ func hostFiles(common, ownAdmin string) map[string]string {
 	}
 	for _, d := range []string{"hooks", "info"} {
 		_ = filepath.WalkDir(filepath.Join(common, d), func(p string, e fs.DirEntry, err error) error {
-			if rel, rerr := filepath.Rel(common, p); err == nil && rerr == nil && !e.IsDir() {
+			if rel, rerr := filepath.Rel(common, p); err == nil && rerr == nil && !e.IsDir() && filepath.ToSlash(rel) != "info/refs" { // info/refs is rewritten by git maintenance and never read locally
 				m[filepath.ToSlash(rel)] = fileState(p)
 			}
 			return nil
