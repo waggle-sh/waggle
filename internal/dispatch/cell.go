@@ -40,6 +40,10 @@ var NotEnforced = []string{
 	"host credentials readable via HOME",
 	"writes outside the repo (not detected)",
 	"code run by allowed build and test commands (test files, go test -exec) is not confined",
+	"writes to gitignored paths in the main checkout (.claude/settings.local.json, .waggle/control/local.yaml) are not detected",
+	"a process that leaves the worker's process group (setsid, a daemon) is not killed and can change host state after the checks",
+	"an include.path or includeIf naming a file outside the hashed set can change effective config",
+	"during the session, claim renewals run git with the Keeper's environment against agent-writable repo config; a config written and reverted between the hash and a renewal is not caught (the post-run config hash is the backstop)",
 	"push tripwire is best effort: it misses bare relative paths, scp forms without git@, upper-case schemes, <transport>::<address>, pushurl, " +
 		"a longer pushInsteadOf from git -c or the Keeper's global config, and any process (a go test run) that clears the GIT_CONFIG_* variables; " +
 		"the post-run ref check and the config hash are the backstop",

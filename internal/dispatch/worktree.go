@@ -49,7 +49,7 @@ func (g *Git) RunIn(ctx context.Context, dir string, args ...string) ([]byte, er
 		bin = "git"
 	}
 	// Hooks and fsmonitor never run from dispatch's own host calls.
-	full := append([]string{"-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false"}, args...)
+	full := append([]string{"-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "log.showSignature=false"}, args...)
 	cmd := exec.CommandContext(ctx, bin, full...)
 	cmd.Dir, cmd.Env = dir, gitEnv(os.Environ())
 	if g.Pinned {
@@ -399,7 +399,7 @@ func readUpTo(path string, max int) ([]byte, error) {
 }
 
 func (w *Worktree) checkClean(ctx context.Context, g *Git, admin string) error {
-	st, err := g.RunIn(ctx, w.Path, "--git-dir="+admin, "--work-tree="+w.Path, "status", "--porcelain=v1", "--untracked-files=all")
+	st, err := g.RunIn(ctx, w.Path, "--git-dir="+admin, "--work-tree="+w.Path, "status", "--porcelain=v1", "--ignore-submodules=dirty", "--untracked-files=all")
 	if err != nil {
 		return err
 	}

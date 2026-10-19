@@ -219,6 +219,8 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			}
 			opts, e := l.cfg.CombOptions(req.RepoDir)
 			opts.GitBinary = d.GitBin
+			// The agent controls repo config: never run hooks from the claim writes.
+			opts.ExtraEnv = []string{"GIT_CONFIG_COUNT=1", "GIT_CONFIG_KEY_0=core.hooksPath", "GIT_CONFIG_VALUE_0=/dev/null"}
 			if e == nil {
 				backend, e = comb.NewGitBackend(opts)
 			}
@@ -267,6 +269,9 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		every = time.Duration(l.cfg.Leases.DefaultTTLMinutes) * time.Minute / 2
 	}
 	renew := func(ctx context.Context) error {
+		if len(diffKeys(ck.before.files, hostFiles(ck.common, w.Admin))) > 0 { // the agent changed what git trusts
+			return errors.New("host files changed; renewal skipped")
+		}
 		return backend.AcquireLease(ctx, comb.Lease{TicketID: req.Ticket, KeeperID: l.keeper, Role: req.Role, Gate: req.Gate, Directories: req.Dirs})
 	}
 	d.emit("launched", "%s in %s", sel.Model, d.Cell.Name())
@@ -279,18 +284,20 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	u := s.Usage
 	res.Usage = Usage{Input: u.InputTokens, CacheWrite: u.CacheWriteTokens, CacheRead: u.CacheReadTokens, Output: u.OutputTokens}
 	d.emit("ended", "%s, %d tokens", s.End, u.TotalTokens)
-	_ = os.WriteFile(filepath.Join(runDir, "final.md"), s.Final, 0o600)
+	_ = writeFile(runDir, "final.md", s.Final)
 	pctx := context.WithoutCancel(ctx) // the checks run even when ctx was cancelled
-	if g.Remote != "" {                // the final sync overwrites any tampered claim mirror
-		if _, err := backend.ClaimOID(pctx, req.Ticket); err != nil && !errors.Is(err, comb.ErrNotFound) {
+	if g.Remote != "" {                // the final sync overwrites a tampered claim mirror, but never runs on changed host files
+		if len(diffKeys(ck.before.files, hostFiles(ck.common, w.Admin))) > 0 {
+			res.Warnings = append(res.Warnings, "claim_sync_skipped: host files changed")
+		} else if _, err := backend.ClaimOID(pctx, req.Ticket); err != nil && !errors.Is(err, comb.ErrNotFound) {
 			res.Warnings = append(res.Warnings, "claim_sync_failed: "+err.Error())
+		} else {
+			ck.synced = true
 		}
 	}
 	var commits int
 	res.Violations, commits = ck.run(pctx)
-	if out, err := pg.Run(pctx, "rev-parse", "refs/heads/"+req.Branch); err == nil {
-		res.HeadOID = strings.TrimSpace(string(out))
-	}
+	res.HeadOID = ck.head
 	if slices.ContainsFunc(res.Violations, func(v comb.Violation) bool { return v.Rule == ruleHost }) {
 		if err := os.WriteFile(w.Path+".tainted", []byte(filepath.Base(runDir)), 0o600); err != nil {
 			res.Warnings = append(res.Warnings, "tainted_marker_failed: "+err.Error())
@@ -299,7 +306,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	res.End, res.ExitCode = outcome(s, res.Violations, commits)
 	d.emit("checked", "%d violations, %d commits", len(res.Violations), commits)
 	if ref := "refs/heads/" + req.Branch; res.ExitCode == 0 && g.Remote != "" && !d.NoPush {
-		if _, err := g.Run(pctx, "push", g.Remote, ref+":"+ref); err != nil {
+		if _, err := g.Run(pctx, "push", g.Remote, ck.head+":"+ref); err != nil { // the checked OID, never the ref
 			res.End, res.ExitCode, res.Error = "error", ExitEnv, err.Error()
 		} else {
 			res.Pushed = true
@@ -482,7 +489,7 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 	}
 	mu.Unlock()
 	s.Subtype = tp.subtype
-	s.TimedOut = errors.Is(tctx.Err(), context.DeadlineExceeded) && ctx.Err() == nil && s.End == runtime.EndInterrupted
+	s.TimedOut = errors.Is(tctx.Err(), context.DeadlineExceeded) && ctx.Err() == nil
 	if err != nil {
 		s.Warnings = append(s.Warnings, "collect: "+err.Error())
 	}

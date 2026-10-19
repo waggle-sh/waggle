@@ -63,7 +63,7 @@ func listRefs(ctx context.Context, g *Git) (map[string]string, error) {
 
 // mainState is the main checkout's branch line, status and HEAD.
 func mainState(ctx context.Context, g *Git) (string, error) {
-	st, err := g.Run(ctx, "status", "--porcelain=v1", "-b", "-z", "--untracked-files=all")
+	st, err := g.Run(ctx, "status", "--porcelain=v1", "--ignore-submodules=dirty", "-b", "-z", "--untracked-files=all")
 	head, _ := g.Run(ctx, "rev-parse", "HEAD") // an unborn HEAD has none
 	return string(st) + "\x00" + string(head), err
 }
@@ -111,15 +111,16 @@ func hostFiles(common, ownAdmin string) map[string]string {
 			m[k+"/"+f] = fileState(filepath.Join(common, k, f))
 		}
 	}
-	var globals []string
+	home, _ := os.UserHomeDir()
+	xdg := os.Getenv("XDG_CONFIG_HOME")
+	if xdg == "" {
+		xdg = filepath.Join(home, ".config")
+	}
+	globals := []string{filepath.Join(xdg, "git", "ignore"), filepath.Join(xdg, "git", "attributes")}
 	if g, ok := os.LookupEnv("GIT_CONFIG_GLOBAL"); ok {
-		globals = []string{g}
-	} else if home, err := os.UserHomeDir(); err == nil {
-		xdg := os.Getenv("XDG_CONFIG_HOME")
-		if xdg == "" {
-			xdg = filepath.Join(home, ".config")
-		}
-		globals = []string{filepath.Join(xdg, "git", "config"), filepath.Join(home, ".gitconfig")}
+		globals = append(globals, g)
+	} else {
+		globals = append(globals, filepath.Join(xdg, "git", "config"), filepath.Join(home, ".gitconfig"))
 	}
 	for _, g := range globals {
 		m["global:"+g] = fileState(g)
@@ -163,6 +164,8 @@ type checker struct {
 	lease      comb.Lease // the claim as dispatch acquired it, never re-read after the run
 	common     string
 	remoteMode bool
+	head       string // refs/heads/<branch>, resolved once: this OID is checked, recorded and pushed
+	synced     bool   // the final claim sync ran, so other tickets' claim mirrors are exempt
 	before     snap
 }
 
@@ -199,7 +202,7 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 	}
 	own, _ := comb.RefName(c.lease.TicketID)
 	for _, ref := range diffKeys(c.before.refs, refs) {
-		if ref != "refs/heads/"+c.w.Branch && ref != own && !(c.remoteMode && strings.HasPrefix(ref, comb.ClaimRefPrefix)) {
+		if ref != "refs/heads/"+c.w.Branch && ref != own && !(c.remoteMode && c.synced && strings.HasPrefix(ref, comb.ClaimRefPrefix)) {
 			add(ruleHost, ref, "ref changed during the run")
 		}
 	}
@@ -207,7 +210,7 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 		if now, err := mainState(ctx, c.g); err != nil || now != c.before.main {
 			add(ruleHost, ".", "main checkout status or HEAD changed")
 		}
-		st, err := c.g.RunIn(ctx, c.w.Path, "--git-dir="+c.w.Admin, "--work-tree="+c.w.Path, "status", "--porcelain=v1", "-z", "--untracked-files=all")
+		st, err := c.g.RunIn(ctx, c.w.Path, "--git-dir="+c.w.Admin, "--work-tree="+c.w.Path, "status", "--porcelain=v1", "--ignore-submodules=dirty", "-z", "--untracked-files=all")
 		if err != nil || len(bytes.TrimSpace(st)) > 0 {
 			add(ruleDirty, ".", "uncommitted or untracked change; the builder must commit")
 		}
@@ -215,8 +218,12 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 		add(ruleHost, ".", "not inspected: host config changed")
 		add(ruleDirty, ".", "not inspected: host config changed")
 	}
-	rng := c.w.CheckBase + "..refs/heads/" + c.w.Branch
-	out, err := c.g.Run(ctx, "log", "--reverse", "-z", "-n", "501", logFormat, rng)
+	out, err := c.g.Run(ctx, "rev-parse", "--verify", "refs/heads/"+c.w.Branch)
+	if c.head = strings.TrimSpace(string(out)); err != nil {
+		add(ruleCommit, c.w.Branch, "cannot resolve the branch")
+	}
+	rng := c.w.CheckBase + ".." + c.head
+	out, err = c.g.Run(ctx, "log", "--reverse", "-z", "-n", "501", logFormat, rng)
 	if err != nil {
 		add(ruleCommit, rng, "cannot list commits")
 	}

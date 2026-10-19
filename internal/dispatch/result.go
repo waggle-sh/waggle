@@ -2,6 +2,7 @@ package dispatch
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"time"
@@ -73,5 +74,21 @@ func (r *Result) Write() error {
 		return err
 	}
 	r.JSON = append(b, '\n')
-	return os.WriteFile(filepath.Join(r.RunDir, "result.json"), r.JSON, 0o600)
+	return writeFile(r.RunDir, "result.json", r.JSON)
+}
+
+// writeFile writes name into dir through a fresh O_EXCL temp file (mode 0600)
+// and a rename, so a symlink or FIFO the agent planted at name is replaced,
+// never followed or blocked on.
+func writeFile(dir, name string, data []byte) error {
+	f, err := os.CreateTemp(dir, "."+name+".tmp")
+	if err != nil {
+		return err
+	}
+	_, werr := f.Write(data)
+	if err := errors.Join(werr, f.Close()); err != nil {
+		_ = os.Remove(f.Name())
+		return err
+	}
+	return os.Rename(f.Name(), filepath.Join(dir, name))
 }
