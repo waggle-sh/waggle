@@ -3213,3 +3213,23 @@
 **Keeper choice:** The remaining D-159 proof of `verify-leases-and-tiers` against real remote claims lands at the T-023 phase F trial, where our hive first has claims on the remote. Phase C proves the gate locally only. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
 
 **Rationale:** Avoids scratch claim refs on the remote; phase F produces the real evidence with no extra setup.
+
+## D-169: T-023 phase C reviewed at 1186 added non-test lines; the stop moves from 1000 to 1350
+
+- **Date:** 2026-10-19
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** T-023 phase C was built at 1186 added non-test lines against the 1000 stop (target 850); `run.go` came in at 490 against a 200 estimate. Guard fix rounds count toward the stop (D-164). Accept and review, cut first, or split?
+
+**Options considered:**
+1. Accept, new stop 1350
+2. Cut to about 1100 (defer progress events and the settings.json and runtime_version copy to phase D), stop 1250
+3. Split into C and C2 (CLI and keepalive in a second PR)
+
+**Hive recommendation:** Accept, new stop 1350
+
+**Keeper choice:** Phase C goes to the opus and fable guards at 1186 added non-test lines (D-136 metric). The stop for phase C, guard fix rounds included, is 1350; a fix round that would cross 1350 comes back to the Keeper before it is written. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Every line traces to a brief item, the offered cuts total about 83 lines and still miss 1000, and two of them are carry items. Splitting interdependent run, check and CLI code adds a full Tier 3 review cycle and delays the own honey switch. Phase D and E estimates should assume a similar overrun.
