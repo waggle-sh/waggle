@@ -55,6 +55,7 @@ type Result struct {
 	Warnings       []string         `json:"warnings"`
 	NotEnforced    []string         `json:"not_enforced"`
 	Verdict        string           `json:"verdict"`
+	Second         bool             `json:"second"`
 	Pushed         bool             `json:"pushed"`
 	Final          string           `json:"final"`
 	Transcript     string           `json:"transcript"`

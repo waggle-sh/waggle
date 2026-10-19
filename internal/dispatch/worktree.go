@@ -109,6 +109,7 @@ type Worktree struct {
 	LockPath  string // Path + ".lock"
 	Branch    string
 	BaseOID   string
+	Detach    string // a guard: the OID its worktree is detached at
 	CheckBase string // BaseOID for a new branch, else merge-base(branch, BaseOID)
 	Reused    bool
 	Warnings  []string
@@ -148,7 +149,7 @@ func Provision(ctx context.Context, g *Git, req Request, baseOID string, now tim
 	if err != nil {
 		return nil, err
 	}
-	w := &Worktree{Path: filepath.Join(dir, req.Ticket+"-"+req.Role), Branch: req.Branch, BaseOID: baseOID}
+	w := &Worktree{Path: filepath.Join(dir, req.Ticket+"-"+req.Role), Branch: req.Branch, BaseOID: baseOID, Detach: req.Head}
 	w.LockPath = w.Path + ".lock"
 	if err := w.taintedErr(); err != nil {
 		return nil, err
@@ -220,6 +221,8 @@ func (w *Worktree) provision(ctx context.Context, g *Git) error {
 		err = w.checkReusable(ctx, g, rev == "refs/heads/"+w.Branch)
 	case !errors.Is(serr, fs.ErrNotExist):
 		err = serr
+	case w.Detach != "":
+		_, err = g.Run(ctx, "worktree", "add", "--detach", w.Path, w.Detach)
 	case rev == "refs/heads/"+w.Branch:
 		_, err = g.Run(ctx, "worktree", "add", w.Path, w.Branch)
 	case exists:
@@ -263,8 +266,12 @@ func requireRealDir(p string) error {
 // explicit --git-dir. The caller has already Lstat-checked the path.
 func (w *Worktree) checkReusable(ctx context.Context, g *Git, branchExists bool) error {
 	bad := fmt.Errorf("%s exists but is not a worktree on branch %s; run waggle dispatch clean or remove it", w.Path, w.Branch)
-	if !branchExists {
+	if !branchExists && w.Detach == "" {
 		return bad
+	}
+	headLine := "branch refs/heads/" + w.Branch
+	if w.Detach != "" {
+		headLine = "detached"
 	}
 	list, err := g.Run(ctx, "worktree", "list", "--porcelain")
 	if err != nil {
@@ -279,11 +286,14 @@ func (w *Worktree) checkReusable(ctx context.Context, g *Git, branchExists bool)
 		switch {
 		case strings.HasPrefix(line, "worktree "):
 			cur = strings.TrimPrefix(line, "worktree ")
-		case line == "branch refs/heads/"+w.Branch:
+		case line == headLine:
 			if got, err := filepath.EvalSymlinks(cur); err == nil && got == want {
 				admin, err := w.adminDir(ctx, g, want)
 				if err != nil {
 					return fmt.Errorf("%w (%v)", bad, err)
+				}
+				if w.Detach != "" { // a guard worktree is shared by both guards: reset it, never trust it
+					return w.reset(ctx, g.pinned(), admin)
 				}
 				return w.checkClean(ctx, g, admin)
 			}
@@ -300,7 +310,12 @@ func (w *Worktree) adminDir(ctx context.Context, g *Git, real string) (string, e
 	if err != nil {
 		return "", err
 	}
-	root := filepath.Join(strings.TrimSpace(string(out)), "worktrees")
+	return w.adminAt(strings.TrimSpace(string(out)), real)
+}
+
+// adminAt is adminDir for a known common dir; it reads files only and runs no git.
+func (w *Worktree) adminAt(common, real string) (string, error) {
+	root := filepath.Join(common, "worktrees")
 	ents, err := os.ReadDir(root)
 	if err != nil {
 		return "", err
@@ -328,7 +343,7 @@ func (w *Worktree) adminDir(ctx context.Context, g *Git, real string) (string, e
 		return "", fmt.Errorf("%d registrations name %s", len(hits), dotGit)
 	}
 	admin := hits[0]
-	if err := sameCommonDir(admin, strings.TrimSpace(string(out))); err != nil {
+	if err := sameCommonDir(admin, common); err != nil {
 		return "", err
 	}
 	own, err := readSmall(dotGit)
@@ -396,6 +411,17 @@ func readUpTo(path string, max int) ([]byte, error) {
 		err = fmt.Errorf("%s is larger than %d bytes", path, max)
 	}
 	return data, err
+}
+
+// reset puts a reused guard worktree back at the reviewed OID and removes
+// every untracked file, so a first guard's probe cannot reach the second review.
+func (w *Worktree) reset(ctx context.Context, pg *Git, admin string) error {
+	for _, a := range [][]string{{"reset", "-q", "--hard", w.Detach}, {"clean", "-q", "-ffdx"}} {
+		if _, err := pg.RunIn(ctx, w.Path, append([]string{"--git-dir=" + admin, "--work-tree=" + w.Path}, a...)...); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (w *Worktree) checkClean(ctx context.Context, g *Git, admin string) error {

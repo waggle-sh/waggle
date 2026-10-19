@@ -27,6 +27,7 @@ func shIn(t *testing.T, dir, stdin string, args ...string) string {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	cmd.Stdin = strings.NewReader(stdin)
+	cmd.Args = append(cmd.Args[:1], append([]string{"-c", "maintenance.auto=false"}, args...)...)
 	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1",
 		"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.com", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.com")
 	out, err := cmd.CombinedOutput()

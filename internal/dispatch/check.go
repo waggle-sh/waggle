@@ -116,14 +116,15 @@ func hostFiles(common, ownAdmin string) map[string]string {
 	if xdg == "" {
 		xdg = filepath.Join(home, ".config")
 	}
-	globals := []string{filepath.Join(xdg, "git", "ignore"), filepath.Join(xdg, "git", "attributes")}
+	// Keyed by role, never by path, so a violation names no $HOME (item 2).
+	globals := map[string]string{"global:xdg/ignore": filepath.Join(xdg, "git", "ignore"), "global:xdg/attributes": filepath.Join(xdg, "git", "attributes")}
 	if g, ok := os.LookupEnv("GIT_CONFIG_GLOBAL"); ok {
-		globals = append(globals, g)
+		globals["global:gitconfig"] = g
 	} else {
-		globals = append(globals, filepath.Join(xdg, "git", "config"), filepath.Join(home, ".gitconfig"))
+		globals["global:xdg/config"], globals["global:gitconfig"] = filepath.Join(xdg, "git", "config"), filepath.Join(home, ".gitconfig")
 	}
-	for _, g := range globals {
-		m["global:"+g] = fileState(g)
+	for k, g := range globals {
+		m[k] = fileState(g)
 	}
 	return m
 }
@@ -166,6 +167,8 @@ type checker struct {
 	remoteMode bool
 	head       string // refs/heads/<branch>, resolved once: this OID is checked, recorded and pushed
 	synced     bool   // the final claim sync ran, so other tickets' claim mirrors are exempt
+	claimOID   string // the local claim ref after the acquire and each renewal (local mode); it must still be there
+	guard      bool   // a guard run: no commits, no ref moves, a detached HEAD at head
 	before     snap
 }
 
@@ -185,7 +188,7 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 	real, err := filepath.EvalSymlinks(c.w.Path)
 	if err == nil {
 		var admin string
-		if admin, err = c.w.adminDir(ctx, c.g, real); err == nil && admin != c.w.Admin {
+		if admin, err = c.w.adminAt(c.common, real); err == nil && admin != c.w.Admin {
 			err = errors.New("another admin dir")
 		}
 	}
@@ -193,7 +196,11 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 		add(ruleHost, ".git", "worktree admin dir pin lost")
 		inspect = false
 	}
-	if head, err := readSmall(filepath.Join(c.w.Admin, "HEAD")); err != nil || strings.TrimSpace(string(head)) != "ref: refs/heads/"+c.w.Branch {
+	wantHead := "ref: refs/heads/" + c.w.Branch
+	if c.guard {
+		wantHead = c.head
+	}
+	if head, err := readSmall(filepath.Join(c.w.Admin, "HEAD")); err != nil || strings.TrimSpace(string(head)) != wantHead {
 		add(ruleHost, "HEAD", "worktree HEAD no longer names the branch")
 	}
 	refs, err := listRefs(ctx, c.g)
@@ -202,9 +209,12 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 	}
 	own, _ := comb.RefName(c.lease.TicketID)
 	for _, ref := range diffKeys(c.before.refs, refs) {
-		if ref != "refs/heads/"+c.w.Branch && ref != own && !(c.remoteMode && c.synced && strings.HasPrefix(ref, comb.ClaimRefPrefix)) {
+		if (c.guard || (ref != "refs/heads/"+c.w.Branch && ref != own)) && !(c.remoteMode && c.synced && strings.HasPrefix(ref, comb.ClaimRefPrefix)) {
 			add(ruleHost, ref, "ref changed during the run")
 		}
+	}
+	if c.claimOID != "" && !c.remoteMode && refs[own] != c.claimOID {
+		add(ruleHost, own, "own claim ref changed after the last renewal")
 	}
 	if inspect {
 		if now, err := mainState(ctx, c.g); err != nil || now != c.before.main {
@@ -217,6 +227,9 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 	} else {
 		add(ruleHost, ".", "not inspected: host config changed")
 		add(ruleDirty, ".", "not inspected: host config changed")
+	}
+	if c.guard { // rule 5: rules 3 and 4 only
+		return vs, 0
 	}
 	out, err := c.g.Run(ctx, "rev-parse", "--verify", "refs/heads/"+c.w.Branch)
 	if c.head = strings.TrimSpace(string(out)); err != nil {
