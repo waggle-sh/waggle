@@ -141,8 +141,9 @@ func (p Policy) Resolve(role string, task *TaskContext, decisionExists func(id i
 	}
 	model, err := p.pick(role, level, task, avoid...)
 	if err != nil && task.SecondGuard && role == roleGuard && errors.Is(err, ErrNoCrossModel) {
-		// D-179: nothing unused at or above the level, so take the highest unused model below it.
-		for l := level - 1; l >= LevelFast && model == ""; l-- {
+		// D-179, bounded by D-180: nothing unused at or above the level, so take the
+		// highest unused model below it, going no lower than the roster guard minimum.
+		for l := level - 1; l >= max(LevelFast, p.Minimums[roleGuard]) && model == ""; l-- {
 			for _, m := range []string{p.Models.Primary[l], p.Models.Alternate[l]} {
 				if m != "" && !slices.Contains(avoid, m) {
 					model, level, err = m, l, nil
