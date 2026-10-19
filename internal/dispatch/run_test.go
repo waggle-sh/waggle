@@ -32,7 +32,7 @@ func TestRunHappyPath(t *testing.T) {
 			res.KeeperID != "alice" || res.ClaimVerb != "claim" || res.ClaimOID != f.git("rev-parse", "refs/waggle/claims/ticket-23") ||
 			res.BaseOID != f.git("rev-parse", "origin/main") || res.CheckBaseOID != res.BaseOID || res.RuntimeVersion != "fake-claude 9.9" ||
 			res.Model == "" || res.Profile == "" || res.CostUSD == nil || *res.CostUSD != 0.05 || res.Usage.Input != 100 || res.Usage.Output != 10 ||
-			len(res.NotEnforced) != 11 || !res.Pushed || res.Schema != 1 {
+			len(res.NotEnforced) != len(NotEnforced) || !res.Pushed || res.Schema != 1 {
 			t.Fatalf("result fields: %+v", res)
 		}
 		if !f.pushed("t-023") || sh(t, f.origin, "rev-parse", "refs/heads/t-023") != head {
@@ -327,7 +327,7 @@ func TestRunRefusedArgExitsLikeUnverified(t *testing.T) {
 }
 
 func TestWaggleCommandsAndOutcome(t *testing.T) {
-	md := "## 2. x\n- `nope`\n## 3. Build\n- **Build:** `go build ./...`\n- **T:** `<test command>`\n- **V:** `go vet ./...` and `more`\n## 4. y\n- `late`\n"
+	md := "## 2. x\n- `nope`\n## 3. Build and Verification Commands\n- **Build:** `go build ./...`\n- **T:** `<test command>`\n- **V:** `go vet ./...` and `more`\n## 4. y\n- `late`\n"
 	if got := strings.Join(waggleCommands([]byte(md)), "|"); got != "go build ./...|go vet ./..." {
 		t.Fatalf("commands %q", got)
 	}

@@ -62,6 +62,8 @@ type Request struct {
 	Base      string // revision; empty means <forge.remote>/main or main
 	Tier      *comb.RiskTier
 	ReadPaths []string // read-only context, repo-relative, read from base
+	Second    bool     // guard only: also avoid the first guard's model (D-100)
+	Head      string   // set by Run for a guard: the OID under review, where its worktree is detached
 }
 
 const maxReadPaths = 50
@@ -88,17 +90,26 @@ func (r Request) Validate() (Request, error) {
 	default:
 		return r, failf(ExitUsage, "role %q is not a claim role; use builder, forager or guard", r.Role)
 	}
-	if r.Gate != "light" && r.Gate != "full" {
+	guard := r.Role == "guard"
+	if guard { // a guard takes its directories and gate from the claim
+		r.Dirs, r.Gate = nil, ""
+	}
+	switch {
+	case r.Second && !guard:
+		return r, failf(ExitUsage, "--second is for the guard role")
+	case !guard && r.Gate != "light" && r.Gate != "full":
 		return r, failf(ExitUsage, "gate %q: must be light or full", r.Gate)
 	}
-	dirs, err := comb.NormalizeDirectories(r.Dirs, config.MaxMaxDirectoriesPerClaim)
-	switch {
-	case errors.Is(err, comb.ErrTier3Path):
-		return r, failf(ExitClaim, "%w", err)
-	case err != nil:
-		return r, failf(ExitUsage, "%w", err)
+	if !guard {
+		dirs, err := comb.NormalizeDirectories(r.Dirs, config.MaxMaxDirectoriesPerClaim)
+		switch {
+		case errors.Is(err, comb.ErrTier3Path):
+			return r, failf(ExitClaim, "%w", err)
+		case err != nil:
+			return r, failf(ExitUsage, "%w", err)
+		}
+		r.Dirs = dirs
 	}
-	r.Dirs = dirs
 	if r.Branch == "" {
 		r.Branch = "t-" + strings.TrimPrefix(id, "T-")
 	}
