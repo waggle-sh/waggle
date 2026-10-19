@@ -3077,3 +3077,139 @@
 **Keeper choice:** Phase B is accepted at 867 added non-test lines (D-089 metric), including the third fix pass for Windows build tags, relative gitdir resolution and the adminDir hardening. Every line past 667 is a guard-requested security fix (worktree reuse pinned to its registered gitdir, bounded lock reads, atomic stale-lock takeover); both guards found no cut worth the risk. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
 
 **Rationale:** The overrun is larger than earlier precedents (D-136), so it is recorded rather than left in the reviews; the phase C and D estimates should assume similar safety overhead.
+
+## D-162: Q-T023-13: the D-137 default_args allowlist permits only --max-budget-usd and --debug
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Which default_args flags does the D-137 allowlist permit?
+
+**Options considered:**
+1. --max-budget-usd=<n> and --debug, each also present in the pinned --help
+2. --max-budget-usd only
+3. Empty allowlist
+
+**Hive recommendation:** --max-budget-usd=<n> and --debug, each also present in the pinned --help
+
+**Keeper choice:** The C0 allowlist permits `--max-budget-usd=<n>` and `--debug` only, and each must also appear in the pinned `--help`. `--effort` stays refused (D-134). Today config.yaml cannot express sequences, so the allowlist guards programmatic callers only. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Smallest set with a known use; anything else can be added by a later decision.
+
+## D-163: Q-T023-14: every worker run adds --no-session-persistence and --disable-slash-commands
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Add --no-session-persistence and --disable-slash-commands to every worker argv?
+
+**Options considered:**
+1. Both
+2. Only --disable-slash-commands
+3. Neither
+
+**Hive recommendation:** Both
+
+**Keeper choice:** Phase C0 adds `--no-session-persistence` and `--disable-slash-commands` as fixed argv flags on every worker run. A failed session cannot be resumed from the Keeper's Claude Code history; `transcript.jsonl` keeps the full run. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Keeps worker sessions out of the Keeper's history and removes an unreviewed command surface inside the cell.
+
+## D-164: Q-T023-15: T-023 phase C splits into C0 (allowlist, stop 130) then C (target 850, stop 1000)
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** How should phase C be split and sized?
+
+**Options considered:**
+1. C0 then C
+2. C0, C, and a separate CLI phase
+3. One phase C
+
+**Hive recommendation:** C0 then C
+
+**Keeper choice:** Phase C0 (`t-023c0`, lease `internal/runtime/launch.go`) lands the D-137 allowlist first: estimate 60, target 90, stop 130 added non-test lines. Phase C follows after C0 merges: estimate 700, target 850, stop 1000 (D-136 metric). Guard fix rounds count toward the stop, and a fix round that would cross the stop comes to the Keeper before it is written. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** D-161 showed guard fix rounds add about 30 percent; this sets realistic stops and makes C0 a reviewable precondition.
+
+## D-165: Q-T023-16: a worker commit without a Signed-off-by trailer is a dispatch violation
+
+- **Date:** 2026-10-18
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Is an unsigned worker commit (D-132) a violation or a warning?
+
+**Options considered:**
+1. Violation
+2. Warning
+
+**Hive recommendation:** Violation
+
+**Keeper choice:** The phase C post-run check (rule 1) fails a run whose worker commits lack a `Signed-off-by` trailer, and the branch is not offered for review. Worker task lines say `git commit -s`. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Workers are told to sign; a missing trailer is a real miss that DCO enforcement (T-025) would reject later anyway.
+
+## D-166: Q-T023-17: waggle dispatch builds on every platform and runs only on unix hosts
+
+- **Date:** 2026-10-18
+- **Kind:** technical
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Which platforms does waggle dispatch support?
+
+**Options considered:**
+1. Build everywhere, run on unix only
+2. Unix only, no Windows build
+
+**Hive recommendation:** Build everywhere, run on unix only
+
+**Keeper choice:** Dispatch builds on every platform via `cell_unix.go` and `cell_other.go` build tags, and runs only on linux and macOS; elsewhere it exits 3 with a clear message. CI adds a Windows cross-compile check. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Keeps go build ./... green for every contributor without building a Windows cell.
+
+## D-167: Q-T023-18: one dispatch run per repo, enforced by dispatch.lock
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Can two dispatch runs share one repo at the same time?
+
+**Options considered:**
+1. One run per repo via dispatch.lock
+2. Design for concurrent runs now
+
+**Hive recommendation:** One run per repo via dispatch.lock
+
+**Keeper choice:** Phase C allows one dispatch run per repo at a time, enforced by `dispatch.lock`. Parallel builders serialize after phase F until a later decision relaxes this. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Concurrent runs fail each other's host-state check; per-run scoping would grow phase C well past its stop.
+
+## D-168: Q-T023-19: the D-159 remote gate proof lands at the phase F trial, not phase C
+
+- **Date:** 2026-10-18
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** When does the D-159 remote gate proof land?
+
+**Options considered:**
+1. At the phase F trial
+2. In phase C with throwaway remote claims
+
+**Hive recommendation:** At the phase F trial
+
+**Keeper choice:** The remaining D-159 proof of `verify-leases-and-tiers` against real remote claims lands at the T-023 phase F trial, where our hive first has claims on the remote. Phase C proves the gate locally only. Decided by the Head Keeper via queen card on 2026-10-18; recorded by the queen.
+
+**Rationale:** Avoids scratch claim refs on the remote; phase F produces the real evidence with no extra setup.
