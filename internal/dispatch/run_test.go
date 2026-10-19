@@ -32,7 +32,7 @@ func TestRunHappyPath(t *testing.T) {
 			res.KeeperID != "alice" || res.ClaimVerb != "claim" || res.ClaimOID != f.git("rev-parse", "refs/waggle/claims/ticket-23") ||
 			res.BaseOID != f.git("rev-parse", "origin/main") || res.CheckBaseOID != res.BaseOID || res.RuntimeVersion != "fake-claude 9.9" ||
 			res.Model == "" || res.Profile == "" || res.CostUSD == nil || *res.CostUSD != 0.05 || res.Usage.Input != 100 || res.Usage.Output != 10 ||
-			len(res.NotEnforced) != 6 || !res.Pushed || res.Schema != 1 {
+			len(res.NotEnforced) != 7 || !res.Pushed || res.Schema != 1 {
 			t.Fatalf("result fields: %+v", res)
 		}
 		if !f.pushed("t-023") || sh(t, f.origin, "rev-parse", "refs/heads/t-023") != head {

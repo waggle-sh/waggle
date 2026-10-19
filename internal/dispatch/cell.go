@@ -40,6 +40,9 @@ var NotEnforced = []string{
 	"host credentials readable via HOME",
 	"writes outside the repo (not detected)",
 	"code run by allowed build and test commands (test files, go test -exec) is not confined",
+	"push tripwire is best effort: it misses bare relative paths, scp forms without git@, upper-case schemes, <transport>::<address>, pushurl, " +
+		"a longer pushInsteadOf from git -c or the Keeper's global config, and any process (a go test run) that clears the GIT_CONFIG_* variables; " +
+		"the post-run ref check and the config hash are the backstop",
 }
 
 type hostCell struct{}
