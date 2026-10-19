@@ -20,10 +20,21 @@ import (
 	"github.com/waggle-sh/waggle/internal/layout"
 )
 
-// Git runs git on the host. Bin defaults to "git"; Dir is the main checkout.
+// Git runs git on the host. Bin defaults to "git"; Dir is the main checkout;
+// Remote is forge.remote, empty for a local-only hive. Pinned drops the
+// Keeper's git config sources, for the checks that run after the agent (7.2).
 type Git struct {
-	Bin string
-	Dir string
+	Bin    string
+	Dir    string
+	Remote string
+	Pinned bool
+}
+
+// pinned returns a copy of g that runs under pinnedEnv.
+func (g *Git) pinned() *Git {
+	c := *g
+	c.Pinned = true
+	return &c
 }
 
 // Run runs git in g.Dir and returns stdout. A failure carries trimmed stderr.
@@ -41,6 +52,9 @@ func (g *Git) RunIn(ctx context.Context, dir string, args ...string) ([]byte, er
 	full := append([]string{"-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false"}, args...)
 	cmd := exec.CommandContext(ctx, bin, full...)
 	cmd.Dir, cmd.Env = dir, gitEnv(os.Environ())
+	if g.Pinned {
+		cmd.Env = pinnedEnv(cmd.Env)
+	}
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	if err := cmd.Run(); err != nil {
@@ -66,9 +80,32 @@ func gitEnv(parent []string) []string {
 	return append(out, "GIT_TERMINAL_PROMPT=0", "GIT_NO_REPLACE_OBJECTS=1")
 }
 
+// configVars are git's environment config sources. They stay out of redirectVars
+// because the Comb keeps them on purpose (test 28 ties redirectVars to its
+// list); only the 7.2 checks and the pre-launch status drop them.
+var configVars = map[string]bool{"GIT_CONFIG_PARAMETERS": true, "GIT_CONFIG_COUNT": true, "GIT_EXEC_PATH": true,
+	"GIT_CONFIG_GLOBAL": true, "GIT_CONFIG_SYSTEM": true, "GIT_CONFIG_NOSYSTEM": true, "GIT_ATTR_NOSYSTEM": true}
+
+// pinnedEnv drops the git config and exec path variables of the Keeper's shell
+// (case-insensitive, GIT_CONFIG_KEY_* and GIT_CONFIG_VALUE_* by prefix) and
+// points the global, system and attribute sources at nothing, so only the
+// repo config that the files step verified can name a filter or hook.
+func pinnedEnv(env []string) []string {
+	out := make([]string, 0, len(env)+3)
+	for _, kv := range env {
+		key, _, _ := strings.Cut(kv, "=")
+		key = strings.ToUpper(key)
+		if !configVars[key] && !strings.HasPrefix(key, "GIT_CONFIG_KEY_") && !strings.HasPrefix(key, "GIT_CONFIG_VALUE_") {
+			out = append(out, kv)
+		}
+	}
+	return append(out, "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1", "GIT_ATTR_NOSYSTEM=1")
+}
+
 // Worktree is one provisioned worktree and the run lock that guards it.
 type Worktree struct {
 	Path      string // <repo>/.waggle/worktrees/T-<nnn>-<role>
+	Admin     string // <common>/worktrees/<id>, pinned at provision
 	LockPath  string // Path + ".lock"
 	Branch    string
 	BaseOID   string
@@ -107,22 +144,15 @@ func processAlive(pid int) bool {
 // is checked out as is and CheckBase becomes merge-base(branch, baseOID).
 // Failures are ExitEnv and leave no lock behind.
 func Provision(ctx context.Context, g *Git, req Request, baseOID string, now time.Time) (*Worktree, error) {
-	repo, err := filepath.Abs(req.RepoDir)
+	dir, err := worktreesDir(req.RepoDir)
 	if err != nil {
-		return nil, failf(ExitEnv, "%w", err)
-	}
-	dir := filepath.Join(repo, filepath.FromSlash(layout.Worktrees))
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return nil, failf(ExitEnv, "%w", err)
-	}
-	if err := requireRealDir(filepath.Dir(dir)); err != nil {
-		return nil, failf(ExitEnv, "%w", err)
-	}
-	if err := requireRealDir(dir); err != nil {
-		return nil, failf(ExitEnv, "%w", err)
+		return nil, err
 	}
 	w := &Worktree{Path: filepath.Join(dir, req.Ticket+"-"+req.Role), Branch: req.Branch, BaseOID: baseOID}
 	w.LockPath = w.Path + ".lock"
+	if err := w.taintedErr(); err != nil {
+		return nil, err
+	}
 	if w.Warnings, err = takeLock(w.LockPath, now); err != nil {
 		return nil, err
 	}
@@ -133,12 +163,53 @@ func Provision(ctx context.Context, g *Git, req Request, baseOID string, now tim
 	return w, nil
 }
 
+// worktreesDir returns the absolute, created and symlink-free runtime
+// directory under repoDir.
+func worktreesDir(repoDir string) (string, error) {
+	repo, err := filepath.Abs(repoDir)
+	if err != nil {
+		return "", failf(ExitEnv, "%w", err)
+	}
+	dir := filepath.Join(repo, filepath.FromSlash(layout.Worktrees))
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", failf(ExitEnv, "%w", err)
+	}
+	if err := errors.Join(requireRealDir(filepath.Dir(dir)), requireRealDir(dir)); err != nil {
+		return "", failf(ExitEnv, "%w", err)
+	}
+	return dir, nil
+}
+
+// taintedErr refuses reuse of a worktree a run left tainted (7.1): the next
+// status call would run under a repo config the agent could have written.
+func (w *Worktree) taintedErr() error {
+	by, err := readSmall(w.Path + ".tainted")
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	return failf(ExitEnv, "host state was changed by run %s; inspect, restore and run waggle dispatch clean", strings.TrimSpace(string(by)))
+}
+
+// branchRev names the ref of an existing branch: the local branch, else the
+// remote-tracking one after a fetch (a must-fix round started on another machine).
+func (g *Git) branchRev(ctx context.Context, branch string) (string, bool) {
+	refs := []string{"refs/heads/" + branch}
+	if g.Remote != "" {
+		refs = append(refs, "refs/remotes/"+g.Remote+"/"+branch)
+	}
+	for _, r := range refs {
+		if _, err := g.Run(ctx, "rev-parse", "--verify", "--quiet", r); err == nil {
+			return r, true
+		}
+	}
+	return "", false
+}
+
 func (w *Worktree) provision(ctx context.Context, g *Git) error {
 	if _, err := g.Run(ctx, "worktree", "prune"); err != nil {
 		return err
 	}
-	_, verr := g.Run(ctx, "rev-parse", "--verify", "--quiet", "refs/heads/"+w.Branch)
-	exists := verr == nil
+	rev, exists := g.branchRev(ctx, w.Branch)
 	fi, serr := os.Lstat(w.Path)
 	var err error
 	switch {
@@ -146,11 +217,13 @@ func (w *Worktree) provision(ctx context.Context, g *Git) error {
 		err = fmt.Errorf("%s exists but is not a real directory; remove it", w.Path)
 	case serr == nil:
 		w.Reused = true
-		err = w.checkReusable(ctx, g, exists)
+		err = w.checkReusable(ctx, g, rev == "refs/heads/"+w.Branch)
 	case !errors.Is(serr, fs.ErrNotExist):
 		err = serr
-	case exists:
+	case rev == "refs/heads/"+w.Branch:
 		_, err = g.Run(ctx, "worktree", "add", w.Path, w.Branch)
+	case exists:
+		_, err = g.Run(ctx, "worktree", "add", "--no-track", "-b", w.Branch, w.Path, rev)
 	default:
 		_, err = g.Run(ctx, "worktree", "add", "-b", w.Branch, w.Path, w.BaseOID)
 	}
@@ -158,13 +231,17 @@ func (w *Worktree) provision(ctx context.Context, g *Git) error {
 		return err
 	}
 	if w.CheckBase = w.BaseOID; exists {
-		out, err := g.Run(ctx, "merge-base", "refs/heads/"+w.Branch, w.BaseOID)
+		out, err := g.Run(ctx, "merge-base", rev, w.BaseOID)
 		if err != nil {
 			return err
 		}
 		w.CheckBase = strings.TrimSpace(string(out))
 	}
-	return nil
+	real, err := filepath.EvalSymlinks(w.Path)
+	if err == nil {
+		w.Admin, err = w.adminDir(ctx, g, real)
+	}
+	return err
 }
 
 // requireRealDir refuses a symlink or non-directory at p.
@@ -297,7 +374,10 @@ const maxSmall = 4096
 
 // readSmall reads a regular file of at most maxSmall bytes without following
 // a final symlink or blocking on a FIFO.
-func readSmall(path string) ([]byte, error) {
+func readSmall(path string) ([]byte, error) { return readUpTo(path, maxSmall) }
+
+// readUpTo is readSmall with a caller-chosen cap.
+func readUpTo(path string, max int) ([]byte, error) {
 	if fi, err := os.Lstat(path); err != nil {
 		return nil, err
 	} else if !fi.Mode().IsRegular() {
@@ -311,9 +391,9 @@ func readSmall(path string) ([]byte, error) {
 	if fi, err := f.Stat(); err != nil || !fi.Mode().IsRegular() {
 		return nil, fmt.Errorf("%s is not a regular file", path)
 	}
-	data, err := io.ReadAll(io.LimitReader(f, maxSmall+1))
-	if err == nil && len(data) > maxSmall {
-		err = fmt.Errorf("%s is larger than %d bytes", path, maxSmall)
+	data, err := io.ReadAll(io.LimitReader(f, int64(max)+1))
+	if err == nil && len(data) > max {
+		err = fmt.Errorf("%s is larger than %d bytes", path, max)
 	}
 	return data, err
 }
@@ -329,10 +409,21 @@ func (w *Worktree) checkClean(ctx context.Context, g *Git, admin string) error {
 	return nil
 }
 
-// Remove runs git worktree remove without --force; a failure is for the caller
-// to report as a warning.
+// Remove runs git worktree remove without --force, after re-running adminDir
+// and requiring the admin dir pinned at provision. A mismatch or failure keeps
+// the worktree; the caller reports it as a warning.
 func (w *Worktree) Remove(ctx context.Context, g *Git) error {
-	_, err := g.Run(ctx, "worktree", "remove", w.Path)
+	real, err := filepath.EvalSymlinks(w.Path)
+	if err == nil {
+		var admin string
+		if admin, err = w.adminDir(ctx, g, real); err == nil && admin != w.Admin {
+			err = errors.New("admin dir changed since provision")
+		}
+	}
+	if err != nil {
+		return err
+	}
+	_, err = g.Run(ctx, "worktree", "remove", w.Path)
 	return err
 }
 
@@ -395,7 +486,7 @@ func takeLock(path string, now time.Time) (warns []string, err error) {
 
 // NewRunDir creates the next run record directory,
 // <repo>/.waggle/worktrees/runs/T-<nnn>-<role>-<seq>, mode 0700. Run records
-// live outside the worktree so the agent cannot rewrite them.
+// live outside the worktree, so a reset or clean inside it cannot clobber them. Without a Cell the agent can still write them (section 8).
 func NewRunDir(repoDir, ticket, role string) (string, error) {
 	repo, err := filepath.Abs(repoDir)
 	if err != nil {
