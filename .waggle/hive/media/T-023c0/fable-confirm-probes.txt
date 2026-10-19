@@ -1,0 +1,94 @@
+=== RUN   TestProbeSSHSchemes
+    zz_probe_test.go:47: control (tripwire off): stub ssh was invoked, push err=exit status 128
+    zz_probe_test.go:64: git+ssh-user: err=exit status 128
+        07:05:13.178470 git.c:502               trace: built-in: git push git+ssh://user@127.0.0.1:22/x.git HEAD:refs/heads/pushed
+        07:05:13.179159 run-command.c:672       trace: run_command: unset GIT_CONFIG_COUNT GIT_PREFIX; 'git-receive-pack '\''/dev/null/user@127.0.0.1:22/x.git'\'''
+        07:05:13.179163 run-command.c:764       trace: start_command: /bin/sh -c 'git-receive-pack '\''/dev/null/user@127.0.0.1:22/x.git'\''' 'git-receive-pack '\''/dev/null/user@127.0.0.1:22/x.git'\'''
+        07:05:13.185954 git.c:502               trace: built-in: git receive-pack /dev/null/user@127.0.0.1:22/x.git
+        fatal: '/dev/null/user@127.0.0.1:22/x.git' does not appear to be a git repository
+        fatal: Could not read from remote repository.
+        
+        Please make sure you have the correct access rights
+        and the repository exists.
+    zz_probe_test.go:64: ssh: err=exit status 128
+        07:05:13.196794 git.c:502               trace: built-in: git push ssh://127.0.0.1/x.git HEAD:refs/heads/pushed
+        07:05:13.197515 run-command.c:672       trace: run_command: unset GIT_CONFIG_COUNT GIT_PREFIX; 'git-receive-pack '\''/dev/null/127.0.0.1/x.git'\'''
+        07:05:13.197518 run-command.c:764       trace: start_command: /bin/sh -c 'git-receive-pack '\''/dev/null/127.0.0.1/x.git'\''' 'git-receive-pack '\''/dev/null/127.0.0.1/x.git'\'''
+        07:05:13.204095 git.c:502               trace: built-in: git receive-pack /dev/null/127.0.0.1/x.git
+        fatal: '/dev/null/127.0.0.1/x.git' does not appear to be a git repository
+        fatal: Could not read from remote repository.
+        
+        Please make sure you have the correct access rights
+        and the repository exists.
+    zz_probe_test.go:64: scp-git@: err=exit status 128
+        07:05:13.215007 git.c:502               trace: built-in: git push git@127.0.0.1:x.git HEAD:refs/heads/pushed
+        07:05:13.215777 run-command.c:672       trace: run_command: unset GIT_CONFIG_COUNT GIT_PREFIX; 'git-receive-pack '\''/dev/null/127.0.0.1:x.git'\'''
+        07:05:13.215781 run-command.c:764       trace: start_command: /bin/sh -c 'git-receive-pack '\''/dev/null/127.0.0.1:x.git'\''' 'git-receive-pack '\''/dev/null/127.0.0.1:x.git'\'''
+        07:05:13.222998 git.c:502               trace: built-in: git receive-pack /dev/null/127.0.0.1:x.git
+        fatal: '/dev/null/127.0.0.1:x.git' does not appear to be a git repository
+        fatal: Could not read from remote repository.
+        
+        Please make sure you have the correct access rights
+        and the repository exists.
+    zz_probe_test.go:64: git+ssh: err=exit status 128
+        07:05:13.234712 git.c:502               trace: built-in: git push git+ssh://127.0.0.1/x.git HEAD:refs/heads/pushed
+        07:05:13.235418 run-command.c:672       trace: run_command: unset GIT_CONFIG_COUNT GIT_PREFIX; 'git-receive-pack '\''/dev/null/127.0.0.1/x.git'\'''
+        07:05:13.235422 run-command.c:764       trace: start_command: /bin/sh -c 'git-receive-pack '\''/dev/null/127.0.0.1/x.git'\''' 'git-receive-pack '\''/dev/null/127.0.0.1/x.git'\'''
+        07:05:13.242479 git.c:502               trace: built-in: git receive-pack /dev/null/127.0.0.1/x.git
+        fatal: '/dev/null/127.0.0.1/x.git' does not appear to be a git repository
+        fatal: Could not read from remote repository.
+        
+        Please make sure you have the correct access rights
+        and the repository exists.
+    zz_probe_test.go:64: ssh+git: err=exit status 128
+        07:05:13.252809 git.c:502               trace: built-in: git push ssh+git://127.0.0.1/x.git HEAD:refs/heads/pushed
+        07:05:13.253512 run-command.c:672       trace: run_command: unset GIT_CONFIG_COUNT GIT_PREFIX; 'git-receive-pack '\''/dev/null/127.0.0.1/x.git'\'''
+        07:05:13.253515 run-command.c:764       trace: start_command: /bin/sh -c 'git-receive-pack '\''/dev/null/127.0.0.1/x.git'\''' 'git-receive-pack '\''/dev/null/127.0.0.1/x.git'\'''
+        07:05:13.260261 git.c:502               trace: built-in: git receive-pack /dev/null/127.0.0.1/x.git
+        fatal: '/dev/null/127.0.0.1/x.git' does not appear to be a git repository
+        fatal: Could not read from remote repository.
+        
+        Please make sure you have the correct access rights
+        and the repository exists.
+--- PASS: TestProbeSSHSchemes (0.30s)
+=== RUN   TestProbeStatedGaps
+    zz_probe_test.go:89: 
+    zz_probe_test.go:90: 
+    zz_probe_test.go:92: 
+    zz_probe_test.go:93: 
+    zz_probe_test.go:97: 
+    zz_probe_test.go:98: 
+    zz_probe_test.go:120: upper-case HTTPS://: rewritten-to-dev-null=false
+            fatal: unable to access 'HTTPS://127.0.0.1:1/x.git/': Failed to connect to 127.0.0.1 port 1 after 0 ms: Couldn't connect to server
+    zz_probe_test.go:120: upper-case SSH://: rewritten-to-dev-null=false
+            git: 'remote-SSH' is not a git command. See 'git --help'.
+            fatal: remote helper 'SSH' aborted session
+    zz_probe_test.go:120: transport::address: rewritten-to-dev-null=false
+            fatal: unable to access 'http://127.0.0.1:1/x.git/': Failed to connect to 127.0.0.1 port 1 after 0 ms: Couldn't connect to server
+    zz_probe_test.go:120: scp host:path: rewritten-to-dev-null=false
+            STUB-SSH-CALLED 127.0.0.1 git-receive-pack 'x.git'
+            fatal: Could not read from remote repository.
+            
+    zz_probe_test.go:120: scp user@host:path: rewritten-to-dev-null=false
+            STUB-SSH-CALLED user@127.0.0.1 git-receive-pack 'x.git'
+            fatal: Could not read from remote repository.
+            
+    zz_probe_test.go:120: global longer pushInsteadOf: rewritten-to-dev-null=false
+            fatal: '/REAL-OVERRIDE/x.git' does not appear to be a git repository
+            fatal: Could not read from remote repository.
+            
+    zz_probe_test.go:120: -c longer pushInsteadOf: rewritten-to-dev-null=false
+            fatal: '/REAL-C/x.git' does not appear to be a git repository
+            fatal: Could not read from remote repository.
+            
+    zz_probe_test.go:120: remote pushurl: rewritten-to-dev-null=false
+            fatal: '/REAL-PUSHURL/' does not appear to be a git repository
+            fatal: Could not read from remote repository.
+            
+    zz_probe_test.go:120: symlink bare relative: rewritten-to-dev-null=false
+            To link.git
+             * [new branch]      HEAD -> p
+    zz_probe_test.go:122: symlink target refs after push: "c6ceef1853973ac27bec5e1ae5445cfc4663c5d5 commit\trefs/heads/p\n"
+--- PASS: TestProbeStatedGaps (0.38s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/runtime	0.766s
