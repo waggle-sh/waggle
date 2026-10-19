@@ -1,0 +1,15 @@
+scan-hive: base origin/main (merge-base 2ecd449), head 167b242
+changed paths (9):
+  OUTSIDE HIVE .claude/hooks/handoff-check.sh
+  OUTSIDE HIVE .claude/hooks/session-start.sh
+  OUTSIDE HIVE .gitignore
+  OUTSIDE HIVE .waggle/control/WAGGLE.md
+  OUTSIDE HIVE .waggle/control/roles/queen.md
+  OUTSIDE HIVE .waggle/control/roles/scout.md
+  OUTSIDE HIVE .waggle/control/scripts/scan-hive.sh
+  .waggle/hive/media/hive-process-1/scan-planted.txt
+  .waggle/hive/media/hive-process-1/scan-records.txt
+decisions gate (exit 0):
+  decisions: unchanged
+hits (0):
+result: clean, but 7 path(s) outside .waggle/hive/: guard and card
