@@ -360,3 +360,75 @@ func TestTripwireBlocksPush(t *testing.T) {
 		}
 	}
 }
+
+// Item 16: editing Config().DefaultArgs after Verify leaves the next argv unchanged.
+func TestConfigDoesNotAliasDefaultArgs(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug"}})
+	a.Config().DefaultArgs[0] = "--max-budget-usd=3"
+	if argv := mustPrepare(t, a, "T-5", nil).Argv; slices.Contains(argv, "--max-budget-usd=3") || !slices.Contains(argv, "--debug") {
+		t.Errorf("argv follows the edited copy: %q", argv)
+	}
+}
+
+// Item 17: --debug-file in the help does not satisfy --debug, and a quote or
+// parenthesis after a token (as in the real help) still counts.
+func TestVerifyHelpTokenBoundary(t *testing.T) {
+	fakeClaude(t, "echo '"+strings.ReplaceAll(fullHelp, "--debug", "--debug-file")+"'\n")
+	a := NewClaudeAdapter(AdapterConfig{DefaultArgs: []string{"--debug"}})
+	wantErr(t, a.Verify(context.Background()), ErrUnverified, "--debug")
+	if !helpHas([]byte("(--debug, \"dontAsk\")"), "dontAsk") || helpHas([]byte("--debug-file"), "--debug") {
+		t.Error("helpHas boundary wrong")
+	}
+}
+
+// Item 19, runtime half: partly set or control-character identities are refused;
+// a zero identity sets both GIT_CONFIG_* values and no author or committer.
+func TestPrepareGitIdentity(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{})
+	inv, s := testLaunch(t, "T-5")
+	for _, id := range []GitIdentity{{Name: "A"}, {Email: "a@example.test"}, {Name: "A\nB", Email: "a@example.test"}, {Name: "A", Email: "a@example.test\x00"}} {
+		inv.GitIdentity = id
+		_, err := a.Prepare(inv, s, nil, nil)
+		wantErr(t, err, ErrAdapterConfig, "git identity")
+	}
+	inv.GitIdentity = GitIdentity{}
+	spec, err := a.Prepare(inv, s, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, kv := range spec.Env {
+		if strings.HasPrefix(kv, "GIT_AUTHOR_") || strings.HasPrefix(kv, "GIT_COMMITTER_") {
+			t.Errorf("zero identity sets %s", kv)
+		}
+	}
+	for _, want := range []string{"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1"} {
+		if !slices.Contains(spec.Env, want) {
+			t.Errorf("env lacks %q", want)
+		}
+	}
+	inv.GitIdentity = GitIdentity{Name: "Hive Worker", Email: "worker@example.test"}
+	spec, err = a.Prepare(inv, s, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"GIT_AUTHOR_NAME=Hive Worker", "GIT_AUTHOR_EMAIL=worker@example.test", "GIT_COMMITTER_NAME=Hive Worker", "GIT_COMMITTER_EMAIL=worker@example.test"} {
+		if !slices.Contains(spec.Env, want) {
+			t.Errorf("env lacks %q", want)
+		}
+	}
+}
+
+// Item 20: the guard gets no git add or git commit rule; the builder keeps both.
+func TestGuardSettingsDropGitWrites(t *testing.T) {
+	guard, err := workerSettings("guard", []string{"go test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(guard), "Bash(git add") || strings.Contains(string(guard), "Bash(git commit") || !strings.Contains(string(guard), "Bash(git diff") {
+		t.Errorf("guard settings: %s", guard)
+	}
+	builder, _ := workerSettings("builder", []string{"go test"})
+	if !strings.Contains(string(builder), "Bash(git add") || !strings.Contains(string(builder), "Bash(git commit") {
+		t.Errorf("builder settings: %s", builder)
+	}
+}

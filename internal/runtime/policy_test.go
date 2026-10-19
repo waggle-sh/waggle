@@ -226,3 +226,18 @@ func TestCountMustFix(t *testing.T) {
 		t.Errorf("CountMustFix(nil) = %d", n)
 	}
 }
+
+// Item 21 (test 17): the second guard avoids the builder's model and the first
+// guard's, and none left is ErrNoCrossModel naming the alternates key.
+func TestSecondGuard(t *testing.T) {
+	p := testPolicy()
+	p.Models.Alternate = map[Level]string{LevelFrontier: "other-frontier"}
+	first := mustResolve(t, p, "guard", &TaskContext{TaskID: "T-1"}, nil)
+	second := mustResolve(t, p, "guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+	if first.Model != "opus" || second.Model != "other-frontier" {
+		t.Errorf("first %q second %q; want opus then other-frontier", first.Model, second.Model)
+	}
+	p.Models.Alternate = nil
+	_, err := p.Resolve("guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
+	wantErr(t, err, ErrNoCrossModel, "T-1", "alternates.standard")
+}
