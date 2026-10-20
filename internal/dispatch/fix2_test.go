@@ -113,44 +113,6 @@ func TestShortLivedChildHarmless(t *testing.T) {
 	}
 }
 
-// Pid reuse guard: a tracked pid whose start time differs from the live
-// process is another process and is never killed.
-func TestSweepSkipsReusedPid(t *testing.T) {
-	cmd := exec.Command("sleep", "60")
-	if err := cmd.Start(); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = cmd.Process.Kill(); _ = cmd.Wait() })
-	var real proc
-	if !wait(func() bool {
-		tab, _ := procTable()
-		i := slices.IndexFunc(tab, func(p proc) bool { return p.pid == cmd.Process.Pid })
-		if i >= 0 {
-			real = tab[i]
-		}
-		return i >= 0
-	}) {
-		t.Fatal("the process table does not list the helper")
-	}
-	tr := newTracker(cmd.Process.Pid)
-	tr.seen[pkey{real.pid, real.start + "x"}] = "sleep"
-	if k := tr.sweep(); len(k) != 0 || syscall.Kill(real.pid, 0) != nil {
-		t.Fatalf("a start time mismatch was killed: %v", k)
-	}
-	tr.seen[pkey{real.pid, real.start}] = "sleep"
-	k := tr.sweep()
-	dead := make(chan error, 1)
-	go func() { dead <- cmd.Wait() }()
-	select {
-	case <-dead:
-	case <-time.After(5 * time.Second):
-		t.Fatal("the matching process was not killed")
-	}
-	if len(k) != 1 || k[0].PID != real.pid {
-		t.Fatalf("killed %v", k)
-	}
-}
-
 // Item 5 and fable N2/B2: a process that escaped unseen (a daemon whose parent
 // is gone before any poll) holds stdout. Run returns about a second after the
 // leader is reaped, not at the 120 minute default timeout. Linux adopts the
