@@ -163,7 +163,8 @@ func TestCleanGitCallsArePinned(t *testing.T) {
 // Opus probes: a planted entry copying another ticket's, and a planted entry
 // whose gitdir is a link to the real one. Both exit 3 with nothing removed.
 func TestCleanRefusesForeignDuplicateAndLinkedGitdir(t *testing.T) {
-	for _, link := range []bool{false, true} {
+	for _, mode := range []string{"copy", "link", "case"} {
+		link := mode == "link"
 		f, wt := cleanRepo(t, false)
 		other := filepath.Join(f.real, ".waggle/worktrees/T-024-builder")
 		f.git("worktree", "add", "-q", "-b", "t-024", other, "main")
@@ -175,12 +176,35 @@ func TestCleanRefusesForeignDuplicateAndLinkedGitdir(t *testing.T) {
 			}
 		} else {
 			b, _ := os.ReadFile(src)
+			if mode == "case" { // git folds case under core.ignorecase, the macOS default
+				b = []byte(strings.Replace(string(b), "T-024-builder", "t-024-builder", 1))
+			}
 			write(t, f.common(), "worktrees/0/gitdir", string(b))
 		}
 		out, err := doClean(f, "", false)
 		if code(err) != ExitEnv || err == nil || !exists(wt) || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-023-builder")) || strings.Contains(out, "removed") {
-			t.Fatalf("link %v: out %q err %v", link, out, err)
+			t.Fatalf("%s: out %q err %v", mode, out, err)
 		}
+	}
+}
+
+// A stray file and a gitdir-less entry directory are skipped (git prunes both);
+// a symlinked entry or gitdir still refuses. The real worktrees stay intact.
+func TestCleanSkipsStrayAdminEntries(t *testing.T) {
+	f, wt := cleanRepo(t, false)
+	write(t, f.common(), "worktrees/.DS_Store", "x")
+	if err := os.MkdirAll(filepath.Join(f.common(), "worktrees/half"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := doClean(f, "", false); err != nil || exists(wt) {
+		t.Fatalf("out %q err %v", out, err)
+	}
+	f, wt = cleanRepo(t, false)
+	if err := os.Symlink(filepath.Join(f.common(), "worktrees/T-023-builder"), filepath.Join(f.common(), "worktrees/ln")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := doClean(f, "", false); code(err) != ExitEnv || !exists(wt) {
+		t.Fatalf("a symlinked entry: err %v", err)
 	}
 }
 
