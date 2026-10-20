@@ -91,6 +91,9 @@ func TestSweepKillsTrackedGroup(t *testing.T) {
 		t.Fatalf("no orphan in the group: %v", tab)
 	}
 	tr := newTracker(0)
+	// rootStart lets the sweep reap the killed orphan once the earlier tests in
+	// the package have made this process a subreaper (a zombie still answers kill 0).
+	tr.rootStart = leader.start
 	tr.seen[pkey{leader.pid, leader.start}] = "sh"
 	tr.sweep()
 	if !gone(orphan.pid) {
