@@ -139,12 +139,17 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 // and refuses when any two name the same worktree, or when an entry's gitdir is
 // not a readable regular file: git prunes repository-wide and follows links.
 func (c *cleaner) noDuplicates() error {
-	root, byPath := filepath.Join(c.common, "worktrees"), map[string]string{}
+	root := filepath.Join(c.common, "worktrees")
+	type entry struct {
+		name, key string
+		fi        os.FileInfo
+	}
+	var seen []entry
 	ents, _ := os.ReadDir(root)
 	for _, e := range ents {
 		admin := filepath.Join(root, e.Name())
 		b, err := readSmall(filepath.Join(admin, "gitdir"))
-		if e.Type().IsRegular() || e.IsDir() && errors.Is(err, fs.ErrNotExist) { // git prunes a stray file or a gitdir-less entry
+		if e.Type().IsRegular() || e.IsDir() && errors.Is(err, fs.ErrNotExist) { // git prunes a stray file, or a gitdir-less entry unless it is locked
 			continue
 		}
 		if err != nil || !e.IsDir() {
@@ -154,14 +159,17 @@ func (c *cleaner) noDuplicates() error {
 		if !filepath.IsAbs(g) {
 			g = filepath.Join(admin, g)
 		}
-		p := strings.TrimSuffix(filepath.Clean(g), string(filepath.Separator)+".git")
-		if rp, serr := filepath.EvalSymlinks(p); serr == nil { // one worktree named by a link and by its real path
-			p = rp
+		p := filepath.Clean(g)
+		if strings.EqualFold(filepath.Base(p), ".git") {
+			p = filepath.Dir(p)
 		}
-		if other, dup := byPath[strings.ToLower(p)]; dup {
-			return failf(ExitEnv, "worktrees/%s and worktrees/%s both name %s; nothing was removed", other, e.Name(), p)
+		fi, _ := os.Stat(p) // file identity folds links, case and suffix spelling; a missing worktree falls back to its lowercased path
+		for _, s := range seen {
+			if fi != nil && s.fi != nil && os.SameFile(fi, s.fi) || fi == nil && s.fi == nil && s.key == strings.ToLower(p) {
+				return failf(ExitEnv, "worktrees/%s and worktrees/%s both name %s; nothing was removed", s.name, e.Name(), p)
+			}
 		}
-		byPath[strings.ToLower(p)] = e.Name() // git folds case under core.ignorecase
+		seen = append(seen, entry{e.Name(), strings.ToLower(p), fi})
 	}
 	return nil
 }
