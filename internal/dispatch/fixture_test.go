@@ -85,6 +85,8 @@ func newFixture(t *testing.T, remote, link bool) *fixture {
 		}
 	}
 	sh(t, f.real, "init", "-q", "-b", "main")
+	sh(t, f.real, "config", "--local", "user.name", "Fixture Keeper")
+	sh(t, f.real, "config", "--local", "user.email", "keeper@example.com")
 	opts := scaffold.InitOptions{TargetDir: f.real, Profile: "cli", Delivery: "installed", Forge: "github", CombMode: "direct", Runtime: "claude-code", Out: io.Discard}
 	quiet(t, func() {
 		if err := scaffold.InitRepo(opts); err != nil {

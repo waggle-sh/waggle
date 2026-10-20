@@ -50,6 +50,8 @@ func dispatchRepo(t *testing.T) string {
 		}
 	}
 	git(t, repo, "init", "-q", "-b", "main")
+	git(t, repo, "config", "--local", "user.name", "Fixture Keeper")
+	git(t, repo, "config", "--local", "user.email", "keeper@example.com")
 	old := os.Stdout
 	os.Stdout, _ = os.OpenFile(os.DevNull, os.O_WRONLY, 0)
 	err := scaffold.InitRepo(scaffold.InitOptions{TargetDir: repo, Profile: "cli", Delivery: "installed", Forge: "github", CombMode: "direct", Runtime: "claude-code", Out: io.Discard})

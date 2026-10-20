@@ -2,8 +2,10 @@ package dispatch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,6 +19,7 @@ import (
 const (
 	maxBrief      = 400 << 10
 	maxPromptFile = 128 << 10
+	maxReviews    = 50 // review files counted for the must-fix step-up
 )
 
 // Inputs are the prompt inputs for one run, all read from the base revision.
@@ -105,10 +108,38 @@ func ReadInputs(ctx context.Context, g *Git, baseOID string, req Request) (in In
 	in.WaggleMD = get(layout.WaggleMD, maxPromptFile, true)
 	in.Review = get(layout.ReviewsDir+"/"+req.Ticket+".md", maxBrief, false)
 	in.MustFix = runtime.CountMustFix(in.Review)
+	if err == nil {
+		var n int
+		n, err = roundMustFix(ctx, g, baseOID, req)
+		in.MustFix += n
+	}
 	for _, p := range req.ReadPaths {
 		in.ReadOnly = append(in.ReadOnly, runtime.ReadOnlyFile{Path: p, Content: get(p, maxPromptFile, true)})
 	}
 	return in, err
+}
+
+// roundMustFix counts the must-fix verdicts of this phase's review files at
+// base: reviews/T-<nnn><suffix>-*.md, where the suffix is the branch's own
+// (t-023d reads T-023d-*.md), so each guard's file counts (D-177). It is
+// computed once per run and used for every resolution in it.
+func roundMustFix(ctx context.Context, g *Git, baseOID string, req Request) (n int, err error) {
+	prefix := req.Ticket + strings.TrimPrefix(req.Branch, "t-"+strings.TrimPrefix(req.Ticket, "T-")) + "-"
+	out, err := g.Run(ctx, "ls-tree", "-z", "--name-only", baseOID, layout.ReviewsDir+"/")
+	if err != nil {
+		return 0, failf(ExitEnv, "%w", err)
+	}
+	files := 0
+	for _, p := range strings.Split(string(out), "\x00") {
+		if b := path.Base(p); strings.HasPrefix(b, prefix) && strings.HasSuffix(b, ".md") && files < maxReviews {
+			files++
+			data, _, e := blobAt(ctx, g, baseOID, p, maxBrief)
+			if err = errors.Join(err, e); e == nil {
+				n += runtime.CountMustFix(data)
+			}
+		}
+	}
+	return n, err
 }
 
 // TaskLines are the variable per-task lines after the brief (T-023 section
@@ -130,13 +161,24 @@ func TaskLines(req Request, baseOID string, lease comb.Lease) []string {
 // in runDir as prompt.stable.txt and prompt.variable.txt (mode 0600), returning
 // both for the adapter.
 func WritePrompts(runDir string, in Inputs, lines []string, s runtime.ContextSettings) (stable, variable []byte, err error) {
-	stable, variable = runtime.AssemblePrompt(runtime.PromptParts{
+	stable, variable = BuildPrompts(in, lines, s)
+	return stable, variable, SavePrompts(runDir, stable, variable)
+}
+
+// BuildPrompts assembles both halves in memory, so a refusal can come before
+// anything is written.
+func BuildPrompts(in Inputs, lines []string, s runtime.ContextSettings) (stable, variable []byte) {
+	return runtime.AssemblePrompt(runtime.PromptParts{
 		RolePrompt: in.RolePrompt, WaggleMD: in.WaggleMD, Brief: in.Brief, TaskLines: lines, ReadOnly: in.ReadOnly,
 	}, s)
+}
+
+// SavePrompts writes both halves into runDir.
+func SavePrompts(runDir string, stable, variable []byte) error {
 	for name, data := range map[string][]byte{"prompt.stable.txt": stable, "prompt.variable.txt": variable} {
 		if err := os.WriteFile(filepath.Join(runDir, name), data, 0o600); err != nil {
-			return nil, nil, failf(ExitEnv, "%w", err)
+			return failf(ExitEnv, "%w", err)
 		}
 	}
-	return stable, variable, nil
+	return nil
 }
