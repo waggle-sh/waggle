@@ -1,0 +1,109 @@
+    opus_probe_test.go:42: PROBE untracked                      exit 1 end lease_violation verdict "pass" err <nil> violations [{dirty . uncommitted or untracked change; the builder must commit}]
+    opus_probe_test.go:42: PROBE stash                          exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state refs/stash ref changed during the run}]
+    opus_probe_test.go:42: PROBE notes                          exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state refs/notes/commits ref changed during the run}]
+    opus_probe_test.go:42: PROBE tag                            exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state refs/tags/probe ref changed during the run}]
+    opus_probe_test.go:42: PROBE worktree add                   exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state worktrees/opus-extra changed during the run} {host_state worktrees/opus-extra/HEAD changed during the run} {host_state worktrees/opus-extra/commondir changed during the run} {host_state worktrees/opus-extra/config.worktree changed during the run} {host_state worktrees/opus-extra/gitdir changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    opus_probe_test.go:42: PROBE log output hook                exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state hooks/post-checkout changed during the run}]
+    opus_probe_test.go:42: PROBE log output ref                 exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state refs/heads/evil ref changed during the run}]
+    opus_probe_test.go:42: PROBE log output main checkout       exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state . main checkout status or HEAD changed}]
+    opus_probe_test.go:42: PROBE log output info                exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state info/exclude changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    opus_probe_test.go:42: PROBE local config                   exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    opus_probe_test.go:42: PROBE dotgit file                    exit 1 end lease_violation verdict "pass" err <nil> violations [{host_state .git worktree admin dir pin lost} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    opus_probe_test.go:42: PROBE commit then restore HEAD       exit 0 end done verdict "pass" err <nil> violations []
+    opus_probe_test.go:42: PROBE skip-worktree hidden edit      exit 0 end done verdict "pass" err <nil> violations []
+    opus_probe_test.go:42: PROBE assume-unchanged hidden edit   exit 0 end done verdict "pass" err <nil> violations []
+    opus_probe_test.go:42: PROBE description                    exit 0 end done verdict "pass" err <nil> violations []
+--- PASS: TestOpusGuardZeroChange (20.01s)
+    --- PASS: TestOpusGuardZeroChange/untracked (1.28s)
+    --- PASS: TestOpusGuardZeroChange/stash (1.36s)
+    --- PASS: TestOpusGuardZeroChange/notes (1.34s)
+    --- PASS: TestOpusGuardZeroChange/tag (1.28s)
+    --- PASS: TestOpusGuardZeroChange/worktree_add (1.30s)
+    --- PASS: TestOpusGuardZeroChange/log_output_hook (1.37s)
+    --- PASS: TestOpusGuardZeroChange/log_output_ref (1.35s)
+    --- PASS: TestOpusGuardZeroChange/log_output_main_checkout (1.32s)
+    --- PASS: TestOpusGuardZeroChange/log_output_info (1.35s)
+    --- PASS: TestOpusGuardZeroChange/local_config (1.34s)
+    --- PASS: TestOpusGuardZeroChange/dotgit_file (1.26s)
+    --- PASS: TestOpusGuardZeroChange/commit_then_restore_HEAD (1.38s)
+    --- PASS: TestOpusGuardZeroChange/skip-worktree_hidden_edit (1.36s)
+    --- PASS: TestOpusGuardZeroChange/assume-unchanged_hidden_edit (1.37s)
+    --- PASS: TestOpusGuardZeroChange/description (1.36s)
+    opus_probe_test.go:56: PROBE first guard --skip-worktree: exit 1 verdict "pass" err <nil> violations [{dirty . uncommitted or untracked change; the builder must commit}]
+    opus_probe_test.go:60: PROBE second guard --skip-worktree: exit 0 verdict "pass" err <nil> violations []; saw b.go+status: "ok\nPOISON\n"
+    opus_probe_test.go:56: PROBE first guard --assume-unchanged: exit 1 verdict "pass" err <nil> violations [{dirty . uncommitted or untracked change; the builder must commit}]
+    opus_probe_test.go:60: PROBE second guard --assume-unchanged: exit 0 verdict "pass" err <nil> violations []; saw b.go+status: "ok\n"
+    opus_probe_test.go:66: PROBE first: exit 1 violations [{host_state HEAD worktree HEAD no longer names the branch}] err <nil>
+    opus_probe_test.go:68: PROBE second after tamper: exit 3 err host state was changed by run T-023-guard-1; inspect, restore and run waggle dispatch clean
+--- PASS: TestOpusSecondGuardReset (5.29s)
+    --- PASS: TestOpusSecondGuardReset/--skip-worktree (1.94s)
+    --- PASS: TestOpusSecondGuardReset/--assume-unchanged (1.95s)
+    --- PASS: TestOpusSecondGuardReset/first_guard_moved_HEAD (1.40s)
+    opus_probe_test.go:85: PROBE under cap      len 262143 -> "pass"
+    opus_probe_test.go:85: PROBE exactly cap    len 262144 -> ""
+    opus_probe_test.go:85: PROBE crlf           len 15 -> ""
+    opus_probe_test.go:85: PROBE trailing sp    len 15 -> ""
+    opus_probe_test.go:85: PROBE indented       len 15 -> ""
+    opus_probe_test.go:85: PROBE quoted later   len 33 -> "must-fix"
+    opus_probe_test.go:85: PROBE two then text  len 46 -> "pass"
+--- PASS: TestOpusVerdict (0.01s)
+    opus_probe_test.go:105: PROBE control char name: exit 3 err invalid adapter launch config: git identity needs a name and an email without control characters; state refs=
+    opus_probe_test.go:115: PROBE guard prepare refusal: exit 3 err invalid adapter launch config: allowed command "git push origin"; before refs=refs/heads/t-023
+        refs/waggle/claims/ticket-23 .waggle/worktrees/runs .waggle/worktrees/host-files.json .waggle/control/usage.jsonl; after refs=refs/heads/t-023
+        refs/waggle/claims/ticket-23 .waggle/worktrees/runs .waggle/worktrees/host-files.json .waggle/control/usage.jsonl
+    opus_probe_test.go:121: PROBE guard no claim: exit 4 err no claim for T-023: the guard reads the builder's claim; state refs=refs/heads/t-023
+    opus_probe_test.go:132: PROBE host record refusal: exit 3 err host files changed since run T-023-builder-1: info/attributes; inspect them, then delete host-files.json; before refs=refs/heads/t-023
+        refs/waggle/claims/ticket-23 .waggle/worktrees/runs .waggle/worktrees/host-files.json; after refs=refs/heads/t-023
+        refs/waggle/claims/ticket-23 .waggle/worktrees/runs .waggle/worktrees/host-files.json
+--- PASS: TestOpusRefusalsWriteNothing (2.86s)
+    --- PASS: TestOpusRefusalsWriteNothing/identity_control_char (0.39s)
+    --- PASS: TestOpusRefusalsWriteNothing/guard_prepare_refusal (1.14s)
+    --- PASS: TestOpusRefusalsWriteNothing/guard_no_claim (0.44s)
+    --- PASS: TestOpusRefusalsWriteNothing/host_record_refusal (0.89s)
+    opus_probe_test.go:146: PROBE blank local name: exit 0 err <nil> author "Global Keeper <keeper@example.com>"
+    opus_probe_test.go:153: PROBE local name + global email: exit 0 err <nil> author "Fixture Keeper <global@example.com>"
+    opus_probe_test.go:158: PROBE planting run: exit 1 err <nil> host violations [{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    opus_probe_test.go:160: PROBE next dispatch T-024: exit 1 end lease_violation err <nil> violations [{commit 429cdbab935fcd4f746f5808e194f3ec59a4fecb subject lacks the T-024: prefix}]
+    opus_probe_test.go:161: PROBE T-024 author "refs/heads/main t <<t@example.com>>\nrefs/heads/t-023 Fixture Keeper <<keeper@example.com>>\nrefs/heads/t-024 Fixture Keeper <<planted@example.test>>"
+    opus_probe_test.go:169: PROBE planting run: exit 1 err <nil>
+    opus_probe_test.go:171: PROBE next dispatch T-024: exit 3 err host files changed since run T-023-builder-1: config; inspect them, then delete host-files.json
+--- PASS: TestOpusIdentity (4.69s)
+    --- PASS: TestOpusIdentity/blank_local_name,_global_fallback (0.83s)
+    --- PASS: TestOpusIdentity/mixed_scopes (0.83s)
+    --- PASS: TestOpusIdentity/planted_by_an_earlier_agent,_no_prior_clean_run (1.41s)
+    --- PASS: TestOpusIdentity/planted_by_an_earlier_agent,_after_a_clean_run (1.61s)
+    opus_probe_test.go:203: PROBE deleted record plus hook     next dispatch: exit 0/0 err <nil>
+    opus_probe_test.go:203: PROBE push -u style branch config  next dispatch: exit 3/0 err host files changed since run T-023-builder-1: config; inspect them, then delete host-files.json
+    opus_probe_test.go:203: PROBE git remote add               next dispatch: exit 3/0 err host files changed since run T-023-builder-1: config; inspect them, then delete host-files.json
+    opus_probe_test.go:203: PROBE global gitconfig edit        next dispatch: exit 3/0 err host files changed since run T-023-builder-1: global:gitconfig; inspect them, then delete host-files.json
+    opus_probe_test.go:203: PROBE symlinked record             next dispatch: exit 3/0 err host-files.json is unreadable (<tmp> is not a regular file); inspect the host files, then delete it
+--- PASS: TestOpusHostRecordKeeperEdits (5.04s)
+    --- PASS: TestOpusHostRecordKeeperEdits/deleted_record_plus_hook (1.56s)
+    --- PASS: TestOpusHostRecordKeeperEdits/push_-u_style_branch_config (0.90s)
+    --- PASS: TestOpusHostRecordKeeperEdits/git_remote_add (0.88s)
+    --- PASS: TestOpusHostRecordKeeperEdits/global_gitconfig_edit (0.84s)
+    --- PASS: TestOpusHostRecordKeeperEdits/symlinked_record (0.84s)
+    opus_probe_test.go:216: PROBE symlinked ledger: exit 0 err <nil> target bytes 0 warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command ledger_append_failed: usage: open ledger: <tmp> is not a regular file]
+    opus_probe_test.go:220: PROBE guard no_verdict: exit 5 end no_verdict err <nil> ledger:
+        {"ts":"2026-10-19T22:35:55.555692Z","ticket":"T-023","role":"builder","session":"s1","adapter":"claude-code","model":"sonnet","profile":"balanced","floored":false,"input_tokens":100,"cache_write_tokens":0,"cache_read_tokens":0,"output_tokens":10,"cost_usd":0.05,"end":"done"}
+        {"ts":"2026-10-19T22:35:56.160877Z","ticket":"T-023","role":"guard","session":"s1","adapter":"claude-code","model":"opus","profile":"balanced","floored":false,"input_tokens":100,"cache_write_tokens":0,"cache_read_tokens":0,"output_tokens":10,"cost_usd":null,"end":"error"}
+--- PASS: TestOpusLedger (2.12s)
+    opus_probe_test.go:239: PROBE shipped reset: err <nil> content "package x\n// POISON\n" ls-files -v "S internal/x/a.go"
+    opus_probe_test.go:245: PROBE index removed then reset: err <nil> content "package x\n" ls-files -v "H internal/x/a.go"
+--- PASS: TestOpusResetFix (0.19s)
+    opus_probe_test.go:253: PROBE remote guard: exit 0 end done verdict "pass" pushed false err <nil> violations [] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command]; origin head unchanged true
+    opus_probe_test.go:256: PROBE remote guard writes another claim mirror: exit 0 violations [] err <nil>
+    opus_probe_test.go:268: PROBE mutant combEnv without GIT_CONFIG_PARAMETERS=: err <nil> canary fired true
+--- PASS: TestOpusRemoteGuardAndCombEnv (3.41s)
+    opus_probe_test.go:286: PROBE branch t-023     count 1 err <nil>
+    opus_probe_test.go:286: PROBE branch t-023d    count 1 err <nil>
+    opus_probe_test.go:286: PROBE branch t-023d1   count 2 err <nil>
+    opus_probe_test.go:286: PROBE branch t-023d10  count 1 err <nil>
+    opus_probe_test.go:286: PROBE branch t-023D1   count 0 err <nil>
+    opus_probe_test.go:292: PROBE oversized review: count 2 err .waggle/hive/reviews/T-023d1-big.md at base is 409610 bytes, over the 409600 byte cap exit 3
+    opus_probe_test.go:303: PROBE builder (count 1): model sonnet exit 0 err <nil>
+    opus_probe_test.go:305: PROBE guard 1 (count 1): model opus exit 0 err <nil>
+    opus_probe_test.go:310: PROBE guard 2 (count 2): model sonnet exit 0 err <nil>; builder sonnet first guard opus
+--- PASS: TestOpusMustFixCount (2.79s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	46.642s

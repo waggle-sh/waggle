@@ -1,0 +1,77 @@
+# confirm-scan-probe.sh on base 5c7ada6, macOS (BSD awk, real decisions gate), scan-hive.sh as committed at 5c7ada6.
+### records path (expect exit 0)
+== records-batch: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head a336c9c, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### records set edges
+== decisions-rewrite: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 8725a21, 1 commit(s) scanned
+   hits (1):
+     decisions gate: decisions (exit 1)
+   result: FAIL, 1 hit(s): guard and card
+== rename-existing-media: exit 2
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head b5bbcb5, 1 commit(s) scanned
+     HOLD (deleted outside the records set) .waggle/hive/media/hive-process-1/scan-branch.txt
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== queen-md-mode-change: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 3b089ed, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== add-gitignore-in-media: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head db4d477, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### history evasions
+== added-then-removed: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head b3d549a, 2 commit(s) scanned
+   hits (1):
+     commit a5ed590 .waggle/hive/media/confirm-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== added-then-reverted: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 916114e, 2 commit(s) scanned
+   hits (1):
+     commit 9e3ba71 .waggle/hive/media/confirm-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== amended-away: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 33964f4, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== side-commit-merged-then-removed: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head dc404b4, 3 commit(s) scanned
+   hits (1):
+     commit 7f397f3 .waggle/hive/media/confirm-plant/side.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== evil-merge-then-removed: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 1c4d6cc, 3 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== evil-merge-edit-then-restored: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 0204011, 4 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### binary and text flips
+== binary-then-text: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 54af294, 2 commit(s) scanned
+   hits (2):
+     commit 54af294 .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 09a98f3 .waggle/hive/media/confirm-plant/x.dat:0: binary
+   result: FAIL, 2 hit(s): guard and card
+== text-then-binary: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 10faeae, 2 commit(s) scanned
+   hits (3):
+     .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 10faeae .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 1cfc622 .waggle/hive/media/confirm-plant/x.dat:1: email
+   result: FAIL, 3 hit(s): guard and card
+== nul-after-8000-bytes: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 2988dbb, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== nul-after-hit: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head abf1adc, 1 commit(s) scanned
+   hits (2):
+     .waggle/hive/media/confirm-plant/late-nul2.txt:2: email
+     commit abf1adc .waggle/hive/media/confirm-plant/late-nul2.txt:2: email
+   result: FAIL, 2 hit(s): guard and card

@@ -1,0 +1,5 @@
+https://github.com/waggle-sh/waggle.git -> file:///dev/null/github.com/waggle-sh/waggle.git false 0 
+git@github.com:waggle-sh/waggle.git -> file:///dev/null/github.com:waggle-sh/waggle.git false 0 
+ssh://git@github.com/x.git -> file:///dev/null/git@github.com/x.git false 0 
+/srv/x.git -> file:///dev/null/srv/x.git false 0 
+./x.git -> file:///dev/null//x.git false 0 

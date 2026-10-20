@@ -1,0 +1,284 @@
+awk: /usr/bin/mawk  sh: /usr/bin/dash  grep: grep (GNU grep) 3.8
+=== scan on the branch (base origin/main) ===
+decisions gate (exit 0):
+hits (62):
+  .claude/hooks/handoff-check.sh:26: name
+  .claude/hooks/handoff-check.sh:36: name
+  .claude/hooks/session-start.sh:8: name
+  .claude/hooks/session-start.sh:9: name
+  .claude/hooks/session-start.sh:10: name
+  .waggle/control/scripts/scan-hive.sh:15: name
+  .waggle/control/scripts/scan-hive.sh:44: name
+  .waggle/control/scripts/scan-hive.sh:45: name
+  .waggle/hive/media/T-023/diag-test-diff.txt:47: name
+  .waggle/hive/media/T-023/diag-test-diff.txt:48: name
+  .waggle/hive/media/T-023d0/fable-confirm-output.txt:56: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:62: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:63: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:64: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:65: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:66: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:67: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:78: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:81: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:85: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:92: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:93: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:100: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:115: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:179: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:180: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:183: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:184: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:219: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:221: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:288: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:289: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:312: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:327: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:328: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:329: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:337: name
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt:338: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:60: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:61: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:62: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:63: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:64: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:65: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:76: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:79: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:95: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:147: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:148: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:151: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:152: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:338: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:339: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:340: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:351: name
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt:352: name
+  .waggle/hive/media/T-023d0/opus-confirm-mutants.sh:3: name
+  .waggle/hive/media/T-023d0/opus-confirm2-mutants.sh:3: name
+  .waggle/hive/media/T-023d0/opus-mutants.sh:3: name
+  .waggle/hive/media/T-023d0b/opus-mutants.sh:2: name
+  .waggle/hive/media/T-023d0b/opus-mutants2.sh:4: name
+  .waggle/hive/reviews/T-023d0-fable.md:52: name
+result: FAIL, 62 hit(s): guard and card
+exit 0
+=== planted probes ===
+== baseline-clean: exit 0
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== email: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== email-upper: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== email-md-escape: exit 0
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== email-md-escape-at: exit 0
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== home-users: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: home-path
+   result: FAIL, 1 hit(s): guard and card
+== home-home: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: home-path
+   result: FAIL, 1 hit(s): guard and card
+== home-encoded: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: home-path
+   result: FAIL, 1 hit(s): guard and card
+== temp-macos: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: temp-path
+   result: FAIL, 1 hit(s): guard and card
+== temp-harness: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: temp-path
+   result: FAIL, 1 hit(s): guard and card
+== hostname: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: hostname
+   result: FAIL, 1 hit(s): guard and card
+== hostname-upper: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: hostname
+   result: FAIL, 1 hit(s): guard and card
+== name: exit 0
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== tok-ghp: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: token
+   result: FAIL, 1 hit(s): guard and card
+== tok-pat: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: token
+   result: FAIL, 1 hit(s): guard and card
+== tok-skant: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: token
+   result: FAIL, 1 hit(s): guard and card
+== tok-jwt-not-covered: exit 0
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== tok-aws-not-covered: exit 0
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== em-dash: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: dash
+   result: FAIL, 1 hit(s): guard and card
+== en-dash: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: dash
+   result: FAIL, 1 hit(s): guard and card
+== dash-in-code-block: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:2: dash
+   result: FAIL, 1 hit(s): guard and card
+== personal-mail: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a.md:1: personal-mail
+   result: FAIL, 1 hit(s): guard and card
+== binary: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/bin.dat:0: binary
+   result: FAIL, 1 hit(s): guard and card
+== non-hive: exit 2
+   hits (0):
+   result: clean, but 1 path(s) outside .waggle/hive/: guard and card
+== decisions-edit: exit 0
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== crlf: exit 1
+   hits (2):
+     .waggle/hive/media/guard-plant/a.md:1: email
+     .waggle/hive/media/guard-plant/a.md:2: dash
+   result: FAIL, 2 hit(s): guard and card
+== name-with-space: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/a b.md:: dash
+   result: FAIL, 1 hit(s): guard and card
+== email-in-filename: exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/<planted-email>.txt:0: email
+   result: FAIL, 1 hit(s): guard and card
+== non-ascii-filename: exit 2
+   hits (0):
+   result: clean, but 1 path(s) outside .waggle/hive/: guard and card
+== msg-only: exit 1
+   hits (1):
+     commit 914fe3b message:1: email
+   result: FAIL, 1 hit(s): guard and card
+== renamed-only (base = commit with the hit): exit 1
+   hits (1):
+     .waggle/hive/media/guard-plant/r2.md:1: home-path
+   result: FAIL, 1 hit(s): guard and card
+== added-then-removed (net diff clean, hit in history): exit 0
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== deleted-then-readded: exit 0
+   hits (0):
+   result: clean and hive-only: merge with --admin, one-line note to the Keeper
+== three args: exit 3
+== unknown base: exit 3
+=== hooks under dash and bash, GNU stat ===
+[missing][sh] rc=2 Handoff missing: write .waggle/hive/handoff/queen.local.md (facts only, at most 40 lines; starter in .claude/hooks/handoff-check.sh) before stopping.
+[missing][bash] rc=2 Handoff missing: write .waggle/hive/handoff/queen.local.md (facts only, at most 40 lines; starter in .claude/hooks/handoff-check.sh) before stopping.
+[active-compact][sh] rc=0 <no output>
+[active-compact][bash] rc=0 <no output>
+[active-spaced][sh] rc=0 <no output>
+[active-spaced][bash] rc=0 <no output>
+[40-lines][sh] rc=0 /w/.claude/hooks/handoff-check.sh: 35: [: Illegal number:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893850   Available: 10103348
+Inodes: Total: 3932160    Free: 3383120
+1792448489
+[40-lines][bash] rc=0 /w/.claude/hooks/handoff-check.sh: line 35: [:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893850   Available: 10103348
+Inodes: Total: 3932160    Free: 3383120
+1792448489: integer expression expected
+[41-lines][sh] rc=2 Handoff .waggle/hive/handoff/queen.local.md is 41 lines; the cap is 40 (D-182). Cut it to facts only (live state, running agents, next work) before stopping.
+[41-lines][bash] rc=2 Handoff .waggle/hive/handoff/queen.local.md is 41 lines; the cap is 40 (D-182). Cut it to facts only (live state, running agents, next work) before stopping.
+[41-lines-no-final-newline][sh] rc=0 /w/.claude/hooks/handoff-check.sh: 35: [: Illegal number:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893849   Available: 10103347
+Inodes: Total: 3932160    Free: 3383120
+1792448489
+[41-lines-no-final-newline][bash] rc=0 /w/.claude/hooks/handoff-check.sh: line 35: [:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893849   Available: 10103347
+Inodes: Total: 3932160    Free: 3383120
+1792448489: integer expression expected
+[empty-file][sh] rc=0 /w/.claude/hooks/handoff-check.sh: 35: [: Illegal number:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893850   Available: 10103348
+Inodes: Total: 3932160    Free: 3383120
+1792448489
+[empty-file][bash] rc=0 /w/.claude/hooks/handoff-check.sh: line 35: [:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893850   Available: 10103348
+Inodes: Total: 3932160    Free: 3383120
+1792448489: integer expression expected
+[older-than-main][sh] rc=0 /w/.claude/hooks/handoff-check.sh: 35: [: Illegal number:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893849   Available: 10103347
+Inodes: Total: 3932160    Free: 3383120
+1577836800
+[older-than-main][bash] rc=0 /w/.claude/hooks/handoff-check.sh: line 35: [:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893848   Available: 10103346
+Inodes: Total: 3932160    Free: 3383120
+1577836800: integer expression expected
+[newer-than-main][sh] rc=0 /w/.claude/hooks/handoff-check.sh: 35: [: Illegal number:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893848   Available: 10103346
+Inodes: Total: 3932160    Free: 3383120
+1792448489
+[newer-than-main][bash] rc=0 /w/.claude/hooks/handoff-check.sh: line 35: [:   File: "/hk/.waggle/hive/handoff/queen.local.md"
+    ID: c6fc52319e581e2a Namelen: 255     Type: overlayfs
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 15402443   Free: 10893848   Available: 10103346
+Inodes: Total: 3932160    Free: 3383120
+1792448489: integer expression expected
+[committed queen.md only, local missing]
+[committed-only][sh] rc=2 Handoff missing: write .waggle/hive/handoff/queen.local.md (facts only, at most 40 lines; starter in .claude/hooks/handoff-check.sh) before stopping.
+[committed-only][bash] rc=2 Handoff missing: write .waggle/hive/handoff/queen.local.md (facts only, at most 40 lines; starter in .claude/hooks/handoff-check.sh) before stopping.
+[outside-repo][sh] rc=0 <no output>
+=== session-start, local present ===
+=== Queen handoff (.waggle/hive/handoff/queen.local.md) ===
+1
+2
+3
+
+=== session-start, local missing, summary present ===
+=== Queen handoff (.waggle/hive/handoff/queen.md) ===
+# summary
+
+=== session-start, both missing ===
+=== Queen handoff (.waggle/hive/handoff/queen.md) ===
+(missing)
+
+=== session-start, bash ===
+=== Queen handoff (.waggle/hive/handoff/queen.md) ===
+(missing)
+=== session-start outside repo rc=0 <no output>

@@ -1,0 +1,176 @@
+package runtime
+
+// Opus guard second confirmation probes for T-023 phase D0 at d969d57. Not part of the PR.
+
+import (
+	"errors"
+	"fmt"
+	"slices"
+	"strings"
+	"testing"
+)
+
+// P6b: D-180 second-guard matrix, exhaustive over a small model alphabet,
+// checked against an independent reference that includes the guard-minimum bound.
+func TestOpusConfirm2P6Bounded(t *testing.T) {
+	F, S, X := LevelFast, LevelStandard, LevelFrontier
+	levels := []Level{F, S, X}
+	alpha := []string{"a", "b", "c", "d"}
+	altOpts := []string{"", "a", "b", "c", "d"}
+	var total, ok, walked, errs, formerBelow, formerBelowNowErr, hintless, belowMin int
+	var bad []string
+	for _, p0 := range alpha {
+		for _, p1 := range alpha {
+			for _, p2 := range alpha {
+				for _, a0 := range altOpts {
+					for _, a1 := range altOpts {
+						for _, a2 := range altOpts {
+							prim := map[Level]string{F: p0, S: p1, X: p2}
+							alt := map[Level]string{}
+							for l, v := range map[Level]string{F: a0, S: a1, X: a2} {
+								if v != "" {
+									alt[l] = v
+								}
+							}
+							for _, bmin := range levels {
+								for _, gmin := range levels {
+									for _, mf := range []int{0, 2} {
+										p := Policy{Models: Models{Adapter: "claude-code", Primary: prim, Alternate: alt},
+											Minimums: map[string]Level{"builder": bmin, "guard": gmin, "forager": F}}
+										if p.Validate() != nil {
+											continue
+										}
+										total++
+										tc := func(sg bool) *TaskContext { return &TaskContext{TaskID: "T-1", GuardMustFix: mf, SecondGuard: sg} }
+										b, eb := p.Resolve("builder", tc(false), nil)
+										g1, e1 := p.Resolve("guard", tc(false), nil)
+										g2, e2 := p.Resolve("guard", tc(true), nil)
+										bs, ebs := p.Resolve("builder", tc(true), nil)
+										fs, efs := p.Resolve("forager", tc(true), nil)
+										ff, eff := p.Resolve("forager", tc(false), nil)
+										if bs != b || (ebs == nil) != (eb == nil) || fs != ff || (efs == nil) != (eff == nil) {
+											bad = append(bad, fmt.Sprintf("other role changed by SecondGuard: %v", p))
+										}
+										gl := max(gmin, b.Level)
+										var refFirst string
+										for l := gl; l <= X && refFirst == ""; l++ {
+											for _, m := range []string{prim[l], alt[l]} {
+												if m != "" && m != b.Model {
+													refFirst = m
+													break
+												}
+											}
+										}
+										if (e1 == nil) != (refFirst != "") || (e1 == nil && g1.Model != refFirst) || (e1 != nil && !errors.Is(e1, ErrNoCrossModel)) {
+											bad = append(bad, fmt.Sprintf("first guard: got %q %v want %q (%v)", g1.Model, e1, refFirst, p))
+										}
+										if e1 != nil {
+											if e2 == nil || !errors.Is(e2, ErrNoCrossModel) {
+												bad = append(bad, fmt.Sprintf("second guard resolved though first guard cannot: %q (%v)", g2.Model, p))
+											}
+											continue
+										}
+										avoid := []string{b.Model, g1.Model}
+										scan := func(floor Level) (string, Level) {
+											for l := gl; l <= X; l++ {
+												for _, m := range []string{prim[l], alt[l]} {
+													if m != "" && !slices.Contains(avoid, m) {
+														return m, gl
+													}
+												}
+											}
+											for l := gl - 1; l >= floor; l-- {
+												for _, m := range []string{prim[l], alt[l]} {
+													if m != "" && !slices.Contains(avoid, m) {
+														return m, l
+													}
+												}
+											}
+											return "", 0
+										}
+										ref, refLevel := scan(gmin)
+										old, oldLevel := scan(F)
+										if old != "" && oldLevel < gmin {
+											formerBelow++
+											if e2 != nil {
+												formerBelowNowErr++
+											}
+										}
+										anyUnusedAtOrAboveMin := false
+										for _, l := range levels {
+											if l < gmin {
+												continue
+											}
+											for _, m := range []string{prim[l], alt[l]} {
+												if m != "" && !slices.Contains(avoid, m) {
+													anyUnusedAtOrAboveMin = true
+												}
+											}
+										}
+										switch {
+										case e2 != nil:
+											errs++
+											if ref != "" || anyUnusedAtOrAboveMin || !errors.Is(e2, ErrNoCrossModel) {
+												bad = append(bad, fmt.Sprintf("second guard error with an unused model at or above the minimum: %v (%v)", e2, p))
+											}
+											if !strings.Contains(e2.Error(), ".alternates.") {
+												hintless++
+											}
+										default:
+											ok++
+											if slices.Contains(avoid, g2.Model) {
+												bad = append(bad, fmt.Sprintf("SHARED %q (%v)", g2.Model, p))
+											}
+											if g2.Model != ref || g2.Level != refLevel {
+												bad = append(bad, fmt.Sprintf("second guard %q/%s want %q/%s (%v)", g2.Model, g2.Level, ref, refLevel, p))
+											}
+											if g2.Level < gmin {
+												belowMin++
+												bad = append(bad, fmt.Sprintf("BELOW MINIMUM %q/%s gmin %s (%v)", g2.Model, g2.Level, gmin, p))
+											}
+											if g2.Level < gl {
+												walked++
+												if prim[g2.Level] != g2.Model && alt[g2.Level] != g2.Model {
+													bad = append(bad, fmt.Sprintf("dishonest level %s for %q (%v)", g2.Level, g2.Model, p))
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	fmt.Printf("P6b exhaustive: %d valid combinations, second guard ok %d (walked down %d, below guard minimum %d), errors %d (without config hint %d), former below-minimum resolutions %d, of which now error %d, violations %d\n",
+		total, ok, walked, belowMin, errs, hintless, formerBelow, formerBelowNowErr, len(bad))
+	for i, b := range bad {
+		if i == 10 {
+			break
+		}
+		fmt.Println("P6b VIOLATION", b)
+	}
+	std := map[Level]string{F: "haiku", S: "sonnet", X: "opus"}
+	for _, c := range []struct {
+		n    string
+		alt  map[Level]string
+		bmin Level
+		mf   int
+	}{
+		{"hive config, unstepped", nil, S, 0},
+		{"hive config, stepped", nil, S, 2},
+		{"alt frontier fable, unstepped", map[Level]string{X: "fable"}, S, 0},
+		{"alt frontier fable, stepped", map[Level]string{X: "fable"}, S, 2},
+		{"D-179 case: bmin frontier, fable", map[Level]string{X: "fable"}, X, 0},
+	} {
+		p := Policy{Models: Models{Adapter: "claude-code", Primary: std, Alternate: c.alt},
+			Minimums: map[string]Level{"builder": c.bmin, "guard": S}}
+		tc := func(sg bool) *TaskContext { return &TaskContext{TaskID: "T-1", GuardMustFix: c.mf, SecondGuard: sg} }
+		b, _ := p.Resolve("builder", tc(false), nil)
+		g1, e1 := p.Resolve("guard", tc(false), nil)
+		g2, e2 := p.Resolve("guard", tc(true), nil)
+		fmt.Printf("P6b %-34s builder=%s/%s first=%s/%s err1=%v second=%s/%s err2=%v\n", c.n, b.Model, b.Level, g1.Model, g1.Level, e1 != nil, g2.Model, g2.Level, e2)
+	}
+}

@@ -1,0 +1,199 @@
+=== RUN   TestFableConfirmWorkerGit
+    fable_confirm_test.go:146: env entries=44 distinct keys=44 duplicates=0
+    fable_confirm_test.go:149: env: HOME=<tmp>/keeperhome
+    fable_confirm_test.go:149: env: GIT_TERMINAL_PROMPT=0
+    fable_confirm_test.go:149: env: GIT_CONFIG_GLOBAL=/dev/null
+    fable_confirm_test.go:149: env: GIT_CONFIG_NOSYSTEM=1
+    fable_confirm_test.go:149: env: GIT_ATTR_NOSYSTEM=1
+    fable_confirm_test.go:149: env: GIT_CONFIG_COUNT=12
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_0=https://
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_1=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_1=ssh://
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_2=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_2=git@
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_3=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_3=http://
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_4=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_4=git://
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_5=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_5=git+ssh://
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_6=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_6=ssh+git://
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_7=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_7=file://
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_8=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_8=/
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_9=url.file:///dev/null/.pushInsteadOf
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_9=.
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_10=core.excludesFile
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_10=/dev/null
+    fable_confirm_test.go:149: env: GIT_CONFIG_KEY_11=core.attributesFile
+    fable_confirm_test.go:149: env: GIT_CONFIG_VALUE_11=/dev/null
+    fable_confirm_test.go:169: GIT_CONFIG_COUNT=12, keys 0..11 all present with values: checked
+    fable_confirm_test.go:207: control keeper probe.scope:
+        file:<tmp>/xdg/git/config	xdg-config
+        file:<tmp>/keeperhome/.gitconfig	home-gitconfig
+        command line:	parent-parameters
+    fable_confirm_test.go:209: control keeper push url: git@evil.test:example/repo
+    fable_confirm_test.go:211: control keeper status --ignored:
+        ?? .gitattributes
+        ?? .gitignore
+        ?? a.txt
+        ?? b.md
+        ?? hidden-by-home-ignore.txt
+        ?? hidden-by-local-excludesfile.txt
+        ?? hidden-by-xdg-ignore.txt
+        !! hidden-by-gitignore.txt
+        !! hidden-by-global-excludesfile.txt
+        !! hidden-by-info-exclude.txt
+    fable_confirm_test.go:213: control keeper check-attr -a:
+        a.txt: diff: tree-attr
+        a.txt: merge: info-attr
+        b.md: filter: global-attr
+    fable_confirm_test.go:215: control keeper git var GIT_ATTR_SYSTEM: "/etc/gitattributes"
+    fable_confirm_test.go:217: control keeper git var GIT_ATTR_GLOBAL: "<tmp>/global-attributes"
+    fable_confirm_test.go:221: system attributes file /etc/gitattributes: stat /etc/gitattributes: no such file or directory (not plantable without root; evidence is git var under the worker env)
+    fable_confirm_test.go:233: worker git: git version 2.54.0 (Apple Git-157)
+    fable_confirm_test.go:235: worker probe.scope: ""
+    fable_confirm_test.go:237: worker probe.included: ""
+    fable_confirm_test.go:239: worker core.hooksPath: ""
+    fable_confirm_test.go:241: worker credential.helper: ""
+    fable_confirm_test.go:243: worker core.excludesFile: "command\tcommand line:\t/dev/null"
+    fable_confirm_test.go:245: worker core.attributesFile: "command\tcommand line:\t/dev/null"
+    fable_confirm_test.go:247: worker git var GIT_ATTR_SYSTEM (empty means GIT_ATTR_NOSYSTEM applied): ""
+    fable_confirm_test.go:249: worker git var GIT_ATTR_GLOBAL: "/dev/null"
+    fable_confirm_test.go:251: worker push url: file:///dev/null/github.com/example/repo
+    fable_confirm_test.go:253: worker fetch url: https://github.com/example/repo
+    fable_confirm_test.go:255: worker alias probe: "git: 'probe' is not a git command. See 'git --help'.\n\nThe most similar command is\n\tprune" err=exit status 1
+    fable_confirm_test.go:257: worker status --ignored (!! = ignored; ?? = visible untracked):
+        ?? .gitattributes
+        ?? .gitignore
+        ?? a.txt
+        ?? b.md
+        ?? hidden-by-global-excludesfile.txt
+        ?? hidden-by-home-ignore.txt
+        ?? hidden-by-local-excludesfile.txt
+        ?? hidden-by-xdg-ignore.txt
+        !! hidden-by-gitignore.txt
+        !! hidden-by-info-exclude.txt
+    fable_confirm_test.go:260: worker check-ignore -v hidden-by-home-ignore.txt: ignored=false ""
+    fable_confirm_test.go:260: worker check-ignore -v hidden-by-xdg-ignore.txt: ignored=false ""
+    fable_confirm_test.go:260: worker check-ignore -v hidden-by-global-excludesfile.txt: ignored=false ""
+    fable_confirm_test.go:260: worker check-ignore -v hidden-by-gitignore.txt: ignored=true ".gitignore:1:hidden-by-gitignore.txt\thidden-by-gitignore.txt"
+    fable_confirm_test.go:260: worker check-ignore -v hidden-by-info-exclude.txt: ignored=true ".git/info/exclude:1:hidden-by-info-exclude.txt\thidden-by-info-exclude.txt"
+    fable_confirm_test.go:263: worker check-attr -a (tree and info attributes should remain; home, xdg, global ones should not):
+        a.txt: diff: tree-attr
+        a.txt: merge: info-attr
+    fable_confirm_test.go:265: worker GIT_AUTHOR_IDENT: Hive Worker <worker@example.test> 1792436983 -0700
+    fable_confirm_test.go:267: worker GIT_COMMITTER_IDENT: Hive Worker <worker@example.test> 1792436983 -0700
+    fable_confirm_test.go:270: worker commit -s: err=<nil> out=""
+    fable_confirm_test.go:273: worker commit identity and trailer:
+        author=Hive Worker <worker@example.test> committer=Hive Worker <worker@example.test>
+        Signed-off-by: Hive Worker <worker@example.test>
+    fable_confirm_test.go:280: hooks or helpers that ran under the worker env: []
+    fable_confirm_test.go:282: worker push: err=exit status 128 out="fatal: '/dev/null/github.com/example/repo' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists."
+    fable_confirm_test.go:284: remote refs after push: ""
+    fable_confirm_test.go:295: control keeper with local core.excludesFile: "<tmp>/local-excludes:1:hidden-by-local-excludesfile.txt\thidden-by-local-excludesfile.txt"
+    fable_confirm_test.go:297: control keeper with local core.attributesFile: "b.md: filter: local-attr"
+    fable_confirm_test.go:299: worker core.excludesFile with a local one set (all scopes):
+        local	file:.git/config	<tmp>/local-excludes
+        command	command line:	/dev/null
+    fable_confirm_test.go:301: worker core.excludesFile effective (last wins): "command\t/dev/null"
+    fable_confirm_test.go:303: worker with local core.excludesFile: ignored=false ""
+    fable_confirm_test.go:305: worker with local core.attributesFile: "b.md: filter: unspecified"
+    fable_confirm_test.go:307: worker status --ignored with local excludesFile set:
+        ?? hidden-by-global-excludesfile.txt
+        ?? hidden-by-home-ignore.txt
+        ?? hidden-by-local-excludesfile.txt
+        ?? hidden-by-xdg-ignore.txt
+        !! hidden-by-gitignore.txt
+        !! hidden-by-info-exclude.txt
+    fable_confirm_test.go:320: worker status --ignored in a linked worktree:
+        ?? hidden-by-home-ignore.txt
+        !! hidden-by-info-exclude.txt
+--- PASS: TestFableConfirmWorkerGit (0.64s)
+=== RUN   TestFableConfirmIdentity
+    fable_confirm_test.go:375: nbsp name, email set                     refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:385: nbsp name, nbsp email                    accepted as zero identity: no GIT_AUTHOR_* or GIT_COMMITTER_* in env
+    fable_confirm_test.go:385: nbsp name, empty email                   accepted as zero identity: no GIT_AUTHOR_* or GIT_COMMITTER_* in env
+    fable_confirm_test.go:385: ideographic space name, empty email      accepted as zero identity: no GIT_AUTHOR_* or GIT_COMMITTER_* in env
+    fable_confirm_test.go:385: em space name, space email               accepted as zero identity: no GIT_AUTHOR_* or GIT_COMMITTER_* in env
+    fable_confirm_test.go:394: name with inner nbsp                     accepted (env ["GIT_AUTHOR_NAME=A\u00a0B" "GIT_AUTHOR_EMAIL=a@example.test"]); git stored "A\u00a0B|a@example.test|A\u00a0B"
+    fable_confirm_test.go:394: name padded with nbsp                    accepted (env ["GIT_AUTHOR_NAME=\u00a0A\u00a0" "GIT_AUTHOR_EMAIL=a@example.test"]); git stored "A\u00a0|a@example.test|\u00a0A"
+    fable_confirm_test.go:394: email with leading nbsp                  accepted (env ["GIT_AUTHOR_NAME=A" "GIT_AUTHOR_EMAIL=\u00a0a@example.test"]); git stored "A|\u00a0a@example.test|A"
+    fable_confirm_test.go:394: zero width space name                    accepted (env ["GIT_AUTHOR_NAME=\u200b" "GIT_AUTHOR_EMAIL=a@example.test"]); git stored "\u200b|a@example.test|\u200b"
+    fable_confirm_test.go:394: BOM name                                 accepted (env ["GIT_AUTHOR_NAME=\ufeff" "GIT_AUTHOR_EMAIL=a@example.test"]); git stored "\ufeff|a@example.test|\ufeff"
+    fable_confirm_test.go:394: RLO in name                              accepted (env ["GIT_AUTHOR_NAME=A\u202eB" "GIT_AUTHOR_EMAIL=a@example.test"]); git stored "A\u202eB|a@example.test|A\u202eB"
+    fable_confirm_test.go:394: dot only name                            accepted (env ["GIT_AUTHOR_NAME=." "GIT_AUTHOR_EMAIL=a@example.test"]); git stored ".|a@example.test|."
+    fable_confirm_test.go:390: angle only name                          accepted (env ["GIT_AUTHOR_NAME=<>" "GIT_AUTHOR_EMAIL=a@example.test"]); git commit refused: "fatal: name consists only of disallowed characters: <>"
+    fable_confirm_test.go:375: NEL only name, empty email               refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:375: NEL in email                             refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:375: tab padded name                          refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:394: space padded both                        accepted (env ["GIT_AUTHOR_NAME= A " "GIT_AUTHOR_EMAIL= a@example.test "]); git stored "A|a@example.test|A"
+    fable_confirm_test.go:375: DEL in email                             refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:375: overlong NUL in name                     refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:375: encoded surrogate in name                refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:375: invalid byte, blank email                refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:375: U+2029 only name, empty email            refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:375: form feed name                           refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:375: vertical tab in email                    refused: invalid adapter launch config: git identity needs a name and an email without control characters
+    fable_confirm_test.go:394: plain                                    accepted (env ["GIT_AUTHOR_NAME=Hive Worker" "GIT_AUTHOR_EMAIL=worker@example.test"]); git stored "Hive Worker|worker@example.test|Hive Worker"
+--- PASS: TestFableConfirmIdentity (0.35s)
+=== RUN   TestFableConfirmD179
+    fable_confirm_test.go:414: A: primary fast=haiku standard=sonnet frontier=opus, no alternates, builder and guard standard
+    fable_confirm_test.go:406: A builder                                                  model="sonnet" level=standard steppedUp=false
+    fable_confirm_test.go:406: A first guard                                              model="opus" level=standard steppedUp=false
+    fable_confirm_test.go:406: A second guard (walks down to fast)                        model="haiku" level=fast steppedUp=false
+    fable_confirm_test.go:406: A builder stepped up                                       model="opus" level=frontier steppedUp=true
+    fable_confirm_test.go:403: A first guard, builder stepped up                          err=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+    fable_confirm_test.go:403: A second guard, builder stepped up                         err=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+    fable_confirm_test.go:406: A2 second guard, empty (non-nil) alternates                model="haiku" level=fast steppedUp=false
+    fable_confirm_test.go:428: B: fast-level builder and guard, no alternates
+    fable_confirm_test.go:406: B first guard                                              model="sonnet" level=fast steppedUp=false
+    fable_confirm_test.go:406: B second guard (no walk needed, frontier free)             model="opus" level=fast steppedUp=false
+    fable_confirm_test.go:432: B2: fast guard, primaries a/b/b
+    fable_confirm_test.go:406: B2 first guard                                             model="b" level=fast steppedUp=false
+    fable_confirm_test.go:403: B2 second guard (nothing below fast: error at fast)        err=no model differs from the builder's and the first guard's: role guard task "T-1" level fast shares ["a" "b"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.fast)
+    fable_confirm_test.go:438: C: primaries duplicated standard=frontier=sonnet, no alternates, guard standard
+    fable_confirm_test.go:403: C first guard (fails itself)                               err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["sonnet"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm_test.go:403: C second guard (first guard failure propagates, no walk)   err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["sonnet"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm_test.go:406: C2 first guard with alt frontier opus                      model="opus" level=standard steppedUp=false
+    fable_confirm_test.go:406: C2 second guard (walks down to haiku)                      model="haiku" level=fast steppedUp=false
+    fable_confirm_test.go:447: D: alt frontier equals standard primary (sonnet); builder stepped up to frontier
+    fable_confirm_test.go:406: D builder                                                  model="opus" level=frontier steppedUp=true
+    fable_confirm_test.go:406: D first guard                                              model="sonnet" level=frontier steppedUp=false
+    fable_confirm_test.go:406: D second guard (standard sonnet taken, falls to fast)      model="haiku" level=fast steppedUp=false
+    fable_confirm_test.go:454: E: alt frontier duplicates fast primary (haiku); builder stepped up
+    fable_confirm_test.go:406: E first guard                                              model="haiku" level=frontier steppedUp=false
+    fable_confirm_test.go:406: E second guard (standard sonnet unused)                    model="sonnet" level=standard steppedUp=false
+    fable_confirm_test.go:460: F: alternates at every level; builder stepped up
+    fable_confirm_test.go:406: F first guard                                              model="alt-frontier" level=frontier steppedUp=false
+    fable_confirm_test.go:406: F second guard (primary before alternate at standard)      model="sonnet" level=standard steppedUp=false
+    fable_confirm_test.go:465: F2: standard primary equals frontier primary (opus), alternates everywhere; builder stepped up
+    fable_confirm_test.go:406: F2 builder                                                 model="opus" level=frontier steppedUp=true
+    fable_confirm_test.go:406: F2 first guard                                             model="alt-frontier" level=frontier steppedUp=false
+    fable_confirm_test.go:406: F2 second guard (standard primary taken, takes alt-standard) model="alt-standard" level=standard steppedUp=false
+    fable_confirm_test.go:475: G: recorded guard override to fast on a Tier 1 task, no alternates
+    fable_confirm_test.go:406: G first guard                                              model="haiku" level=fast steppedUp=false
+    fable_confirm_test.go:406: G second guard (frontier opus free, no walk)               model="opus" level=fast steppedUp=false
+    fable_confirm_test.go:403: G2 second guard, frontier=standard (nothing below fast)    err=no model differs from the builder's and the first guard's: role guard task "T-1" level fast shares ["sonnet" "haiku"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.fast)
+    fable_confirm_test.go:484: H: recorded guard override UP to frontier on a standard builder, no alternates
+    fable_confirm_test.go:406: H first guard                                              model="opus" level=frontier steppedUp=false
+    fable_confirm_test.go:406: H second guard (override level not honored: falls to fast) model="haiku" level=fast steppedUp=false
+    fable_confirm_test.go:490: I: one model at every level
+    fable_confirm_test.go:403: I first guard                                              err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["m"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm_test.go:403: I second guard                                             err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["m"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm_test.go:495: J: SecondGuard on non-guard roles
+    fable_confirm_test.go:406: J builder with SecondGuard                                 model="sonnet" level=standard steppedUp=false
+    fable_confirm_test.go:406: J scout with SecondGuard                                   model="opus" level=frontier steppedUp=false
+    fable_confirm_test.go:406: J forager with SecondGuard                                 model="haiku" level=fast steppedUp=false
+    fable_confirm_test.go:406: J queen with SecondGuard                                   model="opus" level=frontier steppedUp=false
+    fable_confirm_test.go:403: J waggled with SecondGuard                                 err=role has no model: role waggled task "T-1"
+    fable_confirm_test.go:403: J Guard with SecondGuard                                   err=unknown role: role Guard task "T-1"
+    fable_confirm_test.go:403: J second-guard with SecondGuard                            err=unknown role: role second-guard task "T-1"
+    fable_confirm_test.go:406: J builder stepped up with SecondGuard                      model="opus" level=frontier steppedUp=true
+    fable_confirm_test.go:406: J nil task guard                                           model="opus" level=standard steppedUp=false
+--- PASS: TestFableConfirmD179 (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.221s

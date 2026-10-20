@@ -1,0 +1,20 @@
+# macOS arm64, Apple git 2.54.0, go1.27.2; trees unpacked from the same archives
+== darwin arm64 git version 2.54.0 (Apple Git-157)
+== main + proving test, -count=3 (expect fail)
+   2 FAIL
+   1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	12.834s
+== fix, -race -count=5 (expect ok)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	20.626s
+== precedence on Apple git: GIT_CONFIG_COUNT key vs -c vs GIT_CONFIG_PARAMETERS vs repo-local
+local true + env false: effective=false
+plus -c true: effective=true
+plus GIT_CONFIG_PARAMETERS true: effective=true
+-c false with env true: effective=false
+  scope order: local	true
+  scope order: command	false
+  scope order with -c: local	true
+  scope order with -c: command	false
+  scope order with -c: command	true
+== strategy and auto tasks on Apple git: trace of a bare commit without the fix
+"argv":["/Library/Developer/CommandLineTools/usr/bin/git","-c","user.name=a","-c","user.email=a@e.co","commit","-q","-m","x"] "argv":["git","maintenance","run","--auto","--quiet","--detach"] "argv":["/Library/Developer/CommandLineTools/usr/libexec/git-core/git","maintenance","run","--auto","--quiet","--detach"] 
+darwin done

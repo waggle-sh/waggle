@@ -1,0 +1,10 @@
+=== RUN   TestOpusConfirm2P6Bounded
+P6b exhaustive: 73728 valid combinations, second guard ok 40008 (walked down 17568, below guard minimum 0), errors 23460 (without config hint 0), former below-minimum resolutions 18792, of which now error 18792, violations 0
+P6b hive config, unstepped             builder=sonnet/standard first=opus/standard err1=false second=/invalid(0) err2=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["sonnet" "opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+P6b hive config, stepped               builder=opus/frontier first=/invalid(0) err1=true second=/invalid(0) err2=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+P6b alt frontier fable, unstepped      builder=sonnet/standard first=opus/standard err1=false second=fable/standard err2=<nil>
+P6b alt frontier fable, stepped        builder=opus/frontier first=fable/frontier err1=false second=sonnet/standard err2=<nil>
+P6b D-179 case: bmin frontier, fable   builder=opus/frontier first=fable/frontier err1=false second=sonnet/standard err2=<nil>
+--- PASS: TestOpusConfirm2P6Bounded (0.10s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/runtime	0.339s

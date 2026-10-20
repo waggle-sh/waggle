@@ -1,0 +1,81 @@
+# confirm-scan-probe.sh on base 462f589, macOS, scan-hive.sh as committed at 462f589, real decisions gate
+### records path (expect exit 0)
+== records-batch: exit 0
+   scan-hive: base 462f589 (merge-base 462f589), head 395801e, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### records set edges
+== decisions-rewrite: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head 583dc33, 1 commit(s) scanned
+   hits (1):
+     decisions gate: decisions (exit 1)
+   result: FAIL, 1 hit(s): guard and card
+== rename-existing-media: exit 2
+   scan-hive: base 462f589 (merge-base 462f589), head 5b59a48, 1 commit(s) scanned
+     HOLD (deleted outside the records set) .waggle/hive/media/hive-process-1/scan-branch.txt
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== queen-md-mode-change: exit 0
+   scan-hive: base 462f589 (merge-base 462f589), head 731bcc5, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== add-gitignore-in-media: exit 0
+   scan-hive: base 462f589 (merge-base 462f589), head c1beac1, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### history evasions
+== added-then-removed: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head 9514c7e, 2 commit(s) scanned
+   hits (1):
+     commit f89744e .waggle/hive/media/confirm-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== added-then-reverted: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head 532acee, 2 commit(s) scanned
+   hits (1):
+     commit 9766636 .waggle/hive/media/confirm-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== amended-away: exit 0
+   scan-hive: base 462f589 (merge-base 462f589), head 1da82f2, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== side-commit-merged-then-removed: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head 2a1bab6, 4 commit(s) scanned
+   hits (1):
+     commit 5f6de6d .waggle/hive/media/confirm-plant/side.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== evil-merge-then-removed: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head e467fd2, 4 commit(s) scanned
+   hits (1):
+     commit 7d7910d .waggle/hive/media/confirm-plant/evil.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== evil-merge-edit-then-restored: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head 3b5addd, 5 commit(s) scanned
+   hits (1):
+     commit 45b8935 .waggle/hive/media/confirm-plant/both.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+### binary and text flips
+== binary-then-text: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head af3e051, 2 commit(s) scanned
+   hits (2):
+     commit af3e051 .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit ba8afcd .waggle/hive/media/confirm-plant/x.dat:0: binary
+   result: FAIL, 2 hit(s): guard and card
+== text-then-binary: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head 023b9a7, 2 commit(s) scanned
+   hits (3):
+     .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 023b9a7 .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 57d3f14 .waggle/hive/media/confirm-plant/x.dat:1: email
+   result: FAIL, 3 hit(s): guard and card
+== nul-after-8000-bytes: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head 2adf29b, 1 commit(s) scanned
+   hits (2):
+     .waggle/hive/media/confirm-plant/late-nul.txt:2: email
+     commit 2adf29b .waggle/hive/media/confirm-plant/late-nul.txt:2: email
+   result: FAIL, 2 hit(s): guard and card
+== nul-after-hit: exit 1
+   scan-hive: base 462f589 (merge-base 462f589), head 6debb00, 1 commit(s) scanned
+   hits (2):
+     .waggle/hive/media/confirm-plant/late-nul2.txt:2: email
+     commit 6debb00 .waggle/hive/media/confirm-plant/late-nul2.txt:2: email
+   result: FAIL, 2 hit(s): guard and card
