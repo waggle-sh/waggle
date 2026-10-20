@@ -32,7 +32,7 @@ func TestWorkerLeadsOwnSession(t *testing.T) {
 func TestFastExitNeverBlind(t *testing.T) {
 	for range 20 {
 		f := newFixture(t, false, false)
-		res, err := f.run(okScenario)
+		res, err := f.run(emit(assistant(100), okResult)) // no commit: the worker is gone within milliseconds
 		if err != nil || strings.Contains(strings.Join(res.Warnings, "|"), "survivors_unchecked") {
 			t.Fatalf("exit %d warnings %v err %v", res.ExitCode, res.Warnings, err)
 		}
