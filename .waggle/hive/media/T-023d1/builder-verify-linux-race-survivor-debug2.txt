@@ -1,0 +1,23 @@
+=== RUN   TestSurvivorKilledAndRecorded
+DBG sweep root=115 self=58 rootStart="3779364" seen=map[{116 3779364}:claude {118 3779364}:dispatch.test {119 3779364}:sleep {128 3779436}:git]
+DBG proc {pid:118 ppid:58 pgid:118 start:3779364 comm:dispatch.test zombie:false}
+--- PASS: TestSurvivorKilledAndRecorded (162.38s)
+=== RUN   TestSurvivorKilledAndRecorded
+DBG sweep root=191 self=58 rootStart="3795625" seen=map[{194 3795626}:dispatch.test {195 3795626}:sleep {203 3796296}:git]
+    fix2_test.go:90: survivors [], want pid 194
+--- FAIL: TestSurvivorKilledAndRecorded (49.38s)
+=== RUN   TestSurvivorKilledAndRecorded
+DBG sweep root=266 self=58 rootStart="3800548" seen=map[{267 3800548}:claude {269 3800549}:dispatch.test {270 3800549}:sleep]
+DBG proc {pid:269 ppid:58 pgid:269 start:3800549 comm:dispatch.test zombie:false}
+--- PASS: TestSurvivorKilledAndRecorded (20.35s)
+=== RUN   TestSurvivorKilledAndRecorded
+DBG sweep root=340 self=58 rootStart="3802629" seen=map[{343 3802629}:dispatch.test {344 3802629}:sleep {351 3802765}:git {352 3803001}:git]
+    fix2_test.go:90: survivors [], want pid 343
+--- FAIL: TestSurvivorKilledAndRecorded (12.77s)
+=== RUN   TestSurvivorKilledAndRecorded
+DBG sweep root=414 self=58 rootStart="3803910" seen=map[{417 3803910}:dispatch.test {418 3803910}:sleep {425 3803982}:git {426 3804123}:git]
+    fix2_test.go:90: survivors [], want pid 417
+--- FAIL: TestSurvivorKilledAndRecorded (9.43s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	254.423s
+FAIL

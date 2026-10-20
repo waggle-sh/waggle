@@ -1,0 +1,16 @@
+# linux/arm64 container (golang:1.23-bookworm, docker without --init), cross-built test binary, head e0d3b61
+=== RUN   TestSweepKillsTrackedGroup
+    fix3_test.go:97: the unseen group member 13 survived the sweep
+--- FAIL: TestSweepKillsTrackedGroup (5.10s)
+FAIL
+# same container with --init, test alone: PASS (0.06s)
+# with --init, after TestSurvivorKilledAndRecorded (which makes the test process a subreaper):
+=== RUN   TestSweepKillsTrackedGroup
+    fix3_test.go:97: the unseen group member 88 survived the sweep
+--- FAIL: TestSweepKillsTrackedGroup (6.74s)
+# after the test-side fix (tracker rootStart set to the leader's start), both orders: PASS
+=== RUN   TestSurvivorKilledAndRecorded
+--- PASS: TestSurvivorKilledAndRecorded (23.34s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.55s)
+PASS

@@ -1,0 +1,14 @@
+=== RUN   TestSurvivorKilledAndRecorded
+    fix2_test.go:90: survivors [], want pid 114
+--- FAIL: TestSurvivorKilledAndRecorded (6.58s)
+=== RUN   TestBlankNameChildKilled
+--- PASS: TestBlankNameChildKilled (105.11s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (26.29s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (1.80s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (23.85s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	165.660s
+FAIL

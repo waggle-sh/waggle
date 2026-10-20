@@ -1,0 +1,49 @@
+== environment: Linux 6.8.0-117-generic go version go1.23.12 linux/arm64 nproc 2 loadavg 12.26 20.43 15.58 8/798 22
+--- M2 sweep pgid guard removed: diff
+< 			if p.pgid > 1 && p.pgid != syscall.Getpgrp() {
+> 			if true {
+M2 sweep pgid guard removed: not ok, exit 1; last test started: ; failures:
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+--- M3 renew loop: case <-exited removed: diff
+< 			case <-exited:
+< 				return
+M3 renew loop: case <-exited removed: not ok, exit 1; last test started: === RUN   TestWaggleCommandsAndOutcome; failures:
+    fix2_test.go:90: survivors [], want pid 2860
+--- FAIL: TestSurvivorKilledAndRecorded (5.80s)
+    fix2_test.go:170: took 1m5.404790238s exit 0 held false survivors [] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command] err <nil>
+--- FAIL: TestStdoutHolder (65.52s)
+    fix3_test.go:60: exit 0 err <nil> survivors [] pid 4928
+--- FAIL: TestBlankNameChildKilled (11.68s)
+    misc_test.go:37: GOOS=windows go vet: exit status 1
+--- FAIL: TestCrossCompileWindows (91.20s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	562.633s
+--- M4 renew loop: tctx.Err check before a renewal removed: diff
+< 				if tctx.Err() != nil {
+< 					return
+< 				}
+M4 renew loop: tctx.Err check before a renewal removed: not ok, exit 1; last test started: === RUN   TestCrossCompileWindows; failures:
+    fix3_test.go:57: the helper process did not start: no pid in /tmp/TestBlankNameChildKilled1995709617/002/pid
+--- FAIL: TestBlankNameChildKilled (15.20s)
+	/w/internal/dispatch/misc_test.go:36 +0x444
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	600.157s
+FAIL
+--- M5 sweep goroutine: <-renewed removed: diff
+< 		<-renewed
+M5 sweep goroutine: <-renewed removed: not ok, exit 1; last test started: === RUN   TestRunViolations/unsigned_commit; failures:
+    fix3_test.go:173: the renewal's child was "disturbed"
+--- FAIL: TestSweepWaitsForRenewal (9.46s)
+    misc_test.go:37: GOOS=windows go vet: exit status 1
+--- FAIL: TestCrossCompileWindows (76.24s)
+	/w/internal/dispatch/fixture_test.go:134 +0x440
+	/w/internal/dispatch/run_test.go:147 +0x2f0
+	/w/internal/dispatch/run_test.go:138 +0x64
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	600.563s
+FAIL
+
+== D: whole package at head, -race, minus the two git>=2.48 tests
+	/usr/local/go/src/os/exec/exec.go:732 +0xc3c
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	605.104s
+FAIL
+== done

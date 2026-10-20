@@ -1,0 +1,123 @@
+--- FAIL: TestSurvivorKilledAndRecorded (19.50s)
+    fix2_test.go:90: survivors [], want pid 2405
+--- FAIL: TestBlankNameChildKilled (17.51s)
+    fix3_test.go:60: exit 0 err <nil> survivors [] pid 4473
+--- FAIL: TestReuseRefusesExtraRegistration (0.22s)
+    --- FAIL: TestReuseRefusesExtraRegistration/relative (0.06s)
+        guard3_test.go:104: refusal: /tmp/TestReuseRefusesExtraRegistrationrelative2646613017/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/tmp/TestReuseRefusesExtraRegistrationrelative2646613017/001/.waggle/worktrees/T-023-builder/.git points at /tmp/TestReuseRefusesExtraRegistrationrelative2646613017/001/.git/worktrees/AAA, not its registration)
+        guard3_test.go:104: second registration for the path accepted: /tmp/TestReuseRefusesExtraRegistrationrelative2646613017/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/tmp/TestReuseRefusesExtraRegistrationrelative2646613017/001/.waggle/worktrees/T-023-builder/.git points at /tmp/TestReuseRefusesExtraRegistrationrelative2646613017/001/.git/worktrees/AAA, not its registration)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.05s)
+    guard3_test.go:147: git older than 2.48 ignores worktree.useRelativePaths and writes an absolute registration; this test requires git 2.48 or newer (CI runs 2.55)
+panic: test timed out after 10m0s
+	running tests:
+		TestRunHostState (3s)
+		TestRunHostState/new_admin_entry (3s)
+		TestRunHostState/new_admin_entry/symlinked (2s)
+
+goroutine 12037 [running]:
+testing.(*M).startAlarm.func1()
+	/usr/local/go/src/testing/testing.go:2373 +0x1dc
+created by time.goFunc
+	/usr/local/go/src/time/sleep.go:215 +0x44
+
+goroutine 1 [chan receive]:
+testing.(*T).Run(0xc0000c2340, {0x34241e, 0x10}, 0x35ac50)
+	/usr/local/go/src/testing/testing.go:1751 +0x600
+testing.runTests.func1(0xc0000c2340)
+	/usr/local/go/src/testing/testing.go:2168 +0x84
+testing.tRunner(0xc0000c2340, 0xc00012fad8)
+	/usr/local/go/src/testing/testing.go:1690 +0x188
+testing.runTests(0xc0000aa018, {0x554ac0, 0x65, 0x65}, {0xc0000a0e70?, 0x15a060?, 0x557120?})
+	/usr/local/go/src/testing/testing.go:2166 +0x6e4
+testing.(*M).Run(0xc00009b7c0)
+	/usr/local/go/src/testing/testing.go:2034 +0xb78
+main.main()
+	_testmain.go:245 +0x114
+
+goroutine 12031 [IO wait]:
+internal/poll.runtime_pollWait(0xf171a978d180, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:351 +0xa0
+internal/poll.(*pollDesc).wait(0xc0004ae2c0, 0x72, 0x1)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0xb8
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc0004ae2a0, {0xc0003bf200, 0x200, 0x200})
+	/usr/local/go/src/internal/poll/fd_unix.go:165 +0x320
+os.(*File).read(...)
+	/usr/local/go/src/os/file_posix.go:29
+os.(*File).Read(0xc00003ebf0, {0xc0003bf200, 0x200, 0x200})
+	/usr/local/go/src/os/file.go:124 +0xb4
+bytes.(*Buffer).ReadFrom(0xc0003e6990, {0x3baa08, 0xc000098f20})
+	/usr/local/go/src/bytes/buffer.go:211 +0xf4
+io.copyBuffer({0x3babe0, 0xc0003e6990}, {0x3baa08, 0xc000098f20}, {0x0, 0x0, 0x0})
+	/usr/local/go/src/io/io.go:415 +0x1cc
+io.Copy(...)
+	/usr/local/go/src/io/io.go:388
+os.genericWriteTo(0xc00003ebf0, {0x3babe0, 0xc0003e6990})
+	/usr/local/go/src/os/file.go:275 +0x68
+os.(*File).WriteTo(0xc00003ebf0, {0x3babe0, 0xc0003e6990})
+	/usr/local/go/src/os/file.go:253 +0xc8
+io.copyBuffer({0x3babe0, 0xc0003e6990}, {0x3baa88, 0xc00003ebf0}, {0x0, 0x0, 0x0})
+	/usr/local/go/src/io/io.go:411 +0xac
+io.Copy(...)
+	/usr/local/go/src/io/io.go:388
+os/exec.(*Cmd).writerDescriptor.func1()
+	/usr/local/go/src/os/exec/exec.go:580 +0x60
+os/exec.(*Cmd).Start.func2(0xc0000d5d20)
+	/usr/local/go/src/os/exec/exec.go:733 +0x40
+created by os/exec.(*Cmd).Start in goroutine 12034
+	/usr/local/go/src/os/exec/exec.go:732 +0xc3c
+
+goroutine 11863 [chan receive]:
+testing.(*T).Run(0xc0001f64e0, {0x341f69, 0xf}, 0xc000320e80)
+	/usr/local/go/src/testing/testing.go:1751 +0x600
+github.com/waggle-sh/waggle/internal/dispatch.TestRunHostState(0xc0001f64e0)
+	/src/internal/dispatch/host_test.go:59 +0x140
+testing.tRunner(0xc0001f64e0, 0x35ac50)
+	/usr/local/go/src/testing/testing.go:1690 +0x188
+created by testing.(*T).Run in goroutine 1
+	/usr/local/go/src/testing/testing.go:1743 +0x5e4
+
+goroutine 11864 [chan receive]:
+testing.(*T).Run(0xc0001f6680, {0x33f42f, 0x9}, 0xc00035c1c8)
+	/usr/local/go/src/testing/testing.go:1751 +0x600
+github.com/waggle-sh/waggle/internal/dispatch.eachRepoSpelling(0xc0001f6680, 0xc000320ec0)
+	/src/internal/dispatch/fixture_test.go:160 +0x80
+github.com/waggle-sh/waggle/internal/dispatch.TestRunHostState.func10(0xc0001f6680)
+	/src/internal/dispatch/host_test.go:60 +0xb0
+testing.tRunner(0xc0001f6680, 0xc000320e80)
+	/usr/local/go/src/testing/testing.go:1690 +0x188
+created by testing.(*T).Run in goroutine 11863
+	/usr/local/go/src/testing/testing.go:1743 +0x5e4
+
+goroutine 12034 [syscall]:
+syscall.Syscall6(0x5f, 0x3, 0xb, 0xc0003ccae4, 0x4, 0xc00015d200, 0x0)
+	/usr/local/go/src/syscall/syscall_linux.go:95 +0x34
+os.(*Process).pidfdWait(0xc0003d8680)
+	/usr/local/go/src/os/pidfd_linux.go:110 +0x26c
+os.(*Process).wait(0xc0003d8680)
+	/usr/local/go/src/os/exec_unix.go:27 +0x4c
+os.(*Process).Wait(...)
+	/usr/local/go/src/os/exec.go:358
+os/exec.(*Cmd).Wait(0xc000201b00)
+	/usr/local/go/src/os/exec/exec.go:906 +0x74
+os/exec.(*Cmd).Run(0xc000201b00)
+	/usr/local/go/src/os/exec/exec.go:610 +0x58
+os/exec.(*Cmd).CombinedOutput(0xc000201b00)
+	/usr/local/go/src/os/exec/exec.go:1021 +0x204
+github.com/waggle-sh/waggle/internal/dispatch.shIn(0xc0001f6d00, {0xc0004d3840, 0x40}, {0x0, 0x0}, {0xc00031d840, 0x4, 0x4})
+	/src/internal/dispatch/dispatch_test.go:33 +0x5b8
+github.com/waggle-sh/waggle/internal/dispatch.sh(0xc0001f6d00, {0xc0004d3840, 0x40}, {0xc00031d840, 0x4, 0x4})
+	/src/internal/dispatch/dispatch_test.go:22 +0x68
+github.com/waggle-sh/waggle/internal/dispatch.newFixture(0xc0001f6d00, 0x1, 0x1)
+	/src/internal/dispatch/fixture_test.go:110 +0x1208
+github.com/waggle-sh/waggle/internal/dispatch.TestRunHostState.func10.1(0xc0001f6d00, 0x1)
+	/src/internal/dispatch/host_test.go:61 +0x44
+github.com/waggle-sh/waggle/internal/dispatch.eachRepoSpelling.func1(0xc0001f6d00)
+	/src/internal/dispatch/fixture_test.go:160 +0x4c
+testing.tRunner(0xc0001f6d00, 0xc00035c1c8)
+	/usr/local/go/src/testing/testing.go:1690 +0x188
+created by testing.(*T).Run in goroutine 11864
+	/usr/local/go/src/testing/testing.go:1743 +0x5e4
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	600.405s
+FAIL
