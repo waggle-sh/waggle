@@ -1,0 +1,43 @@
+# Each D0 fix removed in turn (sed on the file, restored afterwards); its test must fail.
+# First a cumulative run (each later case also lacked the earlier fixes), then the GIT_CONFIG values case alone.
+== item 16 Config alias (expect FAIL)
+--- FAIL: TestConfigDoesNotAliasDefaultArgs (0.03s)
+    launch_test.go:369: argv follows the edited copy: ["claude" "--print" "--output-format=stream-json" "--verbose" "--model=sonnet" "--setting-sources=" "--settings={\"permissions\":{\"allow\":[\"Read\",\"Glob\",\"Grep\",\"Edit(./**)\",\"Write(./**)\",\"Bash(go build)\",\"Bash(go build *)\",\"Bash(go test)\",\"Bash(go test *)\",\"Bash(git add)\",\"Bash(git add *)\",\"Bash(git commit)\",\"Bash(git commit *)\",\"Bash(git status)\",\"Bash(git status *)\",\"Bash(git diff)\",\"Bash(git diff *)\",\"Bash(git log)\",\"Bash(git log *)\",\"Bash(git show)\",\"Bash(git show *)\"],\"deny\":[\"Bash(git push)\",\"Bash(git push *)\",\"Bash(gh)\",\"Bash(gh *)\",\"Bash(curl)\",\"Bash(curl *)\",\"Bash(wget)\",\"Bash(wget *)\",\"Bash(ssh)\",\"Bash(ssh *)\",\"WebFetch\",\"WebSearch\"],\"defaultMode\":\"dontAsk\"}}" "--strict-mcp-config" "--restricted" "--no-session-persistence" "--disable-slash-commands" "--tools=Bash,Edit,Glob,Grep,Read,Write" "--permission-mode=dontAsk" "--max-turns=40" "--append-system-prompt=# Role\n\n# WAGGLE.md\n" "--max-budget-usd=3"]
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/runtime	0.174s
+FAIL
+== item 17 help substring (expect FAIL)
+--- FAIL: TestVerifyHelpTokenBoundary (0.04s)
+    launch_test.go:378: err = <nil>; want runtime binary not verified
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/runtime	0.185s
+FAIL
+== item 19 check removed (expect FAIL)
+--- FAIL: TestPrepareGitIdentity (0.04s)
+    launch_test.go:392: err = <nil>; want invalid adapter launch config
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/runtime	0.183s
+FAIL
+== item 19 GIT_CONFIG values removed (expect FAIL)
+--- FAIL: TestPrepareGitIdentity (0.03s)
+    launch_test.go:392: err = <nil>; want invalid adapter launch config
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/runtime	0.185s
+FAIL
+== item 20 guard drop removed (expect FAIL)
+--- FAIL: TestGuardSettingsDropGitWrites (0.00s)
+    launch_test.go:428: guard settings: {"permissions":{"allow":["Read","Glob","Grep","Edit(./**)","Write(./**)","Bash(go test)","Bash(go test *)","Bash(git add)","Bash(git add *)","Bash(git commit)","Bash(git commit *)","Bash(git status)","Bash(git status *)","Bash(git diff)","Bash(git diff *)","Bash(git log)","Bash(git log *)","Bash(git show)","Bash(git show *)"],"deny":["Bash(git push)","Bash(git push *)","Bash(gh)","Bash(gh *)","Bash(curl)","Bash(curl *)","Bash(wget)","Bash(wget *)","Bash(ssh)","Bash(ssh *)","WebFetch","WebSearch"],"defaultMode":"dontAsk"}}
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/runtime	0.145s
+FAIL
+== item 21 SecondGuard ignored (expect FAIL)
+--- FAIL: TestSecondGuard (0.00s)
+    policy_test.go:238: first "opus" second "opus"; want opus then other-frontier
+    policy_test.go:242: err = <nil>; want no model differs from the builder's
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/runtime	0.156s
+FAIL
+== item 19 GIT_CONFIG values removed alone (expect FAIL)
+--- FAIL: TestPrepareGitIdentity
+    launch_test.go:406: env lacks "GIT_CONFIG_GLOBAL=/dev/null"
+    launch_test.go:406: env lacks "GIT_CONFIG_NOSYSTEM=1"

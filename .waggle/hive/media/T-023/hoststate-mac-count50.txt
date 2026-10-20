@@ -1,0 +1,2502 @@
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.09s)
+    --- PASS: TestRunHostState/new_admin_entry (1.88s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.98s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.90s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.91s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.95s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.96s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.80s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.90s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.87s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.92s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.01s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.93s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.96s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.81s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.90s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.91s)
+    --- PASS: TestRunHostState/pushurl (1.86s)
+        --- PASS: TestRunHostState/pushurl/plain (0.94s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.22s)
+    --- PASS: TestRunHostState/new_admin_entry (1.82s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.91s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.96s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.98s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.86s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.93s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.91s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.96s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.96s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.00s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (1.00s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.99s)
+    --- PASS: TestRunHostState/info_exclude (1.82s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.91s)
+    --- PASS: TestRunHostState/pushurl (1.84s)
+        --- PASS: TestRunHostState/pushurl/plain (0.91s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.37s)
+    --- PASS: TestRunHostState/new_admin_entry (1.85s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.92s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.94s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.99s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.98s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.83s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.96s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (1.00s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.96s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.04s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.99s)
+    --- PASS: TestRunHostState/info_exclude (1.86s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.95s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.91s)
+    --- PASS: TestRunHostState/pushurl (1.85s)
+        --- PASS: TestRunHostState/pushurl/plain (0.92s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.15s)
+    --- PASS: TestRunHostState/new_admin_entry (1.80s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.90s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.90s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.94s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.90s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.95s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.96s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.00s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.94s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.96s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.98s)
+    --- PASS: TestRunHostState/info_exclude (1.81s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.90s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.91s)
+    --- PASS: TestRunHostState/pushurl (1.90s)
+        --- PASS: TestRunHostState/pushurl/plain (0.93s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.98s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.54s)
+    --- PASS: TestRunHostState/new_admin_entry (1.92s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.95s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.11s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.07s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (1.04s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.83s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.93s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.91s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.95s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.96s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.01s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.00s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.94s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.97s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.98s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.99s)
+    --- PASS: TestRunHostState/pushurl (1.86s)
+        --- PASS: TestRunHostState/pushurl/plain (0.94s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.48s)
+    --- PASS: TestRunHostState/new_admin_entry (1.82s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.91s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.32s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.33s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.99s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.88s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.01s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.00s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.00s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.95s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.96s)
+    --- PASS: TestRunHostState/info_exclude (1.84s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.84s)
+        --- PASS: TestRunHostState/pushurl/plain (0.91s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.21s)
+    --- PASS: TestRunHostState/new_admin_entry (1.82s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.90s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.92s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.99s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.98s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.81s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.88s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.92s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.96s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.03s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.98s)
+    --- PASS: TestRunHostState/info_exclude (1.83s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.91s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.88s)
+        --- PASS: TestRunHostState/pushurl/plain (0.93s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.95s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.23s)
+    --- PASS: TestRunHostState/new_admin_entry (1.93s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.97s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.96s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.96s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.99s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.88s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.93s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.96s)
+    --- PASS: TestRunHostState/info_exclude (1.82s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.91s)
+    --- PASS: TestRunHostState/pushurl (1.84s)
+        --- PASS: TestRunHostState/pushurl/plain (0.91s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.32s)
+    --- PASS: TestRunHostState/new_admin_entry (1.84s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.92s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.92s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.01s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (1.03s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.84s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.87s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.93s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.93s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.07s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.01s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.06s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.96s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.99s)
+    --- PASS: TestRunHostState/info_exclude (1.86s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.94s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.86s)
+        --- PASS: TestRunHostState/pushurl/plain (0.93s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.64s)
+    --- PASS: TestRunHostState/new_admin_entry (1.86s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.94s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.92s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.99s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.96s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.83s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.93s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.93s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.96s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.97s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.05s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.93s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.96s)
+    --- PASS: TestRunHostState/info_exclude (1.98s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.97s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (1.01s)
+    --- PASS: TestRunHostState/pushurl (2.07s)
+        --- PASS: TestRunHostState/pushurl/plain (1.02s)
+        --- PASS: TestRunHostState/pushurl/symlinked (1.05s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.22s)
+    --- PASS: TestRunHostState/new_admin_entry (1.87s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.94s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.93s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.96s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.99s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.88s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.95s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.93s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.88s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.95s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.92s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.95s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.96s)
+    --- PASS: TestRunHostState/info_exclude (1.82s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.91s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.91s)
+    --- PASS: TestRunHostState/pushurl (1.85s)
+        --- PASS: TestRunHostState/pushurl/plain (0.92s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.36s)
+    --- PASS: TestRunHostState/new_admin_entry (1.85s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.94s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.91s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (1.00s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.83s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.89s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.95s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.03s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.94s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.83s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.91s)
+    --- PASS: TestRunHostState/pushurl (1.98s)
+        --- PASS: TestRunHostState/pushurl/plain (0.96s)
+        --- PASS: TestRunHostState/pushurl/symlinked (1.01s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.59s)
+    --- PASS: TestRunHostState/new_admin_entry (2.00s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (1.00s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (1.00s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.08s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.05s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (1.03s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.88s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.01s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.00s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.00s)
+    --- PASS: TestRunHostState/clean_filter_in_config (2.05s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (1.06s)
+    --- PASS: TestRunHostState/info_exclude (1.89s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.97s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.85s)
+        --- PASS: TestRunHostState/pushurl/plain (0.91s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.94s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.15s)
+    --- PASS: TestRunHostState/new_admin_entry (1.82s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.91s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.93s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.96s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.96s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.83s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.89s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.95s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.01s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.95s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.98s)
+    --- PASS: TestRunHostState/info_exclude (1.84s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.91s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.93s)
+    --- PASS: TestRunHostState/pushurl (1.86s)
+        --- PASS: TestRunHostState/pushurl/plain (0.93s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.20s)
+    --- PASS: TestRunHostState/new_admin_entry (1.85s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.92s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.93s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.96s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.99s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.84s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.93s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.90s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.96s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.01s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.94s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.85s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.94s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.84s)
+        --- PASS: TestRunHostState/pushurl/plain (0.91s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.40s)
+    --- PASS: TestRunHostState/new_admin_entry (1.92s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.95s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.01s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.01s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.99s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.86s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.93s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.94s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.92s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.96s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.96s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.95s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.85s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.93s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.86s)
+        --- PASS: TestRunHostState/pushurl/plain (0.93s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.26s)
+    --- PASS: TestRunHostState/new_admin_entry (1.81s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.91s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.00s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.98s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.84s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.89s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.03s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.95s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.98s)
+    --- PASS: TestRunHostState/info_exclude (1.85s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.93s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.87s)
+        --- PASS: TestRunHostState/pushurl/plain (0.93s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.16s)
+    --- PASS: TestRunHostState/new_admin_entry (1.86s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.95s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.91s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.93s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.90s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.87s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.93s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.93s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.96s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.82s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.90s)
+    --- PASS: TestRunHostState/pushurl (1.88s)
+        --- PASS: TestRunHostState/pushurl/plain (0.93s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.95s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.44s)
+    --- PASS: TestRunHostState/new_admin_entry (1.84s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.93s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.00s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (1.03s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.86s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.94s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.88s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.93s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.05s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.03s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (1.00s)
+    --- PASS: TestRunHostState/info_exclude (1.84s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.93s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.91s)
+    --- PASS: TestRunHostState/pushurl (1.98s)
+        --- PASS: TestRunHostState/pushurl/plain (0.97s)
+        --- PASS: TestRunHostState/pushurl/symlinked (1.01s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.39s)
+    --- PASS: TestRunHostState/new_admin_entry (1.96s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (1.00s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.96s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.94s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.83s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.90s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (2.02s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (1.04s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.98s)
+    --- PASS: TestRunHostState/info_exclude (1.83s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.91s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.88s)
+        --- PASS: TestRunHostState/pushurl/plain (0.94s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.94s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.60s)
+    --- PASS: TestRunHostState/new_admin_entry (1.89s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.92s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.96s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.08s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.03s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (1.04s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.85s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.95s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.99s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (1.04s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (2.02s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (1.04s)
+    --- PASS: TestRunHostState/info_exclude (1.89s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.95s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.94s)
+    --- PASS: TestRunHostState/pushurl (1.84s)
+        --- PASS: TestRunHostState/pushurl/plain (0.92s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.22s)
+    --- PASS: TestRunHostState/new_admin_entry (1.82s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.92s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.96s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.98s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.89s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (1.02s)
+    --- PASS: TestRunHostState/info_exclude (1.83s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.90s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.93s)
+    --- PASS: TestRunHostState/pushurl (1.84s)
+        --- PASS: TestRunHostState/pushurl/plain (0.92s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.14s)
+    --- PASS: TestRunHostState/new_admin_entry (1.84s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.92s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.92s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.95s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.96s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.98s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.83s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.88s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.00s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.95s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.96s)
+    --- PASS: TestRunHostState/info_exclude (1.81s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.90s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.90s)
+    --- PASS: TestRunHostState/pushurl (1.86s)
+        --- PASS: TestRunHostState/pushurl/plain (0.93s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.33s)
+    --- PASS: TestRunHostState/new_admin_entry (1.88s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.05s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.04s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.85s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.93s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.89s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.94s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.96s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.98s)
+    --- PASS: TestRunHostState/info_exclude (1.84s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.84s)
+        --- PASS: TestRunHostState/pushurl/plain (0.91s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.08s)
+    --- PASS: TestRunHostState/new_admin_entry (1.82s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.89s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.92s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.93s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.96s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.91s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.95s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.92s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.96s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.96s)
+    --- PASS: TestRunHostState/info_exclude (1.81s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.91s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.90s)
+    --- PASS: TestRunHostState/pushurl (1.82s)
+        --- PASS: TestRunHostState/pushurl/plain (0.91s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.91s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.19s)
+    --- PASS: TestRunHostState/new_admin_entry (1.81s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.90s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.91s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.95s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.89s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.08s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.95s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.83s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.91s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.93s)
+    --- PASS: TestRunHostState/pushurl (1.85s)
+        --- PASS: TestRunHostState/pushurl/plain (0.93s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.33s)
+    --- PASS: TestRunHostState/new_admin_entry (1.83s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.92s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.91s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.01s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.03s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.98s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.84s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.90s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.95s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.09s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.03s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.95s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.85s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.93s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.87s)
+        --- PASS: TestRunHostState/pushurl/plain (0.94s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.25s)
+    --- PASS: TestRunHostState/new_admin_entry (1.84s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.93s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.96s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.99s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.84s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.90s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.95s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.95s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.05s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.96s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.98s)
+    --- PASS: TestRunHostState/info_exclude (1.84s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.86s)
+        --- PASS: TestRunHostState/pushurl/plain (0.94s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (14.16s)
+    --- PASS: TestRunHostState/new_admin_entry (1.86s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.95s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (2.06s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.05s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.62s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.81s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.69s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.84s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.85s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.78s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.89s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.73s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.86s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.87s)
+    --- PASS: TestRunHostState/info_exclude (1.83s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.91s)
+    --- PASS: TestRunHostState/pushurl (1.59s)
+        --- PASS: TestRunHostState/pushurl/plain (0.81s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.79s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.63s)
+    --- PASS: TestRunHostState/new_admin_entry (1.60s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.80s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.81s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.72s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.85s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.87s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.73s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.79s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.85s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.80s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.90s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.73s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.86s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.87s)
+    --- PASS: TestRunHostState/info_exclude (1.61s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.80s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.81s)
+    --- PASS: TestRunHostState/pushurl (1.64s)
+        --- PASS: TestRunHostState/pushurl/plain (0.81s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.83s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.50s)
+    --- PASS: TestRunHostState/new_admin_entry (1.62s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.82s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.80s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.72s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.85s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.86s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.64s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.83s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.81s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.68s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.84s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.84s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.80s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.88s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.72s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.87s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.85s)
+    --- PASS: TestRunHostState/info_exclude (1.65s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.80s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.85s)
+    --- PASS: TestRunHostState/pushurl (1.66s)
+        --- PASS: TestRunHostState/pushurl/plain (0.86s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.81s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.60s)
+    --- PASS: TestRunHostState/new_admin_entry (1.59s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.79s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.80s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.71s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.86s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.85s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.62s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.81s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.81s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.71s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.86s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.84s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.94s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.95s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.99s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.80s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.92s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.87s)
+    --- PASS: TestRunHostState/info_exclude (1.61s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.80s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.81s)
+    --- PASS: TestRunHostState/pushurl (1.63s)
+        --- PASS: TestRunHostState/pushurl/plain (0.82s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.82s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.23s)
+    --- PASS: TestRunHostState/new_admin_entry (1.61s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.80s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.81s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.70s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.85s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.85s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.60s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.79s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.80s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.64s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.83s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.81s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.77s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.88s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.88s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.71s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.85s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.85s)
+    --- PASS: TestRunHostState/info_exclude (1.59s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.78s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.81s)
+    --- PASS: TestRunHostState/pushurl (1.62s)
+        --- PASS: TestRunHostState/pushurl/plain (0.80s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.81s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.21s)
+    --- PASS: TestRunHostState/new_admin_entry (1.59s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.80s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.79s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.71s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.85s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.86s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.59s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.80s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.78s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.65s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.82s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.82s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.78s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.88s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.69s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.85s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.84s)
+    --- PASS: TestRunHostState/info_exclude (1.58s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.79s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.80s)
+    --- PASS: TestRunHostState/pushurl (1.61s)
+        --- PASS: TestRunHostState/pushurl/plain (0.79s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.82s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.36s)
+    --- PASS: TestRunHostState/new_admin_entry (1.60s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.79s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.80s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.70s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.86s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.85s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.60s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.80s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.80s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.66s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.82s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.84s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.77s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.87s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.68s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.84s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.84s)
+    --- PASS: TestRunHostState/info_exclude (1.69s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.82s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.87s)
+    --- PASS: TestRunHostState/pushurl (1.66s)
+        --- PASS: TestRunHostState/pushurl/plain (0.86s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.80s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.33s)
+    --- PASS: TestRunHostState/new_admin_entry (1.62s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.82s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.80s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.69s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.84s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.85s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.63s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.81s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.82s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.67s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.84s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.83s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.79s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.90s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.89s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.69s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.84s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.85s)
+    --- PASS: TestRunHostState/info_exclude (1.62s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.81s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.81s)
+    --- PASS: TestRunHostState/pushurl (1.63s)
+        --- PASS: TestRunHostState/pushurl/plain (0.81s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.82s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.22s)
+    --- PASS: TestRunHostState/new_admin_entry (1.61s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.80s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.81s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.72s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.87s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.84s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.57s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.79s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.78s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.64s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.82s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.82s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.76s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.88s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.88s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.70s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.84s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.86s)
+    --- PASS: TestRunHostState/info_exclude (1.59s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.79s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.81s)
+    --- PASS: TestRunHostState/pushurl (1.62s)
+        --- PASS: TestRunHostState/pushurl/plain (0.80s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.82s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.70s)
+    --- PASS: TestRunHostState/new_admin_entry (1.59s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.79s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.81s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.80s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.86s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.94s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.72s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.90s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.82s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.66s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.82s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.84s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.77s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.89s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.88s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.68s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.84s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.84s)
+    --- PASS: TestRunHostState/info_exclude (1.63s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.79s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.84s)
+    --- PASS: TestRunHostState/pushurl (1.84s)
+        --- PASS: TestRunHostState/pushurl/plain (0.94s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.91s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.20s)
+    --- PASS: TestRunHostState/new_admin_entry (1.60s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.79s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.80s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.70s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.85s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.85s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.59s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.80s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.79s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.63s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.81s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.83s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.76s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.87s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.89s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.68s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.84s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.84s)
+    --- PASS: TestRunHostState/info_exclude (1.61s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.81s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.80s)
+    --- PASS: TestRunHostState/pushurl (1.64s)
+        --- PASS: TestRunHostState/pushurl/plain (0.81s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.83s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.17s)
+    --- PASS: TestRunHostState/new_admin_entry (1.61s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.81s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.80s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.69s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.84s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.85s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.58s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.78s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.80s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.63s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.83s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.81s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.80s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.88s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.68s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.85s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.84s)
+    --- PASS: TestRunHostState/info_exclude (1.58s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.79s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.79s)
+    --- PASS: TestRunHostState/pushurl (1.59s)
+        --- PASS: TestRunHostState/pushurl/plain (0.78s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.81s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.57s)
+    --- PASS: TestRunHostState/new_admin_entry (1.57s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.79s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.78s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.70s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.83s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.86s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.70s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.80s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.90s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.65s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.82s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.83s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.76s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.87s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.89s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.68s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.84s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.83s)
+    --- PASS: TestRunHostState/info_exclude (1.82s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.87s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.95s)
+    --- PASS: TestRunHostState/pushurl (1.68s)
+        --- PASS: TestRunHostState/pushurl/plain (0.86s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.82s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (13.14s)
+    --- PASS: TestRunHostState/new_admin_entry (1.59s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.79s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.80s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.68s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.84s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.84s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.58s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.78s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.79s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.64s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.82s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.82s)
+    --- PASS: TestRunHostState/dot_git_rewritten (1.76s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.87s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (0.89s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.68s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.84s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.84s)
+    --- PASS: TestRunHostState/info_exclude (1.61s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.80s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.81s)
+    --- PASS: TestRunHostState/pushurl (1.61s)
+        --- PASS: TestRunHostState/pushurl/plain (0.80s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.81s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.25s)
+    --- PASS: TestRunHostState/new_admin_entry (1.60s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.79s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.81s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.70s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.85s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.85s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.59s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.79s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.79s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.93s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.83s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (1.11s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.38s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.23s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.14s)
+    --- PASS: TestRunHostState/clean_filter_in_config (2.16s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (1.06s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (1.10s)
+    --- PASS: TestRunHostState/info_exclude (1.97s)
+        --- PASS: TestRunHostState/info_exclude/plain (1.03s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.93s)
+    --- PASS: TestRunHostState/pushurl (1.92s)
+        --- PASS: TestRunHostState/pushurl/plain (0.95s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.97s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.38s)
+    --- PASS: TestRunHostState/new_admin_entry (1.88s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.94s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.94s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.95s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.98s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.88s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.95s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.93s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.97s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.96s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (2.02s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (1.03s)
+    --- PASS: TestRunHostState/info_exclude (1.84s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.92s)
+    --- PASS: TestRunHostState/pushurl (1.84s)
+        --- PASS: TestRunHostState/pushurl/plain (0.92s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.44s)
+    --- PASS: TestRunHostState/new_admin_entry (1.86s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.92s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.93s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.99s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (1.00s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.98s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.92s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.97s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.07s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.03s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.98s)
+    --- PASS: TestRunHostState/info_exclude (1.84s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.90s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.93s)
+    --- PASS: TestRunHostState/pushurl (1.91s)
+        --- PASS: TestRunHostState/pushurl/plain (0.96s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.95s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.52s)
+    --- PASS: TestRunHostState/new_admin_entry (1.86s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.93s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.94s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.99s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.00s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.99s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.88s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.94s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.94s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.98s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.96s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.02s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.01s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.96s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.98s)
+    --- PASS: TestRunHostState/info_exclude (1.96s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.98s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.98s)
+    --- PASS: TestRunHostState/pushurl (1.90s)
+        --- PASS: TestRunHostState/pushurl/plain (0.96s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.35s)
+    --- PASS: TestRunHostState/new_admin_entry (1.81s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.90s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.91s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.96s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.99s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.87s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.93s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.94s)
+    --- PASS: TestRunHostState/another_entry_HEAD (2.02s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (1.03s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.99s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.04s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.94s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.97s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.82s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.92s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.90s)
+    --- PASS: TestRunHostState/pushurl (1.86s)
+        --- PASS: TestRunHostState/pushurl/plain (0.92s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.27s)
+    --- PASS: TestRunHostState/new_admin_entry (1.87s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.94s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.93s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.98s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.99s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.82s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.91s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.92s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.90s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.96s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.06s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.92s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.96s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.97s)
+    --- PASS: TestRunHostState/info_exclude (1.86s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.94s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.93s)
+    --- PASS: TestRunHostState/pushurl (1.86s)
+        --- PASS: TestRunHostState/pushurl/plain (0.92s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.93s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.36s)
+    --- PASS: TestRunHostState/new_admin_entry (1.83s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.91s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.92s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.93s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.96s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.85s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.94s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.91s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.90s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.95s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.94s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.13s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.07s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.06s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.99s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (1.00s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.99s)
+    --- PASS: TestRunHostState/info_exclude (1.84s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.94s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.90s)
+    --- PASS: TestRunHostState/pushurl (1.90s)
+        --- PASS: TestRunHostState/pushurl/plain (0.92s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.98s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (15.47s)
+    --- PASS: TestRunHostState/new_admin_entry (1.92s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.97s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (0.95s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.97s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (1.00s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.97s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (1.86s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (0.92s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (0.93s)
+    --- PASS: TestRunHostState/another_entry_HEAD (1.94s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.96s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.98s)
+    --- PASS: TestRunHostState/dot_git_rewritten (2.05s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (1.03s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (1.02s)
+    --- PASS: TestRunHostState/clean_filter_in_config (1.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (0.98s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (1.00s)
+    --- PASS: TestRunHostState/info_exclude (1.90s)
+        --- PASS: TestRunHostState/info_exclude/plain (0.95s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (0.95s)
+    --- PASS: TestRunHostState/pushurl (1.85s)
+        --- PASS: TestRunHostState/pushurl/plain (0.92s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.92s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	740.815s

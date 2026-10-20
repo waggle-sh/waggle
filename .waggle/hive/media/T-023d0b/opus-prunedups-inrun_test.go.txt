@@ -1,0 +1,43 @@
+//go:build unix
+
+package dispatch
+
+import (
+	"os"
+	"testing"
+)
+
+// TestOpusPruneDups: the agent plants worktrees/a (sorts before the run's own
+// id) with the run's own gitdir, after the result line, then runs git worktree
+// prune itself. git's prune_dups deletes the run's own admin dir. Is that loud?
+func TestOpusPruneDups(t *testing.T) {
+	f := newFixture(t, true, false)
+	planted := f.common() + "/worktrees/0"
+	scen := okScenario + "own=$(git rev-parse --absolute-git-dir)\nmkdir '" + planted + "'\ncp \"$own/gitdir\" '" + planted +
+		"/gitdir'\necho 'ref: refs/heads/main' > '" + planted + "/HEAD'\necho ../.. > '" + planted + "/commondir'\nexec 2>>'" + f.common() + "/../../dbg.log'\nset -x\nls \"$own\" >&2\ngit worktree prune -v >&2\nls '" + f.common() + "/worktrees' >&2\n"
+	res, err := f.run(scen)
+	_, serr := os.Stat(planted)
+	t.Logf("exit %d err %v planted stat %v", res.ExitCode, err, serr)
+	for _, v := range res.Violations {
+		t.Logf("violation %+v", v)
+	}
+	b, _ := os.ReadFile(f.common() + "/../../dbg.log")
+	t.Logf("dbg:\n%s", b)
+	if res.ExitCode == 0 {
+		t.Fatal("silent")
+	}
+}
+
+// TestOpusPlantNoGitdir: the agent leaves worktrees/planted with no gitdir and
+// exits right after the result line, with no later worker commit. Any host-side
+// git that starts auto maintenance before the check (the claim sync fetch in
+// remote mode, the keepalive renew) races the check for it.
+func TestOpusPlantNoGitdir(t *testing.T) {
+	f := newFixture(t, true, false)
+	planted := f.common() + "/worktrees/planted"
+	res, err := f.run(okScenario + "mkdir '" + planted + "'\n")
+	if err != nil || res.ExitCode != 1 || !hasViolation(res.Violations, ruleHost, "worktrees/planted") {
+		_, serr := os.Stat(planted)
+		t.Fatalf("exit %d err %v violations %v (planted stat after run: %v)", res.ExitCode, err, res.Violations, serr)
+	}
+}

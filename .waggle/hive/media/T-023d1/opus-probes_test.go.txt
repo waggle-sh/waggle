@@ -1,0 +1,311 @@
+//go:build unix
+
+package dispatch
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/waggle-sh/waggle/internal/runtime"
+)
+
+func pv(t *testing.T, format string, a ...any) { t.Helper(); t.Logf("PROBE "+format, a...) }
+
+var passEv = emit(assistant(100), verdictEvent(`Verdict: pass`))
+
+// P1: the guard zero-change rule, beyond the PR's four cases.
+func TestOpusGuardZeroChange(t *testing.T) {
+	cases := []struct{ name, script string }{
+		{"untracked", "echo p > probe.txt\n"},
+		{"stash", "echo x >> internal/x/b.go\ngit -c user.name=a -c user.email=a@e.co stash -q\n"},
+		{"notes", "git -c user.name=a -c user.email=a@e.co notes add -m n HEAD\n"},
+		{"tag", "git tag probe\n"},
+		{"worktree add", "git worktree add -q --detach ../opus-extra HEAD\n"},
+		{"log output hook", "git log -1 --format=tformat:hook --output=\"$(git rev-parse --git-common-dir)/hooks/post-checkout\"\n"},
+		{"log output ref", "git log -1 --format=%H --output=\"$(git rev-parse --git-common-dir)/refs/heads/evil\"\n"},
+		{"log output main checkout", "git log -1 --format=%H --output=\"$(git rev-parse --git-common-dir)/../planted.txt\"\n"},
+		{"log output info", "git log -1 --format=tformat:star --output=\"$(git rev-parse --git-common-dir)/info/exclude\"\n"},
+		{"local config", "git config --local probe.x 1\n"},
+		{"dotgit file", "echo 'gitdir: /nowhere' > .git\n"},
+		{"commit then restore HEAD", "h=$(git rev-parse HEAD)\ngit -c user.name=a -c user.email=a@e.co commit -q --allow-empty -m probe\ngit checkout -q --detach $h\n"},
+		{"skip-worktree hidden edit", "echo hidden >> internal/x/b.go\ngit update-index --skip-worktree internal/x/b.go\n"},
+		{"assume-unchanged hidden edit", "echo hidden >> internal/x/b.go\ngit update-index --assume-unchanged internal/x/b.go\n"},
+		{"description", "echo x > \"$(git rev-parse --git-common-dir)/description\"\n"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := guardFixture(t, false)
+			res, err := f.guard(c.script + passEv)
+			pv(t, "%-30s exit %d end %s verdict %q err %v violations %v", c.name, res.ExitCode, res.End, res.Verdict, err, res.Violations)
+		})
+	}
+}
+
+// P2: the second guard's reset on a worktree the first guard left dirty with a
+// hidden index trick, and on a tampered one.
+func TestOpusSecondGuardReset(t *testing.T) {
+	for _, trick := range []string{"--skip-worktree", "--assume-unchanged"} {
+		t.Run(trick, func(t *testing.T) {
+			f := guardFixture(t, false)
+			cfg, _ := os.ReadFile(filepath.Join(f.real, ".waggle/control/config.yaml"))
+			write(t, f.real, ".waggle/control/config.yaml", strings.Replace(string(cfg), "        fast: haiku\n", "        fast: haiku\n      alternates:\n        standard: haiku\n", 1))
+			res, err := f.guard("echo POISON >> internal/x/b.go\ngit update-index " + trick + " internal/x/b.go\necho p > probe.txt\n" + passEv)
+			pv(t, "first guard %s: exit %d verdict %q err %v violations %v", trick, res.ExitCode, res.Verdict, err, res.Violations)
+			seen := filepath.Join(t.TempDir(), "seen")
+			res, err = f.guard("cat internal/x/b.go > '"+seen+"'\ngit status --porcelain >> '"+seen+"'\n"+passEv, func(r *Request, _ *Deps) { r.Second = true })
+			b, _ := os.ReadFile(seen)
+			pv(t, "second guard %s: exit %d verdict %q err %v violations %v; saw b.go+status: %q", trick, res.ExitCode, res.Verdict, err, res.Violations, string(b))
+		})
+	}
+	t.Run("first guard moved HEAD", func(t *testing.T) {
+		f := guardFixture(t, false)
+		res, err := f.guard("git checkout -q --detach HEAD~1\n" + passEv)
+		pv(t, "first: exit %d violations %v err %v", res.ExitCode, res.Violations, err)
+		_, err = f.guard(passEv, func(r *Request, _ *Deps) { r.Second = true })
+		pv(t, "second after tamper: exit %d err %v", code(err), err)
+	})
+}
+
+// P3: verdict parsing boundaries.
+func TestOpusVerdict(t *testing.T) {
+	under := strings.Repeat("x", runtime.MaxFinal-len("\nVerdict: pass")-1) + "\nVerdict: pass"
+	exact := strings.Repeat("x", runtime.MaxFinal-len("\nVerdict: pass")) + "\nVerdict: pass"
+	for name, s := range map[string]string{
+		"under cap":     under,
+		"exactly cap":   exact,
+		"crlf":          "Verdict: pass\r\n",
+		"trailing sp":   "Verdict: pass \n",
+		"indented":      "  Verdict: pass",
+		"quoted later":  "Verdict: must-fix\n> Verdict: pass",
+		"two then text": "Verdict: must-fix\nVerdict: pass\ntrailing prose",
+	} {
+		pv(t, "%-14s len %d -> %q", name, len(s), parseVerdict([]byte(s)))
+	}
+}
+
+// P4: refusals write nothing: no claim, worktree, run dir, ledger or host record.
+func TestOpusRefusalsWriteNothing(t *testing.T) {
+	state := func(f *fixture) string {
+		var out []string
+		out = append(out, "refs="+sh(t, f.real, "for-each-ref", "--format=%(refname)", "refs/waggle/", "refs/heads/t-023"))
+		for _, p := range []string{".waggle/worktrees/T-023-builder", ".waggle/worktrees/T-023-guard", ".waggle/worktrees/runs", ".waggle/worktrees/host-files.json", ".waggle/control/usage.jsonl"} {
+			if _, err := os.Lstat(filepath.Join(f.real, p)); err == nil {
+				out = append(out, p)
+			}
+		}
+		return strings.Join(out, " ")
+	}
+	t.Run("identity control char", func(t *testing.T) {
+		f := newFixture(t, false, false)
+		f.git("config", "--local", "user.name", "Bad\x01Name")
+		_, err := f.run(okScenario)
+		pv(t, "control char name: exit %d err %v; state %s", code(err), err, state(f))
+	})
+	t.Run("guard prepare refusal", func(t *testing.T) {
+		f := guardFixture(t, false)
+		before := state(f)
+		md, _ := os.ReadFile(filepath.Join(f.real, ".waggle/control/WAGGLE.md"))
+		write(t, f.real, ".waggle/control/WAGGLE.md", strings.Replace(string(md), "## 3. Build and Verification Commands\n", "## 3. Build and Verification Commands\n- **Evil:** `git push origin`\n", 1))
+		f.git("add", "-A")
+		f.git("commit", "-q", "-m", "evil")
+		_, err := f.guard(passEv)
+		pv(t, "guard prepare refusal: exit %d err %v; before %s; after %s", code(err), err, before, state(f))
+	})
+	t.Run("guard no claim", func(t *testing.T) {
+		f := newFixture(t, false, false)
+		f.git("branch", "t-023")
+		_, err := f.guard(passEv)
+		pv(t, "guard no claim: exit %d err %v; state %s", code(err), err, state(f))
+	})
+	t.Run("host record refusal", func(t *testing.T) {
+		f := newFixture(t, false, false)
+		if res, err := f.run(okScenario); err != nil || res.ExitCode != 0 {
+			t.Fatal(err)
+		}
+		os.Remove(filepath.Join(f.real, ".waggle/control/usage.jsonl"))
+		before := state(f)
+		write(t, f.common(), "info/attributes", "* filter=x\n")
+		_, err := f.run(commitFile("internal/x/c.go", "ok") + emit(assistant(100), okResult))
+		pv(t, "host record refusal: exit %d err %v; before %s; after %s", code(err), err, before, state(f))
+	})
+}
+
+// P5: identity resolution.
+func TestOpusIdentity(t *testing.T) {
+	commit := "mkdir -p internal/x\necho ok > internal/x/b.go\ngit add -A\ngit commit -q -s -m 'T-023: id'\n" + emit(assistant(100), okResult)
+	glob := filepath.Join(t.TempDir(), "gitconfig")
+	write(t, filepath.Dir(glob), filepath.Base(glob), "[user]\n\tname = Global Keeper\n\temail = global@example.com\n")
+	t.Run("blank local name, global fallback", func(t *testing.T) {
+		f := newFixture(t, false, false)
+		f.git("config", "--local", "user.name", "   ")
+		t.Setenv("GIT_CONFIG_GLOBAL", glob)
+		res, err := f.run(commit)
+		pv(t, "blank local name: exit %d err %v author %q", res.ExitCode, err, f.git("log", "-1", "--format=%an <%ae>", "refs/heads/t-023"))
+	})
+	t.Run("mixed scopes", func(t *testing.T) {
+		f := newFixture(t, false, false)
+		f.git("config", "--local", "--unset", "user.email")
+		t.Setenv("GIT_CONFIG_GLOBAL", glob)
+		res, err := f.run(commit)
+		pv(t, "local name + global email: exit %d err %v author %q", res.ExitCode, err, f.git("log", "-1", "--format=%an <%ae>", "refs/heads/t-023"))
+	})
+	t.Run("planted by an earlier agent, no prior clean run", func(t *testing.T) {
+		f := newFixture(t, false, false)
+		res, err := f.run(okScenario + "git config --local user.email planted@example.test\n")
+		pv(t, "planting run: exit %d err %v host violations %v", res.ExitCode, err, res.Violations)
+		res, err = f.run(strings.ReplaceAll(commit, "internal/x", "docs"), func(r *Request, _ *Deps) { r.Ticket = "24"; r.Branch = ""; r.Dirs = []string{"docs"} })
+		pv(t, "next dispatch T-024: exit %d end %s err %v violations %v", res.ExitCode, res.End, err, res.Violations)
+		pv(t, "T-024 author %q", sh(t, f.real, "for-each-ref", "--format=%(refname) %(authorname) <%(authoremail)>", "refs/heads/"))
+	})
+	t.Run("planted by an earlier agent, after a clean run", func(t *testing.T) {
+		f := newFixture(t, false, false)
+		if res, err := f.run(okScenario); err != nil || res.ExitCode != 0 {
+			t.Fatal(err)
+		}
+		res, err := f.run(commitFile("internal/x/c.go", "ok")+"git config --local user.email planted@example.test\n"+emit(assistant(100), okResult))
+		pv(t, "planting run: exit %d err %v", res.ExitCode, err)
+		_, err = f.run(commit, func(r *Request, _ *Deps) { r.Ticket = "24"; r.Branch = "" })
+		pv(t, "next dispatch T-024: exit %d err %v", code(err), err)
+	})
+}
+
+// P6: the cross-run record against ordinary Keeper git activity between runs.
+func TestOpusHostRecordKeeperEdits(t *testing.T) {
+	for name, edit := range map[string]func(f *fixture, glob string){
+		"push -u style branch config": func(f *fixture, _ string) { f.git("config", "branch.t-023.remote", "origin") },
+		"git remote add":              func(f *fixture, _ string) { f.git("remote", "add", "other", "/nowhere") },
+		"global gitconfig edit": func(_ *fixture, glob string) {
+			write(t, filepath.Dir(glob), filepath.Base(glob), "[alias]\n\tst = status\n")
+		},
+		"symlinked record": func(f *fixture, _ string) {
+			p := filepath.Join(f.real, ".waggle/worktrees/host-files.json")
+			os.Remove(p)
+			os.Symlink("/dev/null", p)
+		},
+		"deleted record plus hook": func(f *fixture, _ string) {
+			os.Remove(filepath.Join(f.real, ".waggle/worktrees/host-files.json"))
+			write(t, f.common(), "hooks/post-checkout", "#!/bin/sh\n")
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			glob := filepath.Join(t.TempDir(), "gitconfig")
+			write(t, filepath.Dir(glob), filepath.Base(glob), "")
+			f := newFixture(t, false, false)
+			t.Setenv("GIT_CONFIG_GLOBAL", glob)
+			if res, err := f.run(okScenario); err != nil || res.ExitCode != 0 {
+				t.Fatalf("first: %v %v", err, res.Violations)
+			}
+			edit(f, glob)
+			res, err := f.run(commitFile("internal/x/c.go", "ok") + emit(assistant(100), okResult))
+			pv(t, "%-28s next dispatch: exit %d/%d err %v", name, code(err), res.ExitCode, err)
+		})
+	}
+}
+
+// P7: the ledger refuses a symlinked file, and a guard's line maps no_verdict to error.
+func TestOpusLedger(t *testing.T) {
+	f := newFixture(t, false, false)
+	target := filepath.Join(t.TempDir(), "target")
+	write(t, filepath.Dir(target), filepath.Base(target), "")
+	os.Symlink(target, filepath.Join(f.real, ".waggle/control/usage.jsonl"))
+	res, err := f.run(okScenario)
+	b, _ := os.ReadFile(target)
+	pv(t, "symlinked ledger: exit %d err %v target bytes %d warnings %v", res.ExitCode, err, len(b), res.Warnings)
+	g := guardFixture(t, false)
+	res, err = g.guard(emit(assistant(100), verdictEvent(`no verdict here`)))
+	l, _ := os.ReadFile(filepath.Join(g.real, ".waggle/control/usage.jsonl"))
+	pv(t, "guard no_verdict: exit %d end %s err %v ledger:\n%s", res.ExitCode, res.End, err, l)
+}
+
+// P2b: git behavior behind P2 and the candidate fix (drop the admin index first).
+func TestOpusResetFix(t *testing.T) {
+	dir, _ := newRepo(t)
+	h := sh(t, dir, "rev-parse", "HEAD")
+	wt := filepath.Join(t.TempDir(), "wt")
+	sh(t, dir, "worktree", "add", "-q", "--detach", wt, h)
+	admin := sh(t, wt, "rev-parse", "--absolute-git-dir")
+	poison := func() {
+		write(t, wt, "internal/x/a.go", "package x\n// POISON\n")
+		sh(t, wt, "update-index", "--skip-worktree", "internal/x/a.go")
+	}
+	poison()
+	pg := &Git{Dir: dir, Pinned: true}
+	w := &Worktree{Path: wt, Detach: h}
+	err := w.reset(context.Background(), pg, admin)
+	b, _ := os.ReadFile(filepath.Join(wt, "internal/x/a.go"))
+	pv(t, "shipped reset: err %v content %q ls-files -v %q", err, b, sh(t, wt, "ls-files", "-v", "internal/x/a.go"))
+	if err := os.Remove(filepath.Join(admin, "index")); err != nil {
+		t.Fatal(err)
+	}
+	err = w.reset(context.Background(), pg, admin)
+	b, _ = os.ReadFile(filepath.Join(wt, "internal/x/a.go"))
+	pv(t, "index removed then reset: err %v content %q ls-files -v %q", err, b, sh(t, wt, "ls-files", "-v", "internal/x/a.go"))
+}
+
+// P9: a guard in remote mode, and the comb env mutant (item 10 behavior).
+func TestOpusRemoteGuardAndCombEnv(t *testing.T) {
+	f := guardFixture(t, true)
+	remoteHead := sh(t, f.origin, "rev-parse", "refs/heads/t-023")
+	res, err := f.guard(passEv)
+	pv(t, "remote guard: exit %d end %s verdict %q pushed %v err %v violations %v warnings %v; origin head unchanged %v",
+		res.ExitCode, res.End, res.Verdict, res.Pushed, err, res.Violations, res.Warnings, sh(t, f.origin, "rev-parse", "refs/heads/t-023") == remoteHead)
+	res, err = f.guard("git update-ref refs/waggle/claims/ticket-24 HEAD\n" + passEv)
+	pv(t, "remote guard writes another claim mirror: exit %d violations %v err %v", res.ExitCode, res.Violations, err)
+
+	old := combEnv
+	combEnv = combEnv[1:]
+	t.Cleanup(func() { combEnv = old })
+	hook, canary := canaryScript(t, "")
+	hooks := t.TempDir()
+	os.Rename(hook, filepath.Join(hooks, "reference-transaction"))
+	g := newFixture(t, false, false)
+	t.Setenv("GIT_CONFIG_PARAMETERS", "'core.hooksPath'='"+hooks+"'")
+	_, err = g.run(emit(assistant(100), okResult))
+	_, cerr := os.Stat(canary)
+	pv(t, "mutant combEnv without GIT_CONFIG_PARAMETERS=: err %v canary fired %v", err, cerr == nil)
+}
+
+// P8: item 22 across phases and suffixes, and GuardMustFix across the two guards of a round.
+func TestOpusMustFixCount(t *testing.T) {
+	dir, g := newRepo(t)
+	for name, body := range map[string]string{
+		"T-023d-opus.md": "Verdict: must-fix\n", "T-023d1-opus.md": "Verdict: must-fix\n", "T-023d1-confirm-fable.md": "Verdict: must-fix\r\n",
+		"T-023d10-opus.md": "Verdict: must-fix\n", "T-023-opus.md": "Verdict: must-fix\n", "T-023.md": "Verdict: must-fix\n",
+		"T-0231-opus.md": "Verdict: must-fix\n", "old/T-023d1-x.md": "Verdict: must-fix\n", "T-023d1-quote.md": "text\n    Verdict: must-fix\n> Verdict: must-fix\n",
+	} {
+		write(t, dir, ".waggle/hive/reviews/"+name, body)
+	}
+	sh(t, dir, "add", "-A")
+	sh(t, dir, "commit", "-q", "-m", "reviews")
+	base := sh(t, dir, "rev-parse", "HEAD")
+	for _, br := range []string{"t-023", "t-023d", "t-023d1", "t-023d10", "t-023D1"} {
+		n, err := roundMustFix(context.Background(), g, base, Request{Ticket: "T-023", Branch: br})
+		pv(t, "branch %-9s count %d err %v", br, n, err)
+	}
+	write(t, dir, ".waggle/hive/reviews/T-023d1-big.md", strings.Repeat("y", maxBrief+10))
+	sh(t, dir, "add", "-A")
+	sh(t, dir, "commit", "-q", "-m", "big")
+	n, err := roundMustFix(context.Background(), g, sh(t, dir, "rev-parse", "HEAD"), Request{Ticket: "T-023", Branch: "t-023d1"})
+	pv(t, "oversized review: count %d err %v exit %d", n, err, code(err))
+
+	// Two guards of one round; the queen commits the first guard's must-fix
+	// review before dispatching the second with the default base.
+	f := newFixture(t, false, false)
+	cfg, _ := os.ReadFile(filepath.Join(f.real, ".waggle/control/config.yaml"))
+	write(t, f.real, ".waggle/control/config.yaml", strings.Replace(string(cfg), "        fast: haiku\n", "        fast: haiku\n      alternates:\n        frontier: fable\n", 1))
+	write(t, f.real, ".waggle/hive/reviews/T-023-round1.md", "Verdict: must-fix\n")
+	f.git("add", "-A")
+	f.git("commit", "-q", "-m", "round 1 review")
+	b, err := f.run(okScenario)
+	pv(t, "builder (count 1): model %s exit %d err %v", b.Model, b.ExitCode, err)
+	g1, err := f.guard(passEv)
+	pv(t, "guard 1 (count 1): model %s exit %d err %v", g1.Model, g1.ExitCode, err)
+	write(t, f.real, ".waggle/hive/reviews/T-023-round2-g1.md", "Verdict: must-fix\n")
+	f.git("add", "-A")
+	f.git("commit", "-q", "-m", "guard 1 review")
+	g2, err := f.guard(passEv, func(r *Request, _ *Deps) { r.Second = true })
+	pv(t, "guard 2 (count 2): model %s exit %d err %v; builder %s first guard %s", g2.Model, g2.ExitCode, err, b.Model, g1.Model)
+}

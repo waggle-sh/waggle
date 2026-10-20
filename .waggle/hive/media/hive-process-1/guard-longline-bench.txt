@@ -1,0 +1,6 @@
+guard-longline-bench.sh 5e1c79d 1000 20000 50000 100000 (macOS, BSD awk)
+line of 1000 bytes: exit 0, 0 s (includes the go run gate)
+line of 20000 bytes: exit 0, 1 s (includes the go run gate)
+line of 50000 bytes: exit 0, 5 s (includes the go run gate)
+line of 100000 bytes: exit 0, 20 s (includes the go run gate)
+(2000000 bytes: killed after 11 minutes at full CPU; quadratic in line length)

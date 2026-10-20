@@ -1,0 +1,7 @@
+guard-percommit.sh origin/main 5e1c79d (macOS): each branch commit against its parent.
+== 6cb3a3c: exit 2   hits (0)   clean, 7 paths outside .waggle/hive/
+== 167b242: exit 2   hits (0)   clean, 2 paths outside .waggle/hive/
+== 9c77cc2: exit 0   hits (0)   clean and hive-only
+== deb4537: exit 0   hits (0)   clean and hive-only
+== 5e1c79d: exit 0   hits (0)   clean and hive-only
+No intermediate commit of this branch carries a hit.

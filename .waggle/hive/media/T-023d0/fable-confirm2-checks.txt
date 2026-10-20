@@ -1,0 +1,23 @@
+ok  	github.com/waggle-sh/waggle/cmd/waggle	16.576s
+ok  	github.com/waggle-sh/waggle/internal/comb	29.268s
+ok  	github.com/waggle-sh/waggle/internal/config	1.401s
+ok  	github.com/waggle-sh/waggle/internal/decisions	3.797s
+ok  	github.com/waggle-sh/waggle/internal/dispatch	72.886s
+ok  	github.com/waggle-sh/waggle/internal/forge	11.901s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	5.334s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	10.903s
+ok  	github.com/waggle-sh/waggle/internal/usage	1.205s
+
+== go build ./...: ok
+== go vet ./...: ok
+== gofmt -l internal/runtime/policy.go internal/runtime/policy_test.go: (none)
+== git diff ebce792 d969d57: en or em dashes: 0; files: internal/runtime/policy.go, internal/runtime/policy_test.go
+== git diff 2ee74d9 d969d57 --numstat added non-test lines: claude.go 4, launch.go 66, policy.go 36, runtime.go 8 = 114 (stop 130)
+== d969d57 signed off (Signed-off-by: paulternate <redacted>)
+== gh pr view 53: head d969d57df9164954ab366f225950dd0a4069bd60, base main, six files all under internal/runtime/
+== gh pr checks 53 (runs 39310780102 and 39310780103, both headSha d969d57):
+verify-leases-and-tiers  fail   "leases: no claim for T-023; claims must stay until merge" (expected, D-168)
+product-ci               pass   (TestRunHostState/new_admin_entry did not fire)
+relay-claim              skipping
+== Validate callers (zero or invalid guard minimum never reaches Resolve): internal/config/roster.go:123, internal/runtime/claude.go:65

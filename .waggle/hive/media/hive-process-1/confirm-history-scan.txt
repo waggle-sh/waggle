@@ -1,0 +1,20 @@
+# scan-hive.sh f4ef205 5c7ada6 on macOS (root commit to the fix head, 241 commits, 16 s): rule counts only, to measure false positives of the new token and local-file rules on existing content. Hits in old history are expected (pre-redaction); this range is not a gate.
+rule counts:
+   54 dash
+  377 email
+  163 home-path
+    5 hostname
+    2 local-file
+  551 name
+  317 personal-mail
+  354 temp-path
+   30 token
+token hits by file (net and per-commit labels):
+    2 .waggle/hive/media/T-018b/probes-race.txt
+    2 .waggle/hive/media/T-018b/rereview-original-probes.txt
+    2 .waggle/hive/media/T-018b/rereview-probes.go.txt
+   20 .waggle/hive/media/T-018b/rereview-probes.txt
+    2 .waggle/hive/media/T-018b/zz_guard_test.go.txt
+    2 internal/forge/github_transport_test.go
+token shapes in those files (masked): 14 x ghp_GUARDSECRE... (35 chars), 1 x ghp_TESTTOKENt... (38 chars); all test fixtures under the ghp_ rule that predates this fix round. The new JWT, AWS, Slack, sbp_ and re_ shapes: 0 hits in the whole history.
+local-file hits: .waggle/hive/media/T-023a/probe-repo/CLAUDE.local.md (net and its adding commit 77b1fb3), an existing fixture on main; it only hits when a scanned range adds it.
