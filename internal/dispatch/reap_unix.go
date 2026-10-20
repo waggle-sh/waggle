@@ -21,7 +21,7 @@ type pkey struct {
 
 // tracker follows the worker's descendants by sampling the process table (D-187).
 // A process that left the group is still a descendant by ppid until its parent
-// exits; one that daemonizes between two samples is never seen (not_enforced).
+// exits; one whose parent exits before the next sample is never seen (not_enforced).
 type tracker struct {
 	root, self int
 	rootStart  string
