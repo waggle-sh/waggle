@@ -3562,3 +3562,61 @@
 **Keeper choice:** Fix rounds on T-023 phase D (D1 and D2) run without a Keeper card while the guards confirm and the build stays under the stop; every merge still comes to the Keeper on a card. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
 
 **Rationale:** Saves one wait per fix round, typically two or three in phase D.
+
+## D-187: D-176 mitigation: dispatch tracks the worker's descendants live and kills them on stop and exit
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** The D-176 probe failed: Claude Code 2.1.304's Bash tool starts each command as a session leader, so neither a group kill nor a session sweep reaches it, and after the worker exits its children reparent to pid 1. A survivor can move refs, write the main checkout or plant hooks after the check while dispatch.lock is released. What is built before phase F?
+
+**Options considered:**
+1. Track descendants live: poll the tree about every 250 ms, kill every tracked (pid, start time) on stop and exit, hold dispatch.lock until the sweep, record survivors, PR_SET_CHILD_SUBREAPER on linux
+2. Walk the tree only before the kill on the stop path
+3. Defer to T-024 as NotEnforced and override D-176
+
+**Hive recommendation:** Track descendants live: poll the tree about every 250 ms, kill every tracked (pid, start time) on stop and exit, hold dispatch.lock until the sweep, record survivors, PR_SET_CHILD_SUBREAPER on linux
+
+**Keeper choice:** Dispatch polls the worker's descendant tree about every 250 ms while it runs and records each (pid, start time). On stop and after the leader exits it kills every tracked process still alive whose start time matches, repeats until none remain, and only then runs the post-run check and releases dispatch.lock; any process it had to kill is recorded in result.json. On linux dispatch also sets PR_SET_CHILD_SUBREAPER. A process that daemonizes between two polls stays a documented NotEnforced gap until T-024. Built in the T-023 phase D1 fix round inside internal/dispatch/; the D-176 probe is rerun with the pinned Claude Code as proof, and phase F stays blocked until it passes. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Closes the common leak (a background tool child outliving the worker) on both operating systems without waiting for the Cell runtime, for about 60 to 90 lines.
+
+## D-188: --second checks the recorded builder and first-guard models and fails closed
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Re-resolving the second guard from policy can hand it the builder's own model when the must-fix count changes between guard runs. How is --second protected?
+
+**Options considered:**
+1. Read the builder's and first guard's result.json for the round; exit 3 if missing, if base_oid differs, or if the resolved model equals either; add must_fix to result.json
+2. A queen rule only
+
+**Hive recommendation:** Read the builder's and first guard's result.json for the round; exit 3 if missing, if base_oid differs, or if the resolved model equals either; add must_fix to result.json
+
+**Keeper choice:** A --second guard run reads the latest builder run and first guard run records of the task, and exits 3 before launch when either is missing, when their base_oid differs from the second guard's base, or when the resolved second-guard model equals the model either recorded. result.json gains must_fix, the count used. Built in the T-023 phase D1 fix round; no internal/runtime change. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Keeps the D-100 and D-116 cross-model guarantee true by construction instead of by queen discipline, for about 20 lines.
+
+## D-189: The cross-run host record ignores branch keys and is re-baselined by an acknowledge step
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Item 1's cross-run host record trips on routine edits: every git push -u adds a branch section to .git/config. The only recovery is deleting host-files.json. Change it?
+
+**Options considered:**
+1. Compare config by parsed keys ignoring branch.<name>.*; D2's dispatch clean --host-record shows the diff and re-baselines on confirm; store the verified pre-check snapshot
+2. Keep strict
+
+**Hive recommendation:** Compare config by parsed keys ignoring branch.<name>.*; D2's dispatch clean --host-record shows the diff and re-baselines on confirm; store the verified pre-check snapshot
+
+**Keeper choice:** The host record compares the common config as parsed keys and ignores branch.<name>.* entries; every other difference is still exit 3. The record stores the snapshot the checks verified (fable B1), not a fresh hash after push and removal. Phase D2's dispatch clean --host-record prints the differences and re-baselines only after the Keeper confirms. The parse and snapshot land in the D1 fix round, the acknowledge step in D2. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Keeps item 1 meaningful without training the queen to delete the record after every PR.
