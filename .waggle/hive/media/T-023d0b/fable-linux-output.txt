@@ -1,0 +1,337 @@
+# linux arm64 container (alpine edge, git 2.56.0, go1.27.2, under Colima; amd64 was not available without qemu).
+# trees: main 53941e6 plus the proving test only, fix 1599c2b. scripts: fable-probe-scripts.txt; probe test: fable-probe_test.go.txt
+##### probe1 fix
+== tree fix: aarch64 git version 2.56.0 go1.27.2
+=== RUN   TestFableProbeEnvAndTrace
+    fable_probe_test.go:143: run: exit 1 err <nil> violations [{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    fable_probe_test.go:113: [worker env GIT_*]
+        GIT_ATTR_NOSYSTEM=1
+        GIT_CONFIG_COUNT=14
+        GIT_CONFIG_GLOBAL=/dev/null
+        GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_10=core.excludesFile
+        GIT_CONFIG_KEY_11=core.attributesFile
+        GIT_CONFIG_KEY_12=maintenance.auto
+        GIT_CONFIG_KEY_13=gc.auto
+        GIT_CONFIG_KEY_1=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_2=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_3=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_4=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_5=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_6=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_7=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_8=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_9=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_NOSYSTEM=1
+        GIT_CONFIG_VALUE_0=https://
+        GIT_CONFIG_VALUE_10=/dev/null
+        GIT_CONFIG_VALUE_11=/dev/null
+        GIT_CONFIG_VALUE_12=false
+        GIT_CONFIG_VALUE_13=0
+        GIT_CONFIG_VALUE_1=ssh://
+        GIT_CONFIG_VALUE_2=git@
+        GIT_CONFIG_VALUE_3=http://
+        GIT_CONFIG_VALUE_4=git://
+        GIT_CONFIG_VALUE_5=git+ssh://
+        GIT_CONFIG_VALUE_6=ssh+git://
+        GIT_CONFIG_VALUE_7=file://
+        GIT_CONFIG_VALUE_8=/
+        GIT_CONFIG_VALUE_9=.
+        GIT_TERMINAL_PROMPT=0
+    fable_probe_test.go:113: [cfg plain (command scope only)]
+        command	command line:	false
+        command	0
+        effective=false
+    fable_probe_test.go:113: [cfg with repo-local maintenance.auto=true]
+        local	file:<tmp>
+        command	command line:	false
+        local	1
+        command	0
+        effective=false
+    fable_probe_test.go:113: [cfg with git -c maintenance.auto=true]
+        local	true
+        command	false
+        command	true
+        effective=true
+    fable_probe_test.go:113: [cfg with GIT_CONFIG_PARAMETERS]
+        local	true
+        command	false
+        command	true
+        effective=true
+    fable_probe_test.go:70: [worker w1-plain] 1 git processes; maintenance-class: 0
+    fable_probe_test.go:108: [worker w1-plain]   top-level commands: commit
+    fable_probe_test.go:70: [worker w2-local] 1 git processes; maintenance-class: 0
+    fable_probe_test.go:108: [worker w2-local]   top-level commands: commit
+    fable_probe_test.go:70: [worker w3-dashc] 2 git processes; maintenance-class: 1
+    fable_probe_test.go:72: [worker w3-dashc]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [worker w3-dashc]   CHAIN git -c maintenance.auto=true -c gc.auto=1 -c user.name=a -c user.email=a@e.co commit -q -s -m T-023: dashc  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [worker w3-dashc]   top-level commands: commit,maintenance
+    fable_probe_test.go:70: [worker w4-params] 2 git processes; maintenance-class: 1
+    fable_probe_test.go:72: [worker w4-params]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [worker w4-params]   CHAIN git -c user.name=a -c user.email=a@e.co commit -q -s -m T-023: probe  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [worker w4-params]   top-level commands: commit,maintenance
+    fable_probe_test.go:70: [worker w5-unset] 2 git processes; maintenance-class: 1
+    fable_probe_test.go:72: [worker w5-unset]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [worker w5-unset]   CHAIN git -c user.name=a -c user.email=a@e.co commit -q -s -m T-023: probe  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [worker w5-unset]   top-level commands: commit,maintenance
+    fable_probe_test.go:70: [host (RunIn + comb, remote mode)] 59 git processes; maintenance-class: 2
+    fable_probe_test.go:72: [host (RunIn + comb, remote mode)]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:72: [host (RunIn + comb, remote mode)]   MAINT -c core.hooksPath=/dev/null -c core.fsmonitor=false -c log.showSignature=false -c maintenance.auto=false -c gc.auto=0 worktree prune
+    fable_probe_test.go:84: [host (RunIn + comb, remote mode)]   CHAIN git -C <tmp> push --atomic --porcelain --force-with-lease=refs/waggle/claims/ticket-23: origin e1e9f11c00e3ec9ba532bc670e40dbdc8cf17875:refs/waggle/claims/ticket-23  =>  git-receive-pack <tmp>  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [host (RunIn + comb, remote mode)]   top-level commands: branch,cat-file,commit-tree,diff-tree,fetch,for-each-ref,git-receive-pack,git-upload-pack,hash-object,log,ls-tree,maintenance,mktree,pack-objects,push,reset,rev-list,rev-parse,status,unpack-objects,update-ref,worktree
+--- PASS: TestFableProbeEnvAndTrace (2.11s)
+=== RUN   TestFableProbeManualPrune
+=== RUN   TestFableProbeManualPrune/own-entry-pruned-as-dup
+    fable_probe_test.go:181: exit 1 err <nil> entries-after [A-dup] violations [{host_state worktrees/A-dup changed during the run} {host_state worktrees/A-dup/HEAD changed during the run} {host_state worktrees/A-dup/commondir changed during the run} {host_state worktrees/A-dup/config.worktree changed during the run} {host_state worktrees/A-dup/gitdir changed during the run} {host_state worktrees/T-023-builder changed during the run} {host_state worktrees/T-023-builder/commondir changed during the run} {host_state worktrees/T-023-builder/config.worktree changed during the run} {host_state worktrees/T-023-builder/gitdir changed during the run} {host_state .git worktree admin dir pin lost} {host_state HEAD worktree HEAD no longer names the branch} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+=== RUN   TestFableProbeManualPrune/planted-pruned
+    fable_probe_test.go:181: exit 0 err <nil> entries-after [] violations []
+=== RUN   TestFableProbeManualPrune/maintenance-run-own
+    fable_probe_test.go:181: exit 1 err <nil> entries-after [A-dup] violations [{host_state worktrees/A-dup changed during the run} {host_state worktrees/A-dup/HEAD changed during the run} {host_state worktrees/A-dup/commondir changed during the run} {host_state worktrees/A-dup/config.worktree changed during the run} {host_state worktrees/A-dup/gitdir changed during the run} {host_state worktrees/T-023-builder changed during the run} {host_state worktrees/T-023-builder/commondir changed during the run} {host_state worktrees/T-023-builder/config.worktree changed during the run} {host_state worktrees/T-023-builder/gitdir changed during the run} {host_state .git worktree admin dir pin lost} {host_state HEAD worktree HEAD no longer names the branch} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+=== RUN   TestFableProbeManualPrune/maintenance-run-planted-early
+    fable_probe_test.go:181: exit 0 err <nil> entries-after [] violations []
+--- PASS: TestFableProbeManualPrune (1.34s)
+    --- PASS: TestFableProbeManualPrune/own-entry-pruned-as-dup (0.08s)
+    --- PASS: TestFableProbeManualPrune/planted-pruned (0.09s)
+    --- PASS: TestFableProbeManualPrune/maintenance-run-own (0.08s)
+    --- PASS: TestFableProbeManualPrune/maintenance-run-planted-early (1.10s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	3.448s
+##### probe1 main
+== tree main: aarch64 git version 2.56.0 go1.27.2
+=== RUN   TestFableProbeEnvAndTrace
+    fable_probe_test.go:143: run: exit 1 err <nil> violations [{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    fable_probe_test.go:113: [worker env GIT_*]
+        GIT_ATTR_NOSYSTEM=1
+        GIT_CONFIG_COUNT=12
+        GIT_CONFIG_GLOBAL=/dev/null
+        GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_10=core.excludesFile
+        GIT_CONFIG_KEY_11=core.attributesFile
+        GIT_CONFIG_KEY_1=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_2=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_3=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_4=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_5=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_6=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_7=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_8=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_KEY_9=url.file:///dev/null/.pushInsteadOf
+        GIT_CONFIG_NOSYSTEM=1
+        GIT_CONFIG_VALUE_0=https://
+        GIT_CONFIG_VALUE_10=/dev/null
+        GIT_CONFIG_VALUE_11=/dev/null
+        GIT_CONFIG_VALUE_1=ssh://
+        GIT_CONFIG_VALUE_2=git@
+        GIT_CONFIG_VALUE_3=http://
+        GIT_CONFIG_VALUE_4=git://
+        GIT_CONFIG_VALUE_5=git+ssh://
+        GIT_CONFIG_VALUE_6=ssh+git://
+        GIT_CONFIG_VALUE_7=file://
+        GIT_CONFIG_VALUE_8=/
+        GIT_CONFIG_VALUE_9=.
+        GIT_TERMINAL_PROMPT=0
+    fable_probe_test.go:113: [cfg plain (command scope only)]
+        effective=
+    fable_probe_test.go:113: [cfg with repo-local maintenance.auto=true]
+        local	file:<tmp>
+        local	1
+        effective=true
+    fable_probe_test.go:113: [cfg with git -c maintenance.auto=true]
+        local	true
+        command	true
+        effective=true
+    fable_probe_test.go:113: [cfg with GIT_CONFIG_PARAMETERS]
+        local	true
+        command	true
+        effective=true
+    fable_probe_test.go:70: [worker w1-plain] 2 git processes; maintenance-class: 1
+    fable_probe_test.go:72: [worker w1-plain]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [worker w1-plain]   CHAIN git -c user.name=a -c user.email=a@e.co commit -q -s -m T-023: probe  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [worker w1-plain]   top-level commands: commit,maintenance
+    fable_probe_test.go:70: [worker w2-local] 2 git processes; maintenance-class: 1
+    fable_probe_test.go:72: [worker w2-local]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [worker w2-local]   CHAIN git -c user.name=a -c user.email=a@e.co commit -q -s -m T-023: probe  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [worker w2-local]   top-level commands: commit,maintenance
+    fable_probe_test.go:70: [worker w3-dashc] 2 git processes; maintenance-class: 1
+    fable_probe_test.go:72: [worker w3-dashc]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [worker w3-dashc]   CHAIN git -c maintenance.auto=true -c gc.auto=1 -c user.name=a -c user.email=a@e.co commit -q -s -m T-023: dashc  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [worker w3-dashc]   top-level commands: commit,maintenance
+    fable_probe_test.go:70: [worker w4-params] 2 git processes; maintenance-class: 1
+    fable_probe_test.go:72: [worker w4-params]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [worker w4-params]   CHAIN git -c user.name=a -c user.email=a@e.co commit -q -s -m T-023: probe  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [worker w4-params]   top-level commands: commit,maintenance
+    fable_probe_test.go:70: [worker w5-unset] 2 git processes; maintenance-class: 1
+    fable_probe_test.go:72: [worker w5-unset]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [worker w5-unset]   CHAIN git -c user.name=a -c user.email=a@e.co commit -q -s -m T-023: probe  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [worker w5-unset]   top-level commands: commit,maintenance
+    fable_probe_test.go:70: [host (RunIn + comb, remote mode)] 62 git processes; maintenance-class: 5
+    fable_probe_test.go:72: [host (RunIn + comb, remote mode)]   MAINT maintenance run --auto --no-quiet --detach
+    fable_probe_test.go:72: [host (RunIn + comb, remote mode)]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:72: [host (RunIn + comb, remote mode)]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:72: [host (RunIn + comb, remote mode)]   MAINT maintenance run --auto --quiet --detach
+    fable_probe_test.go:72: [host (RunIn + comb, remote mode)]   MAINT -c core.hooksPath=/dev/null -c core.fsmonitor=false -c log.showSignature=false worktree prune
+    fable_probe_test.go:84: [host (RunIn + comb, remote mode)]   CHAIN git -C <tmp> push --atomic --porcelain --force-with-lease=refs/waggle/claims/ticket-23: origin 8fb10d280257fe0e9cb4a42b68a5bf70dbd533bf:refs/waggle/claims/ticket-23  =>  git-receive-pack <tmp>  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [host (RunIn + comb, remote mode)]   CHAIN git -C <tmp> fetch --prune --no-tags --quiet origin +refs/waggle/claims/*:refs/waggle/claims/*  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:84: [host (RunIn + comb, remote mode)]   CHAIN git -c core.hooksPath=/dev/null -c core.fsmonitor=false -c log.showSignature=false fetch origin  =>  /usr/libexec/git-core/git maintenance run --auto --no-quiet --detach
+    fable_probe_test.go:84: [host (RunIn + comb, remote mode)]   CHAIN git -C <tmp> fetch --prune --no-tags --quiet origin +refs/waggle/claims/*:refs/waggle/claims/*  =>  /usr/libexec/git-core/git maintenance run --auto --quiet --detach
+    fable_probe_test.go:108: [host (RunIn + comb, remote mode)]   top-level commands: branch,cat-file,commit-tree,diff-tree,fetch,for-each-ref,git-receive-pack,git-upload-pack,hash-object,log,ls-tree,maintenance,mktree,pack-objects,push,reset,rev-list,rev-parse,status,unpack-objects,update-ref,worktree
+--- PASS: TestFableProbeEnvAndTrace (2.11s)
+=== RUN   TestFableProbeManualPrune
+=== RUN   TestFableProbeManualPrune/own-entry-pruned-as-dup
+    fable_probe_test.go:181: exit 1 err <nil> entries-after [A-dup] violations [{host_state worktrees/A-dup changed during the run} {host_state worktrees/A-dup/HEAD changed during the run} {host_state worktrees/A-dup/commondir changed during the run} {host_state worktrees/A-dup/config.worktree changed during the run} {host_state worktrees/A-dup/gitdir changed during the run} {host_state worktrees/T-023-builder changed during the run} {host_state worktrees/T-023-builder/commondir changed during the run} {host_state worktrees/T-023-builder/config.worktree changed during the run} {host_state worktrees/T-023-builder/gitdir changed during the run} {host_state .git worktree admin dir pin lost} {host_state HEAD worktree HEAD no longer names the branch} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+=== RUN   TestFableProbeManualPrune/planted-pruned
+    fable_probe_test.go:181: exit 0 err <nil> entries-after [] violations []
+=== RUN   TestFableProbeManualPrune/maintenance-run-own
+    fable_probe_test.go:181: exit 1 err <nil> entries-after [A-dup] violations [{host_state worktrees/A-dup changed during the run} {host_state worktrees/A-dup/HEAD changed during the run} {host_state worktrees/A-dup/commondir changed during the run} {host_state worktrees/A-dup/config.worktree changed during the run} {host_state worktrees/A-dup/gitdir changed during the run} {host_state worktrees/T-023-builder changed during the run} {host_state worktrees/T-023-builder/commondir changed during the run} {host_state worktrees/T-023-builder/config.worktree changed during the run} {host_state worktrees/T-023-builder/gitdir changed during the run} {host_state .git worktree admin dir pin lost} {host_state HEAD worktree HEAD no longer names the branch} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+=== RUN   TestFableProbeManualPrune/maintenance-run-planted-early
+    fable_probe_test.go:181: exit 0 err <nil> entries-after [] violations []
+--- PASS: TestFableProbeManualPrune (1.33s)
+    --- PASS: TestFableProbeManualPrune/own-entry-pruned-as-dup (0.07s)
+    --- PASS: TestFableProbeManualPrune/planted-pruned (0.09s)
+    --- PASS: TestFableProbeManualPrune/maintenance-run-own (0.07s)
+    --- PASS: TestFableProbeManualPrune/maintenance-run-planted-early (1.09s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	3.442s
+##### probe3
+== main 53941e6 + proving test only: -count=5 (expect every subtest to fail)
+failed subtests (10 = all): 10
+== fix 1599c2b: -race -count=20 (expect ok)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	44.579s
+== fix: whole dispatch and runtime packages -race -count=3
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	69.213s
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.329s
+FAIL
+== main with sleep 0
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      2 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.546s
+== fix with sleep 0
+      1 ok  	github.com/waggle-sh/waggle/internal/dispatch	0.456s
+== main with sleep 3
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      1         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      2 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	18.604s
+== fix with sleep 3
+      1 ok  	github.com/waggle-sh/waggle/internal/dispatch	18.478s
+== load: fix, -race -count=10 with 4 parallel package runs in the background (slow-runner stand-in)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	23.038s
+probe3 done
+##### probe4
+== fix with internal/runtime/launch.go reverted to main
+      2 --- FAIL: TestPrepareEnv (0.00s)
+      2 --- FAIL: TestRunPlantDuringAutoMaintenance (2.19s)
+      3 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	4.390s
+      1 FAIL	github.com/waggle-sh/waggle/internal/runtime	0.004s
+== fix with internal/dispatch/worktree.go reverted to main
+      2 --- FAIL: TestRunInDisablesAutoMaintenance (0.00s)
+      2 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	4.345s
+      1 ok  	github.com/waggle-sh/waggle/internal/runtime	0.004s
+== fix with internal/dispatch/run.go reverted to main
+      1 ok  	github.com/waggle-sh/waggle/internal/dispatch	4.318s
+      1 ok  	github.com/waggle-sh/waggle/internal/runtime	0.005s
+== fix with gc.auto=0 dropped from launch.go only (maintenance.auto=false kept)
+gc.auto mentions left: 0
+      1 ok  	github.com/waggle-sh/waggle/internal/dispatch	4.315s
+== fix with maintenance.auto dropped from launch.go, gc.auto=0 kept
+maintenance.auto mentions left: 0
+      1 ok  	github.com/waggle-sh/waggle/internal/dispatch	4.325s
+probe4 done
+##### all done
+##### probe6
+git version 2.56.0
+maintenance.strategy default: '' maintenance.auto default: '' gc.auto default: ''
+/s/probe6.sh: line 16: can't create <tree-g6>/none/r/.git/worktrees/planted/gitdir: nonexistent directory
+== none: entries after: w 
+"argv":["git","maintenance","run","--auto","--quiet","--detach"] "argv":["/usr/libexec/git-core/git","maintenance","run","--auto","--quiet","--detach"] "argv":["git","worktree","prune","--expire","3.months.ago"] "argv":["/usr/libexec/git-core/git","worktree","prune","--expire","3.months.ago"] 
+== both: entries after: planted w 
+
+== only-maintenance-auto: entries after: planted w 
+
+== only-gc-auto: entries after: planted w 
+
+/s/probe6.sh: line 16: can't create <tree-g6>/dash-c-override/r/.git/worktrees/planted/gitdir: nonexistent directory
+== dash-c-override: entries after: w 
+"argv":["git","maintenance","run","--auto","--quiet","--detach"] "argv":["/usr/libexec/git-core/git","maintenance","run","--auto","--quiet","--detach"] "argv":["git","worktree","prune","--expire","3.months.ago"] "argv":["/usr/libexec/git-core/git","worktree","prune","--expire","3.months.ago"] 
+== direct: git maintenance run --auto --no-detach, no keys, traced (which tasks run)
+"argv":["git","maintenance","run","--auto","--no-detach"] 
+== direct with gc.auto=0 only
+"argv":["git","-c","gc.auto=0","maintenance","run","--auto","--no-detach"] 
+== direct with maintenance.auto=false only (run itself is explicit, so it should still run)
+"argv":["git","-c","maintenance.auto=false","maintenance","run","--auto","--no-detach"] 
+== direct with maintenance.strategy=incremental, no keys
+"argv":["git","-c","maintenance.strategy=incremental","maintenance","run","--auto","--no-detach"] 
+== fetch under the comb env form (COUNT=3) and RunIn -c form, traced
+comb form fetch: "argv":["git","fetch","--prune","--no-tags","--quiet","origin"] "argv":["git-upload-pack '../o'"] "argv":["git-upload-pack","../o"] "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"] "argv":["/usr/libexec/git-core/git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"] 
+RunIn form fetch: "argv":["git","-c","core.hooksPath=/dev/null","-c","core.fsmonitor=false","-c","log.showSignature=false","-c","maintenance.auto=false","-c","gc.auto=0","fetch","origin"] "argv":["git-upload-pack '../o'"] "argv":["git-upload-pack","../o"] "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"] "argv":["/usr/libexec/git-core/git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"] 
+no keys fetch: "argv":["git","fetch","origin"] "argv":["git-upload-pack '../o'"] "argv":["git-upload-pack","../o"] "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"] "argv":["/usr/libexec/git-core/git","rev-list","--objects","--stdin","--not","--exclude-hidden=fetch","--all","--quiet","--alternate-refs"] "argv":["git","maintenance","run","--auto","--no-quiet","--detach"] "argv":["/usr/libexec/git-core/git","maintenance","run","--auto","--no-quiet","--detach"] 
+== push to a local bare under the comb env form: receive-pack side
+comb form push: "argv":["git","push","-q","origin","HEAD:refs/heads/main"] "argv":["git-receive-pack '../o'"] "argv":["git-receive-pack","../o"] "argv":["git","pack-objects","--revs","--stdout","--thin","--delta-base-offset","--quiet"] "argv":["/usr/libexec/git-core/git","pack-objects","--revs","--stdout","--thin","--delta-base-offset","--quiet"] "argv":["git","unpack-objects","--pack_header=2,3","-q"] "argv":["/usr/libexec/git-core/git","unpack-objects","--pack_header=2,3","-q"] "argv":["git","rev-list","--objects","--stdin","--not","--exclude-hidden=receive","--all","--quiet","--alternate-refs"] "argv":["/usr/libexec/git-core/git","rev-list","--objects","--stdin","--not","--exclude-hidden=receive","--all","--quiet","--alternate-refs"] "argv":["git","--git-dir=<tree-g6>/fetch/o","for-each-ref","--format=%(objectname)"] "argv":["/usr/libexec/git-core/git","--git-dir=<tree-g6>/fetch/o","for-each-ref","--format=%(objectname)"] "argv":["git","maintenance","run","--auto","--quiet","--detach"] "argv":["/usr/libexec/git-core/git","maintenance","run","--auto","--quiet","--detach"] 
+receive-pack saw GIT_CONFIG_COUNT: 
+probe6 done
+##### probe5
+== fix: internal/dispatch -race -count=3, failing tests
+      1         run_test.go:202: grandchild 102654 survived
+      1         run_test.go:202: grandchild 102710 survived
+      1         run_test.go:202: grandchild 88895 survived
+      1         run_test.go:202: grandchild 88951 survived
+      1         run_test.go:202: grandchild 95774 survived
+      1         run_test.go:202: grandchild 95830 survived
+      2     --- FAIL: TestRunLimitsKillTheGroup/max_tokens (5.06s)
+      1     --- FAIL: TestRunLimitsKillTheGroup/max_tokens (5.07s)
+      2     --- FAIL: TestRunLimitsKillTheGroup/timeout (5.49s)
+      1     --- FAIL: TestRunLimitsKillTheGroup/timeout (5.51s)
+      2 --- FAIL: TestRunLimitsKillTheGroup (10.55s)
+      1 --- FAIL: TestRunLimitsKillTheGroup (10.58s)
+      2 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	65.691s
+== main: internal/dispatch -race -count=3, failing tests
+      5             host_test.go:68: exit 0 err <nil> violations []
+      2         --- FAIL: TestRunHostState/new_admin_entry/plain (0.09s)
+      1         --- FAIL: TestRunHostState/new_admin_entry/plain (0.10s)
+      2         --- FAIL: TestRunHostState/new_admin_entry/symlinked (0.09s)
+      6         maintenance_test.go:30: exit 0 err <nil> violations [] (planted stat after run: stat <tmp> no such file or directory)
+      1         run_test.go:202: grandchild 110272 survived
+      1         run_test.go:202: grandchild 117684 survived
+      1         run_test.go:202: grandchild 117740 survived
+      1         run_test.go:202: grandchild 125074 survived
+      1         run_test.go:202: grandchild 125130 survived
+      1     --- FAIL: TestRunHostState/new_admin_entry (0.17s)
+      1     --- FAIL: TestRunHostState/new_admin_entry (0.18s)
+      1     --- FAIL: TestRunHostState/new_admin_entry (0.19s)
+      2     --- FAIL: TestRunLimitsKillTheGroup/max_tokens (5.06s)
+      1     --- FAIL: TestRunLimitsKillTheGroup/max_tokens (5.07s)
+      1     --- FAIL: TestRunLimitsKillTheGroup/timeout (5.48s)
+      1     --- FAIL: TestRunLimitsKillTheGroup/timeout (5.49s)
+      2     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (1.12s)
+      1     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (1.13s)
+      1     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (1.12s)
+      2     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (1.13s)
+      3     maintenance_test.go:50: RunIn args lack "\ngc.auto=0\n":
+      3     maintenance_test.go:50: RunIn args lack "\nmaintenance.auto=false\n":
+      1 --- FAIL: TestRunHostState (1.30s)
+      2 --- FAIL: TestRunHostState (1.32s)
+      3 --- FAIL: TestRunInDisablesAutoMaintenance (0.00s)
+      1 --- FAIL: TestRunLimitsKillTheGroup (10.54s)
+      1 --- FAIL: TestRunLimitsKillTheGroup (10.55s)
+      1 --- FAIL: TestRunLimitsKillTheGroup (5.54s)
+      1 --- FAIL: TestRunPlantDuringAutoMaintenance (2.24s)
+      1 --- FAIL: TestRunPlantDuringAutoMaintenance (2.25s)
+      1 --- FAIL: TestRunPlantDuringAutoMaintenance (2.26s)
+      2 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	60.600s
+probe5 done
+##### all2 done
+##### probe7 (second container started with docker --init, so PID 1 reaps orphans)
+pid1: docker-init aarch64 git version 2.56.0
+      1 ok  	github.com/waggle-sh/waggle/internal/dispatch	2.518s
+probe7 done

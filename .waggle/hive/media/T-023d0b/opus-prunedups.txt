@@ -1,0 +1,6 @@
+Removing worktrees/t-023: duplicate entry
+planted=a left: a 
+  run worktree status: FAILS
+Removing worktrees/zz: duplicate entry
+planted=zz left: t-023 
+  run worktree status: ok

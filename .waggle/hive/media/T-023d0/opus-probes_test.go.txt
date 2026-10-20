@@ -1,0 +1,253 @@
+package runtime
+
+// Opus guard probes for T-023 phase D0. Not part of the PR.
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+)
+
+// P1: every control character class against GitIdentity.check.
+func TestOpusP1Identity(t *testing.T) {
+	cases := map[string]GitIdentity{
+		"zero":           {},
+		"name only":      {Name: "A"},
+		"email only":     {Email: "a@example.test"},
+		"NUL":            {Name: "A\x00", Email: "a@example.test"},
+		"LF":             {Name: "A\nB", Email: "a@example.test"},
+		"CR":             {Name: "A\rB", Email: "a@example.test"},
+		"TAB":            {Name: "A\tB", Email: "a@example.test"},
+		"ESC":            {Name: "A\x1b[31mB", Email: "a@example.test"},
+		"DEL":            {Name: "A\x7fB", Email: "a@example.test"},
+		"US 0x1f email":  {Name: "A", Email: "a@example.test\x1f"},
+		"C1 U+0085 NEL":  {Name: "A\u0085B", Email: "a@example.test"},
+		"C1 U+009B CSI":  {Name: "A\u009b31mB", Email: "a@example.test"},
+		"raw byte 0x9b":  {Name: "A\x9b31mB", Email: "a@example.test"},
+		"U+2028":         {Name: "A B", Email: "a@example.test"},
+		"U+2029":         {Name: "A B", Email: "a@example.test"},
+		"angle brackets": {Name: "A <evil@example.test>", Email: "a@example.test"},
+		"space only":     {Name: " ", Email: " "},
+		"plain":          {Name: "Hive Worker", Email: "worker@example.test"},
+	}
+	names := make([]string, 0, len(cases))
+	for k := range cases {
+		names = append(names, k)
+	}
+	slices.Sort(names)
+	for _, k := range names {
+		err := cases[k].check()
+		fmt.Printf("P1 %-16s refused=%v\n", k, err != nil)
+	}
+}
+
+// P2: parent env cannot override GIT_CONFIG_GLOBAL / NOSYSTEM, and no
+// GIT_CONFIG_PARAMETERS or extra GIT_CONFIG_* reaches the worker. The env is
+// resolved through os/exec (last duplicate wins) by running env(1).
+func TestOpusP2EnvOverride(t *testing.T) {
+	for _, kv := range [][2]string{{"GIT_CONFIG_GLOBAL", "/x/.gitconfig"}, {"GIT_CONFIG_NOSYSTEM", "0"},
+		{"GIT_CONFIG_SYSTEM", "/x/sys"}, {"GIT_CONFIG_PARAMETERS", "'url.git@github.com:.pushinsteadof'='https://'"},
+		{"GIT_CONFIG_COUNT", "99"}, {"GIT_CONFIG_KEY_10", "url.x.pushInsteadOf"}, {"GIT_AUTHOR_NAME", "Keeper"},
+		{"GIT_DIR", "/x"}, {"XDG_CONFIG_HOME", "/x"}} {
+		t.Setenv(kv[0], kv[1])
+	}
+	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug"}})
+	for _, id := range []GitIdentity{{}, {Name: "W", Email: "w@example.test"}} {
+		inv, s := testLaunch(t, "T-5")
+		inv.GitIdentity = id
+		spec, err := a.Prepare(inv, s, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("/usr/bin/env")
+		cmd.Env = spec.Env
+		out, err := cmd.Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var git []string
+		for _, l := range strings.Split(string(out), "\n") {
+			if strings.HasPrefix(l, "GIT_") || strings.HasPrefix(l, "XDG_") {
+				git = append(git, l)
+			}
+		}
+		fmt.Printf("P2 identity=%v effective GIT_/XDG_ env:\n  %s\n", id != (GitIdentity{}), strings.Join(git, "\n  "))
+	}
+}
+
+// P3: Keeper global and XDG pushInsteadOf vs the tripwire, old env vs new env.
+func TestOpusP3PushInsteadOf(t *testing.T) {
+	home := t.TempDir()
+	xdg := filepath.Join(home, ".config")
+	os.MkdirAll(filepath.Join(xdg, "git"), 0o755)
+	os.WriteFile(filepath.Join(home, ".gitconfig"), []byte("[url \"git@github.com:\"]\n\tpushInsteadOf = https://github.com/\n"), 0o644)
+	os.WriteFile(filepath.Join(xdg, "git", "config"), []byte("[url \"ssh://git@github.com/\"]\n\tpushInsteadOf = https://github.com/waggle-sh/\n"), 0o644)
+	repo := t.TempDir()
+	run := func(env []string, args ...string) string {
+		cmd := exec.Command("git", args...)
+		cmd.Dir, cmd.Env = repo, env
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return "ERR " + strings.TrimSpace(string(out))
+		}
+		return strings.TrimSpace(string(out))
+	}
+	base := []string{"PATH=/usr/bin:/bin", "HOME=" + home, "XDG_CONFIG_HOME=" + xdg}
+	run(base, "init", "-q")
+	run(base, "remote", "add", "origin", "https://github.com/waggle-sh/waggle.git")
+	oldEnv := append(append([]string{}, base...), "GIT_TERMINAL_PROMPT=0")
+	oldEnv = append(oldEnv, tripwireEnv()...)
+	newEnv := append(append([]string{}, base...), envFixed...)
+	fmt.Printf("P3 old env (C0 head) push url: %s\n", run(oldEnv, "remote", "get-url", "--push", "origin"))
+	fmt.Printf("P3 new env (D0 head) push url: %s\n", run(newEnv, "remote", "get-url", "--push", "origin"))
+	fmt.Printf("P3 new env global url.* read: %q\n", run(newEnv, "config", "--global", "--get-regexp", "url"))
+	// Local repo config is not covered by GIT_CONFIG_GLOBAL; show it still beats the tripwire.
+	run(base, "config", "url.git@github.com:.pushInsteadOf", "https://github.com/")
+	fmt.Printf("P3 new env + local repo pushInsteadOf push url: %s\n", run(newEnv, "remote", "get-url", "--push", "origin"))
+	run(base, "config", "--unset", "url.git@github.com:.pushInsteadOf")
+	// GIT_CONFIG_PARAMETERS set from a worker's own shell (the git -c path) is unchanged by D0.
+	withParams := append(append([]string{}, newEnv...), "GIT_CONFIG_PARAMETERS='url.git@github.com:.pushinsteadof'='https://github.com/'")
+	fmt.Printf("P3 new env + worker-set GIT_CONFIG_PARAMETERS push url: %s\n", run(withParams, "remote", "get-url", "--push", "origin"))
+	// A worker-set GIT_CONFIG_GLOBAL in its own shell restores the global (unchanged class: worker-controlled env).
+	withGlobal := append(append([]string{}, newEnv...), "GIT_CONFIG_GLOBAL="+filepath.Join(home, ".gitconfig"))
+	fmt.Printf("P3 new env + worker-set GIT_CONFIG_GLOBAL push url: %s\n", run(withGlobal, "remote", "get-url", "--push", "origin"))
+}
+
+// P4: help token boundary on the pinned help and on mutated copies.
+func TestOpusP4Help(t *testing.T) {
+	pinned, err := os.ReadFile("../../.waggle/hive/media/T-023a/claude-help.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	verify := func(name string, help []byte) {
+		p := filepath.Join(dir, strings.NewReplacer(" ", "_", ">", "", "/", "").Replace(name)+".txt")
+		os.WriteFile(p, help, 0o644)
+		fakeClaude(t, "cat '"+p+"'\n")
+		a := NewClaudeAdapter(AdapterConfig{DefaultArgs: []string{"--debug", "--max-budget-usd=2"}})
+		err := a.Verify(context.Background())
+		msg := ""
+		if err != nil {
+			msg = err.Error()[strings.Index(err.Error(), "lacks"):]
+		}
+		fmt.Printf("P4 %-34s verify ok=%v %s\n", name, err == nil, msg)
+	}
+	verify("pinned", pinned)
+	strip := func(old, new string) []byte {
+		if !strings.Contains(string(pinned), old) {
+			t.Fatalf("fixture lacks %q", old)
+		}
+		return []byte(strings.ReplaceAll(string(pinned), old, new))
+	}
+	verify("debug->debugx", strip("-d, --debug [filter]", "-d, --debugx [filter]"))
+	verify("debug removed, debug-file kept", strip("-d, --debug [filter]", "-d"))
+	verify("debug-> --debug=<f> only", strip("-d, --debug [filter]", "-d, --debug=<f>"))
+	verify("debug-> --debug. (dot)", strip("-d, --debug [filter]", "-d, --debug."))
+	verify("debug-> --debug+e-acute", strip("-d, --debug [filter]", "-d, --debugé"))
+	verify("debug-> --no--debug (prefix)", strip("-d, --debug [filter]", "-d, --no--debug"))
+	verify("max-budget-usd -> usdx", strip("--max-budget-usd <amount>", "--max-budget-usdx <amount>"))
+	verify("restricted -> restricted-mode", strip("  --restricted ", "  --restricted-mode "))
+	verify("dontAsk -> dontAskMe", strip("\"dontAsk\"", "\"dontAskMe\""))
+	for _, c := range []struct{ h, tok string }{{"--debug-file", "--debug"}, {"--debug_x", "--debug"}, {"--debug9", "--debug"},
+		{"--debugx", "--debug"}, {"--debug=", "--debug"}, {"--debug,", "--debug"}, {"--debug[", "--debug"}, {"--debug<", "--debug"},
+		{"--debug", "--debug"}, {"--debug)", "--debug"}, {"--debug\"", "--debug"}, {"--debug.", "--debug"}, {"--debug/", "--debug"},
+		{"--debugé", "--debug"}, {"--debug-file --debug", "--debug"}, {"x--debug", "--debug"}} {
+		fmt.Printf("P4 helpHas(%q, %q) = %v\n", c.h, c.tok, helpHas([]byte(c.h), c.tok))
+	}
+}
+
+// P5: guard settings in every spelling, and the builder unchanged.
+func TestOpusP5GuardSettings(t *testing.T) {
+	for _, cmds := range [][]string{{"go test"}, {"git add"}, {"git commit"}, {"git commit -s"}, {"git add -A"}, {"git -C . commit"}, {"git  commit"}, {"env git commit"}} {
+		g, err := workerSettings("guard", cmds)
+		bad := strings.Contains(string(g), "git add") || strings.Contains(string(g), "commit")
+		fmt.Printf("P5 guard commands=%q err=%v holds-add-or-commit=%v edit=%v write=%v\n", cmds, err != nil, bad,
+			strings.Contains(string(g), "\"Edit(./**)\""), strings.Contains(string(g), "\"Write(./**)\""))
+	}
+	g, _ := workerSettings("guard", []string{"go build", "go test"})
+	fmt.Printf("P5 guard settings: %s\n", g)
+	b, _ := workerSettings("builder", []string{"go build", "go test"})
+	fmt.Printf("P5 builder settings: %s\n", b)
+	for _, role := range []string{"Guard", "forager", "scout"} {
+		s, _ := workerSettings(role, nil)
+		fmt.Printf("P5 role %q keeps git commit: %v\n", role, strings.Contains(string(s), "Bash(git commit)"))
+	}
+}
+
+// P6: second guard matrix.
+func TestOpusP6SecondGuard(t *testing.T) {
+	type cfg struct {
+		name               string
+		prim, alt          map[Level]string
+		builder, guard     Level
+		mustFix1, mustFix2 int
+	}
+	F, S, X := LevelFast, LevelStandard, LevelFrontier
+	std := map[Level]string{F: "haiku", S: "sonnet", X: "opus"}
+	cases := []cfg{
+		{"default, no alternates", std, nil, S, S, 0, 0},
+		{"empty alternates map", std, map[Level]string{}, S, S, 0, 0},
+		{"alt frontier", std, map[Level]string{X: "o2"}, S, S, 0, 0},
+		{"alt standard", std, map[Level]string{S: "s2"}, S, S, 0, 0},
+		{"alt standard = builder model", std, map[Level]string{S: "haiku"}, F, F, 0, 0},
+		{"alt standard dup of frontier primary", std, map[Level]string{S: "opus"}, S, S, 0, 0},
+		{"alts dup across levels", std, map[Level]string{F: "opus", S: "opus", X: "sonnet"}, F, F, 0, 0},
+		{"builder frontier, no alt", std, nil, X, S, 0, 0},
+		{"builder frontier, alt frontier", std, map[Level]string{X: "o2"}, X, S, 0, 0},
+		{"step-up between guards, plain", std, map[Level]string{X: "o2"}, F, S, 0, 2},
+		{"step-up between guards, dup primaries", map[Level]string{F: "haiku", S: "sonnet", X: "haiku"}, map[Level]string{X: "opus"}, F, X, 0, 2},
+	}
+	for _, c := range cases {
+		p := Policy{Models: Models{Adapter: "claude-code", Primary: c.prim, Alternate: c.alt},
+			Minimums: map[string]Level{"builder": c.builder, "guard": c.guard}}
+		verr := p.Validate()
+		b1, _ := p.Resolve("builder", &TaskContext{TaskID: "T-1", GuardMustFix: c.mustFix1}, nil)
+		g1, e1 := p.Resolve("guard", &TaskContext{TaskID: "T-1", GuardMustFix: c.mustFix1}, nil)
+		g2, e2 := p.Resolve("guard", &TaskContext{TaskID: "T-1", GuardMustFix: c.mustFix2, SecondGuard: true}, nil)
+		shared := e2 == nil && (g2.Model == b1.Model || g2.Model == g1.Model)
+		fmt.Printf("P6 %-38s validate=%v builder=%s first=%s err1=%v second=%s err2=%v SHARED=%v\n", c.name, verr, b1.Model, g1.Model, e1, g2.Model, e2, shared)
+	}
+}
+
+// P7: Config() returns no alias after Verify, before Verify, or via repeated calls.
+func TestOpusP7ConfigAlias(t *testing.T) {
+	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug"}})
+	c1 := a.Config()
+	c1.DefaultArgs[0] = "--max-budget-usd=9"
+	c1.DefaultArgs = append(c1.DefaultArgs, "--x")
+	c2 := a.Config()
+	fmt.Printf("P7 after edit, Config().DefaultArgs=%q argv tail=%q\n", c2.DefaultArgs, mustPrepare(t, a, "T-5", nil).Argv[14:])
+	caller := []string{"--debug"}
+	b := verifiedAdapter(t, AdapterConfig{DefaultArgs: caller})
+	caller[0] = "--max-budget-usd=9"
+	fmt.Printf("P7 caller slice edited after Verify, argv tail=%q\n", mustPrepare(t, b, "T-5", nil).Argv[14:])
+}
+
+// P8: a zero identity at D0 head with only a local user.email; and a C1 name in a commit header.
+func TestOpusP8ZeroIdentityCommit(t *testing.T) {
+	home, repo := t.TempDir(), t.TempDir()
+	os.WriteFile(filepath.Join(home, ".gitconfig"), []byte("[user]\n\tname = Keeper Global\n\temail = keeper@example.test\n"), 0o644)
+	run := func(env []string, args ...string) string {
+		cmd := exec.Command("git", args...)
+		cmd.Dir, cmd.Env = repo, env
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return "ERR " + strings.TrimSpace(string(out))
+		}
+		return strings.TrimSpace(string(out))
+	}
+	env := append([]string{"PATH=/usr/bin:/bin", "HOME=" + home}, envFixed...)
+	run(env, "init", "-q")
+	run(env, "config", "user.email", "local@example.test")
+	r := run(env, "commit", "-q", "--allow-empty", "-m", "x")
+	an := run(env, "log", "-1", "--format=%an|%ae")
+	fmt.Printf("P8 zero identity commit err=%v author-is-keeper-global=%v name-empty=%v email=%s\n", strings.HasPrefix(r, "ERR"), strings.HasPrefix(an, "Keeper Global"), strings.HasPrefix(an, "|"), an[strings.Index(an, "|")+1:])
+	c1 := append(append([]string{}, env...), "GIT_AUTHOR_NAME=A\u009b31mB", "GIT_AUTHOR_EMAIL=w@example.test", "GIT_COMMITTER_NAME=W", "GIT_COMMITTER_EMAIL=w@example.test")
+	run(c1, "commit", "-q", "--allow-empty", "-m", "y")
+	fmt.Printf("P8 C1 name in commit header: %q\n", run(env, "log", "-1", "--format=%an"))
+}

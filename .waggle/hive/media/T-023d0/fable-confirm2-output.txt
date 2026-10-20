@@ -1,0 +1,95 @@
+=== RUN   TestFableConfirm2D180
+    fable_confirm2_test.go:32: A: primary fast=haiku standard=sonnet frontier=opus, no alternates, builder and guard standard
+    fable_confirm2_test.go:24: A builder                                                        model="sonnet" level=standard steppedUp=false
+    fable_confirm2_test.go:24: A first guard                                                    model="opus" level=standard steppedUp=false
+    fable_confirm2_test.go:21: A second guard (bound at standard: refuses)                      err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["sonnet" "opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:24: A builder stepped up                                             model="opus" level=frontier steppedUp=true
+    fable_confirm2_test.go:21: A first guard, builder stepped up                                err=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+    fable_confirm2_test.go:21: A second guard, builder stepped up                               err=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+    fable_confirm2_test.go:21: A2 second guard, empty (non-nil) alternates                      err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["sonnet" "opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:46: B: fast-level builder and guard, no alternates
+    fable_confirm2_test.go:24: B first guard                                                    model="sonnet" level=fast steppedUp=false
+    fable_confirm2_test.go:24: B second guard (no walk needed, frontier free)                   model="opus" level=fast steppedUp=false
+    fable_confirm2_test.go:50: B2: fast guard, primaries a/b/b
+    fable_confirm2_test.go:24: B2 first guard                                                   model="b" level=fast steppedUp=false
+    fable_confirm2_test.go:21: B2 second guard (nothing below fast: error at fast)              err=no model differs from the builder's and the first guard's: role guard task "T-1" level fast shares ["a" "b"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.fast)
+    fable_confirm2_test.go:56: B3: fast guard, primaries haiku/opus/opus, builder stepped up to standard
+    fable_confirm2_test.go:24: B3 builder stepped up                                            model="opus" level=standard steppedUp=true
+    fable_confirm2_test.go:21: B3 first guard                                                   err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:21: B3 second guard (walks to fast; guard min fast allows)           err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:63: C: primaries duplicated standard=frontier=sonnet, no alternates, guard standard
+    fable_confirm2_test.go:21: C first guard (fails itself)                                     err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["sonnet"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:21: C second guard (first guard failure propagates, no walk)         err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["sonnet"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:24: C2 first guard with alt frontier opus                            model="opus" level=standard steppedUp=false
+    fable_confirm2_test.go:21: C2 second guard (bound at standard: refuses)                     err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["sonnet" "opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:72: D: alt frontier equals standard primary (sonnet); builder stepped up to frontier
+    fable_confirm2_test.go:24: D builder                                                        model="opus" level=frontier steppedUp=true
+    fable_confirm2_test.go:24: D first guard                                                    model="sonnet" level=frontier steppedUp=false
+    fable_confirm2_test.go:21: D second guard (standard sonnet taken, bound: refuses)           err=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["opus" "sonnet"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+    fable_confirm2_test.go:79: E: alt frontier duplicates fast primary (haiku); builder stepped up
+    fable_confirm2_test.go:24: E first guard                                                    model="haiku" level=frontier steppedUp=false
+    fable_confirm2_test.go:24: E second guard (standard sonnet unused)                          model="sonnet" level=standard steppedUp=false
+    fable_confirm2_test.go:85: F: alternates at every level; builder stepped up
+    fable_confirm2_test.go:24: F first guard                                                    model="alt-frontier" level=frontier steppedUp=false
+    fable_confirm2_test.go:24: F second guard (primary before alternate at standard)            model="sonnet" level=standard steppedUp=false
+    fable_confirm2_test.go:90: F2: standard primary equals frontier primary (opus), alternates everywhere; builder stepped up
+    fable_confirm2_test.go:24: F2 builder                                                       model="opus" level=frontier steppedUp=true
+    fable_confirm2_test.go:24: F2 first guard                                                   model="alt-frontier" level=frontier steppedUp=false
+    fable_confirm2_test.go:24: F2 second guard (standard primary taken, takes alt-standard)     model="alt-standard" level=standard steppedUp=false
+    fable_confirm2_test.go:95: F3: alt standard equals alt frontier, standard primary = frontier primary; builder stepped up
+    fable_confirm2_test.go:24: F3 first guard                                                   model="alt-frontier" level=frontier steppedUp=false
+    fable_confirm2_test.go:21: F3 second guard (standard both taken, fast below bound: refuses) err=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["opus" "alt-frontier"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+    fable_confirm2_test.go:104: G: recorded guard override to fast on a Tier 1 task, no alternates
+    fable_confirm2_test.go:24: G first guard                                                    model="haiku" level=fast steppedUp=false
+    fable_confirm2_test.go:24: G second guard (frontier opus free, no walk)                     model="opus" level=fast steppedUp=false
+    fable_confirm2_test.go:21: G2 second guard, frontier=standard (nothing below fast)          err=no model differs from the builder's and the first guard's: role guard task "T-1" level fast shares ["sonnet" "haiku"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.fast)
+    fable_confirm2_test.go:112: G3: override to fast on Tier 1, frontier primary=haiku (same as fast), alt frontier x
+    fable_confirm2_test.go:24: G3 first guard                                                   model="haiku" level=fast steppedUp=false
+    fable_confirm2_test.go:24: G3 second guard                                                  model="x" level=fast steppedUp=false
+    fable_confirm2_test.go:119: H: recorded guard override UP to frontier on a standard builder, no alternates
+    fable_confirm2_test.go:24: H first guard                                                    model="opus" level=frontier steppedUp=false
+    fable_confirm2_test.go:21: H second guard (walk bound at standard; sonnet taken: refuses)   err=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["sonnet" "opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+    fable_confirm2_test.go:24: H2 second guard with alt standard (walks one level to alt-standard) model="alt-standard" level=standard steppedUp=false
+    fable_confirm2_test.go:126: H3: override UP to frontier, builder min fast, guard min standard, no alternates
+    fable_confirm2_test.go:24: H3 builder                                                       model="haiku" level=fast steppedUp=false
+    fable_confirm2_test.go:24: H3 first guard                                                   model="opus" level=frontier steppedUp=false
+    fable_confirm2_test.go:24: H3 second guard (walks to standard sonnet, stops above fast)     model="sonnet" level=standard steppedUp=false
+    fable_confirm2_test.go:133: I: one model at every level
+    fable_confirm2_test.go:21: I first guard                                                    err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["m"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:21: I second guard                                                   err=no model differs from the builder's and the first guard's: role guard task "T-1" level standard shares ["m"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:138: J: SecondGuard on non-guard roles
+    fable_confirm2_test.go:24: J builder with SecondGuard                                       model="sonnet" level=standard steppedUp=false
+    fable_confirm2_test.go:24: J scout with SecondGuard                                         model="opus" level=frontier steppedUp=false
+    fable_confirm2_test.go:24: J forager with SecondGuard                                       model="haiku" level=fast steppedUp=false
+    fable_confirm2_test.go:24: J queen with SecondGuard                                         model="opus" level=frontier steppedUp=false
+    fable_confirm2_test.go:21: J waggled with SecondGuard                                       err=role has no model: role waggled task "T-1"
+    fable_confirm2_test.go:21: J Guard with SecondGuard                                         err=unknown role: role Guard task "T-1"
+    fable_confirm2_test.go:21: J second-guard with SecondGuard                                  err=unknown role: role second-guard task "T-1"
+    fable_confirm2_test.go:24: J builder stepped up with SecondGuard                            model="opus" level=frontier steppedUp=true
+    fable_confirm2_test.go:24: J nil task guard                                                 model="opus" level=standard steppedUp=false
+    fable_confirm2_test.go:145: K: the bound's source: guard minimum missing, zero, invalid, frontier
+    fable_confirm2_test.go:21: K1 second guard, guard minimum absent (Minimums[guard]=0)        err=unknown role: role guard task "T-1"
+    fable_confirm2_test.go:21: K1 first guard, guard minimum absent                             err=unknown role: role guard task "T-1"
+    fable_confirm2_test.go:24: K1 builder, guard minimum absent                                 model="sonnet" level=standard steppedUp=false
+    fable_confirm2_test.go:24: K2 second guard, guard minimum explicitly 0                      model="haiku" level=fast steppedUp=false
+    fable_confirm2_test.go:154: K2 Validate: invalid model level: role guard minimum invalid(0)
+    fable_confirm2_test.go:21: K3 second guard, guard minimum 7 (invalid)                       err=no model differs from the builder's and the first guard's: role guard task "T-1" level invalid(7) shares ["sonnet"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.invalid(7))
+    fable_confirm2_test.go:158: K3 Validate: invalid model level: role guard minimum invalid(7)
+    fable_confirm2_test.go:162: K4: guard minimum frontier, builder standard, alt standard set
+    fable_confirm2_test.go:24: K4 first guard                                                   model="opus" level=frontier steppedUp=false
+    fable_confirm2_test.go:21: K4 second guard (frontier taken, walk bound at frontier: refuses) err=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["sonnet" "opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+    fable_confirm2_test.go:24: K4b second guard with alt frontier (no walk needed)              model="alt-frontier" level=frontier steppedUp=false
+    fable_confirm2_test.go:170: K5: guard minimum fast, builder standard, alt frontier; builder stepped up
+    fable_confirm2_test.go:24: K5 first guard, builder stepped up                               model="alt-frontier" level=frontier steppedUp=false
+    fable_confirm2_test.go:24: K5 second guard (standard sonnet free)                           model="sonnet" level=standard steppedUp=false
+    fable_confirm2_test.go:24: K5b second guard, standard=frontier=opus (walks to haiku, min fast) model="haiku" level=fast steppedUp=false
+    fable_confirm2_test.go:21: K5c second guard, fast primary empty, min fast (walk exhausts)   err=no model differs from the builder's and the first guard's: role guard task "T-1" level frontier shares ["opus" "alt-frontier"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.frontier)
+    fable_confirm2_test.go:181: L: hive-shaped config from the real roster and config (D-180 motivating case)
+    fable_confirm2_test.go:24: L builder unstepped Tier 3                                       model="sonnet" level=standard steppedUp=false
+    fable_confirm2_test.go:24: L first guard unstepped Tier 3                                   model="opus" level=standard steppedUp=false
+    fable_confirm2_test.go:21: L second guard unstepped Tier 3 (refuses with hint)              err=no model differs from the builder's and the first guard's: role guard task "T-023" level standard shares ["sonnet" "opus"] with the builder or first guard (map a model not already used, for example runtimes.adapters.claude-code.alternates.standard)
+    fable_confirm2_test.go:24: L2 first guard stepped Tier 3, alt frontier fable                model="fable" level=frontier steppedUp=false
+    fable_confirm2_test.go:24: L2 second guard stepped Tier 3 (sonnet at standard)              model="sonnet" level=standard steppedUp=false
+--- PASS: TestFableConfirm2D180 (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/runtime	0.159s

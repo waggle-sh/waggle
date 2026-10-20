@@ -1,0 +1,46 @@
+MUTANT A-worker-keys: count=5
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.05s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.07s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.08s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.09s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.10s)
+   2     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.08s)
+   2     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.09s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.11s)
+   1 --- FAIL: TestRunPlantDuringAutoMaintenance (4.16s)
+   3 --- FAIL: TestRunPlantDuringAutoMaintenance (4.17s)
+   1 --- FAIL: TestRunPlantDuringAutoMaintenance (4.18s)
+   2 FAIL
+   1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	21.080s
+MUTANT A2-worker-no-maintenance-auto: count=5
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.06s)
+   3     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.08s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/plain (2.10s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.06s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.07s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.08s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.09s)
+   1     --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (2.12s)
+   1 --- FAIL: TestRunPlantDuringAutoMaintenance (4.12s)
+   1 --- FAIL: TestRunPlantDuringAutoMaintenance (4.15s)
+   1 --- FAIL: TestRunPlantDuringAutoMaintenance (4.17s)
+   1 --- FAIL: TestRunPlantDuringAutoMaintenance (4.18s)
+   1 --- FAIL: TestRunPlantDuringAutoMaintenance (4.20s)
+   2 FAIL
+   1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	20.988s
+MUTANT A3-worker-no-gc-auto: count=5
+   1 ok  	github.com/waggle-sh/waggle/internal/dispatch	19.333s
+MUTANT A4-worker-keys-unit: count=1
+   1 --- FAIL: TestPrepareEnv (0.04s)
+   2 FAIL
+   1 FAIL	github.com/waggle-sh/waggle/internal/runtime	0.204s
+MUTANT B-host-runin: count=5
+   1 ok  	github.com/waggle-sh/waggle/internal/dispatch	19.871s
+MUTANT B2-host-runin-unit: count=1
+   1 --- FAIL: TestRunInDisablesAutoMaintenance (0.12s)
+   2 FAIL
+   1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.203s
+MUTANT C-comb-extraenv: count=5
+   1 ok  	github.com/waggle-sh/waggle/internal/dispatch	19.763s
+MUTANT AB-worker-and-host: count=1
+   1 ok  	github.com/waggle-sh/waggle/internal/dispatch	0.200s

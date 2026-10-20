@@ -1,0 +1,111 @@
+# scan-hive.sh on hive-process-1 at 462f589 (base origin/main 2ecd449), macOS
+scan-hive: base origin/main (merge-base 2ecd449), head 462f589, 9 commit(s) scanned
+warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+changed paths (103):
+  HOLD (outside .waggle/hive/) .claude/hooks/handoff-check.sh
+  HOLD (outside .waggle/hive/) .claude/hooks/session-start.sh
+  HOLD (outside .waggle/hive/) .gitignore
+  HOLD (outside .waggle/hive/) .waggle/control/WAGGLE.md
+  HOLD (outside .waggle/hive/) .waggle/control/roles/queen.md
+  HOLD (outside .waggle/hive/) .waggle/control/roles/scout.md
+  HOLD (outside .waggle/hive/) .waggle/control/scripts/scan-hive.sh
+  .waggle/hive/DECISIONS.md
+  .waggle/hive/handoff/queen.md
+  .waggle/hive/media/T-023/amd64-diag-run2-segfault.txt
+  .waggle/hive/media/T-023/ci-run39308502545-attempt2-diag-failure.txt
+  .waggle/hive/media/T-023/ci-run39309506539-attempt3-host-test-failure.txt
+  .waggle/hive/media/T-023/diag-test-diff.txt
+  .waggle/hive/media/T-023/fullrepo-race-linux-count3.txt
+  .waggle/hive/media/T-023/hoststate-linux-count50.txt
+  .waggle/hive/media/T-023/hoststate-mac-count50.txt
+  .waggle/hive/media/T-023/round3-fix-and-proving-test.diff
+  .waggle/hive/media/T-023/round3-git-maintenance-prune-repro.txt
+  .waggle/hive/media/T-023/round3-linux-container.txt
+  .waggle/hive/media/T-023/round3-proving-test-prefix-macos.txt
+  .waggle/hive/media/T-023/versions.sh
+  .waggle/hive/media/T-023d0/fable-confirm-checks.txt
+  .waggle/hive/media/T-023d0/fable-confirm-fix-removal.txt
+  .waggle/hive/media/T-023d0/fable-confirm-output.txt
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt
+  .waggle/hive/media/T-023d0/fable-confirm2-checks.txt
+  .waggle/hive/media/T-023d0/fable-confirm2-fix-removal.txt
+  .waggle/hive/media/T-023d0/fable-confirm2-output.txt
+  .waggle/hive/media/T-023d0/fable-confirm2-probe_test.go.txt
+  .waggle/hive/media/T-023d0/fable-fix-removal.txt
+  .waggle/hive/media/T-023d0/fable-probe-output.txt
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt
+  .waggle/hive/media/T-023d0/opus-confirm-mutants.sh
+  .waggle/hive/media/T-023d0/opus-confirm-mutants.txt
+  .waggle/hive/media/T-023d0/opus-confirm-probes.txt
+  .waggle/hive/media/T-023d0/opus-confirm-probes_test.go.txt
+  .waggle/hive/media/T-023d0/opus-confirm2-mutants.sh
+  .waggle/hive/media/T-023d0/opus-confirm2-mutants.txt
+  .waggle/hive/media/T-023d0/opus-confirm2-probes.txt
+  .waggle/hive/media/T-023d0/opus-confirm2-probes_test.go.txt
+  .waggle/hive/media/T-023d0/opus-mutants.sh
+  .waggle/hive/media/T-023d0/opus-mutants.txt
+  .waggle/hive/media/T-023d0/opus-probes.txt
+  .waggle/hive/media/T-023d0/opus-probes_test.go.txt
+  .waggle/hive/media/T-023d0b/fable-darwin-output.txt
+  .waggle/hive/media/T-023d0b/fable-linux-output.txt
+  .waggle/hive/media/T-023d0b/fable-probe-scripts.txt
+  .waggle/hive/media/T-023d0b/fable-probe_test.go.txt
+  .waggle/hive/media/T-023d0b/opus-comb-fetch.sh
+  .waggle/hive/media/T-023d0b/opus-env_test.go.txt
+  .waggle/hive/media/T-023d0b/opus-mutants.sh
+  .waggle/hive/media/T-023d0b/opus-mutants.txt
+  .waggle/hive/media/T-023d0b/opus-mutants2.sh
+  .waggle/hive/media/T-023d0b/opus-mutants2.txt
+  .waggle/hive/media/T-023d0b/opus-prunedups-inrun.txt
+  .waggle/hive/media/T-023d0b/opus-prunedups-inrun_test.go.txt
+  .waggle/hive/media/T-023d0b/opus-prunedups.sh
+  .waggle/hive/media/T-023d0b/opus-prunedups.txt
+  .waggle/hive/media/T-023d0b/opus-trace.sh
+  .waggle/hive/media/T-023d0b/opus-trace.txt
+  .waggle/hive/media/T-023d0b/opus-tripwire.sh
+  .waggle/hive/media/T-023d0b/opus-tripwire.txt
+  .waggle/hive/media/hive-process-1/confirm-branch-scan.txt
+  .waggle/hive/media/hive-process-1/confirm-history-scan.txt
+  .waggle/hive/media/hive-process-1/confirm-hooks-output-macos.txt
+  .waggle/hive/media/hive-process-1/confirm-linux-output.txt
+  .waggle/hive/media/hive-process-1/confirm-linux.sh
+  .waggle/hive/media/hive-process-1/confirm-remerge-output-macos.txt
+  .waggle/hive/media/hive-process-1/confirm-scan-output-macos.txt
+  .waggle/hive/media/hive-process-1/confirm-scan-probe.sh
+  .waggle/hive/media/hive-process-1/fix-branch-scan.txt
+  .waggle/hive/media/hive-process-1/fix-hooks-output-macos.txt
+  .waggle/hive/media/hive-process-1/fix-linux-output.txt
+  .waggle/hive/media/hive-process-1/fix-linux.sh
+  .waggle/hive/media/hive-process-1/fix-longline-bench.txt
+  .waggle/hive/media/hive-process-1/fix-name-output.txt
+  .waggle/hive/media/hive-process-1/fix-new-output-macos.txt
+  .waggle/hive/media/hive-process-1/fix-new-probe.sh
+  .waggle/hive/media/hive-process-1/fix-percommit-output.txt
+  .waggle/hive/media/hive-process-1/fix-plant-output-macos.txt
+  .waggle/hive/media/hive-process-1/fix2-branch-scan.txt
+  .waggle/hive/media/hive-process-1/fix2-merge-and-longline.txt
+  .waggle/hive/media/hive-process-1/fix2-probe-output-macos.txt
+  .waggle/hive/media/hive-process-1/guard-hooks-output-macos.txt
+  .waggle/hive/media/hive-process-1/guard-hooks-probe.sh
+  .waggle/hive/media/hive-process-1/guard-linux-output.txt
+  .waggle/hive/media/hive-process-1/guard-linux.sh
+  .waggle/hive/media/hive-process-1/guard-longline-bench.sh
+  .waggle/hive/media/hive-process-1/guard-longline-bench.txt
+  .waggle/hive/media/hive-process-1/guard-name-output.txt
+  .waggle/hive/media/hive-process-1/guard-name-probe.sh
+  .waggle/hive/media/hive-process-1/guard-percommit-output.txt
+  .waggle/hive/media/hive-process-1/guard-percommit.sh
+  .waggle/hive/media/hive-process-1/guard-plant-output-macos.txt
+  .waggle/hive/media/hive-process-1/guard-plant-probe.sh
+  .waggle/hive/media/hive-process-1/scan-branch.txt
+  .waggle/hive/media/hive-process-1/scan-planted.txt
+  .waggle/hive/media/hive-process-1/scan-records.txt
+  .waggle/hive/reviews/T-023d0-fable.md
+  .waggle/hive/reviews/T-023d0-opus.md
+  .waggle/hive/reviews/T-023d0b-fable.md
+  .waggle/hive/reviews/T-023d0b-opus.md
+  .waggle/hive/reviews/hive-process-1.md
+decisions gate (exit 0):
+  decisions: ok, appended D-178, D-179, D-180, D-181, D-182, D-183, D-184, D-185, D-186
+hits (0):
+result: clean, but 7 change(s) outside the records set: guard and card

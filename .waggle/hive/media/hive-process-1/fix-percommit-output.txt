@@ -1,0 +1,23 @@
+# guard-percommit.sh on macOS: each commit against its parent. Exit 2 for commits touching control or hook files is expected.
+branch commits 2ecd449..89778dd, each scanned against its parent:
+== 6cb3a3c: exit 2
+   hits (0):
+   result: clean, but 7 change(s) outside the records set: guard and card
+== 167b242: exit 2
+   hits (0):
+   result: clean, but 2 change(s) outside the records set: guard and card
+== 9c77cc2: exit 0
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== deb4537: exit 0
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== 5e1c79d: exit 0
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== 519179d: exit 0
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== 89778dd: exit 2
+   hits (0):
+   result: clean, but 4 change(s) outside the records set: guard and card

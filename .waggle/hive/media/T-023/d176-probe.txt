@@ -1,0 +1,37 @@
+D-176 probe (T-023 phase D1): do Bash tool children of the pinned Claude Code stay in the worker's process group?
+
+Result: FAIL. The Bash tool runs each command in a process group of its own (pgid = the tool shell's pid, not the worker's).
+A group SIGKILL of the worker (the hard stop after killGrace) leaves the tool child running. This blocks phase F (D-176).
+
+Setup: macOS (darwin), Claude Code 2.1.304, model haiku, argv shaped like Prepare's: --print --output-format=stream-json
+--verbose --setting-sources= --settings=<allow Bash(perl *)> --strict-mcp-config --restricted --no-session-persistence
+--disable-slash-commands --tools=Bash,Edit,Glob,Grep,Read,Write --permission-mode=dontAsk --max-turns=4.
+The worker was started with setpgrp(0,0) before exec, so it leads its own group exactly like the Cell's Setpgid. The prompt
+asked for one Bash call: perl -e 'sleep 299' (a bare `sleep 299` is refused by the tool harness). Columns: pid ppid pgid sess comm.
+
+--- Run 1: SIGTERM to the group (what stop() sends first)
+claude version: 2.1.304 (Claude Code)
+17247 17245 17247 0 claude
+17390 17247 17390 0 zsh
+17391 17390 17390 0 perl
+leader pgid=17247; SAME_GROUP (every tool child in the leader's group): NO
+kill -TERM -17247
+AFTER_KILL: pid 17390 gone (kill -0 fails, ESRCH)
+AFTER_KILL: pid 17391 gone (kill -0 fails, ESRCH)
+AFTER_KILL: leader gone
+(The tool children died only because Claude Code cleans up its own children on SIGTERM; the group signal did not reach them.)
+
+--- Run 2: SIGKILL to the group (what stop() sends after killGrace, and what the process-exit path sends)
+claude version: 2.1.304 (Claude Code)
+18164 18162 18164 0 claude
+18331 18164 18331 0 zsh
+18332 18331 18331 0 perl
+leader pgid=18164; SAME_GROUP (every tool child in the leader's group): NO
+kill -KILL -18164
+AFTER_KILL: pid 18331 still alive
+AFTER_KILL: pid 18332 still alive
+AFTER_KILL: leader gone
+(Both survivors were killed by hand afterwards.)
+
+Consequence: a worker that is hard-killed, or whose Claude Code is already gone when dispatch signals the group, leaves its
+Bash tool children running outside the group. Dispatch's "process group is gone" guarantee does not cover them.

@@ -1,0 +1,150 @@
+=== RUN   TestOpusP1Identity
+P1 C1 U+0085 NEL    refused=false
+P1 C1 U+009B CSI    refused=false
+P1 CR               refused=true
+P1 DEL              refused=true
+P1 ESC              refused=true
+P1 LF               refused=true
+P1 NUL              refused=true
+P1 TAB              refused=true
+P1 U+2028           refused=false
+P1 U+2029           refused=false
+P1 US 0x1f email    refused=true
+P1 angle brackets   refused=false
+P1 email only       refused=true
+P1 name only        refused=true
+P1 plain            refused=false
+P1 raw byte 0x9b    refused=false
+P1 space only       refused=false
+P1 zero             refused=false
+--- PASS: TestOpusP1Identity (0.00s)
+=== RUN   TestOpusP2EnvOverride
+P2 identity=false effective GIT_/XDG_ env:
+  GIT_TERMINAL_PROMPT=0
+  GIT_CONFIG_GLOBAL=/dev/null
+  GIT_CONFIG_NOSYSTEM=1
+  GIT_CONFIG_COUNT=10
+  GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_0=https://
+  GIT_CONFIG_KEY_1=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_1=ssh://
+  GIT_CONFIG_KEY_2=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_2=git@
+  GIT_CONFIG_KEY_3=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_3=http://
+  GIT_CONFIG_KEY_4=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_4=git://
+  GIT_CONFIG_KEY_5=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_5=git+ssh://
+  GIT_CONFIG_KEY_6=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_6=ssh+git://
+  GIT_CONFIG_KEY_7=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_7=file://
+  GIT_CONFIG_KEY_8=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_8=/
+  GIT_CONFIG_KEY_9=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_9=.
+P2 identity=true effective GIT_/XDG_ env:
+  GIT_TERMINAL_PROMPT=0
+  GIT_CONFIG_GLOBAL=/dev/null
+  GIT_CONFIG_NOSYSTEM=1
+  GIT_CONFIG_COUNT=10
+  GIT_CONFIG_KEY_0=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_0=https://
+  GIT_CONFIG_KEY_1=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_1=ssh://
+  GIT_CONFIG_KEY_2=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_2=git@
+  GIT_CONFIG_KEY_3=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_3=http://
+  GIT_CONFIG_KEY_4=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_4=git://
+  GIT_CONFIG_KEY_5=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_5=git+ssh://
+  GIT_CONFIG_KEY_6=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_6=ssh+git://
+  GIT_CONFIG_KEY_7=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_7=file://
+  GIT_CONFIG_KEY_8=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_8=/
+  GIT_CONFIG_KEY_9=url.file:///dev/null/.pushInsteadOf
+  GIT_CONFIG_VALUE_9=.
+  GIT_AUTHOR_NAME=W
+  GIT_AUTHOR_EMAIL=w@example.test
+  GIT_COMMITTER_NAME=W
+  GIT_COMMITTER_EMAIL=w@example.test
+--- PASS: TestOpusP2EnvOverride (0.04s)
+=== RUN   TestOpusP3PushInsteadOf
+P3 old env (C0 head) push url: ssh://git@github.com/waggle.git
+P3 new env (D0 head) push url: file:///dev/null/github.com/waggle-sh/waggle.git
+P3 new env global url.* read: "ERR "
+P3 new env + local repo pushInsteadOf push url: git@github.com:waggle-sh/waggle.git
+P3 new env + worker-set GIT_CONFIG_PARAMETERS push url: git@github.com:waggle-sh/waggle.git
+P3 new env + worker-set GIT_CONFIG_GLOBAL push url: git@github.com:waggle-sh/waggle.git
+--- PASS: TestOpusP3PushInsteadOf (0.11s)
+=== RUN   TestOpusP4Help
+P4 pinned                             verify ok=true 
+P4 debug->debugx                      verify ok=false lacks --debug
+P4 debug removed, debug-file kept     verify ok=false lacks --debug
+P4 debug-> --debug=<f> only           verify ok=true 
+P4 debug-> --debug. (dot)             verify ok=true 
+P4 debug-> --debug+e-acute            verify ok=true 
+P4 debug-> --no--debug (prefix)       verify ok=true 
+P4 max-budget-usd -> usdx             verify ok=false lacks --max-budget-usd
+P4 restricted -> restricted-mode      verify ok=false lacks --restricted
+P4 dontAsk -> dontAskMe               verify ok=false lacks dontAsk
+P4 helpHas("--debug-file", "--debug") = false
+P4 helpHas("--debug_x", "--debug") = false
+P4 helpHas("--debug9", "--debug") = false
+P4 helpHas("--debugx", "--debug") = false
+P4 helpHas("--debug=", "--debug") = true
+P4 helpHas("--debug,", "--debug") = true
+P4 helpHas("--debug[", "--debug") = true
+P4 helpHas("--debug<", "--debug") = true
+P4 helpHas("--debug", "--debug") = true
+P4 helpHas("--debug)", "--debug") = true
+P4 helpHas("--debug\"", "--debug") = true
+P4 helpHas("--debug.", "--debug") = true
+P4 helpHas("--debug/", "--debug") = true
+P4 helpHas("--debugé", "--debug") = true
+P4 helpHas("--debug-file --debug", "--debug") = true
+P4 helpHas("x--debug", "--debug") = true
+--- PASS: TestOpusP4Help (1.12s)
+=== RUN   TestOpusP5GuardSettings
+P5 guard commands=["go test"] err=false holds-add-or-commit=false edit=true write=true
+P5 guard commands=["git add"] err=false holds-add-or-commit=false edit=true write=true
+P5 guard commands=["git commit"] err=false holds-add-or-commit=false edit=true write=true
+P5 guard commands=["git commit -s"] err=false holds-add-or-commit=true edit=true write=true
+P5 guard commands=["git add -A"] err=false holds-add-or-commit=true edit=true write=true
+P5 guard commands=["git -C . commit"] err=false holds-add-or-commit=true edit=true write=true
+P5 guard commands=["git  commit"] err=true holds-add-or-commit=false edit=false write=false
+P5 guard commands=["env git commit"] err=false holds-add-or-commit=true edit=true write=true
+P5 guard settings: {"permissions":{"allow":["Read","Glob","Grep","Edit(./**)","Write(./**)","Bash(go build)","Bash(go build *)","Bash(go test)","Bash(go test *)","Bash(git status)","Bash(git status *)","Bash(git diff)","Bash(git diff *)","Bash(git log)","Bash(git log *)","Bash(git show)","Bash(git show *)"],"deny":["Bash(git push)","Bash(git push *)","Bash(gh)","Bash(gh *)","Bash(curl)","Bash(curl *)","Bash(wget)","Bash(wget *)","Bash(ssh)","Bash(ssh *)","WebFetch","WebSearch"],"defaultMode":"dontAsk"}}
+P5 builder settings: {"permissions":{"allow":["Read","Glob","Grep","Edit(./**)","Write(./**)","Bash(go build)","Bash(go build *)","Bash(go test)","Bash(go test *)","Bash(git add)","Bash(git add *)","Bash(git commit)","Bash(git commit *)","Bash(git status)","Bash(git status *)","Bash(git diff)","Bash(git diff *)","Bash(git log)","Bash(git log *)","Bash(git show)","Bash(git show *)"],"deny":["Bash(git push)","Bash(git push *)","Bash(gh)","Bash(gh *)","Bash(curl)","Bash(curl *)","Bash(wget)","Bash(wget *)","Bash(ssh)","Bash(ssh *)","WebFetch","WebSearch"],"defaultMode":"dontAsk"}}
+P5 role "Guard" keeps git commit: true
+P5 role "forager" keeps git commit: true
+P5 role "scout" keeps git commit: true
+--- PASS: TestOpusP5GuardSettings (0.00s)
+=== RUN   TestOpusP6SecondGuard
+P6 default, no alternates                 validate=<nil> builder=sonnet first=opus err1=<nil> second= err2=no model differs from the builder's: role guard task "T-1" level standard shares ["sonnet" "opus"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.standard) SHARED=false
+P6 empty alternates map                   validate=<nil> builder=sonnet first=opus err1=<nil> second= err2=no model differs from the builder's: role guard task "T-1" level standard shares ["sonnet" "opus"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.standard) SHARED=false
+P6 alt frontier                           validate=<nil> builder=sonnet first=opus err1=<nil> second=o2 err2=<nil> SHARED=false
+P6 alt standard                           validate=<nil> builder=sonnet first=s2 err1=<nil> second=opus err2=<nil> SHARED=false
+P6 alt standard = builder model           validate=<nil> builder=haiku first=sonnet err1=<nil> second=opus err2=<nil> SHARED=false
+P6 alt standard dup of frontier primary   validate=<nil> builder=sonnet first=opus err1=<nil> second= err2=no model differs from the builder's: role guard task "T-1" level standard shares ["sonnet" "opus"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.standard) SHARED=false
+P6 alts dup across levels                 validate=<nil> builder=haiku first=opus err1=<nil> second=sonnet err2=<nil> SHARED=false
+P6 builder frontier, no alt               validate=<nil> builder=opus first= err1=no model differs from the builder's: role guard task "T-1" level frontier shares ["opus"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.frontier) second= err2=no model differs from the builder's: role guard task "T-1" level frontier shares ["opus"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.frontier) SHARED=false
+P6 builder frontier, alt frontier         validate=<nil> builder=opus first=o2 err1=<nil> second= err2=no model differs from the builder's: role guard task "T-1" level frontier shares ["opus" "o2"] with the builder or first guard (set runtimes.adapters.claude-code.alternates.frontier) SHARED=false
+P6 step-up between guards, plain          validate=<nil> builder=haiku first=sonnet err1=<nil> second=o2 err2=<nil> SHARED=false
+P6 step-up between guards, dup primaries  validate=<nil> builder=haiku first=opus err1=<nil> second=opus err2=<nil> SHARED=true
+--- PASS: TestOpusP6SecondGuard (0.00s)
+=== RUN   TestOpusP7ConfigAlias
+P7 after edit, Config().DefaultArgs=["--debug"] argv tail=["--append-system-prompt=# Role\n\n# WAGGLE.md\n" "--debug"]
+P7 caller slice edited after Verify, argv tail=["--append-system-prompt=# Role\n\n# WAGGLE.md\n" "--debug"]
+--- PASS: TestOpusP7ConfigAlias (0.15s)
+=== RUN   TestOpusP8ZeroIdentityCommit
+P8 zero identity commit err=false author-is-keeper-global=false name-empty=false email=local@example.test
+P8 C1 name in commit header: "A\u009b31mB"
+--- PASS: TestOpusP8ZeroIdentityCommit (0.09s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.590s

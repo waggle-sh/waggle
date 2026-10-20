@@ -1,0 +1,41 @@
+# guard-hooks-probe.sh at 5c7ada6 on macOS /bin/sh and bash (BSD stat, new stat order); the scratch repo is this worktree.
+[missing][sh] rc=2 Handoff missing: write .waggle/hive/handoff/queen.local.md (facts only, at most 40 lines; starter in .claude/hooks/handoff-check.sh) before stopping.
+[missing][bash] rc=2 Handoff missing: write .waggle/hive/handoff/queen.local.md (facts only, at most 40 lines; starter in .claude/hooks/handoff-check.sh) before stopping.
+[active-compact][sh] rc=0 <no output>
+[active-compact][bash] rc=0 <no output>
+[active-spaced][sh] rc=0 <no output>
+[active-spaced][bash] rc=0 <no output>
+[40-lines][sh] rc=0 <no output>
+[40-lines][bash] rc=0 <no output>
+[41-lines][sh] rc=2 Handoff .waggle/hive/handoff/queen.local.md is 41 lines; the cap is 40 (D-182). Cut it to facts only (live state, running agents, next work) before stopping.
+[41-lines][bash] rc=2 Handoff .waggle/hive/handoff/queen.local.md is 41 lines; the cap is 40 (D-182). Cut it to facts only (live state, running agents, next work) before stopping.
+[41-lines-no-final-newline][sh] rc=0 <no output>
+[41-lines-no-final-newline][bash] rc=0 <no output>
+[empty-file][sh] rc=0 <no output>
+[empty-file][bash] rc=0 <no output>
+[older-than-main][sh] rc=2 Handoff .waggle/hive/handoff/queen.local.md is older than the last commit on main (2ecd449 Merge T-023 phase D0b: disable git auto maintenance for workers, host git and comb (Head Keeper)). Rewrite its facts (live state, running agents, next work) before stopping.
+[older-than-main][bash] rc=2 Handoff .waggle/hive/handoff/queen.local.md is older than the last commit on main (2ecd449 Merge T-023 phase D0b: disable git auto maintenance for workers, host git and comb (Head Keeper)). Rewrite its facts (live state, running agents, next work) before stopping.
+[newer-than-main][sh] rc=0 <no output>
+[newer-than-main][bash] rc=0 <no output>
+[committed queen.md only, local missing]
+[committed-only][sh] rc=2 Handoff missing: write .waggle/hive/handoff/queen.local.md (facts only, at most 40 lines; starter in .claude/hooks/handoff-check.sh) before stopping.
+[committed-only][bash] rc=2 Handoff missing: write .waggle/hive/handoff/queen.local.md (facts only, at most 40 lines; starter in .claude/hooks/handoff-check.sh) before stopping.
+[outside-repo][sh] rc=0 <no output>
+=== session-start, local present ===
+=== Queen handoff (.waggle/hive/handoff/queen.local.md) ===
+1
+2
+3
+
+=== session-start, local missing, summary present ===
+=== Queen handoff (.waggle/hive/handoff/queen.md) ===
+# summary
+
+=== session-start, both missing ===
+=== Queen handoff (.waggle/hive/handoff/queen.md) ===
+(missing)
+
+=== session-start, bash ===
+=== Queen handoff (.waggle/hive/handoff/queen.md) ===
+(missing)
+=== session-start outside repo rc=0 <no output>

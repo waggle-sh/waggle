@@ -1,0 +1,320 @@
+package runtime
+
+// Opus guard confirmation probes for T-023 phase D0 at ebce792. Not part of the PR.
+
+import (
+	"errors"
+	"fmt"
+	"os/exec"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+)
+
+// P1: identity refusals, now with C1, invalid UTF-8, separators and blanks.
+func TestOpusConfirmP1Identity(t *testing.T) {
+	const e = "a@example.test"
+	var c0, c1 []rune
+	for r := rune(0); r < 0x20; r++ {
+		c0 = append(c0, r)
+	}
+	for r := rune(0x80); r <= 0x9f; r++ {
+		c1 = append(c1, r)
+	}
+	accepted := func(id GitIdentity) bool { return id.check() == nil }
+	all := func(rs []rune, inEmail bool) (refused, total int) {
+		for _, r := range rs {
+			id := GitIdentity{Name: "A" + string(r) + "B", Email: e}
+			if inEmail {
+				id = GitIdentity{Name: "A", Email: e + string(r)}
+			}
+			total++
+			if !accepted(id) {
+				refused++
+			}
+		}
+		return
+	}
+	for _, s := range []struct {
+		n  string
+		rs []rune
+	}{{"C0", c0}, {"DEL", []rune{0x7f}}, {"C1", c1}, {"U+2028/U+2029", []rune{0x2028, 0x2029}}} {
+		rn, tn := all(s.rs, false)
+		re, te := all(s.rs, true)
+		fmt.Printf("P1 %-14s name refused %d/%d, email refused %d/%d\n", s.n, rn, tn, re, te)
+	}
+	cases := []struct {
+		n  string
+		id GitIdentity
+	}{
+		{"zero", GitIdentity{}},
+		{"plain", GitIdentity{Name: "Hive Worker", Email: e}},
+		{"name only", GitIdentity{Name: "A"}},
+		{"email only", GitIdentity{Email: e}},
+		{"raw 0xff", GitIdentity{Name: "A\xffB", Email: e}},
+		{"raw 0x9b", GitIdentity{Name: "A\x9b31mB", Email: e}},
+		{"truncated UTF-8", GitIdentity{Name: "A\xe2\x80", Email: e}},
+		{"overlong /", GitIdentity{Name: "A\xc0\xafB", Email: e}},
+		{"surrogate", GitIdentity{Name: "A\xed\xa0\x80B", Email: e}},
+		{"invalid in email", GitIdentity{Name: "A", Email: e + "\xff"}},
+		{"literal U+FFFD", GitIdentity{Name: "A�B", Email: e}},
+		{"blank name", GitIdentity{Name: "  ", Email: e}},
+		{"blank email", GitIdentity{Name: "A", Email: " "}},
+		{"tab email", GitIdentity{Name: "A", Email: "\t"}},
+		{"NBSP name", GitIdentity{Name: " ", Email: e}},
+		{"NEL name only", GitIdentity{Name: "\u0085", Email: e}},
+		{"both blank", GitIdentity{Name: " ", Email: "  "}},
+		{"both NBSP", GitIdentity{Name: " ", Email: "　"}},
+		{"U+202E RLO", GitIdentity{Name: "A‮B", Email: e}},
+		{"U+200B ZWSP", GitIdentity{Name: "A​B", Email: e}},
+		{"non-ASCII name", GitIdentity{Name: "Zoë Ångström", Email: e}},
+	}
+	a := verifiedAdapter(t, AdapterConfig{})
+	for _, c := range cases {
+		inv, s := testLaunch(t, "T-5")
+		inv.GitIdentity = c.id
+		spec, err := a.Prepare(inv, s, nil, nil)
+		n := 0
+		for _, kv := range spec.Env {
+			if strings.HasPrefix(kv, "GIT_AUTHOR_") || strings.HasPrefix(kv, "GIT_COMMITTER_") {
+				n++
+			}
+		}
+		fmt.Printf("P1 %-16s refused=%-5v identity vars=%d\n", c.n, err != nil, n)
+	}
+}
+
+// P2: env not overridable, each key emitted once, COUNT correct, tripwire and
+// home ignore/attributes isolation still win under a hostile parent env.
+func TestOpusConfirmP2Env(t *testing.T) {
+	home := t.TempDir()
+	xdg := filepath.Join(home, ".config")
+	for _, kv := range [][2]string{{"GIT_CONFIG_GLOBAL", home + "/.gitconfig"}, {"GIT_CONFIG_NOSYSTEM", "0"},
+		{"GIT_ATTR_NOSYSTEM", "0"}, {"GIT_CONFIG_PARAMETERS", "'core.excludesfile'='" + home + "/ig'"},
+		{"GIT_CONFIG_COUNT", "99"}, {"GIT_CONFIG_KEY_12", "url.x.pushInsteadOf"}, {"GIT_CONFIG_KEY_10", "core.pager"},
+		{"XDG_CONFIG_HOME", xdg}, {"HOME", home}} {
+		t.Setenv(kv[0], kv[1])
+	}
+	writeFile(t, filepath.Join(home, ".gitconfig"), "[url \"git@github.com:\"]\n\tpushInsteadOf = https://github.com/\n[core]\n\texcludesFile = "+home+"/ig\n")
+	writeFile(t, filepath.Join(home, "ig"), "hidden2.txt\n")
+	writeFile(t, filepath.Join(xdg, "git", "config"), "[url \"ssh://git@github.com/\"]\n\tpushInsteadOf = https://github.com/waggle-sh/\n")
+	writeFile(t, filepath.Join(xdg, "git", "ignore"), "hidden.txt\n")
+	writeFile(t, filepath.Join(xdg, "git", "attributes"), "a.txt filter=probe\n")
+	a := verifiedAdapter(t, AdapterConfig{DefaultArgs: []string{"--debug"}})
+	for _, id := range []GitIdentity{{}, {Name: "W", Email: "w@example.test"}} {
+		inv, s := testLaunch(t, "T-5")
+		inv.GitIdentity = id
+		spec, err := a.Prepare(inv, s, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		seen := map[string]int{}
+		lastCfg := ""
+		for _, kv := range spec.Env {
+			k := kv[:strings.IndexByte(kv, '=')]
+			seen[k]++
+			if strings.HasPrefix(k, "GIT_CONFIG") {
+				lastCfg = k
+			}
+		}
+		dups := []string{}
+		for k, n := range seen {
+			if n > 1 {
+				dups = append(dups, k)
+			}
+		}
+		cmd := exec.Command("/usr/bin/env")
+		cmd.Env = spec.Env
+		out, _ := cmd.Output()
+		var git []string
+		for _, l := range strings.Split(string(out), "\n") {
+			if strings.HasPrefix(l, "GIT_") || strings.HasPrefix(l, "XDG_") {
+				git = append(git, l)
+			}
+		}
+		fmt.Printf("P2 identity=%v duplicates=%v last GIT_CONFIG* entry=%s effective GIT_/XDG_ env:\n  %s\n", id != (GitIdentity{}), dups, lastCfg, strings.Join(git, "\n  "))
+		if id != (GitIdentity{}) {
+			continue
+		}
+		repo := t.TempDir()
+		run := func(args ...string) string {
+			c := exec.Command("git", args...)
+			c.Dir, c.Env = repo, spec.Env
+			o, err := c.CombinedOutput()
+			r := strings.TrimSpace(string(o))
+			if err != nil {
+				return "exit!=0 " + r
+			}
+			return r
+		}
+		run("init", "-q")
+		run("remote", "add", "origin", "https://github.com/waggle-sh/waggle.git")
+		fmt.Printf("P2 push url: %s\n", strings.ReplaceAll(run("remote", "get-url", "--push", "origin"), home, "<home>"))
+		fmt.Printf("P2 check-ignore hidden.txt (xdg): %q\n", run("check-ignore", "hidden.txt"))
+		fmt.Printf("P2 check-ignore hidden2.txt (global excludesFile): %q\n", run("check-ignore", "hidden2.txt"))
+		fmt.Printf("P2 check-attr filter a.txt: %q\n", run("check-attr", "filter", "a.txt"))
+		fmt.Printf("P2 effective core.excludesFile / core.attributesFile: %q / %q\n", run("config", "core.excludesFile"), run("config", "core.attributesFile"))
+		writeFile(t, filepath.Join(repo, ".git", "info", "exclude"), "local.txt\n")
+		writeFile(t, filepath.Join(repo, ".gitattributes"), "b.txt filter=repo\n")
+		fmt.Printf("P2 repo info/exclude and .gitattributes still apply: %q %q\n", run("check-ignore", "local.txt"), run("check-attr", "filter", "b.txt"))
+	}
+}
+
+// P6: D-179 second-guard matrix, exhaustive over a small model alphabet,
+// checked against an independent reference.
+func TestOpusConfirmP6SecondGuard(t *testing.T) {
+	F, S, X := LevelFast, LevelStandard, LevelFrontier
+	levels := []Level{F, S, X}
+	alpha := []string{"a", "b", "c", "d"}
+	altOpts := []string{"", "a", "b", "c", "d"}
+	var total, ok, walked, errs, below, belowMin, fastGuard int
+	var bad []string
+	for _, p0 := range alpha {
+		for _, p1 := range alpha {
+			for _, p2 := range alpha {
+				for _, a0 := range altOpts {
+					for _, a1 := range altOpts {
+						for _, a2 := range altOpts {
+							prim := map[Level]string{F: p0, S: p1, X: p2}
+							alt := map[Level]string{}
+							for l, v := range map[Level]string{F: a0, S: a1, X: a2} {
+								if v != "" {
+									alt[l] = v
+								}
+							}
+							for _, bmin := range levels {
+								for _, gmin := range levels {
+									for _, mf := range []int{0, 2} {
+										p := Policy{Models: Models{Adapter: "claude-code", Primary: prim, Alternate: alt},
+											Minimums: map[string]Level{"builder": bmin, "guard": gmin, "forager": F}}
+										if p.Validate() != nil {
+											continue
+										}
+										total++
+										tc := func(sg bool) *TaskContext { return &TaskContext{TaskID: "T-1", GuardMustFix: mf, SecondGuard: sg} }
+										b, eb := p.Resolve("builder", tc(false), nil)
+										g1, e1 := p.Resolve("guard", tc(false), nil)
+										g2, e2 := p.Resolve("guard", tc(true), nil)
+										// Other roles ignore SecondGuard.
+										bs, ebs := p.Resolve("builder", tc(true), nil)
+										fs, efs := p.Resolve("forager", tc(true), nil)
+										ff, eff := p.Resolve("forager", tc(false), nil)
+										if bs != b || (ebs == nil) != (eb == nil) || fs != ff || (efs == nil) != (eff == nil) {
+											bad = append(bad, fmt.Sprintf("other role changed by SecondGuard: %v", p))
+										}
+										// Reference for the first guard: pre-D-179 rule, upward only.
+										gl := max(gmin, b.Level)
+										var refFirst string
+										for l := gl; l <= X && refFirst == ""; l++ {
+											for _, m := range []string{prim[l], alt[l]} {
+												if m != "" && m != b.Model {
+													refFirst = m
+													break
+												}
+											}
+										}
+										if (e1 == nil) != (refFirst != "") || (e1 == nil && g1.Model != refFirst) || (e1 != nil && !errors.Is(e1, ErrNoCrossModel)) {
+											bad = append(bad, fmt.Sprintf("first guard: got %q %v want %q (%v)", g1.Model, e1, refFirst, p))
+										}
+										if e1 != nil {
+											if e2 == nil || !errors.Is(e2, ErrNoCrossModel) {
+												bad = append(bad, fmt.Sprintf("second guard resolved though first guard cannot: %q (%v)", g2.Model, p))
+											}
+											continue
+										}
+										avoid := []string{b.Model, g1.Model}
+										// Reference for the second guard: upward from gl, then downward from gl-1, primary then alternate.
+										var ref string
+										var refLevel Level
+										for l := gl; l <= X && ref == ""; l++ {
+											for _, m := range []string{prim[l], alt[l]} {
+												if m != "" && !slices.Contains(avoid, m) {
+													ref, refLevel = m, gl
+													break
+												}
+											}
+										}
+										for l := gl - 1; l >= F && ref == ""; l-- {
+											for _, m := range []string{prim[l], alt[l]} {
+												if m != "" && !slices.Contains(avoid, m) {
+													ref, refLevel = m, l
+													break
+												}
+											}
+										}
+										anyUnused := false
+										for _, l := range levels {
+											for _, m := range []string{prim[l], alt[l]} {
+												if m != "" && !slices.Contains(avoid, m) {
+													anyUnused = true
+												}
+											}
+										}
+										switch {
+										case e2 != nil:
+											errs++
+											if anyUnused || !errors.Is(e2, ErrNoCrossModel) {
+												bad = append(bad, fmt.Sprintf("second guard error with an unused model: %v (%v)", e2, p))
+											}
+										default:
+											ok++
+											if slices.Contains(avoid, g2.Model) {
+												bad = append(bad, fmt.Sprintf("SHARED %q (%v)", g2.Model, p))
+											}
+											if g2.Model != ref || g2.Level != refLevel {
+												bad = append(bad, fmt.Sprintf("second guard %q/%s want %q/%s (%v)", g2.Model, g2.Level, ref, refLevel, p))
+											}
+											if g2.Level < gl {
+												walked++
+												if prim[g2.Level] != g2.Model && alt[g2.Level] != g2.Model {
+													bad = append(bad, fmt.Sprintf("dishonest level %s for %q (%v)", g2.Level, g2.Model, p))
+												}
+												below++
+												if g2.Level < gmin {
+													belowMin++
+												}
+												if g2.Level == F {
+													fastGuard++
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	fmt.Printf("P6 exhaustive: %d valid policy/task combinations, second guard ok %d (walked down %d, below guard minimum %d, landed on fast %d), errors %d, violations %d\n",
+		total, ok, walked, belowMin, fastGuard, errs, len(bad))
+	for i, b := range bad {
+		if i == 10 {
+			break
+		}
+		fmt.Println("P6 VIOLATION", b)
+	}
+	// Named cases, including this hive's own config (opus/sonnet/haiku, builder and guard standard, no alternates).
+	std := map[Level]string{F: "haiku", S: "sonnet", X: "opus"}
+	for _, c := range []struct {
+		n   string
+		alt map[Level]string
+		mf  int
+	}{
+		{"hive config, no alternates", nil, 0},
+		{"hive config, stepped builder", nil, 2},
+		{"alt frontier fable", map[Level]string{X: "fable"}, 0},
+		{"alt frontier fable, stepped", map[Level]string{X: "fable"}, 2},
+		{"alt standard s2, stepped", map[Level]string{S: "s2"}, 2},
+	} {
+		p := Policy{Models: Models{Adapter: "claude-code", Primary: std, Alternate: c.alt},
+			Minimums: map[string]Level{"builder": S, "guard": S}}
+		tc := func(sg bool) *TaskContext { return &TaskContext{TaskID: "T-1", GuardMustFix: c.mf, SecondGuard: sg} }
+		b, _ := p.Resolve("builder", tc(false), nil)
+		g1, e1 := p.Resolve("guard", tc(false), nil)
+		g2, e2 := p.Resolve("guard", tc(true), nil)
+		fmt.Printf("P6 %-30s builder=%s/%s first=%s/%s err1=%v second=%s/%s err2=%v\n", c.n, b.Model, b.Level, g1.Model, g1.Level, e1 != nil, g2.Model, g2.Level, e2)
+	}
+}
