@@ -1,0 +1,22 @@
+set -u
+rm -rf /w && mkdir /w && cd /src && tar cf - --exclude=.git --exclude=.claude . | tar xf - -C /w && cd /w
+F=internal/dispatch/reap_unix.go
+cp $F /tmp/orig.go
+echo "== baseline linux ./internal/dispatch/... =="
+go test -race -count=1 ./internal/dispatch/... 2>&1 | tail -5
+run() { # name, sed expr
+  cp /tmp/orig.go $F; sed -i "$2" $F
+  if cmp -s $F /tmp/orig.go; then echo "$1: SED DID NOT CHANGE FILE"; return; fi
+  out=$(go test -race -count=1 -run 'TestObserve' ./internal/dispatch/ 2>&1)
+  if echo "$out" | grep -q '^ok'; then echo "$1: PASSED WITHOUT GUARD (not covered)"; else echo "$1: test fails without guard:"; echo "$out" | grep -E '^(--- FAIL|    fix4)' | head -4; fi
+}
+run "newTracker root<=1 early return" 's/if root <= 1 { \/\/ inert/if false { \/\/ inert/'
+run "observe whole condition" 's/if err != nil || t.root <= 1 {/if false {/'
+run "observe root<=1 only" 's/if err != nil || t.root <= 1 {/if err != nil {/'
+run "observe err clears table" 's/if err != nil || t.root <= 1 {/if t.root <= 1 {/'
+run "loop pid<=1 or ppid<=1" 's/ || p.pid <= 1 || p.ppid <= 1 || / || /'
+run "live pid>1 filter" 's/ok \&\& !p.zombie \&\& p.pid > 1 {/ok \&\& !p.zombie {/'
+run "sweep pid guard" 's/p.pid > 1 \&\& p.pid != t.self \&\& //'
+cp /tmp/orig.go $F
+echo "== restored; full run =="
+go test -race -count=1 ./internal/dispatch/... 2>&1 | tail -3

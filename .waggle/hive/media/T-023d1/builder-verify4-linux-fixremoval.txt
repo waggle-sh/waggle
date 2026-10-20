@@ -1,0 +1,31 @@
+== baseline linux ./internal/dispatch/... ==
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.01s)
+    guard3_test.go:147: git older than 2.48 ignores worktree.useRelativePaths and writes an absolute registration; this test requires git 2.48 or newer (CI runs 2.55)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	49.748s
+FAIL
+newTracker root<=1 early return: test fails without guard:
+--- FAIL: TestObserveRefusesInitAndKernelRoots (0.00s)
+    fix4_test.go:53: newTracker(-1) is not inert: &{root:-1 self:14999 rootStart: reaped:false seen:map[] live:[] blind:false}
+observe whole condition: test fails without guard:
+--- FAIL: TestObserveRefusesInitAndKernelRoots (0.00s)
+    fix4_test.go:50: root -1 tracked [] seen map[] blind false
+--- FAIL: TestObserveErrorClearsLive (0.00s)
+    fix4_test.go:84: live [] blind false after a failed read
+observe root<=1 only: test fails without guard:
+--- FAIL: TestObserveRefusesInitAndKernelRoots (0.00s)
+    fix4_test.go:50: root -1 tracked [] seen map[] blind false
+observe err clears table: test fails without guard:
+--- FAIL: TestObserveErrorClearsLive (0.00s)
+    fix4_test.go:84: live [] blind false after a failed read
+loop pid<=1 or ppid<=1: test fails without guard:
+--- FAIL: TestObserveNeverTreatsInitAsTrackedParent (0.00s)
+    fix4_test.go:70: tracked {pid:2 ppid:1 pgid:2 start:2 comm:login zombie:false}
+live pid>1 filter: test fails without guard:
+--- FAIL: TestObserveNeverTreatsInitAsTrackedParent (0.00s)
+    fix4_test.go:70: tracked {pid:1 ppid:0 pgid:1 start:1 comm:launchd zombie:false}
+sweep pid guard: PASSED WITHOUT GUARD (not covered)
+== restored; full run ==
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	37.122s
+FAIL

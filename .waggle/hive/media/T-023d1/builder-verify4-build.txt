@@ -1,0 +1,4 @@
+build darwin ok
+build linux ok
+build freebsd ok
+build windows ok

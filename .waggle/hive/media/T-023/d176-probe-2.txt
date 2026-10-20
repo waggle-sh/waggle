@@ -1,0 +1,21 @@
+D-176 probe 2 (T-023 phase D1 fix round, D-187): the pinned Claude Code through the real dispatch Run.
+
+Result: PASS. Dispatch killed the Bash tool's shell and its perl child, both outside the worker's process group, and recorded them.
+
+Setup: macOS (darwin), Claude Code 2.1.304 (/opt/homebrew/bin/claude), model haiku, the real Run path (Prepare argv, host cell, Setpgid,
+stdout on a pipe, tracker polling every 250 ms). Fixture repo with a brief that asks for one Bash call, `perl probe.pl` (probe.pl is
+`sleep 40;`), allowed through the WAGGLE.md command list. Timeout 25 s and killGrace 1 ns, so the stop path sends SIGTERM and SIGKILL at
+once and Claude Code cannot clean its children up (the worst case of probe 1). Harness: a throwaway test in internal/dispatch, not committed.
+
+--- While the worker runs (ps columns: pid ppid pgid sess stat command; the tool shell is a child of claude and leads its own group)
+89729 89606 89729      0 Ss   /bin/zsh -c source <shell-snapshot>.sh 2>/dev/null || true && ... && eval 'perl probe.pl' < /dev/null && pwd -P >| <tmp>/cwd
+89730 89729 89729      0 S    perl probe.pl
+
+--- Run returned
+Run: exit 5 end timeout err <nil>
+survivors_killed: [{PID:89729 Command:zsh} {PID:89730 Command:perl}]
+warnings: [survivors_killed: 2 process(es) outlived the worker and were killed: [{89729 zsh} {89730 perl}]]
+
+--- ps for `perl probe.pl` and its tool shell after Run returned: none (both gone before dispatch.lock is released and before the checks).
+
+An earlier run of the same harness had the same outcome: survivors_killed [{87433 zsh} {87434 perl}], Run exit 5 end timeout.

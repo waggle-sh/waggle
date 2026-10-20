@@ -1,0 +1,326 @@
+// opus_c2_host_test.go (darwin, data only; run on the host, then removed)
+//go:build darwin
+
+package dispatch
+
+// Opus confirmation 2, darwin host probe. Data only: no sweep(), no signal of
+// any kind. The root is a process this test spawns; every grandchild is a
+// `sleep 2` that exits by itself.
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+// Shape: the worker (perl, own group) forks a tool shell that calls setsid
+// (Claude Code's Bash tool shell is a session leader), the tool shell runs a
+// short foreground step, then backgrounds `sleep 2` and exits. The tracker
+// samples with observe(procTable()) every iv. Reported per interval: tool
+// shell seen, grandchild seen, and whether, after the worker exits, a live
+// process remains in the tool shell's process group (what a kill of a seen
+// group leader's pgid would reach).
+func TestOpusC2HostCatch(t *testing.T) {
+	for _, iv := range []time.Duration{25 * time.Millisecond, 5 * time.Millisecond, time.Millisecond} {
+		var shellSeen, kidSeen, groupLeft, n int
+		for i := 0; i < 20; i++ {
+			n++
+			f := filepath.Join(t.TempDir(), "sh")
+			script := fmt.Sprintf(`use POSIX; my $p = fork; if ($p == 0) { POSIX::setsid(); exec "sh", "-c", "echo \$\$ > %s; sleep 0.1; sleep 2 & echo \$! > %s.bg; exit 0"; } waitpid($p, 0); select(undef, undef, undef, 0.3);`, f, f)
+			cmd := exec.Command("perl", "-e", script)
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+			if err := cmd.Start(); err != nil {
+				t.Fatal(err)
+			}
+			done := make(chan struct{})
+			go func() { _ = cmd.Wait(); close(done) }()
+			tr := &tracker{root: cmd.Process.Pid, self: os.Getpid(), seen: map[pkey]string{}}
+			tr.observe(procTable())
+			for loop := true; loop; {
+				select {
+				case <-done:
+					loop = false
+				case <-time.After(iv):
+					tr.observe(procTable())
+				}
+			}
+			b, _ := os.ReadFile(f)
+			sh, _ := strconv.Atoi(strings.TrimSpace(string(b)))
+			b, _ = os.ReadFile(f + ".bg")
+			bg, _ := strconv.Atoi(strings.TrimSpace(string(b)))
+			for k, c := range tr.seen {
+				if k.pid == sh {
+					shellSeen++
+				}
+				if k.pid == bg && c != "" {
+					kidSeen++
+				}
+			}
+			tab, _ := procTable()
+			for _, p := range tab {
+				if sh > 1 && p.pid == bg && p.pgid == sh && !p.zombie {
+					groupLeft++
+					break
+				}
+			}
+		}
+		t.Logf("interval=%v runs=%d tool_shell_seen=%d bg_child_seen=%d bg_child_alive_in_tool_shell_group_after_worker_exit=%d", iv, n, shellSeen, kidSeen, groupLeft)
+	}
+}
+
+// Cost of one table read on this host.
+func TestOpusC2HostCost(t *testing.T) {
+	const n = 200
+	start := time.Now()
+	var rows int
+	for i := 0; i < n; i++ {
+		tab, err := procTable()
+		if err != nil {
+			t.Fatal(err)
+		}
+		rows = len(tab)
+	}
+	per := time.Since(start) / n
+	t.Logf("procTable rows=%d per_read=%v cpu_share_at_25ms=%.1f%% at_5ms=%.1f%% at_1ms=%.1f%%", rows, per,
+		100*float64(per)/float64(25*time.Millisecond), 100*float64(per)/float64(5*time.Millisecond), 100*float64(per)/float64(time.Millisecond))
+}
+
+// opus_c2_linux_test.go (container only, D-193; run there, never committed)
+//go:build linux
+
+package dispatch
+
+// Opus confirmation 2, linux container probes (D-193: these call sweep() and
+// send signals, so they run only inside the Colima container, --init).
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"slices"
+	"strconv"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+func opusEntry(t *testing.T, pid int) proc {
+	var p proc
+	if !wait(func() bool {
+		tab, _ := procTable()
+		i := slices.IndexFunc(tab, func(q proc) bool { return q.pid == pid && !q.zombie })
+		if i >= 0 {
+			p = tab[i]
+		}
+		return i >= 0
+	}) {
+		t.Fatalf("pid %d not in the table", pid)
+	}
+	return p
+}
+
+// G1, sweep pid guard: dispatch's own entry in seen is never signalled.
+// Without `p.pid != t.self` the test process kills itself.
+func TestOpusC2SweepSkipsSelf(t *testing.T) {
+	cmd := exec.Command("sleep", "30")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = cmd.Process.Kill(); _ = cmd.Wait() })
+	me := opusEntry(t, os.Getpid())
+	tr := newTracker(cmd.Process.Pid)
+	tr.seen[pkey{me.pid, me.start}] = me.comm
+	k := tr.sweep()
+	t.Logf("G1 self pid %d pgid %d (own group %d): sweep killed %v; still running", me.pid, me.pgid, syscall.Getpgrp(), k)
+	if len(k) != 0 {
+		t.Fatalf("self recorded as killed: %v", k)
+	}
+}
+
+// G2, pgid guard: a tracked child in dispatch's own process group is killed by
+// pid only; the group (dispatch itself, go test above it) is not signalled.
+func TestOpusC2SweepSkipsOwnGroup(t *testing.T) {
+	cmd := exec.Command("sleep", "30") // no Setpgid: stays in our group
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = cmd.Process.Kill(); _ = cmd.Wait() })
+	c := opusEntry(t, cmd.Process.Pid)
+	tr := newTracker(c.pid)
+	tr.seen[pkey{c.pid, c.start}] = c.comm
+	k := tr.sweep()
+	_ = cmd.Wait()
+	t.Logf("G2 child pid %d pgid %d == own group %d: sweep killed %v; test process still running", c.pid, c.pgid, syscall.Getpgrp(), k)
+	if len(k) != 1 || k[0].PID != c.pid {
+		t.Fatalf("killed %v", k)
+	}
+}
+
+// G3, foreign group join: a descendant of the worker moves itself into another
+// existing process group of the same session (here a stand-in for the Keeper's
+// shell group). The sweep's kill(-pgid) then reaches that group.
+func TestOpusC2ForeignGroupJoin(t *testing.T) {
+	keeper := exec.Command("sleep", "30")
+	keeper.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := keeper.Start(); err != nil {
+		t.Fatal(err)
+	}
+	keeperDone := make(chan struct{})
+	go func() { _ = keeper.Wait(); close(keeperDone) }()
+	t.Cleanup(func() { _ = keeper.Process.Kill(); <-keeperDone })
+	pidFile := filepath.Join(t.TempDir(), "pid")
+	script := fmt.Sprintf(`my $p = fork; if ($p == 0) { setpgrp(0, %d) or die "setpgrp: $!"; open F, ">", "%s"; print F $$; close F; sleep 20; exit 0 } select(undef, undef, undef, 0.5);`, keeper.Process.Pid, pidFile)
+	w := exec.Command("perl", "-e", script)
+	w.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := w.Start(); err != nil {
+		t.Fatal(err)
+	}
+	tr := newTracker(w.Process.Pid)
+	done := make(chan struct{})
+	go func() { _ = w.Wait(); close(done) }()
+	for loop := true; loop; {
+		select {
+		case <-done:
+			loop = false
+		case <-time.After(10 * time.Millisecond):
+			tr.poll()
+		}
+	}
+	b, _ := os.ReadFile(pidFile)
+	child, _ := strconv.Atoi(strings.TrimSpace(string(b)))
+	c := opusEntry(t, child)
+	t.Cleanup(func() { _ = syscall.Kill(child, syscall.SIGKILL) })
+	k := tr.sweep()
+	var keeperKilled bool
+	select {
+	case <-keeperDone:
+		keeperKilled = true
+	case <-time.After(2 * time.Second):
+	}
+	t.Logf("G3 stand-in group %d (not a descendant), tracked child %d joined pgid %d: sweep killed %v; stand-in killed by the group signal: %v",
+		keeper.Process.Pid, child, c.pgid, k, keeperKilled)
+}
+
+// G4, pid reuse window: the time from the sample a target came from to its kill.
+func TestOpusC2SampleToKill(t *testing.T) {
+	var cmds []*exec.Cmd
+	tr := &tracker{root: 0, self: os.Getpid(), seen: map[pkey]string{}}
+	for i := 0; i < 20; i++ {
+		c := exec.Command("sleep", "30")
+		c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		if err := c.Start(); err != nil {
+			t.Fatal(err)
+		}
+		cmds = append(cmds, c)
+		e := opusEntry(t, c.Process.Pid)
+		tr.seen[pkey{e.pid, e.start}] = e.comm
+	}
+	tr.root = cmds[0].Process.Pid
+	t0 := time.Now()
+	tab, err := procTable()
+	read := time.Since(t0)
+	tr.observe(tab, err)
+	t1 := time.Now()
+	for _, p := range tr.live {
+		_ = syscall.Kill(p.pid, syscall.SIGKILL)
+	}
+	t.Logf("G4 table read %v, %d targets signalled %v after the read finished", read, len(tr.live), time.Since(t1))
+	for _, c := range cmds {
+		_ = c.Wait()
+	}
+}
+
+# ---- run.sh (container script)
+set -u
+rm -rf /w && mkdir /w && cd /src && tar cf - --exclude=.git --exclude=.claude . | tar xf - -C /w && cd /w
+echo "== env: $(uname -sm), pid1=$(cat /proc/1/comm), git $(git --version | cut -d' ' -f3), $(go version | cut -d' ' -f3)"
+cp /ctr/opus_c2_linux_test.go internal/dispatch/
+echo "== probes G1 to G4 (race) =="
+go test -race -count=1 -v -run 'TestOpusC2' ./internal/dispatch/ 2>&1 | grep -E 'G[1-4]|^(--- |ok|FAIL|PASS)'
+R=internal/dispatch/reap_unix.go; cp $R /tmp/reap_unix.go
+U=internal/dispatch/run.go; cp $U /tmp/run.go
+mut() { # file, name, sed, tests
+  cp /tmp/$(basename $1) $1; sed -i "$3" $1
+  if cmp -s $1 /tmp/$(basename $1); then echo "$2: SED DID NOT CHANGE FILE"; return; fi
+  echo "== mutant: $2 (run $4) =="
+  diff /tmp/$(basename $1) $1 | head -8
+  timeout 300 go test -race -count=1 -timeout 240s -v -run "$4" ./internal/dispatch/ > /tmp/m.out 2>&1; rc=$?
+  grep -E 'G[1-4]|^(--- |ok|FAIL|PASS|panic: test timed out)|signal: killed|survived|stdout_held|want|leases' /tmp/m.out | head -14
+  echo "exit status $rc"
+  cp /tmp/$(basename $1) $1
+}
+mut $R "sweep pid guard removed" 's/p.pid > 1 \&\& p.pid != t.self \&\& //' 'TestOpusC2SweepSkipsSelf$'
+mut $R "pgid guard removed" 's/if p.pgid > 1 \&\& p.pgid != syscall.Getpgrp() {/if true {/' 'TestOpusC2SweepSkipsOwnGroup$'
+mut $U "renewal exited case removed" '/^\t\t\tcase <-exited:$/{N;d}' 'TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRenewalBounded$|TestRunKeepalive$'
+mut $U "renewal tctx check removed" '/^\t\t\t\tif tctx.Err() != nil {$/{N;N;d}' 'TestRenewalBounded$|TestRunKeepalive$|TestSweepWaitsForRenewal$'
+echo "== restored; repeat runs (race, -count=10) =="
+go test -race -count=10 -run 'TestSurvivorKilledAndRecorded$|TestRunKeepalive$|TestRunLimitsKillTheGroup$|TestSweepKillsTrackedGroup$|TestBlankNameChildKilled$' ./internal/dispatch/ 2>&1 | grep -E '^(--- FAIL|ok|FAIL)|_test.go' | head -20
+echo "== restored; full linux suite (race) =="
+go test -race -count=1 ./... 2>&1 | grep -E '^(--- FAIL|ok|FAIL)|_test.go:' | head -20
+# ---- run2.sh (container script)
+set -u
+rm -rf /w && mkdir /w && cd /src && tar cf - --exclude=.git --exclude=.claude --exclude=.opus-ctr . | tar xf - -C /w && cd /w
+echo "== TestCrossCompileWindows alone =="; go test -count=1 -run TestCrossCompileWindows -v ./internal/dispatch/ 2>&1 | tail -15
+U=internal/dispatch/run.go; cp $U /tmp/run.go
+sed -n '539,540p' $U
+sed -i '539,540d' $U
+echo "== mutant: renewal 'case <-exited' removed =="
+diff /tmp/run.go $U
+timeout 400 go test -race -count=1 -timeout 300s -v -run 'TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRenewalBounded$|TestRunKeepalive$|TestSurvivorKilledAndRecorded$' ./internal/dispatch/ > /tmp/m.out 2>&1; echo "exit status $?"
+grep -E '^(--- |ok|FAIL|PASS|panic: test timed out)|_test.go:' /tmp/m.out | head -20
+cp /tmp/run.go $U
+echo "== baseline same tests =="
+go test -race -count=1 -v -run 'TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRenewalBounded$|TestRunKeepalive$|TestSurvivorKilledAndRecorded$' ./internal/dispatch/ 2>&1 | grep -E '^(--- |ok|FAIL)'
+echo "== diagnosis: TestSurvivorKilledAndRecorded with the helper's 4 s life raised to 12 s (-count=20) =="
+H=internal/dispatch/fix2_test.go; cp $H /tmp/fix2.go
+sed -i 's/time.Sleep(4 \* time.Second)/time.Sleep(12 * time.Second)/' $H
+diff /tmp/fix2.go $H
+go test -race -count=20 -run 'TestSurvivorKilledAndRecorded$' -v ./internal/dispatch/ 2>&1 | grep -E '^(--- |ok|FAIL)|fix2_test' | sort | uniq -c
+cp /tmp/fix2.go $H
+echo "== same, unmodified 4 s helper (-count=20) =="
+go test -race -count=20 -run 'TestSurvivorKilledAndRecorded$' -v ./internal/dispatch/ 2>&1 | grep -E '^(--- |ok|FAIL)|fix2_test' | sort | uniq -c
+# ---- run3.sh (container script)
+set -u
+export GOFLAGS=-p=1
+rm -rf /w && mkdir /w && cd /src && tar cf - --exclude=.git --exclude=.claude --exclude=.opus-ctr . | tar xf - -C /w && cd /w
+echo "== TestCrossCompileWindows alone =="; go test -count=1 -run TestCrossCompileWindows -v ./internal/dispatch/ 2>&1 | tail -15
+U=internal/dispatch/run.go; cp $U /tmp/run.go
+sed -n '539,540p' $U
+sed -i '539,540d' $U
+echo "== mutant: renewal 'case <-exited' removed =="
+diff /tmp/run.go $U
+timeout 400 go test -race -count=1 -timeout 300s -v -run 'TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRenewalBounded$|TestRunKeepalive$|TestSurvivorKilledAndRecorded$' ./internal/dispatch/ > /tmp/m.out 2>&1; echo "exit status $?"
+grep -E '^(--- |ok|FAIL|PASS|panic: test timed out)|_test.go:' /tmp/m.out | head -20
+cp /tmp/run.go $U
+echo "== baseline same tests =="
+go test -race -count=1 -v -run 'TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRenewalBounded$|TestRunKeepalive$|TestSurvivorKilledAndRecorded$' ./internal/dispatch/ 2>&1 | grep -E '^(--- |ok|FAIL)'
+echo "== diagnosis: TestSurvivorKilledAndRecorded with the helper's 4 s life raised to 12 s (-count=20) =="
+H=internal/dispatch/fix2_test.go; cp $H /tmp/fix2.go
+sed -i 's/time.Sleep(4 \* time.Second)/time.Sleep(12 * time.Second)/' $H
+diff /tmp/fix2.go $H
+go test -race -count=20 -run 'TestSurvivorKilledAndRecorded$' -v ./internal/dispatch/ 2>&1 | grep -E '^(--- |ok|FAIL)|fix2_test' | sort | uniq -c
+cp /tmp/fix2.go $H
+echo "== same, unmodified 4 s helper (-count=20) =="
+go test -race -count=20 -run 'TestSurvivorKilledAndRecorded$' -v ./internal/dispatch/ 2>&1 | grep -E '^(--- |ok|FAIL)|fix2_test' | sort | uniq -c
+# ---- run4.sh (container script)
+set -u
+export GOFLAGS=-p=1
+rm -rf /w && mkdir /w && cd /src && tar cf - --exclude=.git --exclude=.claude --exclude=.opus-ctr . | tar xf - -C /w && cd /w
+echo "== TestCrossCompileWindows alone (no race) =="
+go test -count=1 -run 'TestCrossCompileWindows$' ./internal/dispatch/ 2>&1 | tail -4
+U=internal/dispatch/run.go; cp $U /tmp/run.go
+sed -i '539,540d' $U
+echo "== mutant: renewal 'case <-exited' removed (no race) =="
+diff /tmp/run.go $U
+go test -c -o /tmp/mut.test ./internal/dispatch/ && echo built
+cd internal/dispatch && timeout 400 /tmp/mut.test -test.count=1 -test.timeout 300s -test.v -test.run 'TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRenewalBounded$|TestRunKeepalive$' > /tmp/m.out 2>&1; echo "exit status $?"
+grep -E '^(--- |ok|FAIL|PASS|panic: test timed out)|_test.go:' /tmp/m.out | head -20

@@ -1,0 +1,372 @@
+//go:build unix
+
+package dispatch
+
+// Throwaway confirmation probes for T-023 phase D1 at d95aa72 (fable guard).
+// Not committed. Facts only: each probe logs what happened and fails only on
+// harness errors, so one run on each OS prints the whole table.
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	goruntime "runtime"
+	"slices"
+	"strconv"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+// TestFableHelper plays the escaped processes. Modes:
+//
+//	late <leaderpid> <pidfile> <extra-ms> <script>  wait for the leader to die, sleep extra, run script, touch <pidfile>.done
+//	fork <intermediate-ms> <late args...>            setsid, start "late" as a child, exit after intermediate-ms
+//	hold <pidfile> <secs>                            setsid, keep stdout, sleep
+//
+// FABLE_SETSID=1 makes "late" a session leader.
+func TestFableHelper(t *testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "fable" {
+		return
+	}
+	a := os.Args[slices.Index(os.Args, "--")+1:]
+	pid := []byte(strconv.Itoa(os.Getpid()))
+	switch a[0] {
+	case "late":
+		if os.Getenv("FABLE_SETSID") == "1" {
+			_, _ = syscall.Setsid()
+		}
+		leader, _ := strconv.Atoi(a[1])
+		_ = os.WriteFile(a[2], pid, 0o644)
+		for syscall.Kill(leader, 0) == nil || isZombie(leader) {
+			time.Sleep(5 * time.Millisecond)
+		}
+		ms, _ := strconv.Atoi(a[3])
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+		_ = exec.Command("sh", a[4]).Run()
+		_ = os.WriteFile(a[2]+".done", []byte(time.Now().Format(time.RFC3339Nano)), 0o644)
+	case "fork":
+		_, _ = syscall.Setsid()
+		ms, _ := strconv.Atoi(a[1])
+		c := exec.Command(os.Args[0], append([]string{"-test.run=^TestFableHelper$", "--", "late"}, a[2:]...)...)
+		c.Env = append(os.Environ(), "GO_WANT_HELPER_PROCESS=fable")
+		null, _ := os.OpenFile(os.DevNull, os.O_RDWR, 0)
+		c.Stdin, c.Stdout, c.Stderr = null, null, null
+		_ = c.Start()
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+	case "hold":
+		_, _ = syscall.Setsid()
+		_ = os.WriteFile(a[1], pid, 0o644)
+		s, _ := strconv.Atoi(a[2])
+		time.Sleep(time.Duration(s) * time.Second)
+	}
+	os.Exit(0)
+}
+
+func isZombie(pid int) bool {
+	tab, _ := procTable()
+	i := slices.IndexFunc(tab, func(p proc) bool { return p.pid == pid })
+	return i >= 0 && tab[i].zombie
+}
+
+func fhelper(t *testing.T, env, mode string, args ...string) string {
+	t.Helper()
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return env + " GO_WANT_HELPER_PROCESS=fable '" + exe + "' -test.run='^TestFableHelper$' -- " + mode + " " + strings.Join(args, " ")
+}
+
+func alive(pid int) string {
+	if syscall.Kill(pid, 0) != nil {
+		return "gone"
+	}
+	if isZombie(pid) {
+		return "zombie"
+	}
+	return "alive"
+}
+
+func survivorPIDs(r Result) (ps []int) {
+	for _, s := range r.Survivors {
+		ps = append(ps, s.PID)
+	}
+	return ps
+}
+
+// lateScript writes into the worktree (cwd), the common dir, a ref and the main checkout.
+func lateScript(f *fixture) string {
+	body := "echo late > late.txt; mkdir -p '" + f.common() + "/hooks'; echo x > '" + f.common() + "/hooks/post-checkout'; " +
+		"git update-ref refs/heads/zzz HEAD; echo late > '" + f.real + "/late.txt'\n"
+	p := filepath.Join(f.t.TempDir(), "late.sh")
+	if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+		f.t.Fatal(err)
+	}
+	return "'" + p + "'"
+}
+
+func landed(f *fixture, wt string) string {
+	var out []string
+	for name, p := range map[string]string{"worktree/late.txt": filepath.Join(wt, "late.txt"), "hooks/post-checkout": filepath.Join(f.common(), "hooks/post-checkout"),
+		"main/late.txt": filepath.Join(f.real, "late.txt")} {
+		_, err := os.Stat(p)
+		out = append(out, fmt.Sprintf("%s=%v", name, err == nil))
+	}
+	_, err := os.Stat(filepath.Join(f.common(), "refs/heads/zzz"))
+	out = append(out, fmt.Sprintf("refs/heads/zzz=%v", err == nil || f.git("for-each-ref", "refs/heads/zzz") != ""))
+	slices.Sort(out)
+	return strings.Join(out, " ")
+}
+
+// P1: the shapes through the new Run, each writing one second after the leader exits.
+func TestFableConfirmShapes(t *testing.T) {
+	type shape struct {
+		name  string
+		setup func(f *fixture, pidFile string) string // returns the scenario prefix
+	}
+	shapes := []shape{
+		{"setsid session leader (child of the leader)", func(f *fixture, pf string) string {
+			return fhelper(t, "FABLE_SETSID=1", "late", "$$", "'"+pf+"'", "1000", lateScript(f)) + " </dev/null >/dev/null 2>&1 &\nsleep 0.7\n"
+		}},
+		{"own group child, same session (setpgid via sh)", func(f *fixture, pf string) string {
+			return "(" + fhelper(t, "", "late", "$$", "'"+pf+"'", "1000", lateScript(f)) + ") </dev/null >/dev/null 2>&1 &\nsleep 0.7\n"
+		}},
+		{"double fork, intermediate 400 ms (seen by a poll)", func(f *fixture, pf string) string {
+			return fhelper(t, "", "fork", "400", "$$", "'"+pf+"'", "1000", lateScript(f)) + " </dev/null >/dev/null 2>&1\nsleep 0.7\n"
+		}},
+		{"double fork, intermediate 1 ms (reparented before the first poll)", func(f *fixture, pf string) string {
+			return fhelper(t, "", "fork", "1", "$$", "'"+pf+"'", "1000", lateScript(f)) + " </dev/null >/dev/null 2>&1\nsleep 0.7\n"
+		}},
+		{"setsid child that holds stdout", func(f *fixture, pf string) string {
+			return fhelper(t, "FABLE_SETSID=1", "late", "$$", "'"+pf+"'", "1000", lateScript(f)) + " </dev/null 2>/dev/null &\nsleep 0.7\n"
+		}},
+	}
+	for _, s := range shapes {
+		t.Run(s.name, func(t *testing.T) {
+			f := newFixture(t, false, false)
+			pf := filepath.Join(t.TempDir(), "pid")
+			start := time.Now()
+			res, err := f.run(s.setup(f, pf)+okScenario, func(r *Request, d *Deps) { d.KeepWorktree = true })
+			took := time.Since(start)
+			pid := pidFrom(t, pf)
+			t.Cleanup(func() { _ = syscall.Kill(pid, syscall.SIGKILL) })
+			time.Sleep(2500 * time.Millisecond) // past the late write
+			done, _ := os.ReadFile(pf + ".done")
+			t.Logf("RESULT %s: exit %d end %s err %v took %v | helper pid %d now %s | survivors_killed %v | late write done=%v | landed: %s | violations %v | warnings %v",
+				s.name, res.ExitCode, res.End, err, took.Round(10*time.Millisecond), pid, alive(pid), res.Survivors, len(done) > 0, landed(f, res.Worktree), res.Violations, res.Warnings)
+			if len(done) > 0 { // escaped: does the next dispatch catch it?
+				_, err2 := f.run(okScenario, func(r *Request, _ *Deps) { r.Ticket, r.Branch = "24", "" })
+				t.Logf("RESULT %s: next dispatch (T-024) exit %d err %v", s.name, code(err2), err2)
+			}
+		})
+	}
+}
+
+// P2: the escape gap for a fast double fork at the real poll interval (250 ms).
+func TestFableConfirmForkGap(t *testing.T) {
+	for _, ms := range []int{1, 50, 150, 300} {
+		escaped, killed := 0, 0
+		for i := 0; i < 5; i++ {
+			f := newFixture(t, false, false)
+			pf := filepath.Join(t.TempDir(), "pid")
+			res, err := f.run(fhelper(t, "", "fork", strconv.Itoa(ms), "$$", "'"+pf+"'", "60000", "true")+" </dev/null >/dev/null 2>&1\nsleep 0.7\n"+okScenario)
+			if err != nil || res.ExitCode != 0 {
+				t.Fatalf("exit %d err %v", res.ExitCode, err)
+			}
+			pid := pidFrom(t, pf)
+			if slices.Contains(survivorPIDs(res), pid) && alive(pid) == "gone" {
+				killed++
+			} else {
+				escaped++
+				_ = syscall.Kill(pid, syscall.SIGKILL)
+			}
+		}
+		t.Logf("RESULT fork gap: intermediate %d ms, poll 250 ms, %s: killed %d escaped %d of 5", ms, goruntime.GOOS, killed, escaped)
+	}
+}
+
+// P3: a plain & child in the group (killed by the group signal, not the sweep):
+// what does it look like after Run, and is it recorded?
+func TestFableConfirmGroupChild(t *testing.T) {
+	f := newFixture(t, false, false)
+	pf := filepath.Join(t.TempDir(), "pid")
+	res, err := f.run("sleep 300 </dev/null >/dev/null 2>&1 &\necho $! > '"+pf+"'\n"+okScenario)
+	raw, rerr := os.ReadFile(pf)
+	t.Logf("group child: exit %d err %v pidfile %q readerr %v", res.ExitCode, err, raw, rerr)
+	pid, _ := strconv.Atoi(strings.TrimSpace(string(raw)))
+	if pid == 0 {
+		t.Fatal("no pid")
+	}
+	t.Cleanup(func() { _ = syscall.Kill(pid, syscall.SIGKILL); _, _ = syscall.Wait4(pid, nil, syscall.WNOHANG, nil) })
+	time.Sleep(300 * time.Millisecond)
+	tab, _ := procTable()
+	i := slices.IndexFunc(tab, func(p proc) bool { return p.pid == pid })
+	ppid := -1
+	if i >= 0 {
+		ppid = tab[i].ppid
+	}
+	t.Logf("RESULT group child: exit %d err %v | sleep pid %d now %s (ppid %d, dispatch pid %d) | survivors_killed %v | kill(pid,0)=%v",
+		res.ExitCode, err, pid, alive(pid), ppid, os.Getpid(), res.Survivors, syscall.Kill(pid, 0))
+}
+
+// P4: non-descendants. A sibling orphaned by its own shell before the run, a
+// direct child of dispatch started before the worker, and a direct child of
+// dispatch started while the worker runs (the renew's shape).
+func TestFableConfirmNonDescendants(t *testing.T) {
+	_ = newTracker(0) // sets the subreaper on linux, as a real session would
+	out, err := exec.Command("sh", "-c", "sleep 300 </dev/null >/dev/null 2>&1 & echo $!").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	orphan, _ := strconv.Atoi(strings.TrimSpace(string(out)))
+	pre := exec.Command("sleep", "300")
+	if err := pre.Start(); err != nil {
+		t.Fatal(err)
+	}
+	var post *exec.Cmd
+	go func() {
+		time.Sleep(400 * time.Millisecond)
+		post = exec.Command("sleep", "300")
+		_ = post.Start()
+	}()
+	t.Cleanup(func() {
+		_ = syscall.Kill(orphan, syscall.SIGKILL)
+		_ = pre.Process.Kill()
+		_ = pre.Wait()
+		if post != nil {
+			_ = post.Process.Kill()
+			_ = post.Wait()
+		}
+	})
+	f := newFixture(t, false, false)
+	res, err := f.run("sleep 1.2\n" + okScenario)
+	time.Sleep(200 * time.Millisecond)
+	t.Logf("RESULT non-descendants on %s: exit %d err %v | shell orphan %d %s | pre child %d %s | post child (started during the run) %d %s | survivors_killed %v",
+		goruntime.GOOS, res.ExitCode, err, orphan, alive(orphan), pre.Process.Pid, alive(pre.Process.Pid), post.Process.Pid, alive(post.Process.Pid), res.Survivors)
+}
+
+// P4b: the renew race, deterministically at the tracker level: after the
+// leader is reaped, is a fresh direct child of dispatch adopted and killed?
+func TestFableConfirmTrackerAdoptsOwnChild(t *testing.T) {
+	root := exec.Command("sh", "-c", "sleep 0.4")
+	root.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := root.Start(); err != nil {
+		t.Fatal(err)
+	}
+	tr := newTracker(root.Process.Pid)
+	tr.poll()
+	_ = root.Wait()
+	own := exec.Command("sleep", "300")
+	if err := own.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = own.Process.Kill(); _ = own.Wait() })
+	time.Sleep(50 * time.Millisecond)
+	k := tr.sweep()
+	time.Sleep(100 * time.Millisecond)
+	t.Logf("RESULT tracker on %s: rootStart %q; dispatch's own child %d started after the leader: sweep killed %v, now %s",
+		goruntime.GOOS, tr.rootStart, own.Process.Pid, k, alive(own.Process.Pid))
+}
+
+// P4c: the same race through Run on linux: a fast keepalive while the leader
+// exits. Any claim_renew_failed warning or violation is the sweep killing the
+// renew's git.
+func TestFableConfirmRenewRace(t *testing.T) {
+	warned, viol := 0, 0
+	n := 15
+	for i := 0; i < n; i++ {
+		f := newFixture(t, false, false)
+		res, err := f.run("sleep 0.35\n"+okScenario, func(_ *Request, d *Deps) { d.KeepaliveEvery = 3 * time.Millisecond })
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(strings.Join(res.Warnings, "|"), "claim_renew_failed") {
+			warned++
+			t.Logf("  run %d: %v", i, res.Warnings)
+		}
+		if len(res.Violations) > 0 {
+			viol++
+			t.Logf("  run %d: exit %d violations %v", i, res.ExitCode, res.Violations)
+		}
+	}
+	t.Logf("RESULT renew race on %s: %d runs, keepalive 3 ms: claim_renew_failed in %d, violations in %d", goruntime.GOOS, n, warned, viol)
+}
+
+// P5: D-189, the push path with branch.* keys ignored by the record.
+func TestFableConfirmBranchKeys(t *testing.T) {
+	f := newFixture(t, true, false)
+	if res, err := f.run(okScenario); err != nil || res.ExitCode != 0 || !f.pushed("t-023") {
+		t.Fatalf("run 1: exit %d err %v pushed %v", res.ExitCode, err, f.pushed("t-023"))
+	}
+	bogus := filepath.Join(t.TempDir(), "bogus.git")
+	sh(t, filepath.Dir(bogus), "init", "-q", "--bare", "-b", "main", bogus)
+	f.git("config", "--local", "branch.t-023.pushRemote", bogus)
+	f.git("config", "--local", "branch.t-023.remote", bogus)
+	f.git("config", "--local", "branch.t-023.merge", "refs/heads/main")
+	f.git("config", "--local", "branch.autoSetupMerge", "always")
+	res, err := f.run(commitFile("internal/x/c.go", "ok") + emit(assistant(100), okResult))
+	bog := sh(t, bogus, "for-each-ref", "refs/heads/")
+	t.Logf("RESULT branch keys: run 2 exit %d err %v res.Pushed %v origin t-023 tip subject %q, bogus remote refs %q (pushRemote/remote pointing at it), violations %v",
+		res.ExitCode, err, res.Pushed, sh(t, f.origin, "log", "-1", "--format=%s", "refs/heads/t-023"), bog, res.Violations)
+	for _, kv := range [][2]string{{"remote.pushDefault", "origin"}, {"include.path", "/nonexistent"}, {"core.hooksPath", "/nonexistent"}} {
+		f.git("config", "--local", kv[0], kv[1])
+		_, err := f.run(commitFile("internal/x/d.go", "ok") + emit(assistant(100), okResult))
+		t.Logf("RESULT branch keys: after %s: exit %d err %v", kv[0], code(err), err)
+		f.git("config", "--local", "--unset", kv[0])
+		_ = os.Remove(filepath.Join(f.real, ".waggle/worktrees/host-files.json"))
+		if res, err := f.run(commitFile("internal/x/e"+kv[0]+".go", "ok") + emit(assistant(100), okResult)); err != nil || res.ExitCode != 0 {
+			t.Fatalf("re-baseline after %s: exit %d err %v", kv[0], res.ExitCode, err)
+		}
+	}
+	// a worker writing a branch key during its run is still a host_state violation
+	res, err = f.run("git config --local branch.t-023.pushRemote evil\n" + commitFile("internal/x/g.go", "ok") + emit(assistant(100), okResult))
+	t.Logf("RESULT branch keys: worker writes branch.t-023.pushRemote during the run: exit %d err %v violations %v", res.ExitCode, err, res.Violations)
+	_, err = f.run(okScenario, func(r *Request, _ *Deps) { r.Ticket, r.Branch = "24", "" })
+	t.Logf("RESULT branch keys: next dispatch after that violation run: exit %d err %v", code(err), err)
+}
+
+// P6: the record is saved after a dirty run and a timeout run too, from the verified snapshot.
+func TestFableConfirmRecordSavedAlways(t *testing.T) {
+	old := killGrace
+	killGrace = 200 * time.Millisecond
+	t.Cleanup(func() { killGrace = old })
+	f := newFixture(t, false, false)
+	rec := filepath.Join(f.real, ".waggle/worktrees/host-files.json")
+	hook := filepath.Join(f.common(), "hooks/post-checkout")
+	res, err := f.run("echo x > probe.txt\n"+okScenario, func(_ *Request, d *Deps) { d.KeepWorktree = true })
+	_, e1 := os.Stat(rec)
+	t.Logf("RESULT record: dirty run exit %d err %v violations %v; record present %v", res.ExitCode, err, res.Violations, e1 == nil)
+	f = newFixture(t, false, false)
+	rec, hook = filepath.Join(f.real, ".waggle/worktrees/host-files.json"), filepath.Join(f.common(), "hooks/post-checkout")
+	res, err = f.run("mkdir -p '"+filepath.Dir(hook)+"'; echo x > '"+hook+"'\n"+emit(assistant(100))+"sleep 30\n", func(_ *Request, d *Deps) { d.Timeout = 500 * time.Millisecond })
+	b, e2 := os.ReadFile(rec)
+	t.Logf("RESULT record: timeout run with a hook planted exit %d end %s err %v violations %v; record present %v, holds post-checkout %v", res.ExitCode, res.End, err, res.Violations, e2 == nil, strings.Contains(string(b), "post-checkout"))
+	_, err = f.run(okScenario, func(r *Request, _ *Deps) { r.Ticket, r.Branch = "24", "" })
+	t.Logf("RESULT record: next dispatch exit %d err %v", code(err), err)
+}
+
+// P7: an in-group child that writes to the worktree while being killed is not
+// a question; but a tracked survivor must die before the files step. Here the
+// survivor polls for the sweep's kill and we measure the order with git's own
+// log: the stop path (timeout) with a setsid child.
+func TestFableConfirmStopPath(t *testing.T) {
+	old := killGrace
+	killGrace = time.Nanosecond
+	t.Cleanup(func() { killGrace = old })
+	f := newFixture(t, false, false)
+	pf := filepath.Join(t.TempDir(), "pid")
+	res, err := f.run(fhelper(t, "FABLE_SETSID=1", "late", "$$", "'"+pf+"'", "1000", lateScript(f))+" </dev/null >/dev/null 2>&1 &\n"+emit(assistant(100))+"sleep 30\n",
+		func(_ *Request, d *Deps) { d.Timeout = 800 * time.Millisecond; d.KeepWorktree = true })
+	pid := pidFrom(t, pf)
+	t.Cleanup(func() { _ = syscall.Kill(pid, syscall.SIGKILL) })
+	time.Sleep(2500 * time.Millisecond)
+	done, _ := os.ReadFile(pf + ".done")
+	t.Logf("RESULT stop path (timeout, SIGTERM+SIGKILL at once): exit %d end %s err %v | helper %d now %s | survivors_killed %v | late write done=%v | landed: %s | violations %v",
+		res.ExitCode, res.End, err, pid, alive(pid), res.Survivors, len(done) > 0, landed(f, res.Worktree), res.Violations)
+}
+
+var _ = errors.New
