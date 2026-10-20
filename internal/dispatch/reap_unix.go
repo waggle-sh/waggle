@@ -36,16 +36,18 @@ type tracker struct {
 	kill       func(int, syscall.Signal) error
 }
 
+func sysKill(p int, s syscall.Signal) error { return syscall.Kill(p, s) }
+
 // newTracker takes the first table read itself. Callers start it right after
 // cmd.Start and before cmd.Wait can run, so that read lists the leader (alive,
 // or a zombie with its start time) and the sweep knows the reaping threshold.
 func newTracker(root int) *tracker {
 	if root <= 1 { // inert: pid 0 and init would make every process of the user a descendant
-		return &tracker{blind: true}
+		return &tracker{blind: true, read: procTable, kill: sysKill} // seams set: its sweep reads nothing it may signal
 	}
 	setSubreaper()
 	t := &tracker{root: root, self: syscall.Getpid(), seen: map[pkey]string{}, read: procTable,
-		kill: func(p int, s syscall.Signal) error { return syscall.Kill(p, s) }}
+		kill: sysKill}
 	t.poll()
 	return t
 }
