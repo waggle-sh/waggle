@@ -557,9 +557,9 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 	// pipe cannot hold Run until the timeout.
 	tr := newTracker(cmd.Process.Pid)
 	tracked, collected, swept, held := make(chan struct{}), make(chan struct{}), make(chan struct{}), false
+	tr.poll() // before the worker can exit: it records the leader's start time that the sweep's reaping needs
 	go func() {
 		defer close(tracked)
-		tr.poll()
 		for t := time.NewTicker(pollEvery); ; {
 			select {
 			case <-exited:
