@@ -1,0 +1,13 @@
+# scan-hive.sh at 2a99fb5 with the rev-list --min-parents=3 block removed, on the octopus-evil-then-removed head 57b1248 from oconfirm-scan-probe-rerun-macos.txt: the remerge-skipped guard alone fails it closed
+scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 57b1248, 5 commit(s) scanned
+warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+changed paths (4):
+  .waggle/hive/media/confirm-plant/evil.md
+  .waggle/hive/media/confirm-plant/main.md
+  .waggle/hive/media/confirm-plant/o1.md
+  .waggle/hive/media/confirm-plant/o2.md
+decisions gate (exit 0):
+  decisions: unchanged
+hits (1):
+  commit 5db6ef2:0: remerge-skipped
+result: FAIL, 1 hit(s): guard and card

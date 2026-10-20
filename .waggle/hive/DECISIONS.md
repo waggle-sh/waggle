@@ -3389,3 +3389,234 @@
 **Keeper choice:** Dispatch counts `Verdict: must-fix` lines across every `reviews/T-<nnn><suffix>-*.md` at base, where `<suffix>` is the branch suffix, so the step-up counts this phase's rounds; two Tier 3 guards both must-fix in one round count 2 (10.6 item 22). Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
 
 **Rationale:** Makes the T-012 step-up work with our hive's review naming in about 10 lines; a process habit would be easy to skip.
+
+## D-178: T-023 item 23: a forager triages the linux TestRunHostState/new_admin_entry failure now, beside D0
+
+- **Date:** 2026-10-19
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** TestRunHostState/new_admin_entry failed in 2 of the last 4 linux product-ci runs (plain, then symlinked), each time reporting a planted worktree admin entry as clean (exit 0, no violations): the post-run tamper check missing tampering. It is 10.6 item 23, scheduled for phase D. When?
+
+**Options considered:**
+1. Forager now, beside D0; a real check bug gets a small Tier 3 fix PR on internal/dispatch/ before phase D, a fixture artifact stays item 23
+2. Leave it in phase D and rerun red CI until then
+3. A blocking fix PR before D0 dispatches
+
+**Hive recommendation:** Forager now, beside D0; a real check bug gets a small Tier 3 fix PR on internal/dispatch/ before phase D, a fixture artifact stays item 23
+
+**Keeper choice:** A forager reproduces and triages item 23 on linux in parallel with the D0 build. If the production check can miss a planted admin entry, the fix lands as its own Tier 3 PR on internal/dispatch/ before phase D; if it is a test-fixture artifact, it stays phase D item 23. D0 is not held. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** A tamper check that passes a tampered host is a security gap, and the failure rate is too high to rerun past for long; triage costs one forager run and does not delay D0.
+
+## D-179: A second guard with no unused model at or above its level takes the highest unused model below it
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Opus N7 on T-023 phase D0: a frontier builder (any step-up) plus a frontier first guard fill both frontier slots, so --second always fails, even with alternates.frontier set. This hits exactly the Tier 3 tasks that needed a step-up. How should the second guard resolve?
+
+**Options considered:**
+1. Allow a level down: the highest unused model below the guard's level, still cross-model
+2. alternates.<level> becomes a list (config schema change)
+3. Keep the rule; the queen runs the second guard by hand
+
+**Hive recommendation:** Allow a level down: the highest unused model below the guard's level, still cross-model
+
+**Keeper choice:** When the second guard (TaskContext.SecondGuard) finds no model at or above its level that differs from the builder's and the first guard's, it takes the highest-level unused model below that level (primary before alternate at each level); ErrNoCrossModel only when no unused model exists at any level. The first guard and every other role are unchanged. Lands in the T-023 phase D0 fix round, since policy.go is in the D0 lease and not phase D's. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Keeps the D-116 cross-model rule and makes --second work on stepped-up Tier 3 tasks with about 10 lines and no config schema change.
+
+## D-180: The D-179 second-guard downward walk stops at the roster guard minimum
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** D-179
+
+**Question:** Opus confirmation at ebce792: D-179 lets the second guard walk below the roster guard minimum with no bound, so on this hive's config (opus/sonnet/haiku, guard minimum standard, no alternates) an unstepped Tier 3 task gets sonnet builder, opus first guard and haiku second guard; before D-179 that case refused with a config hint. Bound the walk?
+
+**Options considered:**
+1. Bound the walk at the roster guard minimum
+2. Keep D-179 unbounded
+
+**Hive recommendation:** Bound the walk at the roster guard minimum
+
+**Keeper choice:** The second guard's downward walk (D-179) goes no lower than the roster guard minimum; below it, ErrNoCrossModel with its config hint stands. D-179's stepped-up case still resolves (frontier builder, first guard on alternates.frontier, second guard at standard). Lands in a second T-023 phase D0 fix round with tests for primary-before-alternate, the avoid list inside the walk, and the walk's own exhaustion path (opus confirmation C3). Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Keeps every Tier 3 review at or above the guard floor the roster sets; the queen's D-179 card did not surface that the walk would also send unstepped Tier 3 second guards to the fast model.
+
+## D-181: T-023 item 23 is git's detached auto maintenance pruning the planted entry; fix lands as phase D0b before phase D
+
+- **Date:** 2026-10-19
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Forager round 3 found item 23's mechanism: the fixture's git commit starts git maintenance run --auto --detach (geometric strategy, default since git 2.54, includes worktree-prune); when it runs inside the window between the agent's mkdir and its gitdir write it deletes the planted admin entry, so the check correctly sees nothing. Deterministic repro: the proving test fails 16 of 16 without the fix and passes -race -count=50 on linux with it. Fix is about 3 lines: maintenance.auto=false and gc.auto=0 in the worker's GIT_CONFIG_* keys (internal/runtime/launch.go) and -c maintenance.auto=false on host-side git (internal/dispatch/worktree.go), optionally the comb ExtraEnv. Where?
+
+**Options considered:**
+1. A small Tier 3 PR now (phase D0b), two guards, before phase D
+2. Fold into phase D as item 23 with a lease widening to launch.go
+
+**Hive recommendation:** A small Tier 3 PR now (phase D0b), two guards, before phase D
+
+**Keeper choice:** Phase D0b (t-023d0b) leases internal/runtime/launch.go, internal/dispatch/worktree.go and run.go (comb ExtraEnv only) and their tests, lands the round 3 fix and the proving test TestRunPlantDuringAutoMaintenance, Tier 3 with opus and fable guards, and merges before phase D dispatches. 10.6 item 23 is closed by D0b. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Not a check bug, but it reddens every PR's product-ci including phase D's, and a worker session should not spawn a detached git process that edits the common dir; three lines with a deterministic test.
+
+## D-182: The queen handoff stays local and short; a summary is committed only at phase boundaries
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** The committed queen handoff is a running log reviewed through hive-records PRs; its in-flight paragraph was a must-fix in batches 8, 9 and 10 and it is rewritten after every merge for the Stop hook. Change it?
+
+**Options considered:**
+1. Keep it local and uncommitted, Stop hook still checks freshness, facts only, 40-line cap; commit a short summary at phase boundaries
+2. Keep committing it in every records batch
+
+**Hive recommendation:** Keep it local and uncommitted, Stop hook still checks freshness, facts only, 40-line cap; commit a short summary at phase boundaries
+
+**Keeper choice:** The working queen handoff moves to an uncommitted local file (gitignored), still printed by the session-start hook and checked for freshness by the Stop hook; it is facts only with a 40-line cap. A short committed summary at .waggle/hive/handoff/queen.md is refreshed only at phase boundaries (a phase merge) and in records batches. The hook, gitignore and WAGGLE.md section 4 changes land in a hive control PR (Tier 3). Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Removes the recurring stale in-flight must-fix and the per-merge rewrite cost while keeping a fresh-session entry point.
+
+## D-183: A scripted hive scan replaces the guard and card for hive-records batches that touch only .waggle/hive/**
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Hive-records batches get a full opus guard and a Keeper card; most of the guard's value is a mechanical privacy scan. Change it?
+
+**Options considered:**
+1. A committed scan script (emails, home paths, hostnames, dashes, decisions gate); a clean batch touching only .waggle/hive/** merges without guard or card, with a one-line note to the Keeper
+2. Keep the opus guard and card
+
+**Hive recommendation:** A committed scan script (emails, home paths, hostnames, dashes, decisions gate); a clean batch touching only .waggle/hive/** merges without guard or card, with a one-line note to the Keeper
+
+**Keeper choice:** A committed scan script checks every added line of a records batch for email addresses other than the D-160 noreply and known fixtures, the Keeper's name, home and temp paths, hostnames, token shapes and en or em dashes, and runs waggle gate decisions. A batch that touches only .waggle/hive/** and scans clean merges with --admin without a guard or card; the queen tells the Keeper in one line. Anything touching .waggle/control/ or failing the scan keeps the guard and card. The script lands in the hive control PR. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** The privacy scan is mechanical and a script does it more reliably; saves about an hour and a card per batch.
+
+## D-184: Review depth scales with diff size: one confirming guard for small fix rounds
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Every Tier 3 fix round gets two full confirmations even for a few lines. Scale it?
+
+**Options considered:**
+1. Two guards on every first review; a fix round under about 30 added lines gets one confirming guard (alternating models), and a second only if the first finds anything
+2. Keep two confirmations per round
+
+**Hive recommendation:** Two guards on every first review; a fix round under about 30 added lines gets one confirming guard (alternating models), and a second only if the first finds anything
+
+**Keeper choice:** Every Tier 3 first review keeps two guards on different models. A fix round under 30 added lines (D-136 metric) gets one confirming guard, alternating between the two models round to round; if it finds anything, the other model confirms too. Larger fix rounds keep two confirmations. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** First reviews find the defects; small-round confirmations mostly pass, so one guard keeps the check at about half the cost.
+
+## D-185: Scout estimates are doubled and passing the target splits along the planned cut without a card
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Every phase ran 1.5x to 3.3x over its estimate, so stop cards are predictable rather than informative. Recalibrate?
+
+**Options considered:**
+1. Double scout bottom-up estimates; past the target, split along the planned cut without a card; only the stop comes to the Keeper
+2. Keep current budgets and cards
+
+**Hive recommendation:** Double scout bottom-up estimates; past the target, split along the planned cut without a card; only the stop comes to the Keeper
+
+**Keeper choice:** From now on the scout doubles its bottom-up estimate when setting estimate, target and stop. A build that passes its target splits along the brief's planned cut without a card; only crossing the stop comes to the Keeper. For T-023 phase D the D-173 numbers stand and the D1/D2 cut of section 3 applies without a card if the build passes 770. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Turns a predictable overrun card into a planned split and keeps the stop as the real control.
+
+## D-186: T-023 phase D fix rounds run without a Keeper card
+
+- **Date:** 2026-10-19
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** May Tier 3 fix rounds on T-023 phase D run without a card when the guards confirm and the round stays under the stop?
+
+**Options considered:**
+1. Yes, no card per fix round; merges still come to the Keeper
+2. No, a card per round
+
+**Hive recommendation:** Yes, no card per fix round; merges still come to the Keeper
+
+**Keeper choice:** Fix rounds on T-023 phase D (D1 and D2) run without a Keeper card while the guards confirm and the build stays under the stop; every merge still comes to the Keeper on a card. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Saves one wait per fix round, typically two or three in phase D.
+
+## D-187: D-176 mitigation: dispatch tracks the worker's descendants live and kills them on stop and exit
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** The D-176 probe failed: Claude Code 2.1.304's Bash tool starts each command as a session leader, so neither a group kill nor a session sweep reaches it, and after the worker exits its children reparent to pid 1. A survivor can move refs, write the main checkout or plant hooks after the check while dispatch.lock is released. What is built before phase F?
+
+**Options considered:**
+1. Track descendants live: poll the tree about every 250 ms, kill every tracked (pid, start time) on stop and exit, hold dispatch.lock until the sweep, record survivors, PR_SET_CHILD_SUBREAPER on linux
+2. Walk the tree only before the kill on the stop path
+3. Defer to T-024 as NotEnforced and override D-176
+
+**Hive recommendation:** Track descendants live: poll the tree about every 250 ms, kill every tracked (pid, start time) on stop and exit, hold dispatch.lock until the sweep, record survivors, PR_SET_CHILD_SUBREAPER on linux
+
+**Keeper choice:** Dispatch polls the worker's descendant tree about every 250 ms while it runs and records each (pid, start time). On stop and after the leader exits it kills every tracked process still alive whose start time matches, repeats until none remain, and only then runs the post-run check and releases dispatch.lock; any process it had to kill is recorded in result.json. On linux dispatch also sets PR_SET_CHILD_SUBREAPER. A process that daemonizes between two polls stays a documented NotEnforced gap until T-024. Built in the T-023 phase D1 fix round inside internal/dispatch/; the D-176 probe is rerun with the pinned Claude Code as proof, and phase F stays blocked until it passes. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Closes the common leak (a background tool child outliving the worker) on both operating systems without waiting for the Cell runtime, for about 60 to 90 lines.
+
+## D-188: --second checks the recorded builder and first-guard models and fails closed
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Re-resolving the second guard from policy can hand it the builder's own model when the must-fix count changes between guard runs. How is --second protected?
+
+**Options considered:**
+1. Read the builder's and first guard's result.json for the round; exit 3 if missing, if base_oid differs, or if the resolved model equals either; add must_fix to result.json
+2. A queen rule only
+
+**Hive recommendation:** Read the builder's and first guard's result.json for the round; exit 3 if missing, if base_oid differs, or if the resolved model equals either; add must_fix to result.json
+
+**Keeper choice:** A --second guard run reads the latest builder run and first guard run records of the task, and exits 3 before launch when either is missing, when their base_oid differs from the second guard's base, or when the resolved second-guard model equals the model either recorded. result.json gains must_fix, the count used. Built in the T-023 phase D1 fix round; no internal/runtime change. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Keeps the D-100 and D-116 cross-model guarantee true by construction instead of by queen discipline, for about 20 lines.
+
+## D-189: The cross-run host record ignores branch keys and is re-baselined by an acknowledge step
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Item 1's cross-run host record trips on routine edits: every git push -u adds a branch section to .git/config. The only recovery is deleting host-files.json. Change it?
+
+**Options considered:**
+1. Compare config by parsed keys ignoring branch.<name>.*; D2's dispatch clean --host-record shows the diff and re-baselines on confirm; store the verified pre-check snapshot
+2. Keep strict
+
+**Hive recommendation:** Compare config by parsed keys ignoring branch.<name>.*; D2's dispatch clean --host-record shows the diff and re-baselines on confirm; store the verified pre-check snapshot
+
+**Keeper choice:** The host record compares the common config as parsed keys and ignores branch.<name>.* entries; every other difference is still exit 3. The record stores the snapshot the checks verified (fable B1), not a fresh hash after push and removal. Phase D2's dispatch clean --host-record prints the differences and re-baselines only after the Keeper confirms. The parse and snapshot land in the D1 fix round, the acknowledge step in D2. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Keeps item 1 meaningful without training the queen to delete the record after every PR.

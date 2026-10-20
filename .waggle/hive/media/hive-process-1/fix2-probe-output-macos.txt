@@ -1,0 +1,81 @@
+# confirm-scan-probe.sh on base 5c7ada6, macOS, scan-hive.sh fix2 (remerge pass for merges, NUL to , email fast path)
+### records path (expect exit 0)
+== records-batch: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 5f390fd, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### records set edges
+== decisions-rewrite: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head f3cc1d1, 1 commit(s) scanned
+   hits (1):
+     decisions gate: decisions (exit 1)
+   result: FAIL, 1 hit(s): guard and card
+== rename-existing-media: exit 2
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head f6ecf83, 1 commit(s) scanned
+     HOLD (deleted outside the records set) .waggle/hive/media/hive-process-1/scan-branch.txt
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== queen-md-mode-change: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 3566729, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== add-gitignore-in-media: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head a42a731, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### history evasions
+== added-then-removed: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 18796f4, 2 commit(s) scanned
+   hits (1):
+     commit 20ad1e0 .waggle/hive/media/confirm-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== added-then-reverted: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head a3f4404, 2 commit(s) scanned
+   hits (1):
+     commit 93e99aa .waggle/hive/media/confirm-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== amended-away: exit 0
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 1d47e41, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== side-commit-merged-then-removed: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 7fad23b, 4 commit(s) scanned
+   hits (1):
+     commit 3cc3b75 .waggle/hive/media/confirm-plant/side.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== evil-merge-then-removed: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head c902083, 4 commit(s) scanned
+   hits (1):
+     commit d2030ee .waggle/hive/media/confirm-plant/evil.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== evil-merge-edit-then-restored: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 00a47c8, 5 commit(s) scanned
+   hits (1):
+     commit d0e4394 .waggle/hive/media/confirm-plant/both.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+### binary and text flips
+== binary-then-text: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 9e95006, 2 commit(s) scanned
+   hits (2):
+     commit 9e95006 .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit d91a66c .waggle/hive/media/confirm-plant/x.dat:0: binary
+   result: FAIL, 2 hit(s): guard and card
+== text-then-binary: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 72e409f, 2 commit(s) scanned
+   hits (3):
+     .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 72e409f .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 4f6db5b .waggle/hive/media/confirm-plant/x.dat:1: email
+   result: FAIL, 3 hit(s): guard and card
+== nul-after-8000-bytes: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 6bf9e15, 1 commit(s) scanned
+   hits (2):
+     .waggle/hive/media/confirm-plant/late-nul.txt:2: email
+     commit 6bf9e15 .waggle/hive/media/confirm-plant/late-nul.txt:2: email
+   result: FAIL, 2 hit(s): guard and card
+== nul-after-hit: exit 1
+   scan-hive: base 5c7ada6 (merge-base 5c7ada6), head 9e61415, 1 commit(s) scanned
+   hits (2):
+     .waggle/hive/media/confirm-plant/late-nul2.txt:2: email
+     commit 9e61415 .waggle/hive/media/confirm-plant/late-nul2.txt:2: email
+   result: FAIL, 2 hit(s): guard and card

@@ -1,0 +1,15 @@
+# records branch on 2ecd449 (new review, new media file, DECISIONS untouched) merged with 5c7ada6 by a clean update-branch merge; scanned with base 5c7ada6; macOS; scan-hive.sh fix2
+merge exit 0
+scan-hive: base 5c7ada6 (merge-base 5c7ada6), head f02eaa9, 2 commit(s) scanned
+warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+changed paths (2):
+  .waggle/hive/media/confirm-plant/a.md
+  .waggle/hive/reviews/fix2-probe.md
+decisions gate (exit 0):
+  decisions: unchanged
+hits (0):
+result: clean records batch: merge with --admin, one-line note to the Keeper
+== records-batch-update-merge: exit 0
+
+# long line: one 65536-byte line with no @ on 5c7ada6; scan time
+== long-line-65536-no-at: exit 0, 1 s

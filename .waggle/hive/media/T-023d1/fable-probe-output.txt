@@ -1,0 +1,99 @@
+Fable guard probes, T-023 phase D1 (PR #57, head d48deaf), macOS, go test -race, fake claude (fixture_test.go).
+Source: fable-probe_test.go.txt (uncommitted in the guard's worktree; never merged). Temp paths redacted.
+
+===== Run A: all probes. Probe 1a here used a 'push' trigger in remote mode (the survivor wrote before the check, so rule 4 caught it; see run B for the post-check window).
+    probe_fable_test.go:61: run 1: took 986.799583ms exit 1 end lease_violation pushed false violations [{host_state config changed during the run} {host_state hooks/post-checkout changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command claim_sync_skipped: host files changed] err <nil>
+    probe_fable_test.go:62: run 1: survivor pid 98366 alive after Run: true; planted marker exists: true
+    probe_fable_test.go:64: run 1: host-files.json names hooks/post-checkout as a hash (not absent): false
+    probe_fable_test.go:72: run 2: exit 0 err host state was changed by run T-023-builder-1; inspect, restore and run waggle dispatch clean violations []; fetch ran: true
+--- PASS: TestProbeSurvivorAfterCheck (1.48s)
+    probe_fable_test.go:88: took 5.615602708s exit 5 end timeout violations [{dirty . uncommitted or untracked change; the builder must commit}] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command stdout_held: a process outside the group held the output open; its stream was cut collect: reading session stream: read |0: file already closed] err <nil>
+    probe_fable_test.go:89: survivor pid 98483 alive after Run: true (pgid 98483)
+    probe_fable_test.go:90: late-probe.txt in worktree: true
+--- PASS: TestProbeSurvivorHoldsStdoutLeaderExits (5.71s)
+    probe_fable_test.go:102: exit 0 end done violations [] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command] err <nil>
+    probe_fable_test.go:103: same-group child pid 99822 alive after Run: false; late file: false
+--- PASS: TestProbeSameGroupChildDies (0.72s)
+    probe_fable_test.go:134: empty: verdict "" end no_verdict exit 5 err <nil>
+    probe_fable_test.go:134: exact maxfinal-1: verdict "pass" end done exit 0 err <nil>
+    probe_fable_test.go:134: exact maxfinal uncut: verdict "" end no_verdict exit 5 err <nil>
+    probe_fable_test.go:134: crlf: verdict "" end no_verdict exit 5 err <nil>
+    probe_fable_test.go:134: fence then real: verdict "must-fix" end done exit 0 err <nil>
+    probe_fable_test.go:134: trailing space: verdict "" end no_verdict exit 5 err <nil>
+    probe_fable_test.go:134: leading space: verdict "" end no_verdict exit 5 err <nil>
+    probe_fable_test.go:134: capital: verdict "" end no_verdict exit 5 err <nil>
+    probe_fable_test.go:134: fence last wins: verdict "pass" end done exit 0 err <nil>
+    probe_fable_test.go:134: quoted bullet: verdict "must-fix" end done exit 0 err <nil>
+=== NAME  TestProbeVerdictCrafted
+    probe_fable_test.go:139: parseVerdict(dup last mustfix) = "must-fix"
+    probe_fable_test.go:139: parseVerdict(crlf) = ""
+    probe_fable_test.go:139: parseVerdict(nul) = ""
+    probe_fable_test.go:139: parseVerdict(dup last pass) = "pass"
+--- PASS: TestProbeVerdictCrafted (12.48s)
+    --- PASS: TestProbeVerdictCrafted/empty (1.20s)
+    --- PASS: TestProbeVerdictCrafted/exact_maxfinal-1 (1.31s)
+    --- PASS: TestProbeVerdictCrafted/exact_maxfinal_uncut (1.30s)
+    --- PASS: TestProbeVerdictCrafted/crlf (1.24s)
+    --- PASS: TestProbeVerdictCrafted/fence_then_real (1.24s)
+    --- PASS: TestProbeVerdictCrafted/trailing_space (1.20s)
+    --- PASS: TestProbeVerdictCrafted/leading_space (1.19s)
+    --- PASS: TestProbeVerdictCrafted/capital (1.35s)
+    --- PASS: TestProbeVerdictCrafted/fence_last_wins (1.24s)
+    --- PASS: TestProbeVerdictCrafted/quoted_bullet (1.20s)
+    probe_fable_test.go:161: ignored probe file: exit 1 end lease_violation verdict "pass" violations [{dirty . uncommitted or untracked change; the builder must commit}] err <nil> tainted false
+    probe_fable_test.go:161: log output to hooks: exit 1 end lease_violation verdict "pass" violations [{host_state hooks/post-checkout changed during the run}] err <nil> tainted true
+    probe_fable_test.go:161: log output to main: exit 1 end lease_violation verdict "pass" violations [{host_state . main checkout status or HEAD changed}] err <nil> tainted true
+    probe_fable_test.go:161: log output to hostrecord: exit 0 end done verdict "pass" violations [] err <nil> tainted false
+    probe_fable_test.go:165: next run after host-files.json overwrite: exit 0 err <nil>
+    probe_fable_test.go:161: tag: exit 1 end lease_violation verdict "pass" violations [{host_state refs/tags/probe-tag ref changed during the run}] err <nil> tainted true
+    probe_fable_test.go:161: dotgit rewrite: exit 1 end lease_violation verdict "pass" violations [{host_state .git worktree admin dir pin lost} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}] err <nil> tainted true
+    probe_fable_test.go:174: remote guard: exit 0 end done verdict "pass" pushed false verb "read" head 20714d3b7f60da53d7033688ebbe4c36f7d037e2 err <nil>; origin refs unchanged: true
+    probe_fable_test.go:175: guard worktree removed after exit 0: true
+    probe_fable_test.go:177: ledger lines: 2; last: {"ts":"2026-10-19T22:33:52.066846Z","ticket":"T-023","role":"guard","session":"s1","adapter":"claude-code","model":"opus","profile":"balanced","floored":false,"input_tokens":100,"cache_write_tokens":0,"cache_read_tokens":0,"output_tokens":10,"cost_usd":null,"end":"done"}
+--- PASS: TestProbeGuardSideEffects (9.73s)
+    --- PASS: TestProbeGuardSideEffects/ignored_probe_file (1.19s)
+    --- PASS: TestProbeGuardSideEffects/log_output_to_hooks (1.28s)
+    --- PASS: TestProbeGuardSideEffects/log_output_to_main (1.21s)
+    --- PASS: TestProbeGuardSideEffects/log_output_to_hostrecord (1.95s)
+    --- PASS: TestProbeGuardSideEffects/tag (1.19s)
+    --- PASS: TestProbeGuardSideEffects/dotgit_rewrite (1.17s)
+    --- PASS: TestProbeGuardSideEffects/remote_mode (1.75s)
+    probe_fable_test.go:195: after a Keeper config edit: exit 3 err host files changed since run T-023-builder-1: config; inspect them, then delete host-files.json
+    probe_fable_test.go:200: after deleting the record: exit 0 err <nil>
+    probe_fable_test.go:206: with global: 0 host files changed since run T-023-builder-2: global:gitconfig; inspect them, then delete host-files.json
+--- FAIL: TestProbeHostRecordKeeperEdit (1.80s)
+    probe_fable_test.go:218: control char in user.name: exit 3 err invalid adapter launch config: git identity needs a name and an email without control characters
+    probe_fable_test.go:226: name global, email local: exit 0 err <nil> author "Global Only Name <keeper@example.com>"
+    probe_fable_test.go:232: brief absent: exit 3 err .waggle/hive/tasks/T-023.md is not on base 426219c37e0d41f8f6709a6d60450f9e0145f244; land it in a hive PR first
+--- PASS: TestProbeIdentity (1.65s)
+    probe_fable_test.go:254: branch t-023d: round must-fix 2 err <nil>
+    probe_fable_test.go:254: branch t-023d1: round must-fix 1 err <nil>
+    probe_fable_test.go:254: branch t-023: round must-fix 1 err <nil>
+    probe_fable_test.go:254: branch t-023dd: round must-fix 0 err <nil>
+    probe_fable_test.go:257: ReadInputs t-023d MustFix total 3 err <nil>
+    probe_fable_test.go:262: no reviews dir at base: n 0 err <nil>; ls-tree raw: ""
+--- PASS: TestProbeRoundMustFix (0.65s)
+    probe_fable_test.go:271: no_verdict guard: exit 5 end no_verdict err <nil>; ledger last: {"ts":"2026-10-19T22:33:57.711693Z","ticket":"T-023","role":"guard","session":"s1","adapter":"claude-code","model":"opus","profile":"balanced","floored":false,"input_tokens":100,"cache_write_tokens":0,"cache_read_tokens":0,"output_tokens":10,"cost_usd":null,"end":"error"}
+    probe_fable_test.go:272: guard worktree kept after exit 5: true
+    probe_fable_test.go:274: guard with --dir .github/workflows --gate heavy: err <nil> dirs [] gate ""
+    probe_fable_test.go:276: builder --second: err --second is for the guard role
+    probe_fable_test.go:278: builder with Head set: err <nil> head kept "deadbeef"
+--- PASS: TestProbeGuardLedgerAndValidate (1.45s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	35.853s
+FAIL
+
+===== Run B: probe 1a with the 'worktree remove' trigger, local mode (the survivor writes between the check and saveHostRecord).
+    probe_fable_test.go:61: run 1: took 1.046328584s exit 0 end done pushed false violations [] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command] err <nil>
+    probe_fable_test.go:62: run 1: survivor pid 60330 alive after Run: true; planted marker exists: true
+    probe_fable_test.go:64: run 1: host-files.json records hooks/post-checkout as absent: false; record: {"run":"T-023-builder-1","files":{"config":"7c62f85636fd0fb539c28256e586c29d29e4282d94944dab83629658348f41cf","config.worktree":"absent","global:gitconfig":"other","global:xdg/attributes":"absent","global:xdg/ignore":"1a377e8e10315d1e8b44caf5bfe181da8320a024e4f3316b1cf1d91f9db274b3","hooks/applypatch-msg.sample":"0223497a0b8b033aa58a3a521b8629869386cf7ab0e2f101963d328aa62193f7","hooks/commit-msg.sample":"efc1401b0e99d1ff51494d154d98b46c1e99059bcd8bf9f73cecde19fd3eb23b","hooks/fsmonitor-watchman.sample":"9159720099ad5595b8e66645cbfd47763c1e920f46e0b50ae75e642bbec57ef0","hooks/post-checkout":"a8076d3d28d21e02012b20eaf7dbf75409a6277134439025f282e368e3305abf","hooks/post-update.sample":"81765af2daef323061dcbc5e61fc16481cb74b3bac9ad8a174b186523586f6c5","hooks/pre-applypatch.sample":"e15c5b469ea3e0a695bea6f2c82bcf8e62821074939ddd85b77e0007ff165475","hooks/pre-commit.sample":"57185b7b9f05239d7ab52db045f5b89eb31348d7b2177eab214f5eb872e1971b","hooks/pre-merge-commit.sample":"d3825a70337940ebbd0a5c072984e13245920cdf8898bd225c8d27a6dfc9cb53","hooks/pre-push.sample":"ecce9c7e04d3f5dd9d8ada81753dd1d549a9634b26770042b58dda00217d086a","hooks/pre-rebase.sample":"4febce867790052338076f4e66cc47efb14879d18097d1d61c8261859eaaa7b3","hooks/pre-receive.sample":"a4c3d2b9c7bb3fd8d1441c31bd4ee71a595d66b44fcf49ddb310252320169989","hooks/prepare-commit-msg.sample":"e9ddcaa4189fddd25ed97fc8c789eca7b6ca16390b2392ae3276f0c8e1aa4619","hooks/push-to-checkout.sample":"a53d0741798b287c6dd7afa64aee473f305e65d3f49463bb9d7408ec3b12bf5f","hooks/sendemail-validate.sample":"44ebfc923dc5466bc009602f0ecf067b9c65459abfe8868ddc49b78e6ced7a92","hooks/update.sample":"8d5f2fa83e103cf08b57eaa67521df9194f45cbdbcb37da52ad586097a14d106","info/exclude":"6671fe83b7a07c8932ee89164d1f2793b2318058eb8b98dc5c06ee0a5a3b0ec1","objects/info/alternates":"absent","shallow":"absent"}}
+    probe_fable_test.go:65: run 1: hook present on disk now: true
+    probe_fable_test.go:74: run 2: exit 0 err <nil> violations []; fetch ran in run 2: false
+--- PASS: TestProbeSurvivorAfterCheck (2.30s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	3.566s
+
+===== Run C: B1 fix check. With saveHostRecord storing hostBase(ck.before.files) instead of fresh hashes (temporary local edit, reverted), the same probe gives:
+run 1: exit 0, survivor alive, hook present on disk, record holds the verified snapshot (hooks/post-checkout absent)
+run 2: exit 0 err host files changed since run T-023-builder-1: config, hooks/post-checkout; inspect them, then delete host-files.json (a dispatch *Error, exit 3)
+The builder tests TestHostRecordAcrossRuns and TestHostKeysPathFree still pass with that change.

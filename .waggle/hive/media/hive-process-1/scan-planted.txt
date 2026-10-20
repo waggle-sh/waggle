@@ -1,0 +1,28 @@
+scan-hive: base tmp-scan-records (merge-base fbc545a), head c387183
+changed paths (4):
+  .waggle/hive/DECISIONS.md
+  .waggle/hive/media/planted/planted.bin
+  .waggle/hive/media/planted/planted.md
+  OUTSIDE HIVE docs/planted-outside.txt
+decisions gate (exit 1):
+  decisions: FAIL: decisions: change is not a pure append: head: entries removed or rewritten (base has 186 entries, head has 186)
+  exit status 1
+hits (17):
+  .waggle/hive/media/planted/planted.bin:0: binary
+  .waggle/hive/media/planted/planted.md:2: email
+  .waggle/hive/media/planted/planted.md:4: home-path
+  .waggle/hive/media/planted/planted.md:6: home-path
+  .waggle/hive/media/planted/planted.md:7: home-path
+  .waggle/hive/media/planted/planted.md:8: temp-path
+  .waggle/hive/media/planted/planted.md:9: temp-path
+  .waggle/hive/media/planted/planted.md:10: hostname
+  .waggle/hive/media/planted/planted.md:11: name
+  .waggle/hive/media/planted/planted.md:12: token
+  .waggle/hive/media/planted/planted.md:13: token
+  .waggle/hive/media/planted/planted.md:15: dash
+  .waggle/hive/media/planted/planted.md:16: dash
+  .waggle/hive/media/planted/planted.md:17: personal-mail
+  commit c387183 author:1: email
+  commit c387183 message:1: dash
+  decisions gate: decisions (exit 1)
+result: FAIL, 17 hit(s): guard and card

@@ -1,0 +1,133 @@
+diff --git a/internal/dispatch/diag_test.go b/internal/dispatch/diag_test.go
+new file mode 100644
+index 0000000..6c5d9f0
+--- /dev/null
++++ b/internal/dispatch/diag_test.go
+@@ -0,0 +1,127 @@
++//go:build unix
++
++package dispatch
++
++// T-023 item 23 diagnostic (D-178). Scratch branch only, never merged.
++// Repeats the new_admin_entry scenario with instrumentation and logs the
++// state around the agent exit and the check when an iteration fails.
++
++import (
++	"fmt"
++	"os"
++	"os/exec"
++	"path/filepath"
++	"sort"
++	"strings"
++	"testing"
++)
++
++const diagIterations = 40
++
++func TestDiagNewAdminEntry(t *testing.T) {
++	fails, total := 0, 0
++	for i := 0; i < diagIterations; i++ {
++		for _, link := range []bool{false, true} {
++			total++
++			if !diagOne(t, i, link) {
++				fails++
++			}
++		}
++	}
++	if fails > 0 {
++		t.Errorf("diag: %d of %d iterations failed", fails, total)
++	}
++}
++
++// diagOne runs one planted-entry iteration and returns false when the check
++// missed the entry. Logs are emitted only through t, so they show on failure.
++func diagOne(t *testing.T, iter int, link bool) bool {
++	t.Helper()
++	f := newFixture(t, true, link)
++	root := t.TempDir()
++	diag := filepath.Join(root, "diag.log")
++	planted := f.common() + "/worktrees/planted"
++	mark := func(s string) string { return "echo '" + s + "' >> '" + diag + "'\n" }
++	stamp := func(label string) string {
++		return "echo \"" + label + " $(date +%s%N)\" >> '" + diag + "'\n"
++	}
++	script := okScenario +
++		mark("after-commit") +
++		stamp("commit-done") +
++		"ls -la '" + f.common() + "/worktrees' >> '" + diag + "' 2>&1\n" +
++		"mkdir '" + planted + "' 2>> '" + diag + "'; echo \"mkdir rc=$?\" >> '" + diag + "'\n" +
++		"printf '%s\\n' \"$PWD/.git\" > '" + planted + "/gitdir' 2>> '" + diag + "'; echo \"printf rc=$?\" >> '" + diag + "'\n" +
++		stamp("planted-done") +
++		"ls -la '" + planted + "' >> '" + diag + "' 2>&1\n" +
++		stamp("end")
++	res, err := f.run(script, func(_ *Request, d *Deps) { d.KeepWorktree = true })
++	ok := err == nil && res.ExitCode == 1 && hasViolation(res.Violations, ruleHost, "worktrees/planted")
++	if ok {
++		return true
++	}
++	t.Logf("=== iteration %d link=%v FAILED: exit %d err %v violations %v end %q subtype %q", iter, link, res.ExitCode, err, res.Violations, res.End, res.ResultSubtype)
++	t.Logf("session returned at %d (EndedAt ns), started %d", res.EndedAt.UnixNano(), res.StartedAt.UnixNano())
++	t.Logf("warnings: %v", res.Warnings)
++	t.Logf("git: %s", strings.TrimSpace(gitVersion()))
++	t.Logf("common per git: %s ; fixture common: %s", strings.TrimSpace(f.git("rev-parse", "--path-format=absolute", "--git-common-dir")), f.common())
++	logFile(t, "diag.log (agent shell marks)", diag)
++	logFile(t, "stderr.log", filepath.Join(res.RunDir, "stderr.log"))
++	if fi, serr := os.Stat(planted); serr == nil {
++		t.Logf("post-run: planted exists, mode %v, mtime %v", fi.Mode(), fi.ModTime().UnixNano())
++		logFile(t, "planted/gitdir", planted+"/gitdir")
++	} else {
++		t.Logf("post-run: planted absent (%v)", serr)
++	}
++	logDir(t, "common/worktrees", f.common()+"/worktrees")
++	logDir(t, "common", f.common())
++	for _, p := range []string{"gc.pid", "gc.log", "objects/info/commit-graph", "config", "config.worktree", "packed-refs", "index"} {
++		if fi, serr := os.Stat(filepath.Join(f.common(), p)); serr == nil {
++			t.Logf("stat %s: mtime %d size %d", p, fi.ModTime().UnixNano(), fi.Size())
++		} else {
++			t.Logf("stat %s: %v", p, serr)
++		}
++	}
++	keys := make([]string, 0)
++	for k, v := range hostFiles(f.common(), "") {
++		if strings.HasPrefix(k, "worktrees/") || k == "config" {
++			keys = append(keys, k+"="+v)
++		}
++	}
++	sort.Strings(keys)
++	t.Logf("hostFiles after run (worktrees/*, config): %s", strings.Join(keys, " | "))
++	return false
++}
++
++func gitVersion() string {
++	out, _ := exec.Command("git", "--version").Output()
++	return string(out)
++}
++
++func logFile(t *testing.T, label, path string) {
++	t.Helper()
++	data, err := os.ReadFile(path)
++	if err != nil {
++		t.Logf("%s: %v", label, err)
++		return
++	}
++	t.Logf("%s:\n%s", label, strings.TrimRight(string(data), "\n"))
++}
++
++func logDir(t *testing.T, label, path string) {
++	t.Helper()
++	ents, err := os.ReadDir(path)
++	if err != nil {
++		t.Logf("%s: readdir error %v", label, err)
++		return
++	}
++	var b strings.Builder
++	for _, e := range ents {
++		info, ierr := e.Info()
++		if ierr != nil {
++			fmt.Fprintf(&b, "  %s (info error %v)\n", e.Name(), ierr)
++			continue
++		}
++		fmt.Fprintf(&b, "  %s dir=%v mtime=%d\n", e.Name(), e.IsDir(), info.ModTime().UnixNano())
++	}
++	t.Logf("%s:\n%s", label, strings.TrimRight(b.String(), "\n"))
++}

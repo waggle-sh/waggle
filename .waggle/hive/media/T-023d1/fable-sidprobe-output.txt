@@ -1,0 +1,107 @@
+sidprobe output. Leader started like the host cell (Setpgid) or with Setsid; children: setpgid(0,0), setsid(), plain.
+A session sweep kills every pid whose getsid equals the leader's sid, skipped when that is dispatch's own session.
+
+===== darwin (this Mac), sidprobe-darwin
+===== darwin 27.0.1 =====
+mode setpgid: dispatch pid 22264 pgid 22227 sid 22227
+leader pid 22265 sid 22227 (leader is session leader: false; shares dispatch session: true)
+  before leader  pid 22265 pgid 22265 (<nil>) sid 22227 (<nil>) alive true sameGroupAsLeader true sameSessionAsLeader true
+  before setpgid pid 22266 pgid 22266 (<nil>) sid 22227 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  before setsid  pid 22267 pgid 22267 (<nil>) sid 22267 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  before plain   pid 22268 pgid 22265 (<nil>) sid 22227 (<nil>) alive true sameGroupAsLeader true sameSessionAsLeader true
+after SIGKILL to -leader:
+  after-group-kill leader  pid 22265 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-group-kill setpgid pid 22266 pgid 22266 (<nil>) sid 22227 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  after-group-kill setsid  pid 22267 pgid 22267 (<nil>) sid 22267 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  after-group-kill plain   pid 22268 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+session sweep (sid == leader sid 22227, skipped when it equals dispatch's own session): killed 0
+  after-sweep leader  pid 22265 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep setpgid pid 22266 pgid 22266 (<nil>) sid 22227 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  after-sweep setsid  pid 22267 pgid 22267 (<nil>) sid 22267 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep plain   pid 22268 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+
+mode setsid: dispatch pid 22336 pgid 22227 sid 22227
+leader pid 22337 sid 22337 (leader is session leader: true; shares dispatch session: false)
+  before leader  pid 22337 pgid 22337 (<nil>) sid 22337 (<nil>) alive true sameGroupAsLeader true sameSessionAsLeader true
+  before setpgid pid 22338 pgid 22338 (<nil>) sid 22337 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  before setsid  pid 22339 pgid 22339 (<nil>) sid 22339 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  before plain   pid 22340 pgid 22337 (<nil>) sid 22337 (<nil>) alive true sameGroupAsLeader true sameSessionAsLeader true
+after SIGKILL to -leader:
+  after-group-kill leader  pid 22337 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-group-kill setpgid pid 22338 pgid 22338 (<nil>) sid 22337 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  after-group-kill setsid  pid 22339 pgid 22339 (<nil>) sid 22339 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  after-group-kill plain   pid 22340 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+session sweep (sid == leader sid 22337, skipped when it equals dispatch's own session): killed 1
+  after-sweep leader  pid 22337 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep setpgid pid 22338 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep setsid  pid 22339 pgid 22339 (<nil>) sid 22339 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep plain   pid 22340 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+
+
+===== linux: docker debian:bookworm-slim arm64 under Colima, kernel 6.8 (run with setpgid mode first)
+linux 6.8.0-117-generic debian 12.15
+pids file:
+A 229
+B 230
+C 231
+L 228
+mode setpgid: dispatch pid 223 pgid 1 sid 1
+leader pid 228 sid 1 (leader is session leader: false; shares dispatch session: true)
+  before leader  pid 228 pgid 228 (<nil>) sid 1 (<nil>) alive true sameGroupAsLeader true sameSessionAsLeader true
+  before setpgid pid 229 pgid 229 (<nil>) sid 1 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  before setsid  pid 230 pgid 230 (<nil>) sid 230 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  before plain   pid 231 pgid 228 (<nil>) sid 1 (<nil>) alive true sameGroupAsLeader true sameSessionAsLeader true
+    PID    PPID    PGID     SID COMMAND
+      1       0       1       1 sh
+    223       1       1       1 sidprobe
+    228     223     228       1 sh
+    229     228     229       1 perl
+    230     228     230     230 perl
+    231     228     228       1 perl
+    232     228     228       1 sleep
+    233     223       1       1 ps
+
+after SIGKILL to -leader:
+  after-group-kill leader  pid 228 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-group-kill setpgid pid 229 pgid 229 (<nil>) sid 1 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  after-group-kill setsid  pid 230 pgid 230 (<nil>) sid 230 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  after-group-kill plain   pid 231 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+session sweep (sid == leader sid 1, skipped when it equals dispatch's own session): killed 0
+  after-sweep leader  pid 228 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep setpgid pid 229 pgid 229 (<nil>) sid 1 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  after-sweep setsid  pid 230 pgid 230 (<nil>) sid 230 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep plain   pid 231 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+
+pids file:
+A 242
+B 243
+C 244
+L 241
+mode setsid: dispatch pid 237 pgid 1 sid 1
+leader pid 241 sid 241 (leader is session leader: true; shares dispatch session: false)
+  before leader  pid 241 pgid 241 (<nil>) sid 241 (<nil>) alive true sameGroupAsLeader true sameSessionAsLeader true
+  before setpgid pid 242 pgid 242 (<nil>) sid 241 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  before setsid  pid 243 pgid 243 (<nil>) sid 243 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  before plain   pid 244 pgid 241 (<nil>) sid 241 (<nil>) alive true sameGroupAsLeader true sameSessionAsLeader true
+    PID    PPID    PGID     SID COMMAND
+      1       0       1       1 sh
+    237       1       1       1 sidprobe
+    241     237     241     241 sh
+    242     241     242     241 perl
+    243     241     243     243 perl
+    244     241     241     241 perl
+    245     241     241     241 sleep
+    247     237       1       1 ps
+
+after SIGKILL to -leader:
+  after-group-kill leader  pid 241 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-group-kill setpgid pid 242 pgid 242 (<nil>) sid 241 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader true
+  after-group-kill setsid  pid 243 pgid 243 (<nil>) sid 243 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  after-group-kill plain   pid 244 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+session sweep (sid == leader sid 241, skipped when it equals dispatch's own session): killed 1
+  after-sweep leader  pid 241 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep setpgid pid 242 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep setsid  pid 243 pgid 243 (<nil>) sid 243 (<nil>) alive true sameGroupAsLeader false sameSessionAsLeader false
+  after-sweep plain   pid 244 pgid -1 (no such process) sid 0 (no such process) alive false sameGroupAsLeader false sameSessionAsLeader false
+
+Note: one early linux run with a 700 ms settle (and one with 2 s) showed the setsid-mode children still in the leader's group at the snapshot; three later runs on both OSes agree with the output above. Raw logs kept by the guard.
