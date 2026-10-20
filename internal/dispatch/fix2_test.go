@@ -333,6 +333,7 @@ func TestHostRecordAfterViolation(t *testing.T) {
 // other key (a remote) does.
 func TestHostRecordIgnoresBranchKeys(t *testing.T) {
 	f := newFixture(t, false, false)
+	f.git("remote", "add", "origin", "https://example.invalid/o.git")
 	if res, err := f.run(okScenario); err != nil || res.ExitCode != 0 {
 		t.Fatalf("run 1: exit %d err %v", res.ExitCode, err)
 	}
