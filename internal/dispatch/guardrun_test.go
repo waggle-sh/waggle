@@ -135,8 +135,10 @@ func TestGuardZeroChange(t *testing.T) {
 
 // Item 22 and opus N6: the must-fix count comes from this phase's review files
 // at base (t-023b reads T-023b-*.md), so two guards' must-fix files step the
-// builder up and a file for another phase does not. Both guards of a round read
-// the same base, so they see the same count even after a review is committed.
+// builder up and a file for another phase does not. The count is read at the
+// run's base, so two guards see the same count only on the same base: a --second
+// run after a committed review needs the builder's --base, which checkSecond
+// enforces (TestSecondGuardRefusals).
 func TestMustFixCountPerPhase(t *testing.T) {
 	commit := func(f *fixture, name, body string) {
 		write(t, f.real, ".waggle/hive/reviews/"+name, body)

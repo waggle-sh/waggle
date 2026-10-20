@@ -86,7 +86,7 @@ func TestValidate(t *testing.T) {
 		{"role scout", func(r *Request) { r.Role = "scout" }, ExitUsage},
 		{"role waggled", func(r *Request) { r.Role = "waggled" }, ExitUsage},
 		{"role weaver", func(r *Request) { r.Role = "weaver" }, ExitUsage},
-		{"guard ok", func(r *Request) { r.Role = "guard"; r.Branch = "t-023" }, 0},
+		{"guard ok", func(r *Request) { r.Role, r.Branch, r.Dirs, r.Gate = "guard", "t-023", nil, "" }, 0},
 		{"dir hive", func(r *Request) { r.Dirs = []string{".waggle/hive"} }, 0}, // refused by the Comb at claim time
 		{"dir root", func(r *Request) { r.Dirs = []string{"."} }, ExitClaim},
 		{"dir escapes", func(r *Request) { r.Dirs = []string{"../x"} }, ExitUsage},

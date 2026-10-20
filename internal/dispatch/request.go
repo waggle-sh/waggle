@@ -91,10 +91,12 @@ func (r Request) Validate() (Request, error) {
 		return r, failf(ExitUsage, "role %q is not a claim role; use builder, forager or guard", r.Role)
 	}
 	guard := r.Role == "guard"
-	if guard { // a guard takes its directories and gate from the claim
-		r.Dirs, r.Gate = nil, ""
+	if !guard {
+		r.Head = "" // only Run sets it, for a guard
 	}
 	switch {
+	case guard && (len(r.Dirs) > 0 || r.Gate != ""):
+		return r, failf(ExitUsage, "a guard takes its directories and gate from the builder's claim; drop --dir and --gate")
 	case r.Second && !guard:
 		return r, failf(ExitUsage, "--second is for the guard role")
 	case !guard && r.Gate != "light" && r.Gate != "full":

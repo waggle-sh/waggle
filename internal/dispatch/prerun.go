@@ -2,6 +2,8 @@ package dispatch
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io/fs"
@@ -66,10 +68,41 @@ func hostBase(m map[string]string) map[string]string {
 	return out
 }
 
-// checkHostRecord compares the files git trusts with the hashes the last clean
-// run left (item 1). The record is agent-writable, so this stops only an
+// configKeys is the hash of the common config's parsed entries without
+// branch.<name>.*, which every push with -u rewrites (D-189). A symlink, a
+// missing file or an unparsable one is its file state, so each still differs.
+func configKeys(ctx context.Context, pg *Git, common string) string {
+	p := filepath.Join(common, "config")
+	if st := fileState(p); st == "absent" || st == "other" {
+		return st
+	}
+	out, err := pg.Run(ctx, "config", "--file", p, "--list", "-z")
+	if err != nil {
+		return "unparsable"
+	}
+	var keep []string
+	for _, e := range strings.Split(string(out), "\x00") {
+		if k, _, _ := strings.Cut(e, "\n"); e != "" && !strings.HasPrefix(k, "branch.") {
+			keep = append(keep, e)
+		}
+	}
+	sum := sha256.Sum256([]byte(strings.Join(keep, "\x00")))
+	return hex.EncodeToString(sum[:])
+}
+
+// recordFiles is the map the record stores and compares: the host file hashes
+// without per-worktree keys, the raw config replaced by its parsed keys.
+func recordFiles(files map[string]string, cfg string) map[string]string {
+	m := hostBase(files)
+	delete(m, "config")
+	m["config.keys"] = cfg
+	return m
+}
+
+// checkHostRecord compares the files git trusts with the snapshot the last run
+// verified (item 1). The record is agent-writable, so this stops only an
 // escaped process that does not also rewrite it (see not_enforced).
-func checkHostRecord(dir, common string) error {
+func checkHostRecord(ctx context.Context, pg *Git, dir, common string) error {
 	data, err := readUpTo(filepath.Join(dir, hostRecordName), maxHash)
 	var rec hostRecord
 	switch {
@@ -81,15 +114,17 @@ func checkHostRecord(dir, common string) error {
 	if err != nil {
 		return failf(ExitEnv, "%s is unreadable (%v); inspect the host files, then delete it", hostRecordName, err)
 	}
-	if keys := diffKeys(rec.Files, hostBase(hostFiles(common, ""))); len(keys) > 0 {
+	if keys := diffKeys(rec.Files, recordFiles(hostFiles(common, ""), configKeys(ctx, pg, common))); len(keys) > 0 {
 		return failf(ExitEnv, "host files changed since run %s: %s; inspect them, then delete %s", rec.Run, strings.Join(keys, ", "), hostRecordName)
 	}
 	return nil
 }
 
-// saveHostRecord stores the current hashes after a clean run.
-func saveHostRecord(dir, common, run string) error {
-	b, err := json.Marshal(hostRecord{Run: run, Files: hostBase(hostFiles(common, ""))})
+// saveHostRecord stores the snapshot the checks verified, never a fresh hash:
+// a process that wrote after the compare, or that made the run fail the host
+// check, then differs from the record at the next dispatch (fable B1, opus N1).
+func saveHostRecord(dir string, before snap, run string) error {
+	b, err := json.Marshal(hostRecord{Run: run, Files: recordFiles(before.files, before.cfg)})
 	if err == nil {
 		err = writeFile(dir, hostRecordName, b)
 	}
