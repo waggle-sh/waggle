@@ -4,6 +4,7 @@ package dispatch
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,8 +29,13 @@ func TestHelperProcess(t *testing.T) {
 	case "session": // setsid like Claude Code's Bash tool, record the pid, outlive the leader, then leave a marker
 		_, _ = syscall.Setsid()
 		_ = os.WriteFile(a[1], pid, 0o644)
-		time.Sleep(4 * time.Second)
-		_ = os.WriteFile(a[2], pid, 0o644)
+		for range 600 { // the marker follows only a release the test writes after Run; a survivor never outlives 60 s (D-195)
+			if _, err := os.Stat(a[3]); err == nil {
+				_ = os.WriteFile(a[2], pid, 0o644)
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
 	case "blink": // a session leader that is gone before any poll
 		_, _ = syscall.Setsid()
 		time.Sleep(20 * time.Millisecond)
@@ -39,6 +45,12 @@ func TestHelperProcess(t *testing.T) {
 		if err := c.Start(); err == nil {
 			_ = os.WriteFile(a[1], []byte(strconv.Itoa(c.Process.Pid)), 0o644)
 		}
+	case "sid": // report the session and the leader's pid, and whether joining the test's group fails
+		g, _ := strconv.Atoi(a[2])
+		_ = os.WriteFile(a[1], []byte(fmt.Sprint(getsid(), " ", os.Getppid(), " ", syscall.Setpgid(0, g) == syscall.EPERM)), 0o644)
+	case "toolshell": // a tool shell: own session, a background child, then exit
+		_, _ = syscall.Setsid()
+		_ = exec.Command("sleep", "30").Start()
 	case "sleeper":
 		time.Sleep(60 * time.Second)
 	}
@@ -59,7 +71,7 @@ func helper(t *testing.T, mode string, args ...string) string {
 func pidFrom(t *testing.T, path string) int {
 	t.Helper()
 	var pid int
-	if !wait(func() bool { b, _ := os.ReadFile(path); pid, _ = strconv.Atoi(string(b)); return pid > 0 }) {
+	if !wait(func() bool { b, _ := os.ReadFile(path); pid, _ = strconv.Atoi(string(b)); return pid > 1 }) {
 		t.Fatalf("the helper process did not start: no pid in %s", path)
 	}
 	return pid
@@ -79,10 +91,9 @@ func TestSurvivorKilledAndRecorded(t *testing.T) {
 	fastPoll(t, 30*time.Millisecond)
 	f := newFixture(t, false, false)
 	dir := t.TempDir()
-	pidFile, marker := filepath.Join(dir, "pid"), filepath.Join(dir, "marker")
-	res, err := f.run(helper(t, "session", pidFile, marker) + " &\nsleep 0.7\n" + okScenario)
+	pidFile, marker, release := filepath.Join(dir, "pid"), filepath.Join(dir, "marker"), filepath.Join(dir, "release")
+	res, err := f.run(helper(t, "session", pidFile, marker, release) + " &\nsleep 0.7\n" + okScenario)
 	pid := pidFrom(t, pidFile)
-	t.Cleanup(func() { _ = syscall.Kill(pid, syscall.SIGKILL) })
 	if err != nil || res.ExitCode != 0 {
 		t.Fatalf("exit %d err %v violations %v", res.ExitCode, err, res.Violations)
 	}
@@ -96,7 +107,8 @@ func TestSurvivorKilledAndRecorded(t *testing.T) {
 	if !strings.Contains(string(b), `"survivors_killed": [`) || !strings.Contains(strings.Join(res.Warnings, "|"), "survivors_killed") {
 		t.Fatalf("survivor missing from result.json or the warnings: %s", b)
 	}
-	time.Sleep(4500 * time.Millisecond)
+	_ = os.WriteFile(release, nil, 0o644)
+	time.Sleep(500 * time.Millisecond)
 	if _, e := os.Stat(marker); e == nil {
 		t.Fatal("the killed survivor still wrote its marker")
 	}
@@ -125,8 +137,7 @@ func TestStdoutHolder(t *testing.T) {
 	start := time.Now()
 	res, err := f.run(helper(t, "daemon", pidFile) + "\nsleep 0.3\n" + okScenario)
 	took := time.Since(start)
-	pid := pidFrom(t, pidFile)
-	t.Cleanup(func() { _ = syscall.Kill(pid, syscall.SIGKILL) })
+	pidFrom(t, pidFile) // a survivor that was not killed exits on its own after 60 s (D-195)
 	held := strings.Contains(strings.Join(res.Warnings, "|"), "stdout_held")
 	if err != nil || took > 8*time.Second || (goruntime.GOOS == "linux") == held || (goruntime.GOOS == "linux" && len(res.Survivors) != 1) {
 		t.Fatalf("took %v exit %d held %v survivors %v warnings %v err %v", took, res.ExitCode, held, res.Survivors, res.Warnings, err)

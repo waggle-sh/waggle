@@ -3,6 +3,7 @@
 package dispatch
 
 import (
+	"slices"
 	"syscall"
 	"time"
 )
@@ -24,19 +25,29 @@ type pkey struct {
 // exits; one whose parent exits before the next sample is never seen (not_enforced).
 type tracker struct {
 	root, self int
-	rootStart  string
-	reaped     bool            // the leader is gone: on linux its orphans reparent to dispatch
-	seen       map[pkey]string // tracked processes and their command names
-	live       []proc          // tracked and alive at the last poll
-	blind      bool            // a poll failed or the root was unusable: survivors may have been missed
+	group      int                    // dispatch's own process group from the table, 0 when unknown
+	rootStart  string                 // set once, from the first table that lists the leader
+	reaped     bool                   // the leader is gone: on linux its orphans reparent to dispatch
+	seen       map[pkey]string        // tracked processes and their command names
+	leaders    map[pkey]bool          // tracked processes that lead their own group
+	live       []proc                 // tracked and alive at the last poll
+	blind      bool                   // a poll failed or the root was unusable: survivors may have been missed
+	read       func() ([]proc, error) // the sweep's table read and kill: seams that only tests replace
+	kill       func(int, syscall.Signal) error
 }
 
+// newTracker takes the first table read itself. Callers start it right after
+// cmd.Start and before cmd.Wait can run, so that read lists the leader (alive,
+// or a zombie with its start time) and the sweep knows the reaping threshold.
 func newTracker(root int) *tracker {
 	if root <= 1 { // inert: pid 0 and init would make every process of the user a descendant
 		return &tracker{blind: true}
 	}
 	setSubreaper()
-	return &tracker{root: root, self: syscall.Getpid(), seen: map[pkey]string{}}
+	t := &tracker{root: root, self: syscall.Getpid(), seen: map[pkey]string{}, read: procTable,
+		kill: func(p int, s syscall.Signal) error { return syscall.Kill(p, s) }}
+	t.poll()
+	return t
 }
 
 func (t *tracker) poll() { t.observe(procTable()) }
@@ -49,9 +60,12 @@ func (t *tracker) observe(tab []proc, err error) {
 	}
 	kids := map[int]bool{t.root: !t.reaped, t.self: t.reaped && subreaper}
 	for _, p := range tab {
+		if p.pid == t.self { // from the table, because solaris and illumos lack syscall.Getpgid and Getpgrp
+			t.group = p.pgid
+		}
 		if _, ok := t.seen[pkey{p.pid, p.start}]; ok && !p.zombie {
 			kids[p.pid] = true
-		} else if p.pid == t.root {
+		} else if p.pid == t.root && t.rootStart == "" { // a reused root pid after the reap must not move the threshold
 			t.rootStart = p.start
 		}
 	}
@@ -69,7 +83,16 @@ func (t *tracker) observe(tab []proc, err error) {
 				continue
 			}
 			t.seen[k], kids[p.pid], grew = p.comm, true, true
+			if p.pgid == p.pid {
+				if t.leaders == nil {
+					t.leaders = map[pkey]bool{}
+				}
+				t.leaders[k] = true
+			}
 		}
+	}
+	if t.rootStart == "" { // the leader was never listed: its start time is unknown
+		t.blind = true
 	}
 	t.live = t.live[:0]
 	for _, p := range tab {
@@ -79,23 +102,73 @@ func (t *tracker) observe(tab []proc, err error) {
 	}
 }
 
-// sweep runs after the leader is reaped. It kills every tracked process still
-// alive, polls again for the children of what it killed and repeats until none
-// remain or the bound is hit. It returns each process it had to kill.
+// targets is what the sweep signals, from one table and the tracker's own
+// state only. Pids: tracked live processes above 1, never dispatch. Groups
+// (D-194): the id of a group the tracker saw a tracked process lead, when it is
+// above 1, not dispatch's own, has a live member and its leader pid is absent
+// or has the recorded start time. A table that does not list dispatch (empty,
+// nil) yields nothing: it would make every leader look absent.
+func (t *tracker) targets(tab []proc) (pids, groups []int) {
+	if !slices.ContainsFunc(tab, func(p proc) bool { return p.pid == t.self }) {
+		return nil, nil
+	}
+	for _, p := range t.live {
+		if p.pid > 1 && p.pid != t.self {
+			pids = append(pids, p.pid)
+		}
+	}
+	for k := range t.leaders {
+		member, same := false, true
+		for _, p := range tab {
+			member = member || p.pgid == k.pid && !p.zombie
+			same = same && (p.pid != k.pid || p.start == k.start)
+		}
+		if k.pid > 1 && t.group > 1 && k.pid != t.group && member && same {
+			groups = append(groups, k.pid)
+		}
+	}
+	slices.Sort(groups)
+	return pids, groups
+}
+
+// sweep runs after the leader is reaped. Each round reads the table (a failed
+// read signals nothing and is retried up to 3 times), kills the groups and then
+// the pids that targets names, and repeats until none remain or 40 rounds pass.
+// It returns each process it had to kill, once.
 func (t *tracker) sweep() (killed []Survivor) {
 	t.reaped = true
-	done := map[pkey]bool{}
+	done, fails := map[pkey]bool{}, 0
+	note := func(p proc) {
+		if k := (pkey{p.pid, p.start}); !done[k] && p.pid > 1 && p.pid != t.self && !p.zombie {
+			done[k] = true
+			killed = append(killed, Survivor{p.pid, p.comm})
+		}
+	}
 	for range 40 {
-		if t.poll(); len(t.live) == 0 {
+		tab, err := t.read()
+		if t.observe(tab, err); err != nil {
+			if fails++; fails > 3 {
+				break
+			}
+			time.Sleep(25 * time.Millisecond)
+			continue
+		}
+		pids, groups := t.targets(tab)
+		if len(pids)+len(groups) == 0 {
 			break
 		}
-		for _, p := range t.live {
-			if p.pgid > 1 && p.pgid != syscall.Getpgrp() {
-				_ = syscall.Kill(-p.pgid, syscall.SIGKILL) // an unseen child left in a tracked process's group
+		for _, g := range groups {
+			if t.kill(-g, syscall.SIGKILL) == nil {
+				for _, p := range tab {
+					if p.pgid == g {
+						note(p)
+					}
+				}
 			}
-			if k := (pkey{p.pid, p.start}); p.pid > 1 && p.pid != t.self && syscall.Kill(p.pid, syscall.SIGKILL) == nil && !done[k] {
-				done[k] = true
-				killed = append(killed, Survivor{p.pid, p.comm})
+		}
+		for _, p := range t.live {
+			if slices.Contains(pids, p.pid) && t.kill(p.pid, syscall.SIGKILL) == nil {
+				note(p)
 			}
 		}
 		time.Sleep(25 * time.Millisecond)

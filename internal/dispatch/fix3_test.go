@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
-	"syscall"
 	"testing"
 	"time"
 
@@ -51,15 +50,15 @@ func TestBlankNameChildKilled(t *testing.T) {
 	fastPoll(t, 30*time.Millisecond)
 	f := newFixture(t, false, false)
 	dir := t.TempDir()
-	pidFile, marker := filepath.Join(dir, "pid"), filepath.Join(dir, "marker")
-	script := `use POSIX; $0 = " "; POSIX::setsid(); open F, ">", $ARGV[0]; print F $$; close F; sleep 4; open F, ">", $ARGV[1]; close F;`
-	res, err := f.run("perl -e '" + script + "' " + pidFile + " " + marker + " &\nsleep 0.7\n" + okScenario)
+	pidFile, marker, release := filepath.Join(dir, "pid"), filepath.Join(dir, "marker"), filepath.Join(dir, "release")
+	script := `use POSIX; $0 = " "; POSIX::setsid(); open F, ">", $ARGV[0]; print F $$; close F; for (1..600) { if (-e $ARGV[2]) { open F, ">", $ARGV[1]; close F; last } select(undef, undef, undef, 0.1) }`
+	res, err := f.run("perl -e '" + script + "' " + pidFile + " " + marker + " " + release + " &\nsleep 0.7\n" + okScenario)
 	pid := pidFrom(t, pidFile)
-	t.Cleanup(func() { _ = syscall.Kill(pid, syscall.SIGKILL) })
 	if err != nil || res.ExitCode != 0 || len(res.Survivors) != 1 || res.Survivors[0].PID != pid || !gone(pid) {
 		t.Fatalf("exit %d err %v survivors %v pid %d", res.ExitCode, err, res.Survivors, pid)
 	}
-	time.Sleep(4500 * time.Millisecond)
+	_ = os.WriteFile(release, nil, 0o644)
+	time.Sleep(500 * time.Millisecond)
 	if _, e := os.Stat(marker); e == nil {
 		t.Fatal("the blank-named survivor wrote its marker")
 	}
