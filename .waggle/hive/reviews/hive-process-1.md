@@ -222,3 +222,45 @@ Under `.waggle/hive/media/hive-process-1/`:
 - `fconfirm-branch-scan.txt`
 
 All planted commits were detached and never pushed or branched. The probe scripts were run from outside `.waggle` because the scenarios stage everything under it.
+
+## Confirmation at 2a99fb5
+
+Verdict: pass
+Risk-Tier: 3
+
+Scope: `git diff 462f589 2a99fb5 -- .waggle/control` (20 added lines in `scan-hive.sh`, one sentence each in WAGGLE.md section 4 and the queen role) plus the new fix3 media. The fix adds three fail-closed rules and a version gate: `octopus-merge` (every commit from `git rev-list --min-parents=3`), `remerge-skipped` (git's `diff: warning: Skipping remerge-diff` line, on the commit it follows), `nul-commit` (a NUL byte anywhere in `git cat-file commit`), and an up-front `git version` check that exits 3 below 2.36. B4 is fixed, and C5 and C6 are resolved.
+
+### Ruling: good enough for D-183
+
+Yes. For its purpose, catching accidental leaks on a records batch that merges without a guard, the scan is now good enough. Every ordinary queen or scout shape I could build fails closed or is scanned: normal commits, a hit added then removed, `git revert` (of a commit and of a merge), amends, cherry-picks, squash merges, update-branch merges (clean and with a hand-resolved `DECISIONS.md` conflict), conflict resolutions, renames (including through a name that is itself a hit), binaries and UTF-16, CRLF, lines over and just under 65536 bytes, UTF-8 content and non-ASCII or tab-bearing path names. The gaps left need forgery (crafted objects, deliberate obfuscation such as splitting or encoding an address), which D-183 does not try to stop. No blocking issue.
+
+### Confirmed
+
+1. **B4 fixed.** `octopus-evil-then-removed`, now in the builder's `confirm-scan-probe.sh`, and the same scenario in `fconfirm-merge-probe.sh` exit 1 with two hits on the merge: `remerge-skipped` and `octopus-merge`. `octopus-side-hit-then-removed` still exits 1. Every other scenario in both probes keeps its exit code from the builder's fix3 reruns (the `==` lines diff clean against `fix3-scan-probe-rerun-macos.txt` and `fix3-merge-probe-output-macos.txt`), including `records-batch` and `records-batch-update-merge` at exit 0.
+2. **Each guard holds alone.** With the four-line `rev-list --min-parents=3` block removed, the octopus head still exits 1 on `remerge-skipped` alone (`oconfirm-second-guard-only-macos.txt`). A `+diff: warning` content line cannot trigger the sentinel, since added lines keep their `+`.
+3. **C5 resolved.** `fix3-probe.sh` rerun: a NUL in a crafted message on the same line as the hit, on the line before it, and in the author name each exit 1 with `nul-commit`. Ordinary commits cannot carry a NUL (`git commit` and `commit-tree` refuse one), so this rule has no false positive on a normal batch; signed commits keep their signature in a NUL-free header.
+4. **C6 resolved, version parse checked against real strings** (`oconfirm-version-probe.sh`, which reads the parse line from the script rather than copying it). `2.54.0 (Apple Git-157)`, `2.39.5 (Apple Git-154)`, `2.45.1.windows.1`, `2.36.0.windows.1`, `2.36.0.rc1`, `2.36.0.rc0.windows.1`, `2.36.0.vfs.0.0`, `2.100.0` and `3.0.0.rc0` run; `2.35.1 (Apple Git-136)`, `2.35.1.windows.2`, `2.35.0.rc2` and `2.34.1` exit 3 with "scan-hive: needs git 2.36 or later"; garbage, an empty string and a failing `git version` exit 3. The parse takes field 3 and its first two dot parts, so trailing text and fourth parts are ignored. The full script under a PATH shim gives the same split for the Apple, rc, windows and 2.34.1 strings. Both docs now state the requirement.
+5. **Accidental shapes** (`oconfirm-accident-probe.sh`, all exits as expected): a `DECISIONS.md` append conflict from update-branch resolved by keeping both entries, exit 0 against the moved main; the same resolution with a hit slipped in and fixed in a later commit, exit 1 on the merge; `revert -m 1` of a merge whose side carried a hit, cherry-pick then removal, squash merge then removal, exit 1; a merge message amended to carry a hit and then amended clean, exit 0 (the hit is no longer in history); a rename of a file the branch added, exit 0; a rename through a file name holding an address, exit 1; non-ASCII and tab-bearing paths with a hit in content or name, exit 1; a 70000-byte line, exit 1 (`long-line`); a 60000-byte line, CRLF and UTF-8 lines with a hit, exit 1 (`email`); a UTF-16 file, exit 1 (`binary`).
+6. **Branch scan.** `scan-hive.sh origin/main 2a99fb5`: 10 commits scanned, decisions gate exit 0, 0 hits, exit 2 holding the same 7 control and hook paths (`oconfirm-branch-scan.txt`).
+7. **Privacy and dashes** on the 1049 added lines of 462f589..2a99fb5: no home path, encoded project directory, temp root, hostname, home component word or mail provider; 0 U+2013 or U+2014; the only address is `fixture@example.test`. Author, committer and sign-off are the D-160 handle. My new files pass the same greps, and the planted address is redacted from my outputs.
+
+### Notes (not blocking)
+
+- **O1. A hit in a path name prints the path as is.** The header says hits never print the matched value, but when the path itself carries the address the hit key is that path (`rename-through-hit-name`, `non-ascii-path-hit-in-name`). The scan output then holds the leak; if the queen pastes it into a PR comment or a review, the leak spreads. The hit still fails the batch, so it is not a bypass. A redaction of the key (for example the commit and the path's directory only, or a hash of the name) would close it, and the queen role could say not to paste a FAIL output.
+- **O2. Non-ASCII path names hold a clean batch.** `core.quotePath=true` quotes them, so the class awk sees a path starting with `"` and reports "outside .waggle/hive/" (`non-ascii-path-clean`: exit 2). That fails closed and only costs a guard; the HOLD reason is misleading, and content hit labels under such paths keep a `"b/` prefix.
+- **O3.** Ubuntu 22.04 ships git 2.34.1, so a scout or CI runner there gets exit 3. That is loud, not a silent pass.
+- **O4.** Linux was not rerun: the Docker daemon is down and the instruction was not to start Colima. The new lines use `tr -cd '\000'`, `wc -c`, `rev-list --min-parents` and a plain awk `split`, all GNU-compatible.
+- **O5.** `.waggle/control/scan-names.local` is absent in this worktree, so the Keeper surname rule was not exercised by the branch scan; the scan prints its warning as designed.
+- **O6.** `queen-md-mode-change` (chmod +x on the committed handoff) still exits 0. A mode bit is not a leak, so this is consistent with D-183, recorded only because the classifier ignores mode on that path.
+- **C9 carry-over.** The rerun of `fix3-probe.sh` wrote three more crafted, valid NUL commit objects; they and every planted probe commit are dangling, detached and never pushed. No prune or gc was run.
+
+### Evidence
+
+Under `.waggle/hive/media/hive-process-1/`:
+- `oconfirm-scan-probe-rerun-macos.txt`, `oconfirm-merge-probe-rerun-macos.txt`, `oconfirm-fix3-probe-rerun-macos.txt` (the three existing probes on base 2a99fb5)
+- `oconfirm-second-guard-only-macos.txt`
+- `oconfirm-version-probe.sh`, `oconfirm-version-output-macos.txt`
+- `oconfirm-accident-probe.sh`, `oconfirm-accident-output-macos.txt`
+- `oconfirm-branch-scan.txt`
+
+The probes ran from the worktree root with no untracked or ignored files under `.waggle`, each probe script and a copy of the committed `scan-hive.sh` kept outside `.waggle` while it ran.

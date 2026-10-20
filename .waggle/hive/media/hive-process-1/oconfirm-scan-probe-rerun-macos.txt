@@ -1,0 +1,87 @@
+# confirm-scan-probe.sh 2a99fb5 <copy of the committed scan-hive.sh>, macOS, git 2.54, run from the worktree root with the probe outside .waggle
+### records path (expect exit 0)
+== records-batch: exit 0
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 954f11d, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### records set edges
+== decisions-rewrite: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head d7b44c8, 1 commit(s) scanned
+   hits (1):
+     decisions gate: decisions (exit 1)
+   result: FAIL, 1 hit(s): guard and card
+== rename-existing-media: exit 2
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 43107ef, 1 commit(s) scanned
+     HOLD (deleted outside the records set) .waggle/hive/media/hive-process-1/scan-branch.txt
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== queen-md-mode-change: exit 0
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 1735b9c, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== add-gitignore-in-media: exit 0
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 006b5e8, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### history evasions
+== added-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 9092d23, 2 commit(s) scanned
+   hits (1):
+     commit 3039df4 .waggle/hive/media/confirm-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== added-then-reverted: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 1c68a15, 2 commit(s) scanned
+   hits (1):
+     commit eff9048 .waggle/hive/media/confirm-plant/a.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== amended-away: exit 0
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 31fa715, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== side-commit-merged-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 2e4764e, 4 commit(s) scanned
+   hits (1):
+     commit afe7107 .waggle/hive/media/confirm-plant/side.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== evil-merge-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head b4a5bb0, 4 commit(s) scanned
+   hits (1):
+     commit be1d489 .waggle/hive/media/confirm-plant/evil.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== evil-merge-edit-then-restored: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head b8113cb, 5 commit(s) scanned
+   hits (1):
+     commit 0b18b85 .waggle/hive/media/confirm-plant/both.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== octopus-evil-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 57b1248, 5 commit(s) scanned
+   hits (2):
+     commit 5db6ef2:0: remerge-skipped
+     commit 5db6ef2:0: octopus-merge
+   result: FAIL, 2 hit(s): guard and card
+### binary and text flips
+== binary-then-text: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 3f9a3c1, 2 commit(s) scanned
+   hits (2):
+     commit 3f9a3c1 .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 916705f .waggle/hive/media/confirm-plant/x.dat:0: binary
+   result: FAIL, 2 hit(s): guard and card
+== text-then-binary: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 84e6efc, 2 commit(s) scanned
+   hits (3):
+     .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 84e6efc .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 0634a60 .waggle/hive/media/confirm-plant/x.dat:1: email
+   result: FAIL, 3 hit(s): guard and card
+== nul-after-8000-bytes: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 64fb82f, 1 commit(s) scanned
+   hits (2):
+     .waggle/hive/media/confirm-plant/late-nul.txt:2: email
+     commit 64fb82f .waggle/hive/media/confirm-plant/late-nul.txt:2: email
+   result: FAIL, 2 hit(s): guard and card
+== nul-after-hit: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 048c3b1, 1 commit(s) scanned
+   hits (2):
+     .waggle/hive/media/confirm-plant/late-nul2.txt:2: email
+     commit 048c3b1 .waggle/hive/media/confirm-plant/late-nul2.txt:2: email
+   result: FAIL, 2 hit(s): guard and card
