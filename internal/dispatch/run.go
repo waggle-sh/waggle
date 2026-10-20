@@ -378,10 +378,9 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			res.Warnings = append(res.Warnings, "worktree_remove_failed: "+err.Error())
 		}
 	}
-	{ // the next dispatch of any ticket compares the host files with what the checks verified
-		if err := saveHostRecord(dir, ck.before, filepath.Base(runDir)); err != nil {
-			res.Warnings = append(res.Warnings, "host_record_failed: "+err.Error())
-		}
+	// the next dispatch of any ticket compares the host files with what the checks verified
+	if err := saveHostRecord(dir, ck.before, filepath.Base(runDir)); err != nil {
+		res.Warnings = append(res.Warnings, "host_record_failed: "+err.Error())
 	}
 	err = res.Write()
 	if aerr := appendLedger(req.RepoDir, l.policy.Models.Adapter, s.SessionID, res); aerr != nil && err == nil {
