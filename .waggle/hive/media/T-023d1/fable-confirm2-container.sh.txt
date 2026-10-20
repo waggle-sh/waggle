@@ -1,0 +1,62 @@
+#!/bin/bash
+# Fable confirmation 2, linux container run (D-193): every sweep-calling test
+# and every fix-removal check runs here, never on the darwin host.
+set -u
+export GOFLAGS=-mod=mod
+export HOME=/tmp/home
+mkdir -p "$HOME"
+rm -rf /w && mkdir -p /w && cp -r /src/. /w/ && cd /w || exit 1
+echo "== environment"
+uname -a
+go version
+git --version
+echo "nproc $(nproc)  loadavg $(cat /proc/loadavg)  pid1 $(tr -d '\0' </proc/1/cmdline)"
+echo "pid_max $(cat /proc/sys/kernel/pid_max)"
+
+SWEEP='TestSurvivorKilledAndRecorded$|TestBlankNameChildKilled$|TestSweepKillsTrackedGroup$|TestSweepWaitsForRenewal$|TestRenewalBounded$|TestStdoutHolder$|TestRunLimitsKillTheGroup$|TestRunKeepalive$|TestSweepSkipsReusedPid$'
+OLDGIT='TestReuseAcceptsRelativePathWorktree|TestReuseRefusesExtraRegistration'
+
+summarize() { grep -E '^(=== RUN|--- |ok|FAIL|PASS|\s+\S+_test\.go:)' ; }
+
+echo
+echo "== A: sweep tests, -race -count=5, nothing else running"
+go test -race -count=5 -v -run "$SWEEP" ./internal/dispatch/ 2>&1 | summarize
+
+echo
+echo "== B: same tests, -race -count=3, under load ($(nproc) busy loops)"
+pids=""
+for i in $(seq 1 "$(nproc)"); do sh -c 'while :; do :; done' & pids="$pids $!"; done
+sleep 1
+echo "loadavg $(cat /proc/loadavg)"
+go test -race -count=3 -v -run "$SWEEP" ./internal/dispatch/ 2>&1 | summarize
+kill $pids 2>/dev/null
+wait 2>/dev/null
+echo "loadavg after $(cat /proc/loadavg)"
+
+echo
+echo "== C: fix removal (each on a fresh copy of the file; whole dispatch package minus the two git>=2.48 tests)"
+F=internal/dispatch/reap_unix.go
+R=internal/dispatch/run.go
+mkdir -p /tmp/orig
+cp $F $R /tmp/orig/
+mutate() { # name file perl-expr
+  cp /tmp/orig/reap_unix.go $F; cp /tmp/orig/run.go $R
+  perl -0pi -e "$3" "$2"
+  o="/tmp/orig/$(basename "$2")"
+  if cmp -s "$2" "$o"; then echo "$1: MUTATION DID NOT APPLY"; return; fi
+  echo "--- $1: diff"
+  diff "$o" "$2" | grep '^[<>]'
+  out=$(go test -race -count=1 -skip "$OLDGIT" ./internal/dispatch/ 2>&1)
+  if echo "$out" | grep -q '^ok'; then echo "$1: PACKAGE PASSED WITHOUT THE CODE (not covered)"; else echo "$1: caught by:"; echo "$out" | grep -E '^(--- FAIL|\s+\S+_test\.go:)' | head -8; fi
+}
+mutate "M1 sweep pid guard removed" $F 's/p\.pid > 1 && p\.pid != t\.self && //'
+mutate "M2 sweep pgid guard removed" $F 's/if p\.pgid > 1 && p\.pgid != syscall\.Getpgrp\(\) \{/if true {/'
+mutate "M3 renew loop: case <-exited removed" $R 's/\t\t\tcase <-exited:\n\t\t\t\treturn\n//'
+mutate "M4 renew loop: tctx.Err check before a renewal removed" $R 's/\t\t\t\tif tctx\.Err\(\) != nil \{\n\t\t\t\t\treturn\n\t\t\t\t\}\n//'
+mutate "M5 sweep goroutine: <-renewed removed" $R 's/\t\t<-tracked\n\t\t<-renewed\n/\t\t<-tracked\n/'
+cp /tmp/orig/reap_unix.go $F; cp /tmp/orig/run.go $R
+
+echo
+echo "== D: whole package at head, -race, minus the two git>=2.48 tests"
+go test -race -count=1 -skip "$OLDGIT" ./internal/dispatch/ 2>&1 | tail -3
+echo "== done"

@@ -1,0 +1,7 @@
+--- FAIL: TestRunKeepalive (20.61s)
+    run_test.go:239: fail=false: exit 0 leases 2 err <nil> v=[] w=[no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command]
+--- FAIL: TestRunKeepalive (8.55s)
+    run_test.go:239: fail=false: exit 0 leases 2 err <nil> v=[] w=[no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command]
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	518.799s
+FAIL

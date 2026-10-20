@@ -1,0 +1,200 @@
+//go:build darwin
+
+package dispatch
+
+// Fable confirmation 2 probes (D-193): data only. Nothing here calls sweep(),
+// nothing sends a signal to any process, and every process started here is a
+// child of the test that exits by itself within two seconds.
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"strconv"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+func getsid(pid int) int {
+	r, _, e := syscall.Syscall(syscall.SYS_GETSID, uintptr(pid), 0, 0)
+	if e != 0 {
+		return -int(e)
+	}
+	return int(r)
+}
+
+// Which session and group is a worker in, and which groups could a descendant
+// join by setpgid (same session only)? The sweep's pgid guard skips exactly one
+// of them, dispatch's own group.
+func TestFableC2SessionFacts(t *testing.T) {
+	cmd := exec.Command("sh", "-c", "sleep 1")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer cmd.Wait()
+	time.Sleep(50 * time.Millisecond)
+	tab, err := procTable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	byPid := map[int]proc{}
+	for _, p := range tab {
+		byPid[p.pid] = p
+	}
+	self, mySid := os.Getpid(), getsid(0)
+	t.Logf("dispatch (this test) pid %d pgid %d sid %d", self, syscall.Getpgrp(), mySid)
+	w := byPid[cmd.Process.Pid]
+	t.Logf("worker pid %d ppid %d pgid %d sid %d: Setpgid gives its own group, the session is inherited", w.pid, w.ppid, w.pgid, getsid(w.pid))
+	for p := byPid[self]; p.pid > 1; p = byPid[p.ppid] {
+		t.Logf("ancestor pid %d ppid %d pgid %d sid %d comm %q", p.pid, p.ppid, p.pgid, getsid(p.pid), p.comm)
+	}
+	groups := map[int][]string{}
+	for _, p := range tab {
+		if getsid(p.pid) == mySid {
+			groups[p.pgid] = append(groups[p.pgid], fmt.Sprintf("%d:%s", p.pid, p.comm))
+		}
+	}
+	gs := make([]int, 0, len(groups))
+	for g := range groups {
+		gs = append(gs, g)
+	}
+	sort.Ints(gs)
+	for _, g := range gs {
+		t.Logf("same-session group %d, skipped by the pgid guard: %v, members %v", g, g == syscall.Getpgrp(), groups[g])
+	}
+}
+
+// pollUntilExit mirrors the tracker goroutine in runSession: one poll at once,
+// then one every interval until the leader is reaped. No sweep follows.
+func pollUntilExit(tr *tracker, cmd *exec.Cmd, every time.Duration) {
+	exited := make(chan struct{})
+	go func() { _ = cmd.Wait(); close(exited) }()
+	tr.poll()
+	tk := time.NewTicker(every)
+	defer tk.Stop()
+	for {
+		select {
+		case <-exited:
+			return
+		case <-tk.C:
+			tr.poll()
+		}
+	}
+}
+
+func seenPid(tr *tracker, pid int) bool {
+	for k := range tr.seen {
+		if k.pid == pid {
+			return true
+		}
+	}
+	return false
+}
+
+func readPid(path string) int {
+	for end := time.Now().Add(3 * time.Second); time.Now().Before(end); time.Sleep(5 * time.Millisecond) {
+		if b, err := os.ReadFile(path); err == nil {
+			if pid, _ := strconv.Atoi(strings.TrimSpace(string(b))); pid > 0 {
+				return pid
+			}
+		}
+	}
+	return 0
+}
+
+// Catch rate without sweep: is a detached background child in seen when the
+// leader exits? The leader (Setpgid, like the worker) lives 200 ms and starts a
+// tool shell (setsid, like Claude Code's Bash tool) that backgrounds a child
+// and exits after `hold` seconds; the child records its pid and sleeps.
+func TestFableC2CatchRate(t *testing.T) {
+	dir := t.TempDir()
+	toolSh := filepath.Join(dir, "tool.sh")
+	// the tool shell: background a child that records its pid and sleeps, then exit after $2 seconds
+	if err := os.WriteFile(toolSh, []byte("sh -c 'echo $$ > \"$1\"; exec sleep 1' sh \"$1\" &\nsleep \"$2\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	run := func(every time.Duration, hold string, n int) (caught int) {
+		for i := 0; i < n; i++ {
+			pidFile := filepath.Join(dir, fmt.Sprintf("pid-%d-%s-%d", every, hold, i))
+			leader := fmt.Sprintf(`sleep 0.1; perl -e "use POSIX; POSIX::setsid(); exec q(sh), @ARGV" %s %s %s; sleep 0.1`, toolSh, pidFile, hold)
+			cmd := exec.Command("sh", "-c", leader)
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+			if err := cmd.Start(); err != nil {
+				t.Fatal(err)
+			}
+			tr := newTracker(cmd.Process.Pid)
+			pollUntilExit(tr, cmd, every)
+			pid := readPid(pidFile)
+			if pid == 0 {
+				t.Fatalf("no pid file for run %d", i)
+			}
+			if seenPid(tr, pid) {
+				caught++
+			}
+		}
+		return caught
+	}
+	for _, every := range []time.Duration{25 * time.Millisecond, 10 * time.Millisecond, 5 * time.Millisecond, 2 * time.Millisecond, time.Millisecond} {
+		c := run(every, "0", 20)
+		t.Logf("CATCH poll %v, tool shell exits at once after `cmd &`: caught %d/20", every, c)
+	}
+	for _, hold := range []string{"0.010", "0.030", "0.100"} {
+		c := run(25*time.Millisecond, hold, 10)
+		t.Logf("CATCH poll 25ms, tool shell lives %s s after `cmd &`: caught %d/10", hold, c)
+	}
+}
+
+// Cost of one table read at the D-191 interval, and the share of a core it takes.
+func TestFableC2PollCost(t *testing.T) {
+	const n = 200
+	start := time.Now()
+	for i := 0; i < n; i++ {
+		if _, err := procTable(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	per := time.Since(start) / n
+	tab, _ := procTable()
+	t.Logf("COST one sysctl table read: %v for %d processes; at 25 ms that is %.1f%% of a core, at 1 ms %.0f%%",
+		per, len(tab), 100*float64(per)/float64(25*time.Millisecond), 100*float64(per)/float64(time.Millisecond))
+}
+
+// Pure data: the sweep's target list is live. A tracked process in a foreign
+// group (one the Keeper's shell created) would be a kill(-pgid) target because
+// the guard skips only dispatch's own group; a reused pid with another start is
+// not in live; a failed read empties live and sets blind.
+func TestFableC2LiveIsTheTargetList(t *testing.T) {
+	keeperShell := 7000
+	tab := []proc{
+		{pid: 1, ppid: 0, pgid: 1, start: "1", comm: "launchd"},
+		{pid: keeperShell, ppid: 1, pgid: keeperShell, start: "2", comm: "zsh"},
+		{pid: 4242, ppid: keeperShell, pgid: 4242, start: "3", comm: "waggle"},
+		{pid: 500, ppid: 4242, pgid: 500, start: "5", comm: "claude"},
+		{pid: 501, ppid: 500, pgid: 501, start: "6", comm: "tool-shell"},
+		{pid: 502, ppid: 501, pgid: keeperShell, start: "7", comm: "joined-keeper-group"},
+		{pid: 503, ppid: 501, pgid: 4242, start: "8", comm: "joined-dispatch-group"},
+	}
+	tr := &tracker{root: 500, self: 4242, seen: map[pkey]string{}}
+	tr.observe(tab, nil)
+	for _, p := range tr.live {
+		guard := p.pgid > 1 && p.pgid != 4242 // the sweep's pgid guard, with Getpgrp() standing in as 4242
+		t.Logf("live pid %d pgid %d: group kill would be sent %v", p.pid, p.pgid, guard)
+	}
+	// pid 502 reused with another start: not live, not a target
+	tab2 := append([]proc{}, tab...)
+	tab2[5] = proc{pid: 502, ppid: 1, pgid: 502, start: "99", comm: "stranger"}
+	tr.observe(tab2, nil)
+	for _, p := range tr.live {
+		if p.pid == 502 {
+			t.Fatalf("a reused pid is live: %+v", p)
+		}
+	}
+	t.Logf("reused pid 502 with start 99: not live (live pids %v)", pids(tr.live))
+	tr.observe(nil, fmt.Errorf("table read failed"))
+	t.Logf("after a failed read: live %d blind %v", len(tr.live), tr.blind)
+}

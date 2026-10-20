@@ -1,0 +1,12 @@
+--- FAIL: TestSurvivorKilledAndRecorded (49.18s)
+--- FAIL: TestStdoutHolder (23.62s)
+--- FAIL: TestRenewalBounded (20.90s)
+--- FAIL: TestSweepWaitsForRenewal (0.02s)
+--- FAIL: TestReuseRefusesExtraRegistration (0.24s)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.03s)
+FAIL
+run 1 done
+--- FAIL: TestSurvivorKilledAndRecorded (3.30s)
+--- FAIL: TestStdoutHolder (42.56s)
+--- FAIL: TestReuseRefusesExtraRegistration (0.15s)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.08s)

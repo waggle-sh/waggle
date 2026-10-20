@@ -1,0 +1,16 @@
+--- FAIL: TestRunLimitsKillTheGroup (31.95s)
+    --- FAIL: TestRunLimitsKillTheGroup/max_tokens (7.67s)
+        run_test.go:202: grandchild 1308 survived
+--- FAIL: TestRunLimitsKillTheGroup (31.49s)
+    --- FAIL: TestRunLimitsKillTheGroup/max_tokens (21.24s)
+        run_test.go:202: grandchild 1435 survived
+    --- FAIL: TestRunLimitsKillTheGroup/timeout (10.20s)
+        run_test.go:202: grandchild 1497 survived
+--- FAIL: TestRunLimitsKillTheGroup (22.47s)
+    --- FAIL: TestRunLimitsKillTheGroup/max_tokens (13.54s)
+        run_test.go:202: grandchild 1563 survived
+    --- FAIL: TestRunLimitsKillTheGroup/timeout (8.92s)
+        run_test.go:202: grandchild 1625 survived
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	91.352s
+FAIL

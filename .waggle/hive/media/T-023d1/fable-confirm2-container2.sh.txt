@@ -1,0 +1,36 @@
+#!/bin/bash
+# Fable confirmation 2, linux container run 2 (D-193): the fix-removal checks
+# that run 1 did not reach. Each go test runs under setsid so a mutation that
+# signals dispatch's own group kills only the test binary, not this script.
+set -u
+export GOFLAGS=-mod=mod
+export HOME=/tmp/home
+mkdir -p "$HOME"
+rm -rf /w && mkdir -p /w && cp -r /src/. /w/ && cd /w || exit 1
+echo "== environment: $(uname -sr) $(go version) nproc $(nproc) loadavg $(cat /proc/loadavg)"
+OLDGIT='TestReuseAcceptsRelativePathWorktree|TestReuseRefusesExtraRegistration'
+F=internal/dispatch/reap_unix.go
+R=internal/dispatch/run.go
+mkdir -p /tmp/orig
+cp $F $R /tmp/orig/
+mutate() { # name file perl-expr [extra go test args]
+  cp /tmp/orig/reap_unix.go $F; cp /tmp/orig/run.go $R
+  perl -0pi -e "$3" "$2"
+  o="/tmp/orig/$(basename "$2")"
+  if cmp -s "$2" "$o"; then echo "$1: MUTATION DID NOT APPLY"; return; fi
+  echo "--- $1: diff"
+  diff "$o" "$2" | grep '^[<>]'
+  setsid go test -race -count=1 -v -skip "$OLDGIT" ./internal/dispatch/ > /tmp/out.txt 2>&1
+  rc=$?
+  if grep -q '^ok' /tmp/out.txt; then echo "$1: PACKAGE PASSED WITHOUT THE CODE (not covered), exit $rc"
+  else echo "$1: not ok, exit $rc; last test started: $(grep '^=== RUN' /tmp/out.txt | tail -1); failures:"; grep -E '^(--- FAIL|\s+\S+_test\.go:|FAIL|signal:|exit status)' /tmp/out.txt | head -10; fi
+}
+mutate "M2 sweep pgid guard removed" $F 's/if p\.pgid > 1 && p\.pgid != syscall\.Getpgrp\(\) \{/if true {/'
+mutate "M3 renew loop: case <-exited removed" $R 's/\t\t\tcase <-exited:\n\t\t\t\treturn\n//'
+mutate "M4 renew loop: tctx.Err check before a renewal removed" $R 's/\t\t\t\tif tctx\.Err\(\) != nil \{\n\t\t\t\t\treturn\n\t\t\t\t\}\n//'
+mutate "M5 sweep goroutine: <-renewed removed" $R 's/\t\t<-tracked\n\t\t<-renewed\n/\t\t<-tracked\n/'
+cp /tmp/orig/reap_unix.go $F; cp /tmp/orig/run.go $R
+echo
+echo "== D: whole package at head, -race, minus the two git>=2.48 tests"
+setsid go test -race -count=1 -skip "$OLDGIT" ./internal/dispatch/ 2>&1 | tail -3
+echo "== done"

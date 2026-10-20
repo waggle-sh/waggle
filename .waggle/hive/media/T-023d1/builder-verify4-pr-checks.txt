@@ -1,0 +1,3 @@
+verify-leases-and-tiers	fail	26s	https://github.com/waggle-sh/waggle/actions/runs/39452294552/job/118729995454	
+product-ci	pass	2m23s	https://github.com/waggle-sh/waggle/actions/runs/39452295061/job/118729997908	
+relay-claim	skipping	0	https://github.com/waggle-sh/waggle/actions/runs/39452294552/job/118729998519	

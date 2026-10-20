@@ -1,0 +1,14 @@
+ok  	github.com/waggle-sh/waggle/internal/dispatch	411.534s
+---- full package
+--- FAIL: TestBlankNameChildKilled (10.26s)
+    fix3_test.go:60: exit 0 err <nil> survivors [] pid 11096
+--- FAIL: TestReuseRefusesExtraRegistration (0.11s)
+    --- FAIL: TestReuseRefusesExtraRegistration/relative (0.05s)
+        guard3_test.go:104: refusal: /tmp/TestReuseRefusesExtraRegistrationrelative453470273/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/tmp/TestReuseRefusesExtraRegistrationrelative453470273/001/.waggle/worktrees/T-023-builder/.git points at /tmp/TestReuseRefusesExtraRegistrationrelative453470273/001/.git/worktrees/AAA, not its registration)
+        guard3_test.go:104: second registration for the path accepted: /tmp/TestReuseRefusesExtraRegistrationrelative453470273/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/tmp/TestReuseRefusesExtraRegistrationrelative453470273/001/.waggle/worktrees/T-023-builder/.git points at /tmp/TestReuseRefusesExtraRegistrationrelative453470273/001/.git/worktrees/AAA, not its registration)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.05s)
+    guard3_test.go:147: git older than 2.48 ignores worktree.useRelativePaths and writes an absolute registration; this test requires git 2.48 or newer (CI runs 2.55)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	589.112s
+FAIL
+finished
