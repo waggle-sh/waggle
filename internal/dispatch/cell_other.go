@@ -9,7 +9,7 @@ func ownGroup(*exec.Cmd) error { return failf(ExitEnv, "waggle dispatch needs a 
 
 func signalGroup(*exec.Cmd, bool) {}
 
-type tracker struct{}
+type tracker struct{ blind bool }
 
 func newTracker(int) *tracker      { return &tracker{} }
 func (*tracker) poll()             {}
