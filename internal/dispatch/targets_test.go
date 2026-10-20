@@ -103,3 +103,17 @@ func TestObserveRootStartSetOnce(t *testing.T) {
 		t.Fatalf("a reused root pid moved rootStart to %q", tr.rootStart)
 	}
 }
+
+// A group a read listed empty is gone for good: its id returning as a foreign
+// group (a new leader that exited, a member left) must not be signalled.
+func TestTargetsDropGroupSeenEmpty(t *testing.T) {
+	tr := &tracker{root: 500, self: 4242, group: 4000, seen: map[pkey]string{}}
+	tr.observe(targetTable(), nil)
+	gone := without(targetTable(), 510, 511)
+	tr.observe(gone, nil)
+	foreign := append(gone, pr(9000, 1, 510, "f9000"))
+	tr.observe(foreign, nil)
+	if _, groups := tr.targets(foreign); !slices.Equal(groups, []int{501}) {
+		t.Errorf("groups %v, want [501]", groups)
+	}
+}

@@ -45,7 +45,12 @@ func Clean(ctx context.Context, r CleanRequest, out io.Writer) error {
 	if err != nil {
 		return failf(ExitEnv, "%w", err)
 	}
-	dir, err := worktreesDir(repo)
+	pg := (&Git{Bin: r.GitBin, Dir: repo}).pinned()
+	b, err := pg.Run(ctx, "rev-parse", "--path-format=absolute", "--git-common-dir")
+	if err != nil {
+		return failf(ExitEnv, "%w", err)
+	}
+	dir, err := worktreesDir(repo) // after rev-parse: a non-repo must not gain .waggle/worktrees
 	if err != nil {
 		return err
 	}
@@ -55,11 +60,6 @@ func Clean(ctx context.Context, r CleanRequest, out io.Writer) error {
 		return failf(ExitEnv, "a dispatch run is in progress in this repo: %w", err)
 	}
 	defer os.Remove(lock)
-	pg := (&Git{Bin: r.GitBin, Dir: repo}).pinned()
-	b, err := pg.Run(ctx, "rev-parse", "--path-format=absolute", "--git-common-dir")
-	if err != nil {
-		return failf(ExitEnv, "%w", err)
-	}
 	c := &cleaner{repo: repo, common: strings.TrimSpace(string(b)), pg: pg, out: out}
 	for _, w := range warns {
 		fmt.Fprintln(out, "warning: "+w)
@@ -102,14 +102,15 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 		}
 		wants = append(wants, real)
 	}
-	if err = c.noDuplicates(wants, rel); err != nil {
+	if err = c.noDuplicates(); err != nil {
 		return err
 	}
 	list, err := c.pg.Run(ctx, "worktree", "list", "--porcelain")
 	for _, l := range strings.Split(string(list), "\n") {
 		if p, ok := strings.CutPrefix(l, "worktree "); ok && err == nil && slices.Contains(wants, filepath.Clean(p)) {
-			_, err = c.pg.Run(ctx, "worktree", "remove", "--force", p)
-			fmt.Fprintln(c.out, "removed worktree "+rel)
+			if _, err = c.pg.Run(ctx, "worktree", "remove", "--force", p); err == nil {
+				fmt.Fprintln(c.out, "removed worktree "+rel)
+			}
 		}
 	}
 	if err == nil {
@@ -135,23 +136,29 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 }
 
 // noDuplicates reads every admin entry's gitdir (bounded, links not followed)
-// and refuses when two name the same worktree.
-func (c *cleaner) noDuplicates(wants []string, rel string) error {
-	root, ids := filepath.Join(c.common, "worktrees"), []string{}
+// and refuses when any two name the same worktree, or when an entry's gitdir is
+// not a readable regular file: git prunes repository-wide and follows links.
+func (c *cleaner) noDuplicates() error {
+	root, byPath := filepath.Join(c.common, "worktrees"), map[string]string{}
 	ents, _ := os.ReadDir(root)
 	for _, e := range ents {
 		admin := filepath.Join(root, e.Name())
 		b, err := readSmall(filepath.Join(admin, "gitdir"))
+		if err != nil || !e.IsDir() {
+			return failf(ExitEnv, "worktrees/%s has no readable gitdir; nothing was removed", e.Name())
+		}
 		g := strings.TrimSpace(string(b))
 		if !filepath.IsAbs(g) {
 			g = filepath.Join(admin, g)
 		}
-		if p, ok := strings.CutSuffix(filepath.Clean(g), string(filepath.Separator)+".git"); ok && err == nil && e.IsDir() && slices.Contains(wants, p) {
-			ids = append(ids, e.Name())
+		p := strings.TrimSuffix(filepath.Clean(g), string(filepath.Separator)+".git")
+		if rp, e := filepath.EvalSymlinks(p); e == nil { // one worktree named by a link and by its real path
+			p = rp
 		}
-	}
-	if len(ids) > 1 {
-		return failf(ExitEnv, "worktrees/%s and worktrees/%s both name %s; nothing was removed", ids[0], ids[1], rel)
+		if other, dup := byPath[p]; dup {
+			return failf(ExitEnv, "worktrees/%s and worktrees/%s both name %s; nothing was removed", other, e.Name(), p)
+		}
+		byPath[p] = e.Name()
 	}
 	return nil
 }

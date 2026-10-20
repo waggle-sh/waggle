@@ -38,3 +38,13 @@ func TestFastExitNeverBlind(t *testing.T) {
 		}
 	}
 }
+
+// D2-T6b: the tracker is built before the Wait goroutine exists, in source
+// order. A fast exit cannot show a regression reliably, so the order is pinned.
+func TestTrackerStartsBeforeWait(t *testing.T) {
+	b, err := os.ReadFile("run.go")
+	src := string(b)
+	if i, j := strings.Index(src, "newTracker(cmd.Process.Pid)"), strings.Index(src, "cmd.Wait()"); err != nil || i < 0 || j < 0 || i > j {
+		t.Fatalf("newTracker at %d, first cmd.Wait at %d, err %v", i, j, err)
+	}
+}
