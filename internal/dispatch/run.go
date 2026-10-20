@@ -207,7 +207,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	}
 	out, err := pg.Run(ctx, "rev-parse", "--path-format=absolute", "--git-common-dir")
 	if common = strings.TrimSpace(string(out)); err == nil {
-		err = checkHostRecord(dir, common) // before ResolveBase's fetch, the first unpinned call
+		err = checkHostRecord(ctx, pg, dir, common) // before ResolveBase's fetch, the first unpinned call
 	}
 	if err != nil {
 		return res, err
@@ -234,6 +234,12 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		func() error { return offBranch(ctx, g, req, baseOID) },
 		func() (e error) { in, e = ReadInputs(ctx, g, baseOID, req); task.GuardMustFix = in.MustFix; return },
 		func() (e error) { sel, e = l.policy.Resolve(req.Role, task, nil); return },
+		func() error {
+			if req.Second {
+				return checkSecond(req.RepoDir, req.Ticket, baseOID, sel.Model)
+			}
+			return nil
+		},
 		func() (e error) { cs, e = l.context.Settings(req.Role, task, rt.Config().NudgeTokens); return },
 		func() error {
 			if backend != nil {
@@ -249,7 +255,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		},
 		func() (e error) { // the guard reads the builder's claim and writes none
 			if guard {
-				want, req.Head, e = guardTarget(ctx, backend, g, req)
+				want, req.Head, claim.OID, e = guardTarget(ctx, backend, g, req)
 				claim.Verb = "read"
 			}
 			return
@@ -324,7 +330,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		return res, err
 	}
 	res.EndedAt, res.NotEnforced, res.Warnings = now().UTC(), s.NotEnforced, append(res.Warnings, s.Warnings...)
-	res.ResultSubtype, res.Compacted, res.CostUSD = s.Subtype, s.Compacted, s.CostUSD
+	res.ResultSubtype, res.Compacted, res.CostUSD, res.Survivors, res.MustFix = s.Subtype, s.Compacted, s.CostUSD, s.Survivors, in.MustFix
 	u := s.Usage
 	res.Usage = Usage{Input: u.InputTokens, CacheWrite: u.CacheWriteTokens, CacheRead: u.CacheReadTokens, Output: u.OutputTokens}
 	d.emit("ended", "%s, %d tokens", s.End, u.TotalTokens)
@@ -372,8 +378,8 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			res.Warnings = append(res.Warnings, "worktree_remove_failed: "+err.Error())
 		}
 	}
-	if res.ExitCode == 0 { // a clean run: the next one compares the host files with these hashes
-		if err := saveHostRecord(dir, common, filepath.Base(runDir)); err != nil {
+	{ // the next dispatch of any ticket compares the host files with what the checks verified
+		if err := saveHostRecord(dir, ck.before, filepath.Base(runDir)); err != nil {
 			res.Warnings = append(res.Warnings, "host_record_failed: "+err.Error())
 		}
 	}
@@ -436,6 +442,7 @@ type session struct {
 	TimedOut    bool
 	NotEnforced []string
 	Warnings    []string
+	Survivors   []Survivor
 }
 
 // tap copies the worker's output into transcript.jsonl and remembers the
@@ -536,20 +543,30 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 			}
 		}
 	}()
-	// An escaped child (setsid) can hold the pipe open after the leader is
-	// reaped, so Collect would never see EOF: once the leader is gone and the
-	// timeout or cancel has fired, the read end is closed after a short grace.
-	collected, held := make(chan struct{}), false
-	wg.Add(1)
+	// The tree is sampled while the worker runs. Once the leader is reaped,
+	// everything tracked that still runs is killed (D-187) and the read end is
+	// closed after a short grace, so a process that escaped unseen and holds the
+	// pipe cannot hold Run until the timeout.
+	tr := newTracker(cmd.Process.Pid)
+	tracked, collected, swept, held := make(chan struct{}), make(chan struct{}), make(chan struct{}), false
 	go func() {
-		defer wg.Done()
-		for _, c := range []<-chan struct{}{exited, tctx.Done()} {
+		defer close(tracked)
+		tr.poll()
+		for t := time.NewTicker(pollEvery); ; {
 			select {
-			case <-c:
-			case <-collected:
+			case <-exited:
+				t.Stop()
 				return
+			case <-t.C:
+				tr.poll()
 			}
 		}
+	}()
+	go func() {
+		defer close(swept)
+		<-exited
+		<-tracked
+		s.Survivors = tr.sweep()
 		select {
 		case <-collected:
 		case <-time.After(time.Second):
@@ -562,15 +579,19 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 	close(collected)
 	cancel()
 	wg.Wait()
-	if held {
-		s.Warnings = append(s.Warnings, "stdout_held: a process outside the group held the output open; its stream was cut")
-	}
 	select {
 	case <-exited:
 	default:
 		stop() // the stream ended or failed while the process still runs
 	}
 	<-exited
+	<-swept
+	if held {
+		s.Warnings = append(s.Warnings, "stdout_held: a process outside the group held the output open; its stream was cut")
+	}
+	if len(s.Survivors) > 0 {
+		s.Warnings = append(s.Warnings, fmt.Sprintf("survivors_killed: %d process(es) outlived the worker and were killed: %v", len(s.Survivors), s.Survivors))
+	}
 	mu.Lock()
 	finished = true
 	if killer != nil {

@@ -13,6 +13,12 @@ import (
 // maxViolations is how many violations result.json lists before it only counts.
 const maxViolations = 200
 
+// Survivor is a process that outlived the worker and was killed (D-187).
+type Survivor struct {
+	PID     int    `json:"pid"`
+	Command string `json:"command"`
+}
+
 type Usage struct {
 	Input      int `json:"input"`
 	CacheWrite int `json:"cache_write"`
@@ -56,6 +62,8 @@ type Result struct {
 	NotEnforced    []string         `json:"not_enforced"`
 	Verdict        string           `json:"verdict"`
 	Second         bool             `json:"second"`
+	MustFix        int              `json:"must_fix"`         // the count the model step-up used (D-188)
+	Survivors      []Survivor       `json:"survivors_killed"` // processes that outlived the worker and were killed (D-187)
 	Pushed         bool             `json:"pushed"`
 	Final          string           `json:"final"`
 	Transcript     string           `json:"transcript"`
