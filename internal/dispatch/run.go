@@ -598,6 +598,9 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 	if held {
 		s.Warnings = append(s.Warnings, "stdout_held: a process outside the group held the output open; its stream was cut")
 	}
+	if tr.blind {
+		s.Warnings = append(s.Warnings, "survivors_unchecked: the process table could not be read, so leftover processes may remain")
+	}
 	if len(s.Survivors) > 0 {
 		s.Warnings = append(s.Warnings, fmt.Sprintf("survivors_killed: %d process(es) outlived the worker and were killed: %v", len(s.Survivors), s.Survivors))
 	}
