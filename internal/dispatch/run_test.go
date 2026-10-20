@@ -236,7 +236,7 @@ func TestRunKeepalive(t *testing.T) {
 		cb := &countBackend{ClaimBackend: b, failRenew: fail}
 		res, err := f.run("sleep 1\n"+okScenario, func(_ *Request, d *Deps) { d.Backend, d.KeepaliveEvery = cb, 100*time.Millisecond })
 		if err != nil || res.ExitCode != 0 || cb.leases.Load() < 3 {
-			t.Fatalf("fail=%v: exit %d leases %d err %v", fail, res.ExitCode, cb.leases.Load(), err)
+			t.Fatalf("fail=%v: exit %d leases %d err %v v=%v w=%v", fail, res.ExitCode, cb.leases.Load(), err, res.Violations, res.Warnings)
 		}
 		warned := false
 		for _, w := range res.Warnings {
