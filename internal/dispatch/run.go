@@ -504,8 +504,11 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 	if err != nil {
 		return s, failf(ExitEnv, "starting %s: %w", spec.Argv[0], err)
 	}
-	// The pipe is the stream's only way to EOF: when the leader exits, the
-	// whole group is killed, so a lingering grandchild cannot hold it open.
+	// The tracker's first table read lists the leader before cmd.Wait can reap
+	// it, so its start time is known. The pipe is the stream's only way to EOF:
+	// when the leader exits, the whole group is killed, so a lingering
+	// grandchild cannot hold it open.
+	tr := newTracker(cmd.Process.Pid)
 	exited := make(chan struct{})
 	go func() { _ = cmd.Wait(); signalGroup(cmd, true); close(exited) }()
 	var mu sync.Mutex
@@ -555,9 +558,7 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 	// everything tracked that still runs is killed (D-187) and the read end is
 	// closed after a short grace, so a process that escaped unseen and holds the
 	// pipe cannot hold Run until the timeout.
-	tr := newTracker(cmd.Process.Pid)
 	tracked, collected, swept, held := make(chan struct{}), make(chan struct{}), make(chan struct{}), false
-	tr.poll() // before the worker can exit: it records the leader's start time that the sweep's reaping needs
 	go func() {
 		defer close(tracked)
 		for t := time.NewTicker(pollEvery); ; {

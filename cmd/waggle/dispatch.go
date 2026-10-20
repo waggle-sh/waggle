@@ -26,11 +26,15 @@ func (l *listFlag) Set(v string) error { *l = append(*l, v); return nil }
 // codes: 0 done, 1 run failed, 2 usage, 3 environment, 4 claim refused, 5 needs
 // the Keeper. There is no flag that skips a check, lowers a model or forces.
 func runDispatch(args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "clean" {
+		return runClean(args[1:], stdout, stderr)
+	}
 	fs := flag.NewFlagSet("dispatch", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, "Usage: waggle dispatch <ticket> --role builder|forager --dir <path>... --gate light|full --no-cell")
 		fmt.Fprintln(stderr, "       waggle dispatch <ticket> --role guard --branch <branch> --no-cell [--second] [--base <rev>] [--tier 0-3] [--json]")
+		fmt.Fprintln(stderr, "       waggle dispatch clean <ticket> [--role builder|forager|guard] [--runs] [--repo <dir>]")
 		fmt.Fprintln(stderr, "       [--branch <b>] [--base <rev>] [--tier 0-3] [--read <path>...] [--timeout 120m] [--no-push] [--keep-worktree] [--json] [--repo <dir>]")
 	}
 	var dirs, reads listFlag
@@ -99,4 +103,34 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "%s %s ended %s (exit %d), record %s\n", res.Ticket, res.Role, res.End, res.ExitCode, res.RunDir)
 	return res.ExitCode
+}
+
+// runClean implements `waggle dispatch clean <ticket>` (T-023 10.7.3 items 5
+// and 7). It never deletes a branch or touches a claim.
+func runClean(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("dispatch clean", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	role, repo := fs.String("role", "", "builder, forager or guard; default every role"), fs.String("repo", ".", "repository")
+	runs := fs.Bool("runs", false, "also remove this ticket's run records")
+	ticket := ""
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		ticket, args = args[0], args[1:]
+	}
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return dispatch.ExitUsage
+	}
+	if ticket == "" && fs.NArg() == 1 {
+		ticket = fs.Arg(0)
+	} else if ticket == "" || fs.NArg() > 0 {
+		fmt.Fprintln(stderr, "Usage: waggle dispatch clean <ticket> [--role builder|forager|guard] [--runs] [--repo <dir>]")
+		return dispatch.ExitUsage
+	}
+	err := dispatch.Clean(context.Background(), dispatch.CleanRequest{RepoDir: *repo, Ticket: ticket, Role: *role, Runs: *runs}, stdout)
+	if err != nil {
+		fmt.Fprintf(stderr, "waggle dispatch: %v\n", err)
+	}
+	return dispatch.ExitCode(err)
 }
