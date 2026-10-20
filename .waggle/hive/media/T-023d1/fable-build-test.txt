@@ -1,0 +1,15 @@
+== build
+== vet
+== gofmt
+== test
+ok  	github.com/waggle-sh/waggle/cmd/waggle	16.293s
+ok  	github.com/waggle-sh/waggle/internal/comb	28.289s
+ok  	github.com/waggle-sh/waggle/internal/config	1.493s
+ok  	github.com/waggle-sh/waggle/internal/decisions	3.707s
+ok  	github.com/waggle-sh/waggle/internal/dispatch	110.076s
+ok  	github.com/waggle-sh/waggle/internal/forge	11.745s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	5.503s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	10.549s
+ok  	github.com/waggle-sh/waggle/internal/usage	1.194s
+EXIT 0

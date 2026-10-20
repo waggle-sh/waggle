@@ -1,0 +1,40 @@
+package runtime
+
+import (
+	"os"
+	"strings"
+	"testing"
+)
+
+// TestOpusDumpEnv writes the worker env (all GIT_* entries) one per line to
+// $OPUS_ENV_OUT and checks the single emission of GIT_CONFIG_COUNT.
+func TestOpusDumpEnv(t *testing.T) {
+	t.Setenv("GIT_CONFIG_COUNT", "99")
+	t.Setenv("GIT_CONFIG_KEY_12", "maintenance.auto")
+	t.Setenv("GIT_CONFIG_VALUE_12", "true")
+	env := workerEnv(ContextSettings{ToolOutputChars: 10000}, GitIdentity{Name: "a", Email: "a@e.co"})
+	var git []string
+	counts := 0
+	for _, kv := range env {
+		if strings.HasPrefix(kv, "GIT_CONFIG_COUNT=") {
+			counts++
+		}
+		if strings.HasPrefix(kv, "GIT_") {
+			git = append(git, kv)
+		}
+	}
+	if counts != 1 {
+		t.Fatalf("GIT_CONFIG_COUNT emitted %d times", counts)
+	}
+	for _, kv := range env {
+		if kv == "GIT_CONFIG_VALUE_12=true" {
+			t.Fatal("parent maintenance.auto leaked")
+		}
+	}
+	t.Logf("entries=%d git=%d", len(env), len(git))
+	if p := os.Getenv("OPUS_ENV_OUT"); p != "" {
+		if err := os.WriteFile(p, []byte(strings.Join(git, "\n")+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}

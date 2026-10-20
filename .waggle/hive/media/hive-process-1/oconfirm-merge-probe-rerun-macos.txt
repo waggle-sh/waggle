@@ -1,0 +1,107 @@
+# fconfirm-merge-probe.sh 2a99fb5 <copy of the committed scan-hive.sh> 2ecd449, macOS, git 2.54
+### octopus merges
+   parents of the octopus: 3
+== octopus-evil-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head fc6ccc5, 5 commit(s) scanned
+   hits (2):
+     commit 5c94982:0: remerge-skipped
+     commit 5c94982:0: octopus-merge
+   result: FAIL, 2 hit(s): guard and card
+== octopus-side-hit-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head d159175, 5 commit(s) scanned
+   hits (3):
+     commit 415883e .waggle/hive/media/confirm-plant/s2.md:1: email
+     commit c508c6c:0: remerge-skipped
+     commit c508c6c:0: octopus-merge
+   result: FAIL, 3 hit(s): guard and card
+### conflicts resolved by hand
+== conflict-resolved-with-hit-then-restored: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head e5292af, 5 commit(s) scanned
+   hits (1):
+     commit 9da12ff .waggle/hive/media/confirm-plant/both.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== conflict-resolved-both-sides-plus-hit: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 4f3e25f, 5 commit(s) scanned
+   hits (1):
+     commit 3f16bbf .waggle/hive/media/confirm-plant/both.md:3: email
+   result: FAIL, 1 hit(s): guard and card
+== conflict-resolved-clean: exit 0
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 4cb08f2, 4 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== df-conflict-resolved-with-hit: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 12daa40, 4 commit(s) scanned
+   hits (1):
+     commit 6d58e33 .waggle/hive/media/confirm-plant/d:1: email
+   result: FAIL, 1 hit(s): guard and card
+== binary-conflict-text-resolution: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 47729b7, 4 commit(s) scanned
+   hits (3):
+     commit 5ffeefa .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit b8c916d .waggle/hive/media/confirm-plant/x.dat:0: binary
+     commit 73129df .waggle/hive/media/confirm-plant/x.dat:0: binary
+   result: FAIL, 3 hit(s): guard and card
+### -s ours
+== ours-merge-side-hit: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head a2818e0, 3 commit(s) scanned
+   hits (1):
+     commit 810546c .waggle/hive/media/confirm-plant/side.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== ours-merge-evil-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 5b34296, 4 commit(s) scanned
+   hits (1):
+     commit 96d9b15 .waggle/hive/media/confirm-plant/evil.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+### criss-cross
+   merge bases of X and Y: 2
+== crisscross-evil-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head d760798, 6 commit(s) scanned
+   hits (1):
+     commit 6a402db .waggle/hive/media/confirm-plant/evil.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+### unrelated histories
+   merge exit 0
+== unrelated-root-hit-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head cb50461, 4 commit(s) scanned
+   hits (1):
+     commit 18c34a2 .waggle/hive/media/confirm-plant/root.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+== unrelated-evil-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head f73f1f6, 4 commit(s) scanned
+   hits (1):
+     commit 9068302 .waggle/hive/media/confirm-plant/evil.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+### merge message, merge-only paths, redundant parent
+== merge-message-hit: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 94c297e, 3 commit(s) scanned
+   hits (1):
+     commit 94c297e message:1: email
+   result: FAIL, 1 hit(s): guard and card
+== merge-adds-local-file-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head af6aead, 4 commit(s) scanned
+   hits (1):
+     commit 8e2b975 .waggle/hive/media/confirm-plant/notes.local:0: local-file
+   result: FAIL, 1 hit(s): guard and card
+== merge-adds-binary-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 5d0aeb5, 4 commit(s) scanned
+   hits (1):
+     commit bea209b .waggle/hive/media/confirm-plant/x.dat:0: binary
+   result: FAIL, 1 hit(s): guard and card
+== redundant-parent-evil-then-removed: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 2c2aeef, 3 commit(s) scanned
+   hits (1):
+     commit 3754038 .waggle/hive/media/confirm-plant/evil.md:1: email
+   result: FAIL, 1 hit(s): guard and card
+### clean update-branch merge of a records batch (expect exit 0)
+   merge exit 0
+== records-batch-update-merge: exit 0
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 596ca3a, 2 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### NUL bytes
+== nul-binary-sentinel: exit 1
+   scan-hive: base 2a99fb5 (merge-base 2a99fb5), head 140e57f, 1 commit(s) scanned
+   hits (2):
+     .waggle/hive/media/confirm-plant/sentinel.txt:2: binary
+     commit 140e57f .waggle/hive/media/confirm-plant/sentinel.txt:2: binary
+   result: FAIL, 2 hit(s): guard and card

@@ -1,0 +1,9 @@
+d180-unbounded: --- FAIL: TestSecondGuardHiveShapeRefuses --- FAIL: TestSecondGuardWalk --- FAIL: TestSecondGuardWalk/floor FAIL	github.com/waggle-sh/waggle/internal/runtime	0.088s 
+d180-bound-exclusive: --- FAIL: TestSecondGuard --- FAIL: TestSecondGuardWalk --- FAIL: TestSecondGuardWalk/motivating_case --- FAIL: TestSecondGuardWalk/primary_before_alternate --- FAIL: TestSecondGuardWalk/avoid_list_inside_the_walk FAIL	github.com/waggle-sh/waggle/internal/runtime	0.085s 
+d180-bound-builder-min: --- FAIL: TestSecondGuardWalk --- FAIL: TestSecondGuardWalk/motivating_case --- FAIL: TestSecondGuardWalk/primary_before_alternate --- FAIL: TestSecondGuardWalk/avoid_list_inside_the_walk FAIL	github.com/waggle-sh/waggle/internal/runtime	0.083s 
+c3-alt-before-primary: --- FAIL: TestSecondGuardWalk --- FAIL: TestSecondGuardWalk/primary_before_alternate FAIL	github.com/waggle-sh/waggle/internal/runtime	0.093s 
+c3-ignore-avoid: --- FAIL: TestSecondGuardWalk --- FAIL: TestSecondGuardWalk/avoid_list_inside_the_walk --- FAIL: TestSecondGuardWalk/walk_exhaustion --- FAIL: TestSecondGuardWalk/floor FAIL	github.com/waggle-sh/waggle/internal/runtime	0.073s 
+c3-exhaustion-swallowed: --- FAIL: TestSecondGuardWalk --- FAIL: TestSecondGuardWalk/walk_exhaustion --- FAIL: TestSecondGuardWalk/floor FAIL	github.com/waggle-sh/waggle/internal/runtime	0.084s 
+c3-exhaustion-any-model: --- FAIL: TestSecondGuardWalk --- FAIL: TestSecondGuardWalk/walk_exhaustion FAIL	github.com/waggle-sh/waggle/internal/runtime	0.077s 
+d179-walk-removed: --- FAIL: TestSecondGuard --- FAIL: TestSecondGuardWalk --- FAIL: TestSecondGuardWalk/motivating_case --- FAIL: TestSecondGuardWalk/primary_before_alternate --- FAIL: TestSecondGuardWalk/avoid_list_inside_the_walk FAIL	github.com/waggle-sh/waggle/internal/runtime	0.079s 
+policy.go restored

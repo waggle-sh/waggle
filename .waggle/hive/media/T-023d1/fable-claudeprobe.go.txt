@@ -1,0 +1,172 @@
+// claudeprobe: start the pinned Claude Code the way the host cell does
+// (Setpgid, stdout on a pipe, a scrubbed env) and look at the Bash tool's
+// child while it sleeps: pid, pgid, sid, and where its fd 0, 1 and 2 point.
+// Then SIGKILL the leader's group, report survivors, and sweep the leader's
+// session. Facts only.
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+)
+
+func getsid(pid int) (int, error) {
+	r, _, e := syscall.Syscall(syscall.SYS_GETSID, uintptr(pid), 0, 0)
+	if e != 0 {
+		return 0, e
+	}
+	return int(r), nil
+}
+
+func main() {
+	settings := `{"permissions":{"allow":["Bash(perl *)"],"deny":["Bash(git push)","Bash(git push *)"],"defaultMode":"dontAsk"}}`
+	args := []string{"--print", "--output-format=stream-json", "--verbose", "--model=haiku", "--setting-sources=", "--settings=" + settings,
+		"--strict-mcp-config", "--restricted", "--no-session-persistence", "--disable-slash-commands", "--tools=Bash", "--permission-mode=dontAsk", "--max-turns=4"}
+	cmd := exec.Command("claude", args...)
+	dir, _ := os.MkdirTemp("", "claudeprobe")
+	defer os.RemoveAll(dir)
+	cmd.Dir = dir
+	env := []string{}
+	for _, k := range []string{"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "TERM", "LANG", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL"} {
+		if v, ok := os.LookupEnv(k); ok {
+			env = append(env, k+"="+v)
+		}
+	}
+	cmd.Env = append(env, "GIT_TERMINAL_PROMPT=0")
+	cmd.Stdin = strings.NewReader("Run exactly one Bash command, verbatim: perl -e 'sleep 40'\nWhen it finishes reply with the single word done.\n")
+	pr, pw, _ := os.Pipe()
+	cmd.Stdout, cmd.Stderr = pw, os.Stderr
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := cmd.Start(); err != nil {
+		fmt.Println("start:", err)
+		os.Exit(1)
+	}
+	pw.Close()
+	leader := cmd.Process.Pid
+	leaderSid, _ := getsid(leader)
+	self := os.Getpid()
+	selfSid, _ := getsid(self)
+	fmt.Printf("dispatch pid %d sid %d; leader (claude) pid %d pgid %d sid %d\n", self, selfSid, leader, leader, leaderSid)
+	exited := make(chan struct{})
+	go func() { _ = cmd.Wait(); close(exited) }()
+	go func() {
+		sc := bufio.NewScanner(pr)
+		sc.Buffer(make([]byte, 1<<20), 8<<20)
+		for sc.Scan() {
+			l := sc.Text()
+			if len(l) > 160 {
+				l = l[:160] + "..."
+			}
+			fmt.Println("stream:", l)
+		}
+	}()
+	// Find the perl child by polling ps.
+	var perlPid int
+	for i := 0; i < 600 && perlPid == 0; i++ {
+		time.Sleep(100 * time.Millisecond)
+		out, _ := exec.Command("ps", "-axo", "pid=,ppid=,pgid=,comm=").Output()
+		for _, l := range strings.Split(string(out), "\n") {
+			f := strings.Fields(l)
+			if len(f) >= 4 && strings.HasSuffix(f[3], "perl") {
+				pid, _ := strconv.Atoi(f[0])
+				if pid != self && descends(pid, leader) {
+					perlPid = pid
+				}
+			}
+		}
+	}
+	if perlPid == 0 {
+		fmt.Println("no perl child found within 60s")
+		syscall.Kill(-leader, syscall.SIGKILL)
+		return
+	}
+	// Walk up to the leader, printing each ancestor.
+	fmt.Println("tool child chain (pid ppid pgid sid comm):")
+	pid := perlPid
+	for pid > 1 && pid != leader {
+		out, _ := exec.Command("ps", "-o", "pid=,ppid=,pgid=,comm=", "-p", strconv.Itoa(pid)).Output()
+		f := strings.Fields(string(out))
+		sid, _ := getsid(pid)
+		pg, _ := syscall.Getpgid(pid)
+		fmt.Printf("  %d %s pgid %d sid %d %s  (sameGroupAsLeader %v, sameSessionAsLeader %v)\n", pid, f[1], pg, sid, strings.Join(f[3:], " "), pg == leader, sid == leaderSid)
+		pid, _ = strconv.Atoi(f[1])
+	}
+	for _, p := range []int{perlPid} {
+		out, _ := exec.Command("lsof", "-a", "-p", strconv.Itoa(p), "-d", "0,1,2", "-Fftn").Output()
+		fmt.Printf("perl %d fds 0,1,2 (lsof): %s\n", p, strings.ReplaceAll(strings.TrimSpace(string(out)), "\n", " "))
+	}
+	out, _ := exec.Command("lsof", "-a", "-p", strconv.Itoa(leader), "-d", "1", "-Fftn").Output()
+	fmt.Printf("leader fd 1 (lsof): %s\n", strings.ReplaceAll(strings.TrimSpace(string(out)), "\n", " "))
+	out, _ = exec.Command("lsof", "-a", "-p", strconv.Itoa(self), "-d", "3,4,5,6,7", "-Fftn").Output()
+	fmt.Printf("dispatch pipe fds (lsof): %s\n", strings.ReplaceAll(strings.TrimSpace(string(out)), "\n", " "))
+	fmt.Println("SIGKILL to -leader")
+	_ = syscall.Kill(-leader, syscall.SIGKILL)
+	time.Sleep(500 * time.Millisecond)
+	report := func(when string) {
+		for _, p := range []int{leader, perlPid} {
+			fmt.Printf("  %s pid %d alive %v\n", when, p, syscall.Kill(p, 0) == nil)
+		}
+	}
+	report("after group kill")
+	select {
+	case <-exited:
+		fmt.Println("leader reaped")
+	case <-time.After(2 * time.Second):
+		fmt.Println("leader not reaped in 2s")
+	}
+	// Session sweep.
+	out, _ = exec.Command("ps", "-axo", "pid=").Output()
+	swept := 0
+	for _, l := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		p, err := strconv.Atoi(strings.TrimSpace(l))
+		if err != nil || p == self {
+			continue
+		}
+		if sid, err := getsid(p); err == nil && sid == leaderSid && leaderSid != selfSid {
+			_ = syscall.Kill(p, syscall.SIGKILL)
+			swept++
+		}
+	}
+	fmt.Printf("session sweep killed %d (only when the leader has its own session; here leaderSid==dispatchSid is %v)\n", swept, leaderSid == selfSid)
+	time.Sleep(300 * time.Millisecond)
+	report("after sweep")
+	_ = syscall.Kill(perlPid, syscall.SIGKILL)
+	// Does the pipe reach EOF?
+	done := make(chan struct{})
+	go func() {
+		b := make([]byte, 1)
+		for {
+			if _, err := pr.Read(b); err != nil {
+				break
+			}
+		}
+		close(done)
+	}()
+	select {
+	case <-done:
+		fmt.Println("stdout pipe EOF after the perl child was killed by hand")
+	case <-time.After(3 * time.Second):
+		fmt.Println("stdout pipe still open 3s after killing perl")
+	}
+}
+
+// descends reports whether pid's parent chain reaches leader.
+func descends(pid, leader int) bool {
+	for i := 0; i < 20 && pid > 1; i++ {
+		if pid == leader {
+			return true
+		}
+		out, err := exec.Command("ps", "-o", "ppid=", "-p", strconv.Itoa(pid)).Output()
+		if err != nil {
+			return false
+		}
+		pid, _ = strconv.Atoi(strings.TrimSpace(string(out)))
+	}
+	return false
+}

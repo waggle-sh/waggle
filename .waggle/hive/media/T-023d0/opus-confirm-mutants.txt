@@ -1,0 +1,18 @@
+id-blank-trim: FAIL
+id-utf8: FAIL
+id-iscontrol: FAIL
+id-u2028: FAIL
+id-u2029: FAIL
+env-blank-guard: FAIL
+env-attr-nosystem: FAIL
+env-excludesfile: FAIL
+env-attributesfile: FAIL
+env-count-stale: FAIL
+d179-walk-removed: FAIL
+d179-any-guard: FAIL
+d179-level-not-reported: FAIL
+d179-lowest-first: FAIL
+d179-alt-before-primary: ok  	github.com/waggle-sh/waggle/internal/runtime	3.835s
+d179-ignore-avoid: ok  	github.com/waggle-sh/waggle/internal/runtime	3.882s
+launch.go restored
+policy.go restored

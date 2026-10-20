@@ -1,0 +1,5 @@
+2026-10-19T19:22:28.8434284Z --- FAIL: TestRunHostState (4.94s)
+2026-10-19T19:22:28.8435191Z     --- FAIL: TestRunHostState/new_admin_entry (0.70s)
+2026-10-19T19:22:28.8436054Z         --- FAIL: TestRunHostState/new_admin_entry/plain (0.38s)
+2026-10-19T19:22:28.8437244Z             host_test.go:68: exit 0 err <nil> violations []
+2026-10-19T19:22:28.8437958Z FAIL
