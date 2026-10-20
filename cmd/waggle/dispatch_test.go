@@ -159,7 +159,7 @@ func TestDispatchCleanCLI(t *testing.T) {
 		if got := runDispatch(c.args, &out, &errb); got != c.exit {
 			t.Fatalf("%s: exit %d, want %d\nstdout: %s\nstderr: %s", c.name, got, c.exit, out.String(), errb.String())
 		}
-		if all := out.String() + errb.String(); strings.ContainsAny(all, "–—") {
+		if all := out.String() + errb.String(); strings.ContainsAny(all, "\u2013\u2014") {
 			t.Fatalf("%s: output has an en or em dash: %s", c.name, all)
 		}
 	}
