@@ -1,0 +1,53 @@
+# fconfirm-inspect.sh on base 462f589, macOS, git 2.54.0, scan-hive.sh as committed at 462f589; the octopus head is the merge probe's octopus-evil-then-removed head from the same session
+### octopus merge under --diff-merges=remerge
+parents: 3
+-- remerge -p stdout:
+commit 7885c58
+diff: warning: Skipping remerge-diff for octopus merges.
+-- remerge stderr:
+-- remerge --raw stdout:
+commit 7885c58
+diff: warning: Skipping remerge-diff for octopus merges.
+-- first-parent diff of the same merge (--diff-merges=first-parent):
+commit 7885c58
+
+:000000 100644 0000000 d0239b8 A	.waggle/hive/media/confirm-plant/evil.md
+:000000 100644 0000000 b478595 A	.waggle/hive/media/confirm-plant/s1.md
+:000000 100644 0000000 718f4d2 A	.waggle/hive/media/confirm-plant/s2.md
+-- commits with three or more parents in the range:
+1
+### crafted commit objects with NUL bytes (hash-object --literally)
+-- nul-in-message-same-line: 6dcfe8e6fef06b3916140792b881563c63fb416c (commit-tree refuses a NUL in a message; only hash-object --literally writes one)
+   NUL bytes in the stored object: 1
+   log %B as seen (cat -v): nul message|
+   log %an as seen (cat -v): fixture
+== nul-in-message-same-line: exit 0
+   scan-hive: base 462f5896b6c4a9051d2098856079026233412ddb (merge-base 462f589), head 6dcfe8e, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+-- nul-in-message-next-line: c7f56eb379d1483673ec76e163ebe8efe29b4a98 (commit-tree refuses a NUL in a message; only hash-object --literally writes one)
+   NUL bytes in the stored object: 1
+   log %B as seen (cat -v): nul message|
+   log %an as seen (cat -v): fixture
+== nul-in-message-next-line: exit 0
+   scan-hive: base 462f5896b6c4a9051d2098856079026233412ddb (merge-base 462f589), head c7f56eb, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+-- nul-in-author-then-hit: e2d513357220a6b9593604951ce6a34b7c4c90a3 (commit-tree refuses a NUL in a message; only hash-object --literally writes one)
+   NUL bytes in the stored object: 1
+   log %B as seen (cat -v): clean message||
+   log %an as seen (cat -v): 
+== nul-in-author-then-hit: exit 0
+   scan-hive: base 462f5896b6c4a9051d2098856079026233412ddb (merge-base 462f589), head e2d5133, 1 commit(s) scanned
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### email fast path: one 65536-byte line with no @, scan time
+== long-line-65536-no-at: exit 0, 1 s, 0 email hit(s)
+### scan under a git without --diff-merges=remerge (shim dies like 2.31 to 2.35)
+shim check: fatal: invalid value for '--diff-merges': remerge
+ rc=128
+== old-git-shim: exit 128
+   fatal: invalid value for '--diff-merges': remerge
+### same shim, but git pre-2.30 wording (unrecognized argument)
+== old-git-shim-2: exit 128
+   fatal: unrecognized argument: --diff-merges=remerge
