@@ -1,0 +1,21 @@
+claudeprobe output: the pinned Claude Code 2.1.304 on macOS, started like the host cell (Setpgid, stdout on a pipe, allowlisted env),
+model haiku, one Bash tool call: perl -e 'sleep 40'. Stream lines cut at 160 characters; temp paths redacted.
+
+dispatch pid 65526 sid 65518; leader (claude) pid 65543 pgid 65543 sid 65518
+stream: {"type":"system","subtype":"init","cwd":"<tmp>","session_id":"c39fb162-5650-4757-809e-e...
+stream: {"type":"assistant","message":{"model":"claude-haiku-5-5","id":"msg_011CgCQvjK16gem73UqXFV6C","type":"message","role":"assistant","content":[{"type":"tool_use",...
+stream: {"type":"rate_limit_event","rate_limit_info":{"status":"allowed","resetsAt":1792451400,"rateLimitType":"five_hour","overageStatus":"rejected","overageDisabledRe...
+tool child chain (pid ppid pgid sid comm):
+  65635 65633 pgid 65633 sid 65633 perl  (sameGroupAsLeader false, sameSessionAsLeader false)
+  65633 65543 pgid 65633 sid 65633 /bin/zsh  (sameGroupAsLeader false, sameSessionAsLeader false)
+perl 65635 fds 0,1,2 (lsof): p65635 f0 tCHR n/dev/null f1 tREG n<tmp> f2 tREG n<tmp>
+leader fd 1 (lsof): p65543 f1 tPIPE n->0xdedceb2bd1f21401
+dispatch pipe fds (lsof): p65526 f3 tPIPE n->0xad58733f8842a1ee f5 tKQUEUE ncount=0, state=0xa f6 tPIPE n->0x6b8647e1634f8e17
+SIGKILL to -leader
+  after group kill pid 65543 alive false
+  after group kill pid 65635 alive true
+leader reaped
+session sweep killed 0 (only when the leader has its own session; here leaderSid==dispatchSid is true)
+  after sweep pid 65543 alive false
+  after sweep pid 65635 alive true
+stdout pipe EOF after the perl child was killed by hand
