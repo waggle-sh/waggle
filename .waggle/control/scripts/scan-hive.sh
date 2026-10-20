@@ -12,7 +12,8 @@
 # merge adds nothing), so a hit added then removed on the branch is still
 # reported; every changed path name, including paths a merge adds; and each
 # commit's author, committer and message. A NUL byte in a text line is read
-# as \001, so awk does not stop at it. Needs git 2.36 or later. Rules:
+# as \001, so awk does not stop at it. Needs git 2.36 or later (checked
+# first, exit 3 below it). Rules:
 #   email       any address except the D-160 noreply, noreply@github.com,
 #               git@ remote forms and the fixture domains example.test,
 #               example.com, e.co, evil.test, included.test (and subdomains)
@@ -37,6 +38,12 @@
 #               gitignored handoff or names file)
 #   long-line   a line over 65536 bytes (reported, not regex-scanned)
 #   binary      a changed binary file (cannot be scanned)
+#   octopus-merge  a commit with three or more parents (git does not remerge
+#               it, so its result cannot be scanned)
+#   remerge-skipped  any other merge git declines to remerge (a `diff: warning:
+#               Skipping remerge-diff` line), on the commit it follows
+#   nul-commit  a commit object containing a NUL byte (git stops reading the
+#               author or message there, so the rest cannot be scanned)
 #   decisions   `go run ./cmd/waggle gate decisions` fails
 #
 # Hits print as <file>:<line>: <rule>, never the matched value. A per-commit
@@ -56,6 +63,9 @@ export LC_ALL=C
 
 case "${1:-}" in -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"; exit 0;; esac
 [ $# -le 2 ] || { echo "usage: scan-hive.sh [base] [head]" >&2; exit 3; }
+# --diff-merges=remerge needs git 2.36 or later.
+gv=$(git version 2>/dev/null | awk 'NR == 1 { split($3, v, "."); print v[1] * 1000 + v[2] }' || true)
+[ "${gv:-0}" -ge 2036 ] 2>/dev/null || { echo "scan-hive: needs git 2.36 or later" >&2; exit 3; }
 base=${1:-origin/main}
 head=${2:-HEAD}
 
@@ -104,6 +114,7 @@ cut -f 2- "$tmp/raw" >"$tmp/paths"
   g log "${mopts[@]}" "${dopts[@]}" -p -U0 --format='commit %h' "$mb..$headsha"
 } | tr '\000' '\001' | awk '
   /^commit [0-9a-f]+$/ { pre = $0 " "; hdr = 1; path = ""; next }
+  /^diff: warning: Skipping remerge-diff/ { printf "%s\t0\t\001remerge-skipped\n", substr(pre, 1, length(pre) - 1); next }
   /^diff --git / { hdr = 1; path = ""; next }
   hdr && /^\+\+\+ / { path = substr($0, 5); sub(/\t$/, "", path); sub(/^b\//, "", path); next }
   hdr && /^Binary files .* and \/dev\/null differ$/ { next }
@@ -120,6 +131,12 @@ for c in $(git rev-list "$mb..$headsha"); do
   git log -1 --no-show-signature --format='%an <%ae>' "$c" | awk -v l="commit $s author" '{ printf "%s\t%d\t%s\n", l, NR, $0 }'
   git log -1 --no-show-signature --format='%cn <%ce>' "$c" | awk -v l="commit $s committer" '{ printf "%s\t%d\t%s\n", l, NR, $0 }'
   git log -1 --no-show-signature --format='%B' "$c" | awk -v l="commit $s message" '{ printf "%s\t%d\t%s\n", l, NR, $0 }'
+  # git stops %an and %B at a NUL, so a NUL in the raw object fails closed.
+  [ "$(git cat-file commit "$c" | tr -cd '\000' | wc -c | tr -d ' ')" -eq 0 ] || printf 'commit %s\t0\t\001nul-commit\n' "$s"
+done >>"$stream"
+# git does not remerge an octopus merge, so each one fails closed.
+for c in $(git rev-list --min-parents=3 "$mb..$headsha"); do
+  printf 'commit %s\t0\t\001octopus-merge\n' "$(git rev-parse --short "$c")"
 done >>"$stream"
 
 host="" name="" warn=""
@@ -204,6 +221,7 @@ BEGIN {
   key = $1 ":" $2; s = $3; for (i = 4; i <= NF; i++) s = s "\t" $i
   if (s == "\001binary") { hit("binary"); next }
   if (s == "\001local-file") { hit("local-file"); next }
+  if (s == "\001octopus-merge" || s == "\001remerge-skipped" || s == "\001nul-commit") { hit(substr(s, 2)); next }
   if (length(s) > 65536) { hit("long-line"); next }
   low = tolower(s)
   t = index(s, "@") ? s : "" # no @, no address: skip the email regex
