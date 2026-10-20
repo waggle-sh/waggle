@@ -1,0 +1,24 @@
+# opus confirmation 2, darwin host, data-only probe (no sweep, no signal), head 037ba4f
+=== RUN   TestOpusC2HostCatch
+    opus_c2_host_test.go:72: interval=25ms runs=20 tool_shell_seen=20 bg_child_seen=0 bg_child_alive_in_tool_shell_group_after_worker_exit=20
+    opus_c2_host_test.go:72: interval=5ms runs=20 tool_shell_seen=20 bg_child_seen=6 bg_child_alive_in_tool_shell_group_after_worker_exit=20
+    opus_c2_host_test.go:72: interval=1ms runs=20 tool_shell_seen=20 bg_child_seen=13 bg_child_alive_in_tool_shell_group_after_worker_exit=20
+--- PASS: TestOpusC2HostCatch (27.41s)
+=== RUN   TestOpusC2HostCost
+    opus_c2_host_test.go:89: procTable rows=589 per_read=248.736µs cpu_share_at_25ms=1.0% at_5ms=5.0% at_1ms=24.9%
+--- PASS: TestOpusC2HostCost (0.05s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	27.571s
+
+# go build, go vet, gofmt -l clean; go test -race -count=1 ./... on the host:
+ok  	github.com/waggle-sh/waggle/cmd/waggle	16.572s
+ok  	github.com/waggle-sh/waggle/internal/comb	27.607s
+ok  	github.com/waggle-sh/waggle/internal/config	1.311s
+ok  	github.com/waggle-sh/waggle/internal/decisions	3.879s
+ok  	github.com/waggle-sh/waggle/internal/dispatch	139.679s
+ok  	github.com/waggle-sh/waggle/internal/forge	11.857s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	5.347s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	11.207s
+ok  	github.com/waggle-sh/waggle/internal/usage	1.172s
+rc=0

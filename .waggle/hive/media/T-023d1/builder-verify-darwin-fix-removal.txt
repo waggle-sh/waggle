@@ -1,0 +1,26 @@
+MUTATION A-strict-branch-keys test TestHostRecordBranchKeysStrict exit 1
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+# github.com/waggle-sh/waggle/internal/dispatch [github.com/waggle-sh/waggle/internal/dispatch.test]
+internal/dispatch/prerun.go:92:6: declared and not used: v
+internal/dispatch/prerun.go:93:3: declared and not used: i
+MUTATION B-group-kill test TestSweepKillsTrackedGroup exit 1
+--- FAIL: TestSweepKillsTrackedGroup (5.07s)
+    fix3_test.go:100: the unseen group member 79493 survived the sweep
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	5.308s
+FAIL
+MUTATION C-sysctl-pgid-offset test TestProcTableLayout exit 1
+--- FAIL: TestProcTableLayout (0.00s)
+    reap_darwin_test.go:24: own entry {pid:80455 ppid:80333 pgid:80333 start:1792502482.992801 comm:dispatch.test zombie:false}, want ppid 80333 pgid 79443
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.171s
+FAIL
+MUTATION D-renew-bound test TestRenewalBounded exit 1
+--- FAIL: TestRenewalBounded (20.10s)
+    fix3_test.go:143: a stalled renewal held Run
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	20.279s
+FAIL
+MUTATION E-sweep-waits-renewal test TestSweepWaitsForRenewal exit 0
+ok  	github.com/waggle-sh/waggle/internal/dispatch	1.720s

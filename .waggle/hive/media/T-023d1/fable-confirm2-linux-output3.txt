@@ -1,0 +1,36 @@
+== environment: Linux 6.8.0-117-generic go version go1.23.12 linux/arm64 nproc 2 loadavg 20.08 17.64 22.30 27/891 384
+--- M1 sweep pid guard removed (tests: TestSweepKillsTrackedGroup$|TestSurvivorKilledAndRecorded$|TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRunLimitsKillTheGroup$|TestBlankNameChildKilled$|TestRunKeepalive$|TestSweepSkipsReusedPid$), loadavg 20.08
+M1 sweep pid guard removed: TESTS PASSED WITHOUT THE CODE (not covered), exit 0
+--- M2 sweep pgid guard removed (tests: TestSweepKillsTrackedGroup$|TestSurvivorKilledAndRecorded$|TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRunLimitsKillTheGroup$|TestBlankNameChildKilled$|TestRunKeepalive$|TestSweepSkipsReusedPid$), loadavg 21.19
+/probe/container3.sh: line 19:  2275 Killed                  setsid go test -race -count=1 -timeout 15m -v -run "$4" ./internal/dispatch/ > /tmp/out.txt 2>&1
+M2 sweep pgid guard removed: caught, exit 137; last test started: === RUN   TestSweepSkipsReusedPid
+--- PASS: TestSurvivorKilledAndRecorded (9.11s)
+--- M3 renew loop: case <-exited removed (tests: TestStdoutHolder$|TestSurvivorKilledAndRecorded$|TestBlankNameChildKilled$), loadavg 18.06
+M3 renew loop: case <-exited removed: caught, exit 1; last test started: === RUN   TestBlankNameChildKilled
+    fix2_test.go:90: survivors [], want pid 2541
+--- FAIL: TestSurvivorKilledAndRecorded (8.03s)
+    fix2_test.go:170: took 1m1.759950101s exit 0 held false survivors [] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command] err <nil>
+--- FAIL: TestStdoutHolder (62.62s)
+    fix3_test.go:60: exit 0 err <nil> survivors [] pid 2696
+--- FAIL: TestBlankNameChildKilled (21.54s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	92.350s
+FAIL
+--- M4 renew loop: tctx.Err check before a renewal removed (tests: TestRenewalBounded$|TestRunKeepalive$|TestSweepWaitsForRenewal$|TestFixKeepaliveGate$), loadavg 20.85
+M4 renew loop: tctx.Err check before a renewal removed: TESTS PASSED WITHOUT THE CODE (not covered), exit 0
+--- M5 sweep goroutine: <-renewed removed (tests: TestSweepWaitsForRenewal$), loadavg 17.26
+M5 sweep goroutine: <-renewed removed: caught, exit 1; last test started: === RUN   TestSweepWaitsForRenewal
+    fix3_test.go:173: the renewal's child was "disturbed"
+--- FAIL: TestSweepWaitsForRenewal (4.62s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	4.673s
+FAIL
+
+== W: TestCrossCompileWindows alone at head, loadavg 15.72
+runtime: /usr/local/go/pkg/tool/linux_arm64/compile: signal: killed
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+
+== D: whole package at head, -race, minus the two git>=2.48 tests and the windows cross-compile, loadavg 16.01
+ok  	github.com/waggle-sh/waggle/internal/dispatch	486.047s
+== done

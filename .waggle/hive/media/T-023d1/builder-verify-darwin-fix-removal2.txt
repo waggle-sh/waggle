@@ -1,0 +1,8 @@
+MUTATION A-strict-branch-keys test TestHostRecordBranchKeysStrict exit 1
+--- FAIL: TestHostRecordBranchKeysStrict (3.07s)
+    fix3_test.go:44: pushRemote: tripped false want true: exit 0 <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	3.235s
+FAIL
+MUTATION E-sweep-waits-renewal test TestSweepWaitsForRenewal exit 0
+ok  	github.com/waggle-sh/waggle/internal/dispatch	1.746s

@@ -1,0 +1,27 @@
+# gh pr checks 57 at head 037ba4f (fable confirmation 2)
+verify-leases-and-tiers	fail	26s	(expected: "no claim", D-168)
+product-ci	pass	2m23s	run 39452295061
+relay-claim	skipping	0
+
+# product-ci run 39452295061: headSha 037ba4f, conclusion success, ubuntu-24.04, git 2.55.0
+go test -race ./...
+ok  	github.com/waggle-sh/waggle/cmd/waggle	5.948s
+ok  	github.com/waggle-sh/waggle/internal/comb	10.100s
+ok  	github.com/waggle-sh/waggle/internal/config	1.136s
+ok  	github.com/waggle-sh/waggle/internal/decisions	2.779s
+ok  	github.com/waggle-sh/waggle/internal/dispatch	66.919s
+ok  	github.com/waggle-sh/waggle/internal/forge	6.948s
+ok  	github.com/waggle-sh/waggle/internal/runtime	1.385s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	3.542s
+ok  	github.com/waggle-sh/waggle/internal/usage	1.038s
+
+# sign-off trailers (git log --format='%h %(trailers:key=Signed-off-by,valueonly)' d95aa72..037ba4f)
+037ba4f (none)
+32b9812 (none)
+e0d3b61 Signed-off-by present
+
+# cross-build at head (GOOS=<os> GOARCH=amd64 go vet ./internal/dispatch/ ./cmd/waggle/)
+freebsd ok, openbsd ok, netbsd ok, dragonfly ok, windows ok, linux ok
+solaris, illumos: internal/dispatch/reap_unix.go:93:39: undefined: syscall.Getpgrp (the merge-base 2ecd449 builds on both)
+
+# size (D-136): git diff --numstat 2ecd449 037ba4f over non-test files: 799 added lines (merge-base of main and 037ba4f is 2ecd449)

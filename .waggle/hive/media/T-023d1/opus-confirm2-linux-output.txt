@@ -1,0 +1,222 @@
+# opus confirmation 2, linux/arm64 container (golang:1.23-bookworm, git 2.39.5, docker --init, worktree mounted read-only and copied), head 037ba4f
+# Colima VM: 2 CPUs, 2 GB, shared with the fable guard's container and two local database stacks; compiles were OOM-killed in runs 2 to 4
+# run 1 (run.sh): probes G1 to G4, sweep guard mutants, renewal tctx mutant, repeats, full suite
+== env: Linux aarch64, pid1=docker-init, git 2.39.5, go1.23.12
+== probes G1 to G4 (race) ==
+    opus_c2_linux_test.go:49: G1 self pid 1234 pgid 7 (own group 7): sweep killed []; still running
+--- PASS: TestOpusC2SweepSkipsSelf (1.07s)
+    opus_c2_linux_test.go:68: G2 child pid 1241 pgid 7 == own group 7: sweep killed [{1241 sleep}]; test process still running
+--- PASS: TestOpusC2SweepSkipsOwnGroup (0.06s)
+    opus_c2_linux_test.go:115: G3 stand-in group 1242 (not a descendant), tracked child 1245 joined pgid 1242: sweep killed [{1245 perl}]; stand-in killed by the group signal: true
+--- PASS: TestOpusC2ForeignGroupJoin (0.56s)
+    opus_c2_linux_test.go:142: G4 table read 876.584µs, 20 targets signalled 30.834µs after the read finished
+--- PASS: TestOpusC2SampleToKill (0.02s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	2.758s
+== mutant: sweep pid guard removed (run TestOpusC2SweepSkipsSelf$) ==
+96c96
+< 			if k := (pkey{p.pid, p.start}); p.pid > 1 && p.pid != t.self && syscall.Kill(p.pid, syscall.SIGKILL) == nil && !done[k] {
+---
+> 			if k := (pkey{p.pid, p.start}); syscall.Kill(p.pid, syscall.SIGKILL) == nil && !done[k] {
+signal: killed
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.009s
+FAIL
+exit status 1
+== mutant: pgid guard removed (run TestOpusC2SweepSkipsOwnGroup$) ==
+93c93
+< 			if p.pgid > 1 && p.pgid != syscall.Getpgrp() {
+---
+> 			if true {
+/ctr/run.sh: line 9:  1353 Killed                  timeout 300 go test -race -count=1 -timeout 240s -v -run "$4" ./internal/dispatch/ > /tmp/m.out 2>&1
+exit status 137
+== mutant: renewal exited case removed (run TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRenewalBounded$|TestRunKeepalive$) ==
+539,540d538
+< 			case <-exited:
+< 				return
+565,566d562
+< 			case <-exited:
+< 				t.Stop()
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+exit status 1
+== mutant: renewal tctx check removed (run TestRenewalBounded$|TestRunKeepalive$|TestSweepWaitsForRenewal$) ==
+542,544d541
+< 				if tctx.Err() != nil {
+< 					return
+< 				}
+--- PASS: TestRenewalBounded (1.32s)
+--- PASS: TestSweepWaitsForRenewal (0.88s)
+--- PASS: TestRunKeepalive (2.16s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	5.396s
+exit status 0
+== restored; repeat runs (race, -count=10) ==
+--- FAIL: TestSurvivorKilledAndRecorded (5.53s)
+    fix2_test.go:90: survivors [], want pid 6504
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	151.472s
+FAIL
+== restored; full linux suite (race) ==
+ok  	github.com/waggle-sh/waggle/cmd/waggle	10.914s
+ok  	github.com/waggle-sh/waggle/internal/comb	32.230s
+ok  	github.com/waggle-sh/waggle/internal/config	1.283s
+ok  	github.com/waggle-sh/waggle/internal/decisions	3.848s
+--- FAIL: TestSurvivorKilledAndRecorded (8.08s)
+    fix2_test.go:90: survivors [], want pid 13589
+--- FAIL: TestStdoutHolder (16.13s)
+    fix2_test.go:170: took 14.846657085s exit 0 held false survivors [{13779 dispatch.test}] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_killed: 1 process(es) outlived the worker and were killed: [{13779 dispatch.test}]] err <nil>
+--- FAIL: TestSecondGuardRefusals (26.35s)
+        fix2_test.go:240: want exit 3 containing "would use opus" before launch, got exit 3 err runtime binary not verified: <tmp>/001/bin/claude --help: exec: WaitDelay expired before I/O complete run ""
+--- FAIL: TestReuseRefusesExtraRegistration (1.00s)
+        guard3_test.go:104: refusal: <tmp>/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (<tmp>/001/.waggle/worktrees/T-023-builder/.git points at <tmp>/001/.git/worktrees/AAA, not its registration)
+        guard3_test.go:104: second registration for the path accepted: <tmp>/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (<tmp>/001/.waggle/worktrees/T-023-builder/.git points at <tmp>/001/.git/worktrees/AAA, not its registration)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (5.64s)
+    guard3_test.go:147: git older than 2.48 ignores worktree.useRelativePaths and writes an absolute registration; this test requires git 2.48 or newer (CI runs 2.55)
+--- FAIL: TestCrossCompileWindows (86.60s)
+    misc_test.go:37: GOOS=windows go vet: exit status 1
+	/w/internal/dispatch/fixture_test.go:134 +0x440
+	/w/internal/dispatch/run_test.go:147 +0x2f0
+	/w/internal/dispatch/run_test.go:138 +0x64
+
+# run 2 (run2.sh): build OOM-killed for the windows vet and the case <-exited mutant; unmodified survivor test x20
+== TestCrossCompileWindows alone ==
+runtime: /usr/local/go/pkg/tool/linux_arm64/compile: signal: killed
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+			case <-exited:
+				return
+== mutant: renewal 'case <-exited' removed ==
+539,540d538
+< 			case <-exited:
+< 				return
+exit status 1
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+== baseline same tests ==
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+== diagnosis: TestSurvivorKilledAndRecorded with the helper's 4 s life raised to 12 s (-count=20) ==
+31c31
+< 		time.Sleep(4 * time.Second)
+---
+> 		time.Sleep(12 * time.Second)
+      1 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+== same, unmodified 4 s helper (-count=20) ==
+      1     fix2_test.go:101: the killed survivor still wrote its marker
+      1     fix2_test.go:90: survivors [], want pid 2574
+      1     fix2_test.go:90: survivors [], want pid 2871
+      1     fix2_test.go:90: survivors [], want pid 3167
+      1     fix2_test.go:90: survivors [], want pid 3315
+      1 --- FAIL: TestSurvivorKilledAndRecorded (10.37s)
+      1 --- FAIL: TestSurvivorKilledAndRecorded (11.74s)
+      1 --- FAIL: TestSurvivorKilledAndRecorded (31.19s)
+      1 --- FAIL: TestSurvivorKilledAndRecorded (8.76s)
+      1 --- FAIL: TestSurvivorKilledAndRecorded (8.81s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (10.79s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (11.47s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (11.90s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (13.01s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (15.06s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (17.16s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (20.06s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (29.01s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (5.58s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (5.61s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (5.97s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (6.36s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (6.63s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (61.44s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (8.04s)
+      2 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	305.597s
+
+# run 3 (run3.sh, GOFLAGS=-p=1): windows vet and mutant OOM-killed again; baseline, survivor helper life 12 s x20, unmodified x20
+== TestCrossCompileWindows alone ==
+runtime: /usr/local/go/pkg/tool/linux_arm64/compile: signal: killed
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+			case <-exited:
+				return
+== mutant: renewal 'case <-exited' removed ==
+539,540d538
+< 			case <-exited:
+< 				return
+exit status 1
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+== baseline same tests ==
+--- PASS: TestSurvivorKilledAndRecorded (16.71s)
+--- PASS: TestStdoutHolder (3.23s)
+--- PASS: TestRenewalBounded (16.13s)
+--- PASS: TestSweepWaitsForRenewal (9.75s)
+--- PASS: TestRunKeepalive (13.91s)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	60.831s
+== diagnosis: TestSurvivorKilledAndRecorded with the helper's 4 s life raised to 12 s (-count=20) ==
+31c31
+< 		time.Sleep(4 * time.Second)
+---
+> 		time.Sleep(12 * time.Second)
+      1     fix2_test.go:101: the killed survivor still wrote its marker
+      1 --- FAIL: TestSurvivorKilledAndRecorded (67.48s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (10.03s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (10.50s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (11.11s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (11.46s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (11.72s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (12.05s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (14.58s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (15.12s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (15.20s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (16.48s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (19.56s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (19.79s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (31.49s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (32.60s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (34.70s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (6.30s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (7.47s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (8.83s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (9.76s)
+      2 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	372.114s
+== same, unmodified 4 s helper (-count=20) ==
+      1     fix2_test.go:101: the killed survivor still wrote its marker
+      1     fix2_test.go:90: survivors [], want pid 3960
+      1     fix2_test.go:90: survivors [], want pid 4183
+      1     fix2_test.go:90: survivors [], want pid 4627
+      1     fix2_test.go:90: survivors [], want pid 4923
+      1 --- FAIL: TestSurvivorKilledAndRecorded (13.87s)
+      1 --- FAIL: TestSurvivorKilledAndRecorded (34.13s)
+      1 --- FAIL: TestSurvivorKilledAndRecorded (6.24s)
+      1 --- FAIL: TestSurvivorKilledAndRecorded (68.67s)
+      1 --- FAIL: TestSurvivorKilledAndRecorded (7.73s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (11.34s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (14.47s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (16.24s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (20.01s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (27.62s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (35.58s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (6.01s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (6.37s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (6.59s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (6.74s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (6.82s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (8.06s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (8.58s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (8.71s)
+      1 --- PASS: TestSurvivorKilledAndRecorded (9.92s)
+      2 FAIL
+      1 FAIL	github.com/waggle-sh/waggle/internal/dispatch	326.793s
+
+# run 4 (run4.sh): build OOM-killed again; not retried (other containers in the VM were restarting under memory pressure)
+== TestCrossCompileWindows alone (no race) ==
+runtime: /usr/local/go/pkg/tool/linux_arm64/compile: signal: killed
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+== mutant: renewal 'case <-exited' removed (no race) ==
+539,540d538
+< 			case <-exited:
+< 				return
+runtime: /usr/local/go/pkg/tool/linux_arm64/compile: signal: killed
+exit status 127

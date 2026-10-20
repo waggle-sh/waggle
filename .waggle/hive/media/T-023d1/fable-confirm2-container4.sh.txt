@@ -1,0 +1,25 @@
+#!/bin/bash
+# Fable confirmation 2, linux container run 4 (D-193): M2 alone, without
+# -race to keep memory low in the 2 GB VM, under setsid.
+set -u
+export GOFLAGS=-mod=mod
+export HOME=/tmp/home
+mkdir -p "$HOME"
+rm -rf /w && mkdir -p /w && cp -r /src/. /w/ && cd /w || exit 1
+echo "== environment: $(uname -sr) nproc $(nproc) loadavg $(cat /proc/loadavg) mem $(awk '/MemAvailable/{print $2" kB avail"}' /proc/meminfo)"
+F=internal/dispatch/reap_unix.go
+cp $F /tmp/reap.orig
+SWEEP='TestSweepKillsTrackedGroup$|TestSurvivorKilledAndRecorded$|TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRunLimitsKillTheGroup$|TestBlankNameChildKilled$|TestRunKeepalive$|TestSweepSkipsReusedPid$'
+echo "== head, same tests, no -race (control)"
+setsid go test -count=1 -timeout 15m -v -run "$SWEEP" ./internal/dispatch/ > /tmp/ctl.txt 2>&1; echo "control exit $?"; grep -E '^(--- |ok|FAIL)' /tmp/ctl.txt | head -12
+perl -0pi -e 's/if p\.pgid > 1 && p\.pgid != syscall\.Getpgrp\(\) \{/if true {/' $F
+diff /tmp/reap.orig $F | grep '^[<>]'
+echo "== M2 sweep pgid guard removed, no -race"
+setsid go test -count=1 -timeout 15m -v -run "$SWEEP" ./internal/dispatch/ > /tmp/out.txt 2>&1; rc=$?
+echo "M2 exit $rc; last test started: $(grep '^=== RUN' /tmp/out.txt | tail -1)"
+grep -E '^(--- |ok|FAIL|signal:|exit status)' /tmp/out.txt | head -12
+dmesg 2>/dev/null | grep -i -E 'killed process|oom' | tail -3
+cp /tmp/reap.orig $F
+echo "== W: TestCrossCompileWindows alone at head, no -race, loadavg $(cut -d' ' -f1 /proc/loadavg)"
+setsid go test -count=1 -timeout 15m -v -run 'TestCrossCompileWindows$' ./internal/dispatch/ 2>&1 | grep -vE '^=== RUN' | head -6
+echo "== done"
