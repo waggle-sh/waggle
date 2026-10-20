@@ -1,0 +1,78 @@
+Opus confirmation probes, T-023 phase D1, PR #57 at d95aa72 (base 2ecd449).
+Source: opus-confirm-probes_test.go.txt, run as internal/dispatch/opus_confirm_probe_test.go and then removed.
+darwin: this Mac, go test -race -count=1 -v. linux: the same test binary cross-built for linux/arm64,
+run in debian:bookworm-slim under Colima with --init as an unprivileged user (git 2.39.5 from apt where
+the fixture needs it). Temp paths are omitted; pids are as printed.
+
+--- C1 (darwin, tracker as runSession uses it, poll 30 ms): a setsid perl child with a blank argv0
+argv0="probe" killed=[{13191 probe}] marker_written=false
+argv0=""      killed=[]              marker_written=true
+argv0=" "     killed=[]              marker_written=true
+raw ps line for such a process (8 fields, procTable needs 9):
+  87459 87456 Tue Oct 20 03:48:02 2026     SN
+zsh one word, as the Bash tool's shell would run it: ARGV0=' ' /bin/sleep 3
+  66205 66204 Tue Oct 20 04:02:45 2026     SN
+a newline in argv0 is printed as \012 (no line injection):
+  90271 90267 Tue Oct 20 03:48:11 2026     SN   a b\0129 9 Mon Jan 1 00:00:00 2026 S x
+linux: not affected (comm is read between the parentheses of /proc/<pid>/stat).
+
+--- C1b (darwin, through Run, poll 30 ms): the blank-named child writes hooks/post-checkout 3 s later
+argv0="probe" exit 0 violations 0 survivors [{64771 probe}]; alive when Run returned false; hooks/post-checkout planted after Run false
+argv0=""      exit 0 violations 0 survivors [];             alive when Run returned true;  hooks/post-checkout planted after Run true
+
+--- C2 (double fork: perl forks, the child setsids and forks, the intermediate lives d, the grandchild sleeps 5 s;
+     poll 250 ms, start staggered 0..225 ms against the poll phase, 10 trials each)
+darwin: d   0 ms escaped 10/10
+darwin: d  50 ms escaped 10/10
+darwin: d 125 ms escaped  7/10
+darwin: d 200 ms escaped  3/10
+darwin: d 300 ms escaped  0/10
+linux (subreaper): every d escaped 0/10
+darwin procTable cost: mean 46 ms, worst 49 ms per sample (about 1000 processes); a tracked chain seen live:
+  poll 1 live [25502/25499 perl 25505/25502 perl 25506/25505 perl] ... poll 5 live [25506/1 perl]
+
+--- C3 (a setsid survivor that forks a 2 s child every gap, through the sweep)
+darwin: fork every 0.002 s: sweep killed 106, run 474ms, markers by escaped children 16
+darwin: fork every 0.02 s:  sweep killed 34,  run 894ms, markers by escaped children 2
+linux (--init): fork every 0.002 s: sweep killed 108, run 439ms, markers by escaped children 0
+linux (--init): fork every 0.02 s:  sweep killed 0,   run 741ms, markers by escaped children 0
+(a first linux run with the test binary as pid 1 escaped 112; that is a pid 1 artifact and is not counted)
+
+--- C4 (a child of this process started 300 ms after the worker, alive at the sweep)
+darwin: other child alive after sweep: true; killed []
+linux:  other child pid 3522 alive after sweep: false; killed [{3522 sleep}]
+
+--- C5 (renewal stalls until its context is done or 8 s; session timeout 1 s; keepalive 200 ms)
+d95aa72:                         Run took 24.9s, exit 5 end timeout (three stalled renewals, two started after the timeout)
+d95aa72 with renew(tctx) again:  Run took 1.7s,  exit 5 end timeout
+
+--- C6 (D-189: record saved, line appended to the common config, checkHostRecord)
+Branch.x mixed case      flagged=false
+branch quoted dotted     flagged=false
+branch old syntax        flagged=false
+branch section key       flagged=false
+branch.main.remote URL   flagged=false
+include.path             flagged=true
+includeIf onbranch       flagged=true
+remote pushurl           flagged=true
+branchx lookalike        flagged=true
+
+--- C6b (branch.main.remote = a local path, branch.main.pushRemote = another; the Keeper runs git pull --ff-only, commits, git push)
+after argument-free pull, a = "planted"; origin main e86079b; sink main b32a0cf; local b32a0cf
+
+--- C7 (linux: same-group grandchild, group SIGKILL after the leader exits)
+sweep killed []; grandchild 3524 kill(0) succeeds true; /proc stat "3524 (sleep) Z 3363 ..."; this pid 3363
+
+--- CI (gh pr checks 57 at d95aa72): product-ci fail, verify-leases-and-tiers fail (expected no claim), relay-claim skipping
+product-ci, ubuntu-24.04, at a78dd68, ab64571 and d95aa72 (d48deaf was green):
+  --- FAIL: TestRunLimitsKillTheGroup/max_tokens   run_test.go:202: grandchild <pid> survived
+  --- FAIL: TestRunLimitsKillTheGroup/timeout      run_test.go:202: grandchild <pid> survived
+  (a78dd68 also: --- FAIL: TestRunKeepalive)
+In the linux container TestRunLimitsKillTheGroup passed once: whether the grandchild is reaped depends on
+whether it is still live (killed and Wait4ed by the sweep) or already a zombie (skipped) at the sweep's first poll.
+
+--- Local (darwin): go build ./..., go vet ./..., gofmt -l: clean. go test -race ./...: all ok (internal/dispatch 203.7 s).
+go test -race -count=5 on TestSurvivorKilledAndRecorded, TestShortLivedChildHarmless, TestSweepSkipsReusedPid,
+TestStdoutHolder, TestSecondGuardRefusals, TestResultMustFix, TestGuardValidate, TestGuardRecordsClaimOID,
+TestHostRecordKeepsVerifiedSnapshot, TestHostRecordAfterViolation, TestHostRecordIgnoresBranchKeys,
+TestGuardSecondResetsWorktree: ok (162.9 s).

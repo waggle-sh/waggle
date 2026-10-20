@@ -1,0 +1,5 @@
+--- FAIL: TestRunKeepalive (14.29s)
+    run_test.go:239: fail=false: exit 0 leases 2 err <nil> v=[] w=[no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_killed: 1 process(es) outlived the worker and were killed: [{1111 git}]]
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	439.663s
+FAIL

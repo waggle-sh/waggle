@@ -1,0 +1,23 @@
+MUTATION E-sweep-waits-renewal test TestSweepWaitsForRenewal exit 1
+=== RUN   TestSweepWaitsForRenewal
+    fix3_test.go:173: the renewal's child was "disturbed"
+--- FAIL: TestSweepWaitsForRenewal (8.94s)
+FAIL
+MUTATION G-no-renew-after-exit-linux test TestSweepWaitsForRenewal exit 0
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (2.23s)
+PASS
+MUTATION F-zombie-reap-linux test  exit 1
+tBlankNameChildKilled
+    fix3_test.go:60: exit 0 err <nil> survivors [{141  }] pid 141
+--- FAIL: TestBlankNameChildKilled (17.62s)
+=== RUN   TestSweepKillsTrackedGroup
+    fix3_test.go:100: the unseen group member 159 survived the sweep
+--- FAIL: TestSweepKillsTrackedGroup (6.13s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (34.18s)
+=== RUN   TestFixKeepaliveGate
+--- PASS: TestFixKeepaliveGate (17.50s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (17.18s)
+FAIL
