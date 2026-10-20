@@ -536,7 +536,7 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 			case <-tctx.Done():
 				return
 			case <-t.C:
-				if e := renew(tctx); e != nil && tctx.Err() == nil && len(s.Warnings) < 10 {
+				if e := renew(context.WithoutCancel(tctx)); e != nil && tctx.Err() == nil && len(s.Warnings) < 10 {
 					s.Warnings = append(s.Warnings, "claim_renew_failed: "+e.Error())
 				}
 			}
