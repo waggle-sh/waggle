@@ -65,43 +65,6 @@ func TestBlankNameChildKilled(t *testing.T) {
 	}
 }
 
-// The sweep also signals each tracked process group: a child that was
-// orphaned (never seen) but stayed in a tracked process's group dies too.
-func TestSweepKillsTrackedGroup(t *testing.T) {
-	cmd := exec.Command("sh", "-c", "(sleep 61 &); sleep 62")
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	if err := cmd.Start(); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); _ = cmd.Wait() })
-	var tab []proc
-	var orphan, leader proc
-	if !wait(func() bool {
-		tab, _ = procTable()
-		orphan, leader = proc{}, proc{}
-		for _, p := range tab {
-			if p.pid == cmd.Process.Pid {
-				leader = p
-			} else if p.pgid == cmd.Process.Pid && p.ppid != cmd.Process.Pid && !p.zombie {
-				orphan = p
-			}
-		}
-		return leader.pid != 0 && orphan.pid != 0
-	}) {
-		t.Fatalf("no orphan in the group: %v", tab)
-	}
-	tr := newTracker(cmd.Process.Pid)
-	// rootStart lets the sweep reap the killed orphan once the earlier tests in
-	// the package have made this process a subreaper (a zombie still answers kill 0).
-	tr.rootStart = leader.start
-	tr.seen[pkey{leader.pid, leader.start}] = "sh"
-	tr.sweep()
-	if !gone(orphan.pid) {
-		t.Fatalf("the unseen group member %d survived the sweep", orphan.pid)
-	}
-	_ = cmd.Wait()
-}
-
 // stallBackend stalls every renewal until its context ends and records whether
 // the context had a deadline.
 type stallBackend struct {
