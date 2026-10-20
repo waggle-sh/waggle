@@ -69,7 +69,9 @@ func hostBase(m map[string]string) map[string]string {
 }
 
 // configKeys is the hash of the common config's parsed entries without
-// branch.<name>.*, which every push with -u rewrites (D-189). A symlink, a
+// branch.<name>.merge and branch.<name>.remote naming a configured remote,
+// which every push with -u rewrites (D-192). pushRemote, a remote given as a
+// URL or path and global branch.* settings stay in. A symlink, a
 // missing file or an unparsable one is its file state, so each still differs.
 func configKeys(ctx context.Context, pg *Git, common string) string {
 	p := filepath.Join(common, "config")
@@ -80,9 +82,17 @@ func configKeys(ctx context.Context, pg *Git, common string) string {
 	if err != nil {
 		return "unparsable"
 	}
-	var keep []string
-	for _, e := range strings.Split(string(out), "\x00") {
-		if k, _, _ := strings.Cut(e, "\n"); e != "" && !strings.HasPrefix(k, "branch.") {
+	entries, remotes, keep := strings.Split(string(out), "\x00"), map[string]bool{}, []string{}
+	for _, e := range entries {
+		if k, _, _ := strings.Cut(e, "\n"); strings.HasPrefix(k, "remote.") && strings.Count(k, ".") > 1 {
+			remotes[k[len("remote."):strings.LastIndex(k, ".")]] = true
+		}
+	}
+	for _, e := range entries {
+		k, v, _ := strings.Cut(e, "\n")
+		i := strings.LastIndex(k, ".") // branch.<name>.<field>; branch.<field> has no name
+		routine := strings.HasPrefix(k, "branch.") && i > len("branch.") && (k[i+1:] == "merge" || k[i+1:] == "remote" && remotes[v])
+		if e != "" && !routine {
 			keep = append(keep, e)
 		}
 	}

@@ -9,6 +9,7 @@ import (
 
 type proc struct {
 	pid, ppid   int
+	pgid        int
 	start, comm string
 	zombie      bool
 }
@@ -47,6 +48,11 @@ func (t *tracker) poll() {
 			t.rootStart = p.start
 		}
 	}
+	for _, p := range tab { // reparented to dispatch and dead: reap it, or it stays a zombie of ours
+		if p.zombie && p.ppid == t.self && t.reaped && subreaper && startedAfter(p.start, t.rootStart) {
+			_, _ = syscall.Wait4(p.pid, nil, syscall.WNOHANG, nil)
+		}
+	}
 	for grew := true; grew; {
 		grew = false
 		for _, p := range tab {
@@ -72,16 +78,14 @@ func (t *tracker) poll() {
 func (t *tracker) sweep() (killed []Survivor) {
 	t.reaped = true
 	done := map[pkey]bool{}
-	defer func() { // a reparented child stays a zombie until its new parent waits
-		for k := range done {
-			_, _ = syscall.Wait4(k.pid, nil, syscall.WNOHANG, nil)
-		}
-	}()
 	for range 40 {
 		if t.poll(); len(t.live) == 0 {
 			break
 		}
 		for _, p := range t.live {
+			if p.pgid > 1 && p.pgid != syscall.Getpgrp() {
+				_ = syscall.Kill(-p.pgid, syscall.SIGKILL) // an unseen child left in a tracked process's group
+			}
 			if k := (pkey{p.pid, p.start}); syscall.Kill(p.pid, syscall.SIGKILL) == nil && !done[k] {
 				done[k] = true
 				killed = append(killed, Survivor{p.pid, p.comm})
