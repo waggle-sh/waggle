@@ -163,7 +163,7 @@ func TestCleanGitCallsArePinned(t *testing.T) {
 // Opus probes: a planted entry copying another ticket's, and a planted entry
 // whose gitdir is a link to the real one. Both exit 3 with nothing removed.
 func TestCleanRefusesForeignDuplicateAndLinkedGitdir(t *testing.T) {
-	for _, mode := range []string{"copy", "link", "case"} {
+	for _, mode := range []string{"copy", "link", "case", "GIT", "Git", "upper", "parent"} {
 		link := mode == "link"
 		f, wt := cleanRepo(t, false)
 		other := filepath.Join(f.real, ".waggle/worktrees/T-024-builder")
@@ -176,9 +176,25 @@ func TestCleanRefusesForeignDuplicateAndLinkedGitdir(t *testing.T) {
 			}
 		} else {
 			b, _ := os.ReadFile(src)
-			if mode == "case" { // git folds case under core.ignorecase, the macOS default
-				b = []byte(strings.Replace(string(b), "T-024-builder", "t-024-builder", 1))
+			g := strings.TrimSpace(string(b)) // git folds case under core.ignorecase, the macOS default
+			switch mode {
+			case "case":
+				g = strings.Replace(g, "T-024-builder", "t-024-builder", 1)
+			case "GIT", "Git":
+				g = strings.TrimSuffix(g, ".git") + "." + mode
+			case "upper":
+				g = strings.ToUpper(g)
+			case "parent":
+				ln := filepath.Join(t.TempDir(), "ln")
+				if os.Symlink(filepath.Dir(filepath.Dir(g)), ln) != nil {
+					t.Fatal("cannot plant the parent link")
+				}
+				g = filepath.Join(ln, "T-024-builder", ".git")
 			}
+			if _, serr := os.Stat(filepath.Dir(g)); serr != nil {
+				continue // a case-sensitive filesystem cannot spell the same directory two ways
+			}
+			b = []byte(g + "\n")
 			write(t, f.common(), "worktrees/0/gitdir", string(b))
 		}
 		out, err := doClean(f, "", false)
