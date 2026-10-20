@@ -1,0 +1,121 @@
+// sidprobe: session and process group facts (D-176). Standalone, stdlib only.
+// ---- main.go
+// sidprobe: facts about process groups and sessions for T-023 D-176.
+// usage: sidprobe setpgid|setsid
+// Starts a leader sh the way the host cell does (Setpgid) or with Setsid,
+// which spawns three children: A setpgid(0,0) (own group, same session),
+// B setsid() (own session), C plain (same group). Prints pid/pgid/sid for
+// each, kills the leader's group, reports survivors, then sweeps the
+// leader's session (every pid whose getsid equals the leader's sid) and
+// reports again.
+package main
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+)
+
+func main() {
+	mode := "setpgid"
+	if len(os.Args) > 1 {
+		mode = os.Args[1]
+	}
+	dir, _ := os.MkdirTemp("", "sidprobe")
+	defer os.RemoveAll(dir)
+	script := `
+perl -MPOSIX -e 'POSIX::setpgid(0,0) or die "setpgid: Inappropriate ioctl for device"; sleep 60' >/dev/null 2>>"$1" &
+echo "A $!" >> "$1"
+perl -MPOSIX -e 'POSIX::setsid() or die "setsid: Inappropriate ioctl for device"; sleep 60' >/dev/null 2>>"$1" &
+echo "B $!" >> "$1"
+perl -e 'sleep 60' >/dev/null 2>&1 &
+echo "C $!" >> "$1"
+echo "L $$" >> "$1"
+sleep 60
+`
+	pids := dir + "/pids"
+	cmd := exec.Command("sh", "-c", script, "sh", pids)
+	switch mode {
+	case "setsid":
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	default:
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	}
+	if err := cmd.Start(); err != nil {
+		fmt.Println("start:", err)
+		os.Exit(1)
+	}
+	go cmd.Wait()
+	time.Sleep(2000 * time.Millisecond)
+	b, _ := os.ReadFile(pids)
+	fmt.Printf("pids file:\n%s", b)
+	m := map[string]int{}
+	for _, l := range strings.Split(strings.TrimSpace(string(b)), "\n") {
+		f := strings.Fields(l)
+		if len(f) == 2 {
+			m[f[0]], _ = strconv.Atoi(f[1])
+		}
+	}
+	self := os.Getpid()
+	selfSid, _ := getsid(self)
+	selfPgid, _ := syscall.Getpgid(self)
+	fmt.Printf("mode %s: dispatch pid %d pgid %d sid %d\n", mode, self, selfPgid, selfSid)
+	leader := cmd.Process.Pid
+	leaderSid, _ := getsid(leader)
+	show := func(when string) {
+		for _, k := range []string{"L", "A", "B", "C"} {
+			pid := m[k]
+			pg, e1 := syscall.Getpgid(pid)
+			sid, e2 := getsid(pid)
+			al := syscall.Kill(pid, 0) == nil
+			fmt.Printf("  %s %-7s pid %d pgid %d (%v) sid %d (%v) alive %v sameGroupAsLeader %v sameSessionAsLeader %v\n", when, map[string]string{"L": "leader", "A": "setpgid", "B": "setsid", "C": "plain"}[k], pid, pg, e1, sid, e2, al, pg == leader, sid == leaderSid)
+		}
+	}
+	fmt.Printf("leader pid %d sid %d (leader is session leader: %v; shares dispatch session: %v)\n", leader, leaderSid, leaderSid == leader, leaderSid == selfSid)
+	show("before")
+	if ps, err := exec.Command("ps", "-axo", "pid,ppid,pgid,sid,comm").Output(); err == nil {
+		fmt.Println(string(ps))
+	}
+	_ = syscall.Kill(-leader, syscall.SIGKILL)
+	time.Sleep(300 * time.Millisecond)
+	fmt.Println("after SIGKILL to -leader:")
+	show("after-group-kill")
+	// Session sweep: every pid on the system whose session is the leader's.
+	out, _ := exec.Command("ps", "-axo", "pid=").Output()
+	swept := 0
+	for _, l := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		pid, err := strconv.Atoi(strings.TrimSpace(l))
+		if err != nil || pid == self {
+			continue
+		}
+		if sid, err := getsid(pid); err == nil && sid == leaderSid && leaderSid != selfSid {
+			_ = syscall.Kill(pid, syscall.SIGKILL)
+			swept++
+		}
+	}
+	time.Sleep(300 * time.Millisecond)
+	fmt.Printf("session sweep (sid == leader sid %d, skipped when it equals dispatch's own session): killed %d\n", leaderSid, swept)
+	show("after-sweep")
+	for _, k := range []string{"A", "B", "C"} {
+		_ = syscall.Kill(m[k], syscall.SIGKILL)
+	}
+}
+
+// ---- getsid.go
+package main
+
+import "syscall"
+
+// getsid through the raw syscall number (darwin 310, linux 124): the stdlib exports no Getsid wrapper on either OS.
+
+func getsid(pid int) (int, error) {
+	r, _, e := syscall.Syscall(syscall.SYS_GETSID, uintptr(pid), 0, 0)
+	if e != 0 {
+		return 0, e
+	}
+	return int(r), nil
+}

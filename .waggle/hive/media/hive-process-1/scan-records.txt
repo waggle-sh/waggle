@@ -1,0 +1,65 @@
+scan-hive: base origin/main (merge-base 2ecd449), head fbc545a
+changed paths (59):
+  .waggle/hive/DECISIONS.md
+  .waggle/hive/handoff/queen.md
+  .waggle/hive/media/T-023/amd64-diag-run2-segfault.txt
+  .waggle/hive/media/T-023/ci-run39308502545-attempt2-diag-failure.txt
+  .waggle/hive/media/T-023/ci-run39309506539-attempt3-host-test-failure.txt
+  .waggle/hive/media/T-023/diag-test-diff.txt
+  .waggle/hive/media/T-023/fullrepo-race-linux-count3.txt
+  .waggle/hive/media/T-023/hoststate-linux-count50.txt
+  .waggle/hive/media/T-023/hoststate-mac-count50.txt
+  .waggle/hive/media/T-023/round3-fix-and-proving-test.diff
+  .waggle/hive/media/T-023/round3-git-maintenance-prune-repro.txt
+  .waggle/hive/media/T-023/round3-linux-container.txt
+  .waggle/hive/media/T-023/round3-proving-test-prefix-macos.txt
+  .waggle/hive/media/T-023/versions.sh
+  .waggle/hive/media/T-023d0/fable-confirm-checks.txt
+  .waggle/hive/media/T-023d0/fable-confirm-fix-removal.txt
+  .waggle/hive/media/T-023d0/fable-confirm-output.txt
+  .waggle/hive/media/T-023d0/fable-confirm-probe_test.go.txt
+  .waggle/hive/media/T-023d0/fable-confirm2-checks.txt
+  .waggle/hive/media/T-023d0/fable-confirm2-fix-removal.txt
+  .waggle/hive/media/T-023d0/fable-confirm2-output.txt
+  .waggle/hive/media/T-023d0/fable-confirm2-probe_test.go.txt
+  .waggle/hive/media/T-023d0/fable-fix-removal.txt
+  .waggle/hive/media/T-023d0/fable-probe-output.txt
+  .waggle/hive/media/T-023d0/fable-probe_test.go.txt
+  .waggle/hive/media/T-023d0/opus-confirm-mutants.sh
+  .waggle/hive/media/T-023d0/opus-confirm-mutants.txt
+  .waggle/hive/media/T-023d0/opus-confirm-probes.txt
+  .waggle/hive/media/T-023d0/opus-confirm-probes_test.go.txt
+  .waggle/hive/media/T-023d0/opus-confirm2-mutants.sh
+  .waggle/hive/media/T-023d0/opus-confirm2-mutants.txt
+  .waggle/hive/media/T-023d0/opus-confirm2-probes.txt
+  .waggle/hive/media/T-023d0/opus-confirm2-probes_test.go.txt
+  .waggle/hive/media/T-023d0/opus-mutants.sh
+  .waggle/hive/media/T-023d0/opus-mutants.txt
+  .waggle/hive/media/T-023d0/opus-probes.txt
+  .waggle/hive/media/T-023d0/opus-probes_test.go.txt
+  .waggle/hive/media/T-023d0b/fable-darwin-output.txt
+  .waggle/hive/media/T-023d0b/fable-linux-output.txt
+  .waggle/hive/media/T-023d0b/fable-probe-scripts.txt
+  .waggle/hive/media/T-023d0b/fable-probe_test.go.txt
+  .waggle/hive/media/T-023d0b/opus-comb-fetch.sh
+  .waggle/hive/media/T-023d0b/opus-env_test.go.txt
+  .waggle/hive/media/T-023d0b/opus-mutants.sh
+  .waggle/hive/media/T-023d0b/opus-mutants.txt
+  .waggle/hive/media/T-023d0b/opus-mutants2.sh
+  .waggle/hive/media/T-023d0b/opus-mutants2.txt
+  .waggle/hive/media/T-023d0b/opus-prunedups-inrun.txt
+  .waggle/hive/media/T-023d0b/opus-prunedups-inrun_test.go.txt
+  .waggle/hive/media/T-023d0b/opus-prunedups.sh
+  .waggle/hive/media/T-023d0b/opus-prunedups.txt
+  .waggle/hive/media/T-023d0b/opus-trace.sh
+  .waggle/hive/media/T-023d0b/opus-trace.txt
+  .waggle/hive/media/T-023d0b/opus-tripwire.sh
+  .waggle/hive/media/T-023d0b/opus-tripwire.txt
+  .waggle/hive/reviews/T-023d0-fable.md
+  .waggle/hive/reviews/T-023d0-opus.md
+  .waggle/hive/reviews/T-023d0b-fable.md
+  .waggle/hive/reviews/T-023d0b-opus.md
+decisions gate (exit 0):
+  decisions: ok, appended D-178, D-179, D-180, D-181, D-182, D-183, D-184, D-185, D-186
+hits (0):
+result: clean and hive-only: merge with --admin, one-line note to the Keeper

@@ -1,0 +1,48 @@
+# git-level repro, no waggle code. alpine edge, git 2.56.0. Script below.
+# early: an entry dir without a gitdir file exists while the commit's detached auto maintenance runs:
+#   the worktree-prune task fires and removes it (the later printf finds no directory).
+# dup: a complete entry whose gitdir names the same .git as a real worktree; the prune that task runs
+#   removes one of the pair as "duplicate entry" (the id that sorts later: here the real "w";
+#   in the fixture "T-023-builder" sorts before "planted", so planted goes).
+aarch64
+git version 2.56.0
+== mode early
+/s/m2.sh: line 16: can't create <tmp>: nonexistent directory
+worktrees after: w 
+"argv":["git","-c","user.name=a","-c","user.email=a@e.co","commit","-q","-m","x"] "argv":["git","maintenance","run","--auto","--quiet","--detach"] "argv":["/usr/libexec/git-core/git","maintenance","run","--auto","--quiet","--detach"] "argv":["git","worktree","prune","--expire","3.months.ago"] "argv":["/usr/libexec/git-core/git","worktree","prune","--expire","3.months.ago"] 
+== mode dup
+before prune: planted w 
+Removing worktrees/w: duplicate entry
+worktrees after: planted 
+"argv":["git","worktree","prune","--expire","3.months.ago","-v"] 
+
+# script (m2.sh)
+#!/bin/sh
+# usage: m2.sh <dir> <mode>
+# mode early: planted dir (no gitdir yet) exists when the commit's detached maintenance runs
+# mode dup:   planted is complete (duplicate gitdir) when a manual auto maintenance runs with a second stale entry
+S=$1; M=$2
+rm -rf "$S"; mkdir -p "$S"; cd "$S" || exit 1
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+git init -q r && cd r && git -c user.name=a -c user.email=a@e.co commit -q --allow-empty -m i
+git worktree add -q ../w -b b
+cd ../w && echo x > f && git add f
+case $M in
+early)
+	mkdir "$S/r/.git/worktrees/planted"
+	GIT_TRACE2_EVENT=$S/tr.json git -c user.name=a -c user.email=a@e.co commit -q -m x
+	sleep 2
+	printf '%s\n' "$PWD/.git" > "$S/r/.git/worktrees/planted/gitdir"
+	;;
+dup)
+	git -c user.name=a -c user.email=a@e.co -c maintenance.auto=false commit -q -m x
+	mkdir "$S/r/.git/worktrees/planted"
+	printf '%s\n' "$PWD/.git" > "$S/r/.git/worktrees/planted/gitdir"
+	echo "before prune: $(ls "$S/r/.git/worktrees" | tr '\n' ' ')"
+	GIT_TRACE2_EVENT=$S/tr.json git worktree prune --expire 3.months.ago -v
+	;;
+esac
+sleep 2
+echo "worktrees after: $(ls "$S/r/.git/worktrees" 2>&1 | tr '\n' ' ')"
+grep -o '"argv":\[[^]]*\]' "$S/tr.json" | tr '\n' ' '
+echo

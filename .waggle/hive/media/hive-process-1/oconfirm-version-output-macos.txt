@@ -1,0 +1,32 @@
+# oconfirm-version-probe.sh 2a99fb5 .waggle/control/scripts/scan-hive.sh, macOS, real git 2.54
+### part 1: the parse line on version strings
+   script line 67
+   [git version 2.54.0 (Apple Git-157)]       parsed 2054   runs
+   [git version 2.39.5 (Apple Git-154)]       parsed 2039   runs
+   [git version 2.35.1 (Apple Git-136)]       parsed 2035   exit 3
+   [git version 2.45.1.windows.1]             parsed 2045   runs
+   [git version 2.36.0.windows.1]             parsed 2036   runs
+   [git version 2.35.1.windows.2]             parsed 2035   exit 3
+   [git version 2.36.0.rc1]                   parsed 2036   runs
+   [git version 2.36.0.rc0.windows.1]         parsed 2036   runs
+   [git version 2.35.0.rc2]                   parsed 2035   exit 3
+   [git version 2.34.1]                       parsed 2034   exit 3
+   [git version 2.36.0.vfs.0.0]               parsed 2036   runs
+   [git version 2.100.0]                      parsed 2100   runs
+   [git version 3.0.0.rc0]                    parsed 3000   runs
+   [garbage]                                  parsed 0      exit 3
+   []                                         parsed 0      exit 3
+   gate line: [ "${gv:-0}" -ge 2036 ] 2>/dev/null || { echo "scan-hive: needs git 2.36 or later" >&2; exit 3; }
+### part 2: whole script under a version shim (expect exit 0 at 2.36 and above, 3 below)
+   == shim git 2.39.5 (Apple Git-154): exit 0
+      result: clean records batch: merge with --admin, one-line note to the Keeper
+   == shim git 2.35.1 (Apple Git-136): exit 3
+      scan-hive: needs git 2.36 or later
+   == shim git 2.36.0.rc1: exit 0
+      result: clean records batch: merge with --admin, one-line note to the Keeper
+   == shim git 2.35.0.rc2: exit 3
+      scan-hive: needs git 2.36 or later
+   == shim git 2.45.1.windows.1: exit 0
+      result: clean records batch: merge with --admin, one-line note to the Keeper
+   == shim git 2.34.1: exit 3
+      scan-hive: needs git 2.36 or later

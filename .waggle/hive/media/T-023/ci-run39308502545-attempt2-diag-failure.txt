@@ -1,0 +1,43 @@
+2026-10-19T19:12:23.9059640Z ok  	github.com/waggle-sh/waggle/internal/decisions	2.758s
+2026-10-19T19:12:53.5151332Z ?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+2026-10-19T19:13:21.3557838Z --- FAIL: TestDiagNewAdminEntry (24.89s)
+2026-10-19T19:13:21.3561306Z     diag_test.go:26: === iteration 18 link=true FAILED: exit 0 err <nil> violations [] end "done" subtype "success"
+2026-10-19T19:13:21.3562704Z     diag_test.go:26: warnings: []
+2026-10-19T19:13:21.3564017Z     diag_test.go:26: git: git version 2.55.0
+2026-10-19T19:13:21.3565111Z     diag_test.go:26: diag.log (agent shell marks):
+2026-10-19T19:13:21.3566097Z         after-commit
+2026-10-19T19:13:21.3566568Z         total 12
+2026-10-19T19:13:21.3567847Z         drwxr-xr-x 3 runner runner 4096 Oct 19 19:12 .
+2026-10-19T19:13:21.3568979Z         drwxr-xr-x 8 runner runner 4096 Oct 19 19:12 ..
+2026-10-19T19:13:21.3570227Z         drwxr-xr-x 4 runner runner 4096 Oct 19 19:12 T-023-builder
+2026-10-19T19:13:21.3571268Z         mkdir rc=0
+2026-10-19T19:13:21.3571935Z         printf rc=0
+2026-10-19T19:13:21.3572398Z         total 12
+2026-10-19T19:13:21.3573071Z         drwxr-xr-x 2 runner runner 4096 Oct 19 19:12 .
+2026-10-19T19:13:21.3573918Z         drwxr-xr-x 4 runner runner 4096 Oct 19 19:12 ..
+2026-10-19T19:13:21.3574985Z         -rw-r--r-- 1 runner runner   82 Oct 19 19:12 gitdir
+2026-10-19T19:13:21.3575610Z         end
+2026-10-19T19:13:21.3576140Z     diag_test.go:26: stderr.log:
+2026-10-19T19:13:21.3577653Z     diag_test.go:26: post-run: planted absent (stat <tmp>/repo/.git/worktrees/planted: no such file or directory)
+2026-10-19T19:13:21.3579904Z     diag_test.go:26: common/worktrees: readdir error open <tmp>/repo/.git/worktrees: no such file or directory
+2026-10-19T19:13:21.3581142Z     diag_test.go:26: common:
+2026-10-19T19:13:21.3581968Z           COMMIT_EDITMSG dir=false mtime=1792437156032367856
+2026-10-19T19:13:21.3583167Z           FETCH_HEAD dir=false mtime=1792437156515491926
+2026-10-19T19:13:21.3584025Z           HEAD dir=false mtime=1792437155997200067
+2026-10-19T19:13:21.3585145Z           config dir=false mtime=1792437156046488053
+2026-10-19T19:13:21.3586759Z           description dir=false mtime=1792437155992487607
+2026-10-19T19:13:21.3587617Z           hooks dir=true mtime=1792437155992487607
+2026-10-19T19:13:21.3588439Z           index dir=false mtime=1792437156543492157
+2026-10-19T19:13:21.3589234Z           info dir=true mtime=1792437155992487607
+2026-10-19T19:13:21.3590018Z           logs dir=true mtime=1792437156033013075
+2026-10-19T19:13:21.3590822Z           objects dir=true mtime=1792437156519491959
+2026-10-19T19:13:21.3591625Z           refs dir=true mtime=1792437156348490547
+2026-10-19T19:13:21.3592936Z     diag_test.go:26: stat gc.pid: stat <tmp>/repo/.git/gc.pid: no such file or directory
+2026-10-19T19:13:21.3595259Z     diag_test.go:26: stat gc.log: stat <tmp>/repo/.git/gc.log: no such file or directory
+2026-10-19T19:13:21.3597117Z     diag_test.go:26: stat objects/info/commit-graph: stat <tmp>/repo/.git/objects/info/commit-graph: no such file or directory
+2026-10-19T19:13:21.3598838Z     diag_test.go:26: stat config: mtime 1792437156046488053 size 213
+2026-10-19T19:13:21.3600353Z     diag_test.go:26: stat config.worktree: stat <tmp>/repo/.git/config.worktree: no such file or directory
+2026-10-19T19:13:21.3602872Z     diag_test.go:26: stat packed-refs: stat <tmp>/repo/.git/packed-refs: no such file or directory
+2026-10-19T19:13:21.3604350Z     diag_test.go:26: stat index: mtime 1792437156543492157 size 1793
+2026-10-19T19:13:21.3606177Z     diag_test.go:26: hostFiles after run (worktrees/*, config): config=2452501c7e9ec61b7172d0dc8e1cbe5ac0f010e83e87b1e15cdfd7fcee0cf0d3
+2026-10-19T19:13:21.3607541Z     diag_test.go:32: diag: 1 of 80 iterations failed

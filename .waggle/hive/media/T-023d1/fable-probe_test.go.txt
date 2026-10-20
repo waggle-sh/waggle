@@ -1,0 +1,281 @@
+//go:build unix
+
+// Fable guard probes for T-023 phase D1 (PR #57). Uncommitted; never merge.
+package dispatch
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+
+	"github.com/waggle-sh/waggle/internal/runtime"
+)
+
+func pidOf(t *testing.T, file string) int {
+	t.Helper()
+	b, err := os.ReadFile(file)
+	if err != nil {
+		t.Logf("pid file: %v", err)
+		return 0
+	}
+	pid, _ := strconv.Atoi(strings.TrimSpace(string(b)))
+	return pid
+}
+
+func alive(pid int) bool {
+	if pid <= 0 {
+		return false
+	}
+	return syscall.Kill(pid, 0) == nil
+}
+
+func killPid(pid int) {
+	if pid > 0 {
+		_ = syscall.Kill(pid, syscall.SIGKILL)
+	}
+}
+
+// Probe 1a: a D-176 style survivor (a child in its own process group that does
+// not hold stdout) waits for the push and then plants a hook and a config
+// line. What does the run report, and what does the next run see?
+func TestProbeSurvivorAfterCheck(t *testing.T) {
+	f := newFixture(t, false, false)
+	bin, log := gitWrapper(t)
+	pidFile := filepath.Join(t.TempDir(), "pid")
+	planted := filepath.Join(t.TempDir(), "planted")
+	perl := `POSIX::setpgid(0,0); for (1..1500) { if (open F, "<", "` + log + `") { local $/; $c=<F>; close F; last if $c =~ /worktree remove/ } select(undef,undef,undef,0.001) }` +
+		` open H, ">", "` + f.common() + `/hooks/post-checkout"; print H "#!/bin/sh\n"; close H;` +
+		` open C, ">>", "` + f.common() + `/config"; print C "[remote \"evil\"]\n\turl = x\n"; close C;` +
+		` open P, ">", "` + planted + `"; close P; sleep 3`
+	script := "perl -MPOSIX -e '" + perl + "' >/dev/null 2>&1 &\necho $! > '" + pidFile + "'\n" + okScenario
+	start := time.Now()
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.GitBin = bin })
+	took := time.Since(start)
+	pid := pidOf(t, pidFile)
+	defer killPid(pid)
+	t.Logf("run 1: took %v exit %d end %s pushed %v violations %v warnings %v err %v", took, res.ExitCode, res.End, res.Pushed, res.Violations, res.Warnings, err)
+	t.Logf("run 1: survivor pid %d alive after Run: %v; planted marker exists: %v", pid, alive(pid), exists(planted))
+	rec, _ := os.ReadFile(filepath.Join(f.real, ".waggle/worktrees/host-files.json"))
+	t.Logf("run 1: host-files.json records hooks/post-checkout as absent: %v; record: %s", strings.Contains(string(rec), `"hooks/post-checkout":"absent"`), rec)
+	t.Logf("run 1: hook present on disk now: %v", exists(filepath.Join(f.common(), "hooks/post-checkout")))
+	killPid(pid)
+	time.Sleep(200 * time.Millisecond)
+	b0, _ := os.ReadFile(log)
+	n0 := len(strings.Split(string(b0), "\n"))
+	// Run 2: does the record catch the planted hook and config?
+	res2, err2 := f.run(commitFile("internal/x/c.go", "ok")+emit(assistant(100), okResult), func(_ *Request, d *Deps) { d.GitBin = bin })
+	b, _ := os.ReadFile(log)
+	after := strings.Join(strings.Split(string(b), "\n")[n0-1:], "\n")
+	t.Logf("run 2: exit %d err %v violations %v; fetch ran in run 2: %v", res2.ExitCode, err2, res2.Violations, strings.Contains(after, "fetch"))
+}
+
+// Probe 1b: a survivor in its own process group holds stdout while the leader
+// exits normally; it writes into the worktree 2 seconds in. How long does Run
+// take with a 4 second timeout, what is reported, and does the child survive?
+func TestProbeSurvivorHoldsStdoutLeaderExits(t *testing.T) {
+	f := newFixture(t, false, false)
+	pidFile := filepath.Join(t.TempDir(), "pid")
+	perl := `POSIX::setpgid(0,0); sleep 2; open P, ">", "late-probe.txt"; close P; sleep 40`
+	script := "perl -MPOSIX -e '" + perl + "' &\necho $! > '" + pidFile + "'\n" + okScenario
+	start := time.Now()
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.Timeout = 4 * time.Second })
+	took := time.Since(start)
+	pid := pidOf(t, pidFile)
+	defer killPid(pid)
+	t.Logf("took %v exit %d end %s violations %v warnings %v err %v", took, res.ExitCode, res.End, res.Violations, res.Warnings, err)
+	t.Logf("survivor pid %d alive after Run: %v (pgid %d)", pid, alive(pid), pgidOf(pid))
+	t.Logf("late-probe.txt in worktree: %v", exists(filepath.Join(f.real, ".waggle/worktrees/T-023-builder/late-probe.txt")))
+}
+
+// Probe 1c: a plain `&` child (same group) and the leader exits: the group kill
+// on reap must take it.
+func TestProbeSameGroupChildDies(t *testing.T) {
+	f := newFixture(t, false, false)
+	pidFile := filepath.Join(t.TempDir(), "pid")
+	script := "(sleep 2; touch late-same-group.txt; sleep 30) &\necho $! > '" + pidFile + "'\n" + okScenario
+	res, err := f.run(script, func(_ *Request, d *Deps) { d.Timeout = 10 * time.Second })
+	pid := pidOf(t, pidFile)
+	defer killPid(pid)
+	t.Logf("exit %d end %s violations %v warnings %v err %v", res.ExitCode, res.End, res.Violations, res.Warnings, err)
+	t.Logf("same-group child pid %d alive after Run: %v; late file: %v", pid, alive(pid), exists(filepath.Join(f.real, ".waggle/worktrees/T-023-builder/late-same-group.txt")))
+}
+
+func pgidOf(pid int) int {
+	g, err := syscall.Getpgid(pid)
+	if err != nil {
+		return -1
+	}
+	return g
+}
+
+func exists(p string) bool { _, err := os.Lstat(p); return err == nil }
+
+// Probe 4: crafted, duplicated and odd verdict lines.
+func TestProbeVerdictCrafted(t *testing.T) {
+	cases := map[string]string{
+		"trailing space":       `Verdict: pass `,
+		"crlf":                 `Verdict: pass\r`,
+		"leading space":        ` Verdict: pass`,
+		"capital":              `Verdict: Pass`,
+		"fence last wins":      `Verdict: must-fix\n` + "```" + `\nVerdict: pass\n` + "```",
+		"fence then real":      "```" + `\nVerdict: pass\n` + "```" + `\nVerdict: must-fix`,
+		"quoted bullet":        `- Verdict: pass\nVerdict: must-fix`,
+		"exact maxfinal-1":     strings.Repeat("x", runtime.MaxFinal-1-len("\nVerdict: pass")) + `\nVerdict: pass`,
+		"exact maxfinal uncut": strings.Repeat("x", runtime.MaxFinal-len("\nVerdict: pass")) + `\nVerdict: pass`,
+		"empty":                ``,
+	}
+	for name, report := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := guardFixture(t, false)
+			res, err := f.guard(emit(assistant(100), verdictEvent(report)))
+			t.Logf("%s: verdict %q end %s exit %d err %v", name, res.Verdict, res.End, res.ExitCode, err)
+		})
+	}
+	// parseVerdict directly, no run.
+	for name, in := range map[string]string{"dup last pass": "Verdict: must-fix\nVerdict: pass", "dup last mustfix": "Verdict: pass\nVerdict: must-fix", "crlf": "Verdict: pass\r\n", "nul": "Verdict: pass\x00"} {
+		t.Logf("parseVerdict(%s) = %q", name, parseVerdict([]byte(in)))
+	}
+}
+
+// Probe 5: guard side effects beyond the builder's tests: log --output into
+// the hooks dir, into the main checkout, into host-files.json; a tag; a .git
+// rewrite; remote mode (no push, claim untouched on the origin).
+func TestProbeGuardSideEffects(t *testing.T) {
+	pass := emit(assistant(100), verdictEvent(`Verdict: pass`))
+	type c struct{ script, want string }
+	cases := map[string]c{
+		"log output to hooks":      {"git log -1 --output=\"$(git rev-parse --path-format=absolute --git-common-dir)/hooks/post-checkout\"\n", ruleHost},
+		"log output to main":       {"git log -1 --output=\"$(git rev-parse --path-format=absolute --git-common-dir)/../stray.txt\"\n", ruleHost},
+		"log output to hostrecord": {"git log -1 --output=\"$(git rev-parse --path-format=absolute --git-common-dir)/../.waggle/worktrees/host-files.json\"\n", ""},
+		"tag":                      {"git tag probe-tag\n", ruleHost},
+		"dotgit rewrite":           {"echo 'gitdir: /nonexistent' > .git\n", ruleHost},
+		"ignored probe file":       {"echo x > probe.log\necho '*.log' > .git/info/exclude 2>/dev/null; echo y > probe2.tmp\n", ""},
+	}
+	for name, cc := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := guardFixture(t, false)
+			res, err := f.guard(cc.script + pass)
+			t.Logf("%s: exit %d end %s verdict %q violations %v err %v tainted %v", name, res.ExitCode, res.End, res.Verdict, res.Violations, err,
+				exists(filepath.Join(f.real, ".waggle/worktrees/T-023-guard.tainted")))
+			if name == "log output to hostrecord" {
+				res2, err2 := f.run(commitFile("internal/x/c.go", "ok") + emit(assistant(100), okResult))
+				t.Logf("next run after host-files.json overwrite: exit %d err %v", res2.ExitCode, err2)
+			}
+		})
+	}
+	t.Run("remote mode", func(t *testing.T) {
+		f := guardFixture(t, true)
+		before := sh(t, f.origin, "for-each-ref")
+		res, err := f.guard(pass)
+		after := sh(t, f.origin, "for-each-ref")
+		t.Logf("remote guard: exit %d end %s verdict %q pushed %v verb %q head %s err %v; origin refs unchanged: %v", res.ExitCode, res.End, res.Verdict, res.Pushed, res.ClaimVerb, res.HeadOID, err, before == after)
+		t.Logf("guard worktree removed after exit 0: %v", !exists(filepath.Join(f.real, ".waggle/worktrees/T-023-guard")))
+		line, _ := os.ReadFile(filepath.Join(f.real, ".waggle/control/usage.jsonl"))
+		t.Logf("ledger lines: %d; last: %s", strings.Count(string(line), "\n"), lastLine(string(line)))
+	})
+}
+
+func lastLine(s string) string {
+	ls := strings.Split(strings.TrimSpace(s), "\n")
+	return ls[len(ls)-1]
+}
+
+// Probe 6: the host record versus a Keeper's legitimate edit between runs, and
+// a guard's no_verdict ledger mapping.
+func TestProbeHostRecordKeeperEdit(t *testing.T) {
+	f := newFixture(t, false, false)
+	if res, err := f.run(okScenario); err != nil || res.ExitCode != 0 {
+		t.Fatalf("first: %d %v", res.ExitCode, err)
+	}
+	f.git("config", "--local", "remote.upstream.url", "https://example.com/x.git")
+	_, err := f.run(commitFile("internal/x/c.go", "ok") + emit(assistant(100), okResult))
+	t.Logf("after a Keeper config edit: exit %d err %v", code(err), err)
+	if err := os.Remove(filepath.Join(f.real, ".waggle/worktrees/host-files.json")); err != nil {
+		t.Fatal(err)
+	}
+	res, err := f.run(commitFile("internal/x/d.go", "ok") + emit(assistant(100), okResult))
+	t.Logf("after deleting the record: exit %d err %v", res.ExitCode, err)
+	// A global config edit (the Keeper's ~/.gitconfig stand-in).
+	cfg := filepath.Join(t.TempDir(), "gitconfig")
+	write(t, filepath.Dir(cfg), "gitconfig", "[user]\n\tname = G\n\temail = g@example.com\n")
+	t.Setenv("GIT_CONFIG_GLOBAL", cfg)
+	if res, err := f.run(commitFile("internal/x/e.go", "ok") + emit(assistant(100), okResult)); err != nil || res.ExitCode != 0 {
+		t.Fatalf("with global: %d %v", res.ExitCode, err)
+	}
+	write(t, filepath.Dir(cfg), "gitconfig", "[user]\n\tname = G2\n\temail = g@example.com\n")
+	_, err = f.run(commitFile("internal/x/f.go", "ok") + emit(assistant(100), okResult))
+	t.Logf("after a Keeper global config edit: exit %d err %v", code(err), err)
+}
+
+// Probe 7: identity edge cases before the claim.
+func TestProbeIdentity(t *testing.T) {
+	f := newFixture(t, false, false)
+	f.git("config", "--local", "user.name", "a\tb")
+	_, err := f.run(okScenario)
+	t.Logf("control char in user.name: exit %d err %v", code(err), err)
+	nothingWritten(t, f)
+	g := newFixture(t, false, false)
+	g.git("config", "--local", "--unset", "user.name")
+	cfg := filepath.Join(t.TempDir(), "gitconfig")
+	write(t, filepath.Dir(cfg), "gitconfig", "[user]\n\tname = Global Only Name\n")
+	t.Setenv("GIT_CONFIG_GLOBAL", cfg)
+	res, err := g.run(commitFile("internal/x/b.go", "ok")+"git add -A\ngit commit -q -s -m 'T-023: id'\n"+emit(assistant(100), okResult))
+	t.Logf("name global, email local: exit %d err %v author %q", res.ExitCode, err, g.git("log", "-1", "--format=%an <%ae>", "refs/heads/t-023"))
+	// Brief absent at base: exit 3 and nothing written (refusal ordering).
+	h := newFixture(t, false, false)
+	h.git("rm", "-q", ".waggle/hive/tasks/T-023.md")
+	h.git("commit", "-q", "-m", "drop brief")
+	_, err = h.run(okScenario)
+	t.Logf("brief absent: exit %d err %v", code(err), err)
+	nothingWritten(t, h)
+}
+
+// Probe 9: item 22 counting edge cases, directly through roundMustFix.
+func TestProbeRoundMustFix(t *testing.T) {
+	f := newFixture(t, false, false)
+	for name, body := range map[string]string{
+		"T-023d-opus.md":  "Verdict: must-fix\nVerdict: must-fix\n",
+		"T-023d1-opus.md": "Verdict: must-fix\n",
+		"T-023-x.md":      "Verdict: must-fix\n",
+		"T-023d-note.txt": "Verdict: must-fix\n",
+		"T-023.md":        "Verdict: must-fix\n",
+	} {
+		write(t, f.real, ".waggle/hive/reviews/"+name, body)
+	}
+	f.git("add", "-A")
+	f.git("commit", "-q", "-m", "reviews")
+	base := f.git("rev-parse", "HEAD")
+	g := &Git{Dir: f.real}
+	for _, br := range []string{"t-023d", "t-023d1", "t-023", "t-023dd"} {
+		n, err := roundMustFix(context.Background(), g, base, Request{Ticket: "T-023", Branch: br})
+		t.Logf("branch %s: round must-fix %d err %v", br, n, err)
+	}
+	in, err := ReadInputs(context.Background(), g, base, Request{Ticket: "T-023", Role: "builder", Branch: "t-023d"})
+	t.Logf("ReadInputs t-023d MustFix total %d err %v", in.MustFix, err)
+	// A base without a reviews directory.
+	h := newFixture(t, false, false)
+	hb := h.git("rev-parse", "HEAD")
+	n, err := roundMustFix(context.Background(), &Git{Dir: h.real}, hb, Request{Ticket: "T-023", Branch: "t-023d"})
+	t.Logf("no reviews dir at base: n %d err %v; ls-tree raw: %q", n, err, h.git("ls-tree", "--name-only", hb, ".waggle/hive/reviews/"))
+}
+
+// Probe 10: a guard with no verdict and the ledger line; Validate with guard
+// dirs and gate; a builder Head.
+func TestProbeGuardLedgerAndValidate(t *testing.T) {
+	f := guardFixture(t, false)
+	res, err := f.guard(emit(assistant(100), verdictEvent(`no verdict here`)))
+	line, _ := os.ReadFile(filepath.Join(f.real, ".waggle/control/usage.jsonl"))
+	t.Logf("no_verdict guard: exit %d end %s err %v; ledger last: %s", res.ExitCode, res.End, err, lastLine(string(line)))
+	t.Logf("guard worktree kept after exit 5: %v", exists(filepath.Join(f.real, ".waggle/worktrees/T-023-guard")))
+	r, err := Request{RepoDir: f.real, Ticket: "23", Role: "guard", Dirs: []string{".github/workflows"}, Gate: "heavy", Branch: "t-023"}.Validate()
+	t.Logf("guard with --dir .github/workflows --gate heavy: err %v dirs %v gate %q", err, r.Dirs, r.Gate)
+	_, err = Request{RepoDir: f.real, Ticket: "23", Role: "builder", Dirs: []string{"internal/x"}, Gate: "full", Second: true}.Validate()
+	t.Logf("builder --second: err %v", err)
+	r, err = Request{RepoDir: f.real, Ticket: "23", Role: "builder", Dirs: []string{"internal/x"}, Gate: "full", Head: "deadbeef"}.Validate()
+	t.Logf("builder with Head set: err %v head kept %q", err, r.Head)
+}

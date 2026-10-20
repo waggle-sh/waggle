@@ -1,0 +1,195 @@
+# fix-new-probe.sh 89778dd on macOS (BSD awk, real decisions gate).
+### N10: records set
+== add-review: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== add-media: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== edit-handoff-summary: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== append-decisions: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== modify-task-brief: exit 2
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (modified outside the records set) .waggle/hive/tasks/T-002.md
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== add-task-brief: exit 2
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (added outside the records set) .waggle/hive/tasks/T-999.md
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== modify-existing-review: exit 2
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (modified outside the records set) .waggle/hive/reviews/hive-records-4.md
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== delete-existing-review: exit 2
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (deleted outside the records set) .waggle/hive/reviews/hive-records-4.md
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== rename-existing-media: exit 2
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (deleted outside the records set) .waggle/hive/media/hive-process-1/scan-branch.txt
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== add-roadmap: exit 2
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (added outside the records set) .waggle/hive/ROADMAP.md
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== add-symlink-media: exit 2
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (symlink) .waggle/hive/media/fix-plant/link.md
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+== add-gitattributes-media: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (.gitattributes) .waggle/hive/media/fix-plant/.gitattributes
+   hits (2):
+     .waggle/hive/media/fix-plant/.gitattributes:0: binary
+     commit af7de5a .waggle/hive/media/fix-plant/.gitattributes:0: binary
+   result: FAIL, 2 hit(s): guard and card
+== delete-handoff-summary: exit 2
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (deleted outside the records set) .waggle/hive/handoff/queen.md
+   hits (0):
+   result: clean, but 1 change(s) outside the records set: guard and card
+### N9: local files
+== force-add-handoff-local: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+     HOLD (added outside the records set) .waggle/hive/handoff/queen.local.md
+   hits (2):
+     .waggle/hive/handoff/queen.local.md:0: local-file
+     commit e901f71 .waggle/hive/handoff/queen.local.md:0: local-file
+   result: FAIL, 2 hit(s): guard and card
+== add-local-dot-ext: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/notes.local.md:0: local-file
+     commit 983b1ee .waggle/hive/media/fix-plant/notes.local.md:0: local-file
+   result: FAIL, 2 hit(s): guard and card
+== add-local-suffix: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/names.local:0: local-file
+     commit bdac469 .waggle/hive/media/fix-plant/names.local:0: local-file
+   result: FAIL, 2 hit(s): guard and card
+== not-local-word: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== local-added-then-removed: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (1):
+     commit 4326163 .waggle/hive/handoff/queen.local.md:0: local-file
+   result: FAIL, 1 hit(s): guard and card
+### N3: token shapes, positive
+== jwt: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/a.md:1: token
+     commit f123e1f .waggle/hive/media/fix-plant/a.md:1: token
+   result: FAIL, 2 hit(s): guard and card
+== jwt-in-quotes: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/a.md:1: token
+     commit 70cf1fa .waggle/hive/media/fix-plant/a.md:1: token
+   result: FAIL, 2 hit(s): guard and card
+== aws: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/a.md:1: token
+     commit 9213a77 .waggle/hive/media/fix-plant/a.md:1: token
+   result: FAIL, 2 hit(s): guard and card
+== slack-bot: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/a.md:1: token
+     commit dde1208 .waggle/hive/media/fix-plant/a.md:1: token
+   result: FAIL, 2 hit(s): guard and card
+== slack-user: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/a.md:1: token
+     commit 82f6db7 .waggle/hive/media/fix-plant/a.md:1: token
+   result: FAIL, 2 hit(s): guard and card
+== supabase-pat: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/a.md:1: token
+     commit 5e63d5d .waggle/hive/media/fix-plant/a.md:1: token
+   result: FAIL, 2 hit(s): guard and card
+== resend: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/a.md:1: token
+     commit 2ba01a1 .waggle/hive/media/fix-plant/a.md:1: token
+   result: FAIL, 2 hit(s): guard and card
+### N3: token shapes, negative (expect exit 0)
+== neg-words: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== neg-jwt-short: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== neg-aws-in-word: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+### N2: long lines
+== line of 65536 bytes: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+   (0 s including the go run gate)
+== line of 65537 bytes: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/long.txt:1: long-line
+     commit adf29b3 .waggle/hive/media/fix-plant/long.txt:1: long-line
+   result: FAIL, 2 hit(s): guard and card
+   (1 s including the go run gate)
+== line of 2000000 bytes: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/long.txt:1: long-line
+     commit cd38a35 .waggle/hive/media/fix-plant/long.txt:1: long-line
+   result: FAIL, 2 hit(s): guard and card
+   (1 s including the go run gate)
+### N5: names warning
+== warn-default: exit 0
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (0):
+   result: clean records batch: merge with --admin, one-line note to the Keeper
+== CI=1: exit 0, warning lines: 0
+== with scan-names.local: exit 0, warning lines: 0
+### N6 and N12: labels with a space in the path and hostile diff config
+== space-in-path: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (2):
+     .waggle/hive/media/fix-plant/a b.md:1: dash
+     commit f787344 .waggle/hive/media/fix-plant/a b.md:1: dash
+   result: FAIL, 2 hit(s): guard and card
+== same commit, diff.noprefix, mnemonicPrefix, showSignature, color.ui=always: exit 1
+   hits (2):
+     .waggle/hive/media/fix-plant/a b.md:1: dash
+     commit f787344 .waggle/hive/media/fix-plant/a b.md:1: dash
+   result: FAIL, 2 hit(s): guard and card
+### B1: token added then removed
+== token-added-then-removed: exit 1
+   warning: .waggle/control/scan-names.local is missing, so the Keeper's surname is not being checked
+   hits (1):
+     commit 25e3c64 .waggle/hive/media/fix-plant/a.md:1: token
+   result: FAIL, 1 hit(s): guard and card

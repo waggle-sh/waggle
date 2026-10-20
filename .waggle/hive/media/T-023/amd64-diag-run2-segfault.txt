@@ -1,0 +1,3 @@
+signal: segmentation fault (core dumped)
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.033s
+FAIL

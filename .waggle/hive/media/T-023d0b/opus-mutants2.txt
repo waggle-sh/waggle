@@ -1,0 +1,5 @@
+none: 0 of 10 failed
+C-comb: 0 of 10 failed
+A-worker: 0 of 10 failed
+B-host: 0 of 10 failed
+BC-host-and-comb: 0 of 10 failed
