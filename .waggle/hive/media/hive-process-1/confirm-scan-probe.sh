@@ -60,6 +60,13 @@ w "$M/side.md" "s"; ci f1; side=$(git rev-parse HEAD)
 git checkout -q --detach "$b0"; w "$M/main.md" "m"; ci f2; "${GC[@]}" merge -q --no-ff --no-commit "$side" >/dev/null 2>&1
 w "$M/both.md" "$HIT"; git add -A -- .waggle; "${GC[@]}" commit -q --no-edit
 w "$M/both.md" "base"; ci f3; report evil-merge-edit-then-restored "$(git rev-parse HEAD)"
+# Octopus merge (B4): git skips the remerge diff for three or more parents,
+# so the scan must fail closed on the merge itself (expect exit 1).
+fresh; w "$M/o1.md" "s"; ci o1; o1=$(git rev-parse HEAD)
+fresh; w "$M/o2.md" "t"; ci o2; o2=$(git rev-parse HEAD)
+fresh; w "$M/main.md" "m"; ci o3; "${GC[@]}" merge -q --no-ff --no-edit "$o1" "$o2" >/dev/null 2>&1
+w "$M/evil.md" "$HIT"; git add -A -- .waggle; "${GC[@]}" commit -q --amend --no-edit
+w "$M/evil.md" "redacted"; ci o4; report octopus-evil-then-removed "$(git rev-parse HEAD)"
 
 echo "### binary and text flips"
 fresh; printf 'a\000b %s\n' "$HIT" >"$M/x.dat"; ci b1; w "$M/x.dat" "clean text"; ci b2; report binary-then-text "$(git rev-parse HEAD)"

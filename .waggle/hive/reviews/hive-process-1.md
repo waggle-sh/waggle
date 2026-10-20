@@ -168,3 +168,57 @@ Under `.waggle/hive/media/hive-process-1/`:
 - `confirm-history-scan.txt`
 
 All planted commits were detached and never pushed or branched. The `guard-*` and `fix-*` probes were rerun against a copy of the 5c7ada6 script, because the base 2ecd449 checkout predates it.
+
+## Confirmation at 462f589
+
+Verdict: must-fix
+Risk-Tier: 3
+
+Scope: `git diff aa0e08d 462f589` (fix commit `462f589`: a remerge pass over merges in the content and path-name blocks, `tr '\000' '\001'` before the content awk, the email fast path restored, merges counted in the summary line). B3 is fixed for two-parent merges, and C1 and C2 are fixed. One new blocking issue: git skips the remerge diff for a merge with three or more parents and says so only in a stdout warning the awk drops, so a hit introduced in an octopus merge and removed later still exits 0. The fix is one line.
+
+### Blocking Issues (Must-Fix Only)
+
+**B4. A hit introduced only by an octopus merge (three or more parents) and removed later passes with exit 0.**
+`--diff-merges=remerge` handles two-parent merges only. For a three-parent merge git prints `diff: warning: Skipping remerge-diff for octopus merges.` on stdout, with no diff, no `--raw` entry and exit 0, and the content awk drops that line because it is neither a header nor a `+` line (`fconfirm-inspect-output-macos.txt`). Probe `octopus-evil-then-removed` (two clean side commits, `git merge s1 s2`, the merge amended to add a file in no parent, a later commit replacing it) exits 0, "clean records batch", with 5 commits scanned (`fconfirm-merge-output-macos.txt`). The header's "each merge commit by remerge diff" and the queen role's "every commit" are false for that shape, on the path that merges with no guard. A hit in an octopus side commit is still caught (`octopus-side-hit-then-removed`: exit 1).
+Fix (one line, fail closed): an octopus merge has no place in a records branch, so report each one as a hit. Next to the decisions gate line, after the awk that creates `$tmp/hits`:
+`for c in $(git rev-list --min-parents=3 "$mb..$headsha"); do echo "commit $(git rev-parse --short "$c"):0: octopus-merge" >>"$tmp/hits"; done`
+plus an `octopus-merge` line in the header's rule list. `git rev-list --min-parents=3 462f589..<probe head>` returns the planted merge. As a second guard, the content awk can treat `/^diff: warning: Skipping remerge-diff/` as a hit on the current commit, so any shape git declines to remerge fails closed. Either way, add `octopus-evil-then-removed` to the probe set.
+
+### Confirmed
+
+1. **B3 fixed for two-parent merges.** The builder's `confirm-scan-probe.sh`, rerun on base 462f589 with the committed script: `evil-merge-then-removed` and `evil-merge-edit-then-restored` exit 1 on the merge commit, and every other scenario keeps its exit code from `fix2-probe-output-macos.txt` (`fconfirm-scan-probe-rerun-macos.txt`).
+2. **Evasions tried against the remerge pass** (`fconfirm-merge-probe.sh`, `fconfirm-merge-output-macos.txt`, macOS, real decisions gate). Each plants a hit that exists only in the merge result and is removed by a later commit, unless noted:
+   - a conflict in a file both parents changed, resolved by hand to the hit: exit 1. Resolved to both sides plus the hit: exit 1 (line 3). Resolved to clean text: exit 0.
+   - a directory and file conflict resolved as a file carrying the hit: exit 1.
+   - a binary add and add conflict resolved as text with the hit: exit 1 (binary hits on the flipping commits).
+   - `-s ours` with the hit in the side commit: exit 1 (per-commit pass). `-s ours --no-commit` plus an added file: exit 1 (remerge).
+   - a criss-cross merge (two merge bases) with an added file: exit 1.
+   - `--allow-unrelated-histories` with the hit in the root commit: exit 1 (the root commit diffs against the empty tree). The same merge with an added file: exit 1 (remerge with no merge base works).
+   - a merge whose message alone carries the hit: exit 1 (`message:1`).
+   - a merge that is the only commit adding `notes.local`: exit 1 (`local-file`, from the new `--raw` remerge pass). A merge that is the only commit adding a binary: exit 1 (`binary`).
+   - a crafted merge whose second parent is an ancestor of the first (`commit-tree -p p1 -p base`): exit 1.
+   - an octopus merge: B4.
+3. **A clean update-branch merge still exits 0.** A records branch on 2ecd449 (new review, new media file) merged with 462f589 by `git merge --no-ff`: merge exit 0, then the scan with base 462f589 reports 2 commits scanned, 0 hits, exit 0. The remerge pass adds nothing for a clean merge. `conflict-resolved-clean` above, a hand-resolved conflict with clean text, also exits 0.
+4. **NUL handling on macOS BSD awk.** `tr '\000' '\001'` runs before the content awk, and `nul-after-8000-bytes` and `nul-after-hit` exit 1 on macOS (C1 fixed). A text line reading NUL then `binary` becomes the `\001binary` sentinel and reports a binary hit, so the collision fails closed (`nul-binary-sentinel`: exit 1). Commit fields are not covered: see C5.
+5. **Email fast path restored** (C2). A 65536-byte line with no `@` scans in 1 s with 0 email hits (`fconfirm-inspect-output-macos.txt`).
+6. **git version.** The header says "Needs git 2.36 or later"; nothing else in the repo states it (role, WAGGLE.md and the handoff summary do not). This machine has 2.54. Under a git whose `--diff-merges` rejects `remerge` (a PATH shim that dies like 2.31 to 2.35, and one with the pre-2.30 "unrecognized argument" wording) the first `g log` in the path-name block dies, `set -euo pipefail` ends the script, and the result is exit 128 with the fatal line on stderr and no `changed paths`, `hits` or `result` line. Loud, not a silent skip. The exit code is 128, not the documented 3 (C6).
+7. **Branch scan.** `scan-hive.sh origin/main 462f589`: 0 hits, 9 commits scanned (merges now counted), exit 2 holding the same 7 control and hook paths (`fconfirm-branch-scan.txt`).
+8. **Privacy and dashes on the added lines of aa0e08d..462f589** (223 lines): no home path, encoded project directory, temp root, hostname or home-component word; no email at all; 0 U+2013 or U+2014. Author, committer and sign-off are the D-160 handle. Line 1 of `fix2-probe-output-macos.txt` carries a raw 0x01 byte where the builder's header means "NUL to \001"; harmless. My new files pass the same greps.
+
+### Notes (not blocking)
+
+- **C5. A NUL in a commit message or author hides what follows it from the scan.** `git commit-tree` refuses such a message, so this needs `git hash-object -t commit --literally`. Git's own `%B` and `%an` stop at the NUL (the author prints empty), so the identities loop never sees the bytes after it, and the scan exits 0 (`fconfirm-inspect-output-macos.txt`, three cases). That is forgery, not an accidental leak, so it does not block. A one-line fail-closed check: `git cat-file commit "$c" | tr -cd '\000' | wc -c` above 0 is a hit.
+- **C6.** Under an old git the script ends with exit 128 from the pipeline, not the documented 3, and the message names `--diff-merges`, not the version. A check up front (`git version` below 2.36: "scan-hive: needs git 2.36 or later", exit 3) would be clearer, and WAGGLE.md section 4 or the queen role could state the requirement.
+- **C7.** Linux was not rerun this round: colima stopped between my first `docker ps` and the container runs, and the instruction was not to start it. The remerge change is on the git side, the new `tr` call is GNU-compatible, and the 5c7ada6 Linux run covered the rest, so the risk is low. The builder's fix2 evidence is also macOS only.
+- **C8.** A clean merge made by GitHub's update-branch can differ from git's local merge-ort result in rare rename cases. The remerge diff would then show lines from main as added and scan them, which can only add hits, never hide one.
+- **C9.** Three malformed dangling commit objects remain in the shared object store from a first run of the crafted-object probe with a short parent id (`739f723d`, `b3e25484`, `185320b0`). They are unreachable, `git fsck` reports "bad parents" for them until pruned, and `git prune` removes them. The valid crafted ones (`6dcfe8e`, `c7f56eb`, `e2d5133`) and every planted probe commit are dangling, detached and never pushed.
+
+### Evidence
+
+Under `.waggle/hive/media/hive-process-1/`:
+- `fconfirm-merge-probe.sh`, `fconfirm-merge-output-macos.txt`
+- `fconfirm-inspect.sh`, `fconfirm-inspect-output-macos.txt` (octopus remerge output, crafted NUL commits, long-line timing, old-git shims)
+- `fconfirm-scan-probe-rerun-macos.txt` (the builder's `confirm-scan-probe.sh` on base 462f589)
+- `fconfirm-branch-scan.txt`
+
+All planted commits were detached and never pushed or branched. The probe scripts were run from outside `.waggle` because the scenarios stage everything under it.
