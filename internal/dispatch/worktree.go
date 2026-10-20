@@ -416,6 +416,11 @@ func readUpTo(path string, max int) ([]byte, error) {
 // reset puts a reused guard worktree back at the reviewed OID and removes
 // every untracked file, so a first guard's probe cannot reach the second review.
 func (w *Worktree) reset(ctx context.Context, pg *Git, admin string) error {
+	// A rebuilt index drops skip-worktree, assume-unchanged and other per-entry
+	// state a first guard left, which reset --hard keeps.
+	if err := os.Remove(filepath.Join(admin, "index")); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
 	for _, a := range [][]string{{"reset", "-q", "--hard", w.Detach}, {"clean", "-q", "-ffdx"}} {
 		if _, err := pg.RunIn(ctx, w.Path, append([]string{"--git-dir=" + admin, "--work-tree=" + w.Path}, a...)...); err != nil {
 			return err

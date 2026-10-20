@@ -94,17 +94,20 @@ func TestGuardSecondResetsWorktree(t *testing.T) {
 	f := guardFixture(t, false)
 	cfg, _ := os.ReadFile(filepath.Join(f.real, ".waggle/control/config.yaml"))
 	write(t, f.real, ".waggle/control/config.yaml", strings.Replace(string(cfg), "        fast: haiku\n", "        fast: haiku\n      alternates:\n        standard: haiku\n", 1))
-	seen := filepath.Join(t.TempDir(), "seen")
+	seen, seenA := filepath.Join(t.TempDir(), "seen"), filepath.Join(t.TempDir(), "seenA")
 	pass := emit(assistant(100), verdictEvent(`Verdict: pass`))
-	res, err := f.guard("echo probe > probe.txt\nmkdir -p sub && echo p > sub/q.txt\necho x >> internal/x/b.go\n" + pass)
+	res, err := f.guard("echo probe > probe.txt\nmkdir -p sub && echo p > sub/q.txt\necho x >> internal/x/b.go\ngit update-index --skip-worktree internal/x/a.go\necho POISON >> internal/x/a.go\n" + pass)
 	if err != nil || res.ExitCode != 1 || res.Verdict != "pass" || !hasViolation(res.Violations, ruleDirty, ".") {
 		t.Fatalf("first guard: exit %d verdict %q err %v violations %v", res.ExitCode, res.Verdict, err, res.Violations)
 	}
-	res, err = f.guard("git status --porcelain=v1 --ignored > '"+seen+"'\ngit rev-parse HEAD >> '"+seen+"'\n"+pass, func(r *Request, _ *Deps) { r.Second = true })
+	res, err = f.guard("git status --porcelain=v1 --ignored > '"+seen+"'\ngit rev-parse HEAD >> '"+seen+"'\ncat internal/x/a.go > '"+seenA+"'\n"+pass, func(r *Request, _ *Deps) { r.Second = true })
 	if err != nil || res.ExitCode != 0 || !res.Second {
 		t.Fatalf("second guard: exit %d second %v err %v violations %v", res.ExitCode, res.Second, err, res.Violations)
 	}
 	got, _ := os.ReadFile(seen)
+	if a, _ := os.ReadFile(seenA); !strings.Contains(string(a), "package x") || strings.Contains(string(a), "POISON") {
+		t.Fatalf("a skip-worktree edit survived the reset: %s", a)
+	}
 	if want := f.git("rev-parse", "refs/heads/t-023"); strings.TrimSpace(string(got)) != want {
 		t.Fatalf("second guard saw a dirty or moved worktree:\n%s\nwant only HEAD %s", got, want)
 	}
