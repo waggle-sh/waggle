@@ -144,6 +144,9 @@ func (c *cleaner) noDuplicates() error {
 	for _, e := range ents {
 		admin := filepath.Join(root, e.Name())
 		b, err := readSmall(filepath.Join(admin, "gitdir"))
+		if e.Type().IsRegular() || e.IsDir() && errors.Is(err, fs.ErrNotExist) { // git prunes a stray file or a gitdir-less entry
+			continue
+		}
 		if err != nil || !e.IsDir() {
 			return failf(ExitEnv, "worktrees/%s has no readable gitdir; nothing was removed", e.Name())
 		}
@@ -152,13 +155,13 @@ func (c *cleaner) noDuplicates() error {
 			g = filepath.Join(admin, g)
 		}
 		p := strings.TrimSuffix(filepath.Clean(g), string(filepath.Separator)+".git")
-		if rp, e := filepath.EvalSymlinks(p); e == nil { // one worktree named by a link and by its real path
+		if rp, serr := filepath.EvalSymlinks(p); serr == nil { // one worktree named by a link and by its real path
 			p = rp
 		}
-		if other, dup := byPath[p]; dup {
+		if other, dup := byPath[strings.ToLower(p)]; dup {
 			return failf(ExitEnv, "worktrees/%s and worktrees/%s both name %s; nothing was removed", other, e.Name(), p)
 		}
-		byPath[p] = e.Name()
+		byPath[strings.ToLower(p)] = e.Name() // git folds case under core.ignorecase
 	}
 	return nil
 }

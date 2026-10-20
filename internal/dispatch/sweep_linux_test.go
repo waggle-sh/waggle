@@ -184,3 +184,15 @@ func TestToolShellChildKilled(t *testing.T) {
 		t.Fatalf("survivors %v: want the sleep child, gone after Run", res.Survivors)
 	}
 }
+
+// An inert tracker (root 0 or 1) sweeps against the real table through a
+// recording kill seam and signals nothing.
+func TestInertTrackerSweepSignalsNothing(t *testing.T) {
+	for _, root := range []int{0, 1} {
+		tr, calls := newTracker(root), 0
+		tr.kill = func(int, syscall.Signal) error { calls++; return nil }
+		if k := tr.sweep(); calls != 0 || len(k) != 0 || !tr.blind {
+			t.Fatalf("root %d: kills %d survivors %v blind %v", root, calls, k, tr.blind)
+		}
+	}
+}
