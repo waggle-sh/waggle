@@ -27,6 +27,7 @@ func shIn(t *testing.T, dir, stdin string, args ...string) string {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	cmd.Stdin = strings.NewReader(stdin)
+	cmd.Args = append(cmd.Args[:1], append([]string{"-c", "maintenance.auto=false"}, args...)...)
 	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1",
 		"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.com", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.com")
 	out, err := cmd.CombinedOutput()
@@ -85,7 +86,7 @@ func TestValidate(t *testing.T) {
 		{"role scout", func(r *Request) { r.Role = "scout" }, ExitUsage},
 		{"role waggled", func(r *Request) { r.Role = "waggled" }, ExitUsage},
 		{"role weaver", func(r *Request) { r.Role = "weaver" }, ExitUsage},
-		{"guard ok", func(r *Request) { r.Role = "guard"; r.Branch = "t-023" }, 0},
+		{"guard ok", func(r *Request) { r.Role, r.Branch, r.Dirs, r.Gate = "guard", "t-023", nil, "" }, 0},
 		{"dir hive", func(r *Request) { r.Dirs = []string{".waggle/hive"} }, 0}, // refused by the Comb at claim time
 		{"dir root", func(r *Request) { r.Dirs = []string{"."} }, ExitClaim},
 		{"dir escapes", func(r *Request) { r.Dirs = []string{"../x"} }, ExitUsage},
