@@ -159,3 +159,36 @@ func TestCleanGitCallsArePinned(t *testing.T) {
 		t.Fatalf("an unpinned git call ran: %s", b)
 	}
 }
+
+// Opus probes: a planted entry copying another ticket's, and a planted entry
+// whose gitdir is a link to the real one. Both exit 3 with nothing removed.
+func TestCleanRefusesForeignDuplicateAndLinkedGitdir(t *testing.T) {
+	for _, link := range []bool{false, true} {
+		f, wt := cleanRepo(t, false)
+		other := filepath.Join(f.real, ".waggle/worktrees/T-024-builder")
+		f.git("worktree", "add", "-q", "-b", "t-024", other, "main")
+		src := filepath.Join(f.common(), "worktrees/T-024-builder/gitdir")
+		if link {
+			src = filepath.Join(f.common(), "worktrees/T-023-builder/gitdir")
+			if err := os.MkdirAll(filepath.Join(f.common(), "worktrees/0"), 0o755); err != nil || os.Symlink(src, filepath.Join(f.common(), "worktrees/0/gitdir")) != nil {
+				t.Fatal("cannot plant the link")
+			}
+		} else {
+			b, _ := os.ReadFile(src)
+			write(t, f.common(), "worktrees/0/gitdir", string(b))
+		}
+		out, err := doClean(f, "", false)
+		if code(err) != ExitEnv || err == nil || !exists(wt) || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-023-builder")) || strings.Contains(out, "removed") {
+			t.Fatalf("link %v: out %q err %v", link, out, err)
+		}
+	}
+}
+
+// Outside a repository clean exits 3 and leaves no .waggle/worktrees behind.
+func TestCleanOutsideRepoCreatesNothing(t *testing.T) {
+	dir := t.TempDir()
+	err := Clean(context.Background(), CleanRequest{RepoDir: dir, Ticket: "23"}, &bytes.Buffer{})
+	if code(err) != ExitEnv || exists(filepath.Join(dir, ".waggle")) {
+		t.Fatalf("err %v", err)
+	}
+}

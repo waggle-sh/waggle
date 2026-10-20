@@ -91,6 +91,13 @@ func (t *tracker) observe(tab []proc, err error) {
 			}
 		}
 	}
+	if slices.ContainsFunc(tab, func(p proc) bool { return p.pid == t.self }) {
+		for k := range t.leaders { // a group a read lists empty is gone for good: its id may return as a foreign group
+			if !slices.ContainsFunc(tab, func(p proc) bool { return p.pgid == k.pid }) {
+				delete(t.leaders, k)
+			}
+		}
+	}
 	if t.rootStart == "" { // the leader was never listed: its start time is unknown
 		t.blind = true
 	}
