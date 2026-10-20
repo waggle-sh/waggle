@@ -1,0 +1,6 @@
+=== RUN   TestSurvivorKilledAndRecorded
+DBG sweep root=126 self=68 rootStart="3765901" seen=map[{129 3765902}:dispatch.test {130 3765902}:sleep {135 3765973}:dirname]
+DBG proc {pid:129 ppid:68 pgid:129 start:3765902 comm:dispatch.test zombie:false}
+--- PASS: TestSurvivorKilledAndRecorded (84.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	85.041s

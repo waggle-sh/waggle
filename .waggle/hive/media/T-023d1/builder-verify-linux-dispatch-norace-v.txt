@@ -1,0 +1,403 @@
+=== RUN   TestHostRecordAcrossRuns
+--- PASS: TestHostRecordAcrossRuns (47.73s)
+=== RUN   TestHostKeysPathFree
+--- PASS: TestHostKeysPathFree (0.33s)
+=== RUN   TestOwnClaimRefRewritten
+--- PASS: TestOwnClaimRefRewritten (0.14s)
+=== RUN   TestRefusalsWriteNothing
+--- PASS: TestRefusalsWriteNothing (0.10s)
+=== RUN   TestIgnoreCheck
+=== RUN   TestIgnoreCheck/.waggle/worktrees/
+=== RUN   TestIgnoreCheck/.waggle/control/usage.jsonl
+--- PASS: TestIgnoreCheck (0.08s)
+    --- PASS: TestIgnoreCheck/.waggle/worktrees/ (0.04s)
+    --- PASS: TestIgnoreCheck/.waggle/control/usage.jsonl (0.04s)
+=== RUN   TestTapLongResultLine
+--- PASS: TestTapLongResultLine (0.28s)
+=== RUN   TestFilesStepRunsNoGit
+--- PASS: TestFilesStepRunsNoGit (0.18s)
+=== RUN   TestWaggleCommandsByTitle
+--- PASS: TestWaggleCommandsByTitle (0.17s)
+=== RUN   TestCombEnvIgnoresParentParameters
+--- PASS: TestCombEnvIgnoresParentParameters (0.16s)
+=== RUN   TestNestedRepoInMainCheckout
+--- PASS: TestNestedRepoInMainCheckout (17.16s)
+=== RUN   TestNestedRepoOnReuse
+--- PASS: TestNestedRepoOnReuse (0.40s)
+=== RUN   TestFailedSyncIsStrict
+--- PASS: TestFailedSyncIsStrict (0.29s)
+=== RUN   TestWorkerIdentity
+--- PASS: TestWorkerIdentity (5.59s)
+=== RUN   TestValidate
+=== RUN   TestValidate/ok
+=== RUN   TestValidate/ticket_T-23
+=== RUN   TestValidate/ticket_bad
+=== RUN   TestValidate/ticket_zero
+=== RUN   TestValidate/role_queen
+=== RUN   TestValidate/role_scout
+=== RUN   TestValidate/role_waggled
+=== RUN   TestValidate/role_weaver
+=== RUN   TestValidate/guard_ok
+=== RUN   TestValidate/dir_hive
+=== RUN   TestValidate/dir_root
+=== RUN   TestValidate/dir_escapes
+=== RUN   TestValidate/no_dirs
+=== RUN   TestValidate/gate
+=== RUN   TestValidate/branch_main
+=== RUN   TestValidate/branch_other_ticket
+=== RUN   TestValidate/branch_longer_number
+=== RUN   TestValidate/branch_upper
+=== RUN   TestValidate/branch_suffix_ok
+=== RUN   TestValidate/branch_dotdot
+=== RUN   TestValidate/branch_lock
+=== RUN   TestValidate/branch_slash
+=== RUN   TestValidate/base_is_branch
+=== RUN   TestValidate/base_is_refs/heads_branch
+=== RUN   TestValidate/read_dot
+=== RUN   TestValidate/read_pathspec_magic
+=== RUN   TestValidate/base_flag
+=== RUN   TestValidate/tier_4
+=== RUN   TestValidate/read_abs
+=== RUN   TestValidate/read_dotdot
+=== RUN   TestValidate/read_ok
+--- PASS: TestValidate (0.62s)
+    --- PASS: TestValidate/ok (0.01s)
+    --- PASS: TestValidate/ticket_T-23 (0.00s)
+    --- PASS: TestValidate/ticket_bad (0.01s)
+    --- PASS: TestValidate/ticket_zero (0.01s)
+    --- PASS: TestValidate/role_queen (0.00s)
+    --- PASS: TestValidate/role_scout (0.01s)
+    --- PASS: TestValidate/role_waggled (0.00s)
+    --- PASS: TestValidate/role_weaver (0.01s)
+    --- PASS: TestValidate/guard_ok (0.00s)
+    --- PASS: TestValidate/dir_hive (0.00s)
+    --- PASS: TestValidate/dir_root (0.02s)
+    --- PASS: TestValidate/dir_escapes (0.01s)
+    --- PASS: TestValidate/no_dirs (0.01s)
+    --- PASS: TestValidate/gate (0.01s)
+    --- PASS: TestValidate/branch_main (0.01s)
+    --- PASS: TestValidate/branch_other_ticket (0.01s)
+    --- PASS: TestValidate/branch_longer_number (0.00s)
+    --- PASS: TestValidate/branch_upper (0.01s)
+    --- PASS: TestValidate/branch_suffix_ok (0.00s)
+    --- PASS: TestValidate/branch_dotdot (0.01s)
+    --- PASS: TestValidate/branch_lock (0.01s)
+    --- PASS: TestValidate/branch_slash (0.01s)
+    --- PASS: TestValidate/base_is_branch (0.01s)
+    --- PASS: TestValidate/base_is_refs/heads_branch (0.01s)
+    --- PASS: TestValidate/read_dot (0.01s)
+    --- PASS: TestValidate/read_pathspec_magic (0.01s)
+    --- PASS: TestValidate/base_flag (0.01s)
+    --- PASS: TestValidate/tier_4 (0.01s)
+    --- PASS: TestValidate/read_abs (0.01s)
+    --- PASS: TestValidate/read_dotdot (0.01s)
+    --- PASS: TestValidate/read_ok (0.00s)
+=== RUN   TestAcquireClaim
+--- PASS: TestAcquireClaim (0.34s)
+=== RUN   TestAcquireClaimMalformed
+--- PASS: TestAcquireClaimMalformed (0.06s)
+=== RUN   TestProvisionNewBranch
+--- PASS: TestProvisionNewBranch (7.96s)
+=== RUN   TestProvisionExistingBranch
+--- PASS: TestProvisionExistingBranch (0.42s)
+=== RUN   TestStaleLock
+--- PASS: TestStaleLock (0.06s)
+=== RUN   TestProcessAlive
+--- PASS: TestProcessAlive (0.00s)
+=== RUN   TestUntrackedPathIsNotAWorktree
+--- PASS: TestUntrackedPathIsNotAWorktree (0.02s)
+=== RUN   TestInputsComeFromBase
+--- PASS: TestInputsComeFromBase (0.06s)
+=== RUN   TestInputsMissing
+--- PASS: TestInputsMissing (0.09s)
+=== RUN   TestInputsReview
+--- PASS: TestInputsReview (0.04s)
+=== RUN   TestResolveBase
+--- PASS: TestResolveBase (4.17s)
+=== RUN   TestNewRunDir
+--- PASS: TestNewRunDir (0.01s)
+=== RUN   TestGitEnvScrubs
+--- PASS: TestGitEnvScrubs (0.01s)
+=== RUN   TestExitCode
+--- PASS: TestExitCode (0.04s)
+=== RUN   TestTakeLockRefusesFifoAndSymlink
+--- PASS: TestTakeLockRefusesFifoAndSymlink (0.01s)
+=== RUN   TestHelperProcess
+--- PASS: TestHelperProcess (0.00s)
+=== RUN   TestSurvivorKilledAndRecorded
+--- PASS: TestSurvivorKilledAndRecorded (31.06s)
+=== RUN   TestShortLivedChildHarmless
+--- PASS: TestShortLivedChildHarmless (22.48s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.04s)
+=== RUN   TestStdoutHolder
+--- PASS: TestStdoutHolder (7.08s)
+=== RUN   TestSecondGuardRefusals
+=== RUN   TestSecondGuardRefusals/no_first_guard
+=== RUN   TestSecondGuardRefusals/no_builder
+=== RUN   TestSecondGuardRefusals/base_moved
+=== RUN   TestSecondGuardRefusals/model_repeats
+=== RUN   TestSecondGuardRefusals/review_committed_between_the_guards
+--- PASS: TestSecondGuardRefusals (75.72s)
+    --- PASS: TestSecondGuardRefusals/no_first_guard (74.32s)
+    --- PASS: TestSecondGuardRefusals/no_builder (0.28s)
+    --- PASS: TestSecondGuardRefusals/base_moved (0.33s)
+    --- PASS: TestSecondGuardRefusals/model_repeats (0.27s)
+    --- PASS: TestSecondGuardRefusals/review_committed_between_the_guards (0.46s)
+=== RUN   TestResultMustFix
+--- PASS: TestResultMustFix (12.38s)
+=== RUN   TestGuardValidate
+--- PASS: TestGuardValidate (0.00s)
+=== RUN   TestGuardRecordsClaimOID
+--- PASS: TestGuardRecordsClaimOID (18.31s)
+=== RUN   TestHostRecordKeepsVerifiedSnapshot
+--- PASS: TestHostRecordKeepsVerifiedSnapshot (0.25s)
+=== RUN   TestHostRecordAfterViolation
+--- PASS: TestHostRecordAfterViolation (0.09s)
+=== RUN   TestHostRecordIgnoresBranchKeys
+--- PASS: TestHostRecordIgnoresBranchKeys (0.29s)
+=== RUN   TestHostRecordBranchKeysStrict
+--- PASS: TestHostRecordBranchKeysStrict (45.60s)
+=== RUN   TestBlankNameChildKilled
+--- PASS: TestBlankNameChildKilled (31.37s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (21.94s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (1.56s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (3.38s)
+=== RUN   TestFixPushesCheckedOID
+--- PASS: TestFixPushesCheckedOID (0.33s)
+=== RUN   TestFixClaimSyncSkipped
+--- PASS: TestFixClaimSyncSkipped (0.19s)
+=== RUN   TestFixCombRunsNoHooks
+--- PASS: TestFixCombRunsNoHooks (0.68s)
+=== RUN   TestFixKeepaliveGate
+--- PASS: TestFixKeepaliveGate (15.52s)
+=== RUN   TestFixGlobalIgnore
+--- PASS: TestFixGlobalIgnore (0.49s)
+=== RUN   TestFixShowSignature
+--- PASS: TestFixShowSignature (0.19s)
+=== RUN   TestFixNestedRepoFilter
+--- PASS: TestFixNestedRepoFilter (0.16s)
+=== RUN   TestFixResultSymlink
+--- PASS: TestFixResultSymlink (0.14s)
+=== RUN   TestFixInfoRefsIsNotHostState
+--- PASS: TestFixInfoRefsIsNotHostState (0.19s)
+=== RUN   TestFixTaintedMarkerFIFO
+--- PASS: TestFixTaintedMarkerFIFO (0.15s)
+=== RUN   TestFixSkippedSyncIsStrict
+--- PASS: TestFixSkippedSyncIsStrict (14.07s)
+=== RUN   TestFixTimeoutWithErrorResult
+--- PASS: TestFixTimeoutWithErrorResult (1.37s)
+=== RUN   TestReuseRefusesSeparateGitDirPlant
+--- PASS: TestReuseRefusesSeparateGitDirPlant (13.94s)
+=== RUN   TestReuseRefusesInWorktreeGitFileRewrite
+--- PASS: TestReuseRefusesInWorktreeGitFileRewrite (0.39s)
+=== RUN   TestReuseAcceptsHonestWorktree
+--- PASS: TestReuseAcceptsHonestWorktree (0.09s)
+=== RUN   TestNewRunDirRefusesSymlinkedRuns
+--- PASS: TestNewRunDirRefusesSymlinkedRuns (0.03s)
+=== RUN   TestReuseRefusesCommondirRewrite
+--- PASS: TestReuseRefusesCommondirRewrite (0.07s)
+=== RUN   TestReuseRefusesExtraRegistration
+=== RUN   TestReuseRefusesExtraRegistration/absolute
+    guard3_test.go:99: refusal: /tmp/TestReuseRefusesExtraRegistrationabsolute648369090/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (lstat /tmp/TestReuseRefusesExtraRegistrationabsolute648369090/001/.git/worktrees/AAA/commondir: no such file or directory)
+=== RUN   TestReuseRefusesExtraRegistration/relative
+    guard3_test.go:104: refusal: /tmp/TestReuseRefusesExtraRegistrationrelative2046554204/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/tmp/TestReuseRefusesExtraRegistrationrelative2046554204/001/.waggle/worktrees/T-023-builder/.git points at /tmp/TestReuseRefusesExtraRegistrationrelative2046554204/001/.git/worktrees/AAA, not its registration)
+    guard3_test.go:104: second registration for the path accepted: /tmp/TestReuseRefusesExtraRegistrationrelative2046554204/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/tmp/TestReuseRefusesExtraRegistrationrelative2046554204/001/.waggle/worktrees/T-023-builder/.git points at /tmp/TestReuseRefusesExtraRegistrationrelative2046554204/001/.git/worktrees/AAA, not its registration)
+--- FAIL: TestReuseRefusesExtraRegistration (0.09s)
+    --- PASS: TestReuseRefusesExtraRegistration/absolute (0.04s)
+    --- FAIL: TestReuseRefusesExtraRegistration/relative (0.05s)
+=== RUN   TestFilterCanaryFiresWithoutTamper
+--- PASS: TestFilterCanaryFiresWithoutTamper (0.10s)
+=== RUN   TestReuseAcceptsRelativePathWorktree
+    guard3_test.go:147: git older than 2.48 ignores worktree.useRelativePaths and writes an absolute registration; this test requires git 2.48 or newer (CI runs 2.55)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.02s)
+=== RUN   TestPlantedRepoNotReused
+--- PASS: TestPlantedRepoNotReused (0.01s)
+=== RUN   TestSymlinkedWorktreeRefused
+--- PASS: TestSymlinkedWorktreeRefused (0.02s)
+=== RUN   TestForeignSameBranchRefused
+--- PASS: TestForeignSameBranchRefused (0.03s)
+=== RUN   TestStaleLockTakeoverIsAtomic
+--- PASS: TestStaleLockTakeoverIsAtomic (0.02s)
+=== RUN   TestAcquireClaimRemoteNotes
+--- PASS: TestAcquireClaimRemoteNotes (0.31s)
+=== RUN   TestBlobAtChecksReturnedPath
+--- PASS: TestBlobAtChecksReturnedPath (0.03s)
+=== RUN   TestGitCallsDisableHooksAndFsmonitor
+--- PASS: TestGitCallsDisableHooksAndFsmonitor (0.02s)
+=== RUN   TestGuardVerdicts
+=== RUN   TestGuardVerdicts/pass
+=== RUN   TestGuardVerdicts/must-fix
+=== RUN   TestGuardVerdicts/none
+=== RUN   TestGuardVerdicts/heading_text
+=== RUN   TestGuardVerdicts/truncated
+--- PASS: TestGuardVerdicts (15.51s)
+    --- PASS: TestGuardVerdicts/pass (0.33s)
+    --- PASS: TestGuardVerdicts/must-fix (0.19s)
+    --- PASS: TestGuardVerdicts/none (0.20s)
+    --- PASS: TestGuardVerdicts/heading_text (0.32s)
+    --- PASS: TestGuardVerdicts/truncated (14.47s)
+=== RUN   TestGuardRefusals
+--- PASS: TestGuardRefusals (3.52s)
+=== RUN   TestGuardSecondResetsWorktree
+--- PASS: TestGuardSecondResetsWorktree (23.00s)
+=== RUN   TestGuardZeroChange
+=== RUN   TestGuardZeroChange/commit
+=== RUN   TestGuardZeroChange/detach_moved
+=== RUN   TestGuardZeroChange/branch_moved
+=== RUN   TestGuardZeroChange/claim_moved
+--- PASS: TestGuardZeroChange (1.04s)
+    --- PASS: TestGuardZeroChange/commit (0.34s)
+    --- PASS: TestGuardZeroChange/detach_moved (0.24s)
+    --- PASS: TestGuardZeroChange/branch_moved (0.23s)
+    --- PASS: TestGuardZeroChange/claim_moved (0.23s)
+=== RUN   TestMustFixCountPerPhase
+--- PASS: TestMustFixCountPerPhase (13.07s)
+=== RUN   TestLedger
+--- PASS: TestLedger (9.16s)
+=== RUN   TestRunHostState
+=== RUN   TestRunHostState/new_admin_entry
+=== RUN   TestRunHostState/new_admin_entry/plain
+=== RUN   TestRunHostState/new_admin_entry/symlinked
+=== RUN   TestRunHostState/own_commondir_rewritten
+=== RUN   TestRunHostState/own_commondir_rewritten/plain
+=== RUN   TestRunHostState/own_commondir_rewritten/symlinked
+=== RUN   TestRunHostState/own_gitdir_rewritten
+=== RUN   TestRunHostState/own_gitdir_rewritten/plain
+=== RUN   TestRunHostState/own_gitdir_rewritten/symlinked
+=== RUN   TestRunHostState/another_entry_HEAD
+=== RUN   TestRunHostState/another_entry_HEAD/plain
+=== RUN   TestRunHostState/another_entry_HEAD/symlinked
+=== RUN   TestRunHostState/dot_git_rewritten
+=== RUN   TestRunHostState/dot_git_rewritten/plain
+=== RUN   TestRunHostState/dot_git_rewritten/symlinked
+=== RUN   TestRunHostState/clean_filter_in_config
+=== RUN   TestRunHostState/clean_filter_in_config/plain
+=== RUN   TestRunHostState/clean_filter_in_config/symlinked
+=== RUN   TestRunHostState/info_exclude
+=== RUN   TestRunHostState/info_exclude/plain
+=== RUN   TestRunHostState/info_exclude/symlinked
+=== RUN   TestRunHostState/pushurl
+=== RUN   TestRunHostState/pushurl/plain
+=== RUN   TestRunHostState/pushurl/symlinked
+--- PASS: TestRunHostState (125.07s)
+    --- PASS: TestRunHostState/new_admin_entry (39.42s)
+        --- PASS: TestRunHostState/new_admin_entry/plain (0.30s)
+        --- PASS: TestRunHostState/new_admin_entry/symlinked (39.12s)
+    --- PASS: TestRunHostState/own_commondir_rewritten (1.10s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/plain (0.83s)
+        --- PASS: TestRunHostState/own_commondir_rewritten/symlinked (0.27s)
+    --- PASS: TestRunHostState/own_gitdir_rewritten (43.02s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/plain (8.59s)
+        --- PASS: TestRunHostState/own_gitdir_rewritten/symlinked (34.35s)
+    --- PASS: TestRunHostState/another_entry_HEAD (0.48s)
+        --- PASS: TestRunHostState/another_entry_HEAD/plain (0.19s)
+        --- PASS: TestRunHostState/another_entry_HEAD/symlinked (0.28s)
+    --- PASS: TestRunHostState/dot_git_rewritten (12.19s)
+        --- PASS: TestRunHostState/dot_git_rewritten/plain (0.77s)
+        --- PASS: TestRunHostState/dot_git_rewritten/symlinked (11.42s)
+    --- PASS: TestRunHostState/clean_filter_in_config (2.40s)
+        --- PASS: TestRunHostState/clean_filter_in_config/plain (1.62s)
+        --- PASS: TestRunHostState/clean_filter_in_config/symlinked (0.77s)
+    --- PASS: TestRunHostState/info_exclude (25.97s)
+        --- PASS: TestRunHostState/info_exclude/plain (17.47s)
+        --- PASS: TestRunHostState/info_exclude/symlinked (8.50s)
+    --- PASS: TestRunHostState/pushurl (0.45s)
+        --- PASS: TestRunHostState/pushurl/plain (0.24s)
+        --- PASS: TestRunHostState/pushurl/symlinked (0.21s)
+=== RUN   TestRunBaseAndBranch
+=== RUN   TestRunBaseAndBranch/plain
+=== RUN   TestRunBaseAndBranch/symlinked
+=== RUN   TestRunBaseAndBranch/remote_tracking_only
+--- PASS: TestRunBaseAndBranch (24.31s)
+    --- PASS: TestRunBaseAndBranch/plain (0.43s)
+    --- PASS: TestRunBaseAndBranch/symlinked (14.65s)
+    --- PASS: TestRunBaseAndBranch/remote_tracking_only (9.23s)
+=== RUN   TestRunClaims
+--- PASS: TestRunClaims (0.37s)
+=== RUN   TestRunDispatchLock
+--- PASS: TestRunDispatchLock (1.13s)
+=== RUN   TestRunGitEnvDropped
+--- PASS: TestRunGitEnvDropped (1.14s)
+=== RUN   TestRunPlantDuringAutoMaintenance
+=== RUN   TestRunPlantDuringAutoMaintenance/plain
+=== RUN   TestRunPlantDuringAutoMaintenance/symlinked
+--- PASS: TestRunPlantDuringAutoMaintenance (28.30s)
+    --- PASS: TestRunPlantDuringAutoMaintenance/plain (25.45s)
+    --- PASS: TestRunPlantDuringAutoMaintenance/symlinked (2.83s)
+=== RUN   TestRunInDisablesAutoMaintenance
+--- PASS: TestRunInDisablesAutoMaintenance (0.00s)
+=== RUN   TestCrossCompileWindows
+    misc_test.go:32: no go.mod above the test directory
+--- FAIL: TestCrossCompileWindows (0.00s)
+=== RUN   TestRedirectVarsMatchComb
+    misc_test.go:46: open ../comb/git.go: no such file or directory
+--- FAIL: TestRedirectVarsMatchComb (0.00s)
+=== RUN   TestPinnedEnv
+--- PASS: TestPinnedEnv (0.00s)
+=== RUN   TestCanonicalPaths
+--- PASS: TestCanonicalPaths (0.00s)
+=== RUN   TestRunHappyPath
+=== RUN   TestRunHappyPath/plain
+=== RUN   TestRunHappyPath/symlinked
+--- PASS: TestRunHappyPath (24.92s)
+    --- PASS: TestRunHappyPath/plain (0.29s)
+    --- PASS: TestRunHappyPath/symlinked (24.63s)
+=== RUN   TestRunViolations
+=== RUN   TestRunViolations/outside_lease
+=== RUN   TestRunViolations/deletion_outside
+=== RUN   TestRunViolations/case_differs
+=== RUN   TestRunViolations/symlink
+=== RUN   TestRunViolations/no_subject_prefix
+=== RUN   TestRunViolations/merge_commit
+=== RUN   TestRunViolations/uncommitted_file
+=== RUN   TestRunViolations/main_checkout_write
+=== RUN   TestRunViolations/new_ref
+=== RUN   TestRunViolations/other_claim_moved
+=== RUN   TestRunViolations/hook_edited
+=== RUN   TestRunViolations/hooksPath_set
+=== RUN   TestRunViolations/unsigned_commit
+=== RUN   TestRunViolations/dotdot_path
+=== RUN   TestRunViolations/backslash_path
+--- PASS: TestRunViolations (39.96s)
+    --- PASS: TestRunViolations/outside_lease (0.61s)
+    --- PASS: TestRunViolations/deletion_outside (0.18s)
+    --- PASS: TestRunViolations/case_differs (0.32s)
+    --- PASS: TestRunViolations/symlink (0.19s)
+    --- PASS: TestRunViolations/no_subject_prefix (0.17s)
+    --- PASS: TestRunViolations/merge_commit (0.27s)
+    --- PASS: TestRunViolations/uncommitted_file (0.35s)
+    --- PASS: TestRunViolations/main_checkout_write (21.03s)
+    --- PASS: TestRunViolations/new_ref (1.48s)
+    --- PASS: TestRunViolations/other_claim_moved (4.81s)
+    --- PASS: TestRunViolations/hook_edited (0.19s)
+    --- PASS: TestRunViolations/hooksPath_set (0.15s)
+    --- PASS: TestRunViolations/unsigned_commit (9.40s)
+    --- PASS: TestRunViolations/dotdot_path (0.56s)
+    --- PASS: TestRunViolations/backslash_path (0.24s)
+=== RUN   TestRunZeroCommits
+--- PASS: TestRunZeroCommits (0.14s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (0.65s)
+    --- PASS: TestRunLimitsKillTheGroup/max_tokens (0.08s)
+    --- PASS: TestRunLimitsKillTheGroup/timeout (0.56s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (46.52s)
+=== RUN   TestRunClaimReadBackWarning
+--- PASS: TestRunClaimReadBackWarning (0.57s)
+=== RUN   TestRunProcessEnds
+--- PASS: TestRunProcessEnds (0.11s)
+=== RUN   TestRunBudgetStop
+--- PASS: TestRunBudgetStop (0.06s)
+=== RUN   TestRunVerifyOnce
+--- PASS: TestRunVerifyOnce (0.14s)
+=== RUN   TestRunRefusedArgExitsLikeUnverified
+--- PASS: TestRunRefusedArgExitsLikeUnverified (0.06s)
+=== RUN   TestWaggleCommandsAndOutcome
+--- PASS: TestWaggleCommandsAndOutcome (0.00s)
+FAIL

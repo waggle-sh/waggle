@@ -1,0 +1,18 @@
+fable confirmation: linux container (golang:1.23-bookworm, aarch64 under Colima, 2 CPUs, 2 GiB) running the PR's own tests that product-ci fails at d95aa72:
+go test -race -count=1 -run 'TestRunLimitsKillTheGroup|TestSurvivorKilledAndRecorded|TestShortLivedChildHarmless|TestSweepSkipsReusedPid|TestStdoutHolder' ./internal/dispatch/
+The VM was under memory pressure (another container was compiling at the same time), so the TestStdoutHolder timing (22 s against an 8 s bound) is not representative; CI passes that test and fails only TestRunLimitsKillTheGroup.
+
+--- PASS: TestSurvivorKilledAndRecorded (12.89s)
+--- PASS: TestShortLivedChildHarmless (1.92s)
+--- PASS: TestSweepSkipsReusedPid (0.05s)
+    fix2_test.go:170: took 22.407104277s exit 0 held false survivors [{1439 dispatch.test}] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_killed: 1 process(es) outlived the worker and were killed: [{1439 dispatch.test}]] err <nil>
+--- FAIL: TestStdoutHolder (22.57s)
+    run_test.go:202: grandchild 1514 survived
+    run_test.go:202: grandchild 1576 survived
+--- FAIL: TestRunLimitsKillTheGroup (23.38s)
+    --- FAIL: TestRunLimitsKillTheGroup/max_tokens (5.94s)
+    --- FAIL: TestRunLimitsKillTheGroup/timeout (17.42s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	60.916s
+FAIL
+exit 1

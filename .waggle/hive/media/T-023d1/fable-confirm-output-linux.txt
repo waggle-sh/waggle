@@ -1,0 +1,37 @@
+fable confirmation probes at d95aa72, linux container (golang:1.23-bookworm, aarch64 under Colima, 2 CPUs, 2 GiB, GOMAXPROCS=1, no -race), poll 250 ms unless the probe says otherwise. Temp paths redacted. The VM is slow, so the took figures are not representative.
+Source: fable-confirm-probe_test.go.txt.
+
+    fable_confirm_test.go:159: RESULT setsid session leader (child of the leader): exit 0 end done err <nil> took 8.51s | helper pid 870 now gone | survivors_killed [{870 dispatch.test}] | late write done=false | landed: hooks/post-checkout=false main/late.txt=false refs/heads/zzz=false worktree/late.txt=false | violations [] | warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_killed: 1 process(es) outlived the worker and were killed: [{870 dispatch.test}]]
+    fable_confirm_test.go:159: RESULT own group child, same session (setpgid via sh): exit 0 end done err <nil> took 1.72s | helper pid 941 now gone | survivors_killed [{941 dispatch.test}] | late write done=false | landed: hooks/post-checkout=false main/late.txt=false refs/heads/zzz=false worktree/late.txt=false | violations [] | warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_killed: 1 process(es) outlived the worker and were killed: [{941 dispatch.test}]]
+    fable_confirm_test.go:159: RESULT double fork, intermediate 400 ms (seen by a poll): exit 0 end done err <nil> took 4.8s | helper pid 1017 now gone | survivors_killed [{1017 dispatch.test}] | late write done=false | landed: hooks/post-checkout=false main/late.txt=false refs/heads/zzz=false worktree/late.txt=false | violations [] | warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_killed: 1 process(es) outlived the worker and were killed: [{1017 dispatch.test}]]
+    fable_confirm_test.go:159: RESULT double fork, intermediate 1 ms (reparented before the first poll): exit 0 end done err <nil> took 890ms | helper pid 1093 now gone | survivors_killed [{1093 dispatch.test}] | late write done=false | landed: hooks/post-checkout=false main/late.txt=false refs/heads/zzz=false worktree/late.txt=false | violations [] | warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_killed: 1 process(es) outlived the worker and were killed: [{1093 dispatch.test}]]
+    fable_confirm_test.go:159: RESULT setsid child that holds stdout: exit 0 end done err <nil> took 5.61s | helper pid 1164 now gone | survivors_killed [{1164 dispatch.test}] | late write done=false | landed: hooks/post-checkout=false main/late.txt=false refs/heads/zzz=false worktree/late.txt=false | violations [] | warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_killed: 1 process(es) outlived the worker and were killed: [{1164 dispatch.test}]]
+--- PASS: TestFableConfirmShapes (65.21s)
+    fable_confirm_test.go:188: RESULT fork gap: intermediate 1 ms, poll 250 ms, linux: killed 5 escaped 0 of 5
+    fable_confirm_test.go:188: RESULT fork gap: intermediate 50 ms, poll 250 ms, linux: killed 5 escaped 0 of 5
+    fable_confirm_test.go:188: RESULT fork gap: intermediate 150 ms, poll 250 ms, linux: killed 5 escaped 0 of 5
+    fable_confirm_test.go:188: RESULT fork gap: intermediate 300 ms, poll 250 ms, linux: killed 5 escaped 0 of 5
+--- PASS: TestFableConfirmForkGap (296.52s)
+    fable_confirm_test.go:199: group child: exit 0 err <nil> pidfile "2798\n" readerr <nil>
+    fable_confirm_test.go:212: RESULT group child: exit 0 err <nil> | sleep pid 2798 now gone (ppid -1, dispatch pid 809) | survivors_killed [{2798 sleep}] | kill(pid,0)=no such process
+--- PASS: TestFableConfirmGroupChild (3.08s)
+    fable_confirm_test.go:248: RESULT non-descendants on linux: exit 0 err <nil> | shell orphan 2814 alive | pre child 2815 alive | post child (started during the run) 2817 alive | survivors_killed []
+--- PASS: TestFableConfirmNonDescendants (17.27s)
+    fable_confirm_test.go:271: RESULT tracker on linux: rootStart "518207"; dispatch's own child 2888 started after the leader: sweep killed [{2888 sleep}], now gone
+--- PASS: TestFableConfirmTrackerAdoptsOwnChild (0.59s)
+    fable_confirm_test.go:296: RESULT renew race on linux: 15 runs, keepalive 3 ms: claim_renew_failed in 0, violations in 0
+--- PASS: TestFableConfirmRenewRace (116.53s)
+    fable_confirm_test.go:313: RESULT branch keys: run 2 exit 0 err <nil> pushed-to-origin false, bogus remote refs "" (pushRemote/remote pointing at it), violations []
+    fable_confirm_test.go:318: RESULT branch keys: after remote.pushDefault: exit 3 err host files changed since run T-023-builder-2: config.keys; inspect them, then delete host-files.json
+    fable_confirm_test.go:318: RESULT branch keys: after include.path: exit 3 err host files changed since run T-023-builder-3: config.keys; inspect them, then delete host-files.json
+    fable_confirm_test.go:318: RESULT branch keys: after core.hooksPath: exit 3 err host files changed since run T-023-builder-4: config.keys; inspect them, then delete host-files.json
+    fable_confirm_test.go:327: RESULT branch keys: worker writes branch.t-023.pushRemote during the run: exit 1 err <nil> violations [{host_state config changed during the run} {host_state . not inspected: host config changed} {dirty . not inspected: host config changed}]
+    fable_confirm_test.go:329: RESULT branch keys: next dispatch after that violation run: exit 4 err T-024 directory "internal/x" overlaps T-023 directory "internal/x" held by alice: comb: directories overlap an active lease
+--- PASS: TestFableConfirmBranchKeys (52.36s)
+    fable_confirm_test.go:342: RESULT record: dirty run exit 1 err <nil> violations [{dirty . uncommitted or untracked change; the builder must commit}]; record present true
+    fable_confirm_test.go:347: RESULT record: timeout run with a hook planted exit 1 end lease_violation err <nil> violations [{host_state hooks/post-checkout changed during the run}]; record present true, holds post-checkout false
+    fable_confirm_test.go:349: RESULT record: next dispatch exit 3 err host files changed since run T-023-builder-1: hooks/post-checkout; inspect them, then delete host-files.json
+--- PASS: TestFableConfirmRecordSavedAlways (1.52s)
+    fable_confirm_test.go:368: RESULT stop path (timeout, SIGTERM+SIGKILL at once): exit 5 end timeout err <nil> | helper 6472 now gone | survivors_killed [{6472 dispatch.test}] | late write done=false | landed: hooks/post-checkout=false main/late.txt=false refs/heads/zzz=false worktree/late.txt=false | violations []
+--- PASS: TestFableConfirmStopPath (16.59s)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	569.727s

@@ -1,0 +1,43 @@
+#!/bin/bash
+# Fable confirmation 2, linux container run 3 (D-193): targeted fix-removal
+# checks, started only once the VM is quiet, each go test under setsid.
+set -u
+export GOFLAGS=-mod=mod
+export HOME=/tmp/home
+mkdir -p "$HOME"
+rm -rf /w && mkdir -p /w && cp -r /src/. /w/ && cd /w || exit 1
+for i in $(seq 1 120); do
+  l=$(cut -d' ' -f1 /proc/loadavg)
+  awk -v l="$l" 'BEGIN{exit !(l < 2.5)}' && break
+  sleep 5
+done
+echo "== environment: $(uname -sr) $(go version) nproc $(nproc) loadavg $(cat /proc/loadavg)"
+F=internal/dispatch/reap_unix.go
+R=internal/dispatch/run.go
+mkdir -p /tmp/orig
+cp $F $R /tmp/orig/
+mutate() { # name file perl-expr tests
+  cp /tmp/orig/reap_unix.go $F; cp /tmp/orig/run.go $R
+  perl -0pi -e "$3" "$2"
+  o="/tmp/orig/$(basename "$2")"
+  if cmp -s "$2" "$o"; then echo "$1: MUTATION DID NOT APPLY"; return; fi
+  echo "--- $1 (tests: $4), loadavg $(cut -d' ' -f1 /proc/loadavg)"
+  setsid go test -race -count=1 -timeout 15m -v -run "$4" ./internal/dispatch/ > /tmp/out.txt 2>&1
+  rc=$?
+  if grep -q '^ok' /tmp/out.txt; then echo "$1: TESTS PASSED WITHOUT THE CODE (not covered), exit $rc"
+  else echo "$1: caught, exit $rc; last test started: $(grep '^=== RUN' /tmp/out.txt | tail -1)"; grep -E '^(--- FAIL|--- PASS|\s+\S+_test\.go:|FAIL|signal:|exit status)' /tmp/out.txt | head -12; fi
+}
+SWEEP='TestSweepKillsTrackedGroup$|TestSurvivorKilledAndRecorded$|TestStdoutHolder$|TestSweepWaitsForRenewal$|TestRunLimitsKillTheGroup$|TestBlankNameChildKilled$|TestRunKeepalive$|TestSweepSkipsReusedPid$'
+mutate "M1 sweep pid guard removed" $F 's/p\.pid > 1 && p\.pid != t\.self && //' "$SWEEP"
+mutate "M2 sweep pgid guard removed" $F 's/if p\.pgid > 1 && p\.pgid != syscall\.Getpgrp\(\) \{/if true {/' "$SWEEP"
+mutate "M3 renew loop: case <-exited removed" $R 's/\t\t\tcase <-exited:\n\t\t\t\treturn\n//' 'TestStdoutHolder$|TestSurvivorKilledAndRecorded$|TestBlankNameChildKilled$'
+mutate "M4 renew loop: tctx.Err check before a renewal removed" $R 's/\t\t\t\tif tctx\.Err\(\) != nil \{\n\t\t\t\t\treturn\n\t\t\t\t\}\n//' 'TestRenewalBounded$|TestRunKeepalive$|TestSweepWaitsForRenewal$|TestFixKeepaliveGate$'
+mutate "M5 sweep goroutine: <-renewed removed" $R 's/\t\t<-tracked\n\t\t<-renewed\n/\t\t<-tracked\n/' 'TestSweepWaitsForRenewal$'
+cp /tmp/orig/reap_unix.go $F; cp /tmp/orig/run.go $R
+echo
+echo "== W: TestCrossCompileWindows alone at head, loadavg $(cut -d' ' -f1 /proc/loadavg)"
+setsid go test -count=1 -timeout 15m -v -run 'TestCrossCompileWindows$' ./internal/dispatch/ 2>&1 | grep -vE '^=== RUN' | head -12
+echo
+echo "== D: whole package at head, -race, minus the two git>=2.48 tests and the windows cross-compile, loadavg $(cut -d' ' -f1 /proc/loadavg)"
+setsid go test -race -count=1 -timeout 30m -skip 'TestReuseAcceptsRelativePathWorktree|TestReuseRefusesExtraRegistration|TestCrossCompileWindows' ./internal/dispatch/ 2>&1 | tail -4
+echo "== done"

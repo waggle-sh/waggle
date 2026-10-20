@@ -1,0 +1,8 @@
+=== RUN   TestCatchRate
+CATCH interval=1ms caught=25/25
+CATCH interval=10ms caught=0/25
+CATCH interval=25ms caught=0/25
+CATCH interval=50ms caught=0/25
+--- PASS: TestCatchRate (32.80s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	32.955s

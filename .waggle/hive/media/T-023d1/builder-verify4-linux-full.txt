@@ -1,0 +1,7 @@
+git version 2.39.5
+--- FAIL: TestReuseRefusesExtraRegistration (0.03s)
+    --- FAIL: TestReuseRefusesExtraRegistration/relative (0.02s)
+--- FAIL: TestReuseAcceptsRelativePathWorktree (0.01s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	36.993s
+FAIL

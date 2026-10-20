@@ -1,0 +1,342 @@
+//go:build unix
+
+package dispatch
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	goruntime "runtime"
+	"strconv"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+
+	"github.com/waggle-sh/waggle/internal/comb"
+)
+
+// trackRun mimics runSession's tracking: root is started, polled every
+// interval until it exits, then swept. It returns what the sweep killed.
+func trackRun(t *testing.T, root *exec.Cmd, every time.Duration) []Survivor {
+	t.Helper()
+	root.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := root.Start(); err != nil {
+		t.Fatal(err)
+	}
+	exited := make(chan struct{})
+	go func() { _ = root.Wait(); _ = syscall.Kill(-root.Process.Pid, syscall.SIGKILL); close(exited) }()
+	tr := newTracker(root.Process.Pid)
+	tr.poll()
+	tk := time.NewTicker(every)
+	defer tk.Stop()
+	for {
+		select {
+		case <-exited:
+			return tr.sweep()
+		case <-tk.C:
+			tr.poll()
+		}
+	}
+}
+
+func readPid(path string) int {
+	b, _ := os.ReadFile(path)
+	n, _ := strconv.Atoi(strings.TrimSpace(string(b)))
+	return n
+}
+
+func alive(pid int) bool { return pid > 0 && syscall.Kill(pid, 0) == nil }
+
+// C1: a process with a blank command name (perl $0 = "", or exec with a blank
+// argv0) is dropped by the darwin ps parse, with its whole subtree.
+func TestOpusConfirmBlankComm(t *testing.T) {
+	for _, name := range []string{`"probe"`, `""`, `" "`} {
+		dir := t.TempDir()
+		pf, mk := filepath.Join(dir, "pid"), filepath.Join(dir, "marker")
+		script := `perl -MPOSIX -e '$0 = ` + name + `; POSIX::setsid(); open F, ">", $ARGV[0]; print F $$; close F; sleep 2; open M, ">", $ARGV[1]; close M' '` + pf + `' '` + mk + `' &
+sleep 0.5`
+		killed := trackRun(t, exec.Command("/bin/sh", "-c", script), 30*time.Millisecond)
+		pid := readPid(pf)
+		time.Sleep(2500 * time.Millisecond)
+		_, mErr := os.Stat(mk)
+		t.Logf("%s: argv0=%s pid=%d killed=%v marker_written=%v", goruntime.GOOS, name, pid, killed, mErr == nil)
+		_ = syscall.Kill(pid, syscall.SIGKILL)
+	}
+}
+
+// C1b: the same through Run: a blank-named setsid child of the worker
+// outlives Run and writes into the main checkout's hooks after the checks.
+func TestOpusConfirmBlankCommRun(t *testing.T) {
+	fastPoll(t, 30*time.Millisecond)
+	for _, name := range []string{`"probe"`, `""`} {
+		f := newFixture(t, false, false)
+		dir := t.TempDir()
+		pf, mk := filepath.Join(dir, "pid"), filepath.Join(f.common(), "hooks", "post-checkout")
+		script := `perl -MPOSIX -e '$0 = ` + name + `; POSIX::setsid(); open F, ">", $ARGV[0]; print F $$; close F; sleep 3; open M, ">", $ARGV[1]; print M "#!/bin/sh\n"; close M' '` + pf + `' '` + mk + `' </dev/null >/dev/null 2>&1 &
+sleep 0.5
+` + okScenario
+		res, err := f.run(script)
+		pid := readPid(pf)
+		aliveAfter := alive(pid)
+		time.Sleep(3500 * time.Millisecond)
+		_, mErr := os.Stat(mk)
+		t.Logf("%s: argv0=%s exit %d violations %d survivors %v; alive when Run returned %v; hooks/post-checkout planted after Run %v; err %v", goruntime.GOOS, name, res.ExitCode, len(res.Violations), res.Survivors, aliveAfter, mErr == nil, err)
+		_ = syscall.Kill(pid, syscall.SIGKILL)
+	}
+}
+
+// C2: the double-fork gap. The intermediate lives d; with a 250 ms poll the
+// grandchild escapes unless a poll lands inside that window.
+func TestOpusConfirmDoubleFork(t *testing.T) {
+	trials := 10
+	for _, d := range []float64{0, 0.05, 0.125, 0.2, 0.3} {
+		esc := 0
+		for i := 0; i < trials; i++ {
+			dir := t.TempDir()
+			pf := filepath.Join(dir, "pid")
+			script := fmt.Sprintf(`sleep %g; perl -MPOSIX -e 'if (my $p = fork) { waitpid($p, 0); exit 0 } POSIX::setsid(); if (fork) { select(undef, undef, undef, %g); exit 0 } open F, ">", $ARGV[0]; print F $$; close F; sleep 5' '%s'
+sleep 0.4`, float64(i)*0.025, d, pf)
+			_ = trackRun(t, exec.Command("/bin/sh", "-c", script), pollEvery)
+			pid := readPid(pf)
+			time.Sleep(100 * time.Millisecond)
+			if alive(pid) {
+				esc++
+				_ = syscall.Kill(pid, syscall.SIGKILL)
+			}
+		}
+		t.Logf("%s: intermediate lifetime %3.0f ms, poll %v: grandchild escaped %d/%d", goruntime.GOOS, d*1000, pollEvery, esc, trials)
+	}
+}
+
+// C3: a survivor that keeps forking during the sweep. Children forked between
+// a sweep poll and the kill of their parent are orphaned before they are seen.
+func TestOpusConfirmRespawnDuringSweep(t *testing.T) {
+	for _, gap := range []float64{0.002, 0.02} {
+		dir := t.TempDir()
+		script := fmt.Sprintf(`perl -MPOSIX -e 'POSIX::setsid(); while (1) { if (!fork) { sleep 2; open M, ">", "$ARGV[0]/m$$"; close M; exit 0 } select(undef, undef, undef, %g) }' '%s' &
+sleep 0.3`, gap, dir)
+		start := time.Now()
+		killed := trackRun(t, exec.Command("/bin/sh", "-c", script), 30*time.Millisecond)
+		took := time.Since(start)
+		time.Sleep(2500 * time.Millisecond)
+		ents, _ := os.ReadDir(dir)
+		t.Logf("%s: fork every %g s: sweep killed %d, run %v, markers by escaped children %d", goruntime.GOOS, gap, len(killed), took.Round(time.Millisecond), len(ents))
+		_ = exec.Command("pkill", "-KILL", "-f", dir).Run()
+	}
+}
+
+// C4: the sweep never kills a non-descendant: another child of this process
+// started after the worker (like a concurrent renewal git, or another test's
+// worker), and this process's parent.
+func TestOpusConfirmNonDescendant(t *testing.T) {
+	root := exec.Command("/bin/sh", "-c", "sleep 0.6")
+	root.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := root.Start(); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(300 * time.Millisecond)
+	other := exec.Command("sleep", "30") // dispatch's own child, younger than the worker
+	if err := other.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = other.Process.Kill(); _ = other.Wait() })
+	exited := make(chan struct{})
+	go func() { _ = root.Wait(); close(exited) }()
+	tr := newTracker(root.Process.Pid)
+	tr.poll()
+	<-exited
+	killed := tr.sweep()
+	t.Logf("%s: other child pid %d alive after sweep: %v; killed %v; parent %d alive %v", goruntime.GOOS, other.Process.Pid, alive(other.Process.Pid), killed, os.Getppid(), alive(os.Getppid()))
+}
+
+// blockBackend: a renewal that hangs until its context is done (or 8 s), like
+// a git push to a stalled remote run with exec.CommandContext.
+type blockBackend struct {
+	ClaimBackend
+	n int
+}
+
+func (b *blockBackend) AcquireLease(ctx context.Context, l comb.Lease) error {
+	b.n++
+	if b.n > 1 {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(8 * time.Second):
+			return fmt.Errorf("stalled renewal gave up after 8 s")
+		}
+	}
+	return b.ClaimBackend.AcquireLease(ctx, l)
+}
+
+// C5: d95aa72: a renewal in flight when the session ends is no longer
+// cancelled, so Run waits for it with no bound; with a 1 s session timeout Run
+// takes as long as the stalled renewal.
+func TestOpusConfirmRenewalBound(t *testing.T) {
+	f := newFixture(t, false, false)
+	b, _ := claimEnv(t, f.real)
+	cb := &blockBackend{ClaimBackend: b}
+	start := time.Now()
+	res, err := f.run("sleep 3\n"+okScenario, func(_ *Request, d *Deps) {
+		d.Backend, d.KeepaliveEvery, d.Timeout = cb, 200*time.Millisecond, time.Second
+	})
+	t.Logf("session timeout 1 s, renewal stalls: Run took %v, exit %d end %s, warnings %v err %v", time.Since(start).Round(100*time.Millisecond), res.ExitCode, res.End, res.Warnings, err)
+}
+
+// C6 (D-189): branch keys the record ignores, and keys it still sees.
+func TestOpusConfirmBranchKeys(t *testing.T) {
+	cases := []struct{ name, add string }{
+		{"Branch.x mixed case", "[Branch \"x\"]\n\tremote = /tmp/evil\n"},
+		{"branch quoted dotted", "[branch \"a.b\"]\n\tpushRemote = /tmp/evil\n"},
+		{"branch old syntax", "[branch.Main]\n\tremote = /tmp/evil\n"},
+		{"branch section key", "[branch]\n\tremote = /tmp/evil\n\tautoSetupMerge = always\n"},
+		{"branch.main.remote URL", "[branch \"main\"]\n\tremote = file:///tmp/evil.git\n\tmerge = refs/heads/main\n\tpushRemote = file:///tmp/evil.git\n"},
+		{"include.path", "[include]\n\tpath = /tmp/evil.inc\n"},
+		{"includeIf onbranch", "[includeIf \"onbranch:main\"]\n\tpath = /tmp/evil.inc\n"},
+		{"remote pushurl", "[remote \"origin\"]\n\tpushurl = /tmp/evil\n"},
+		{"branchx lookalike", "[branchx]\n\tremote = /tmp/evil\n"},
+	}
+	for _, c := range cases {
+		f := newFixture(t, false, false)
+		dir := t.TempDir()
+		pg := (&Git{Bin: "git", Dir: f.real}).pinned()
+		ctx := context.Background()
+		s := snap{files: hostFiles(f.common(), ""), cfg: configKeys(ctx, pg, f.common())}
+		if err := saveHostRecord(dir, s, "T-023-builder-1"); err != nil {
+			t.Fatal(err)
+		}
+		p := filepath.Join(f.common(), "config")
+		old, _ := os.ReadFile(p)
+		_ = os.WriteFile(p, append(old, []byte(c.add)...), 0o644)
+		err := checkHostRecord(ctx, pg, dir, f.common())
+		t.Logf("%-24s flagged=%v", c.name, err != nil)
+	}
+}
+
+// C6b: what an ignored branch.main.remote / pushRemote does to the Keeper's
+// own argument-free pull and push in the main checkout.
+func TestOpusConfirmBranchRedirect(t *testing.T) {
+	t.Setenv("GIT_CONFIG_GLOBAL", "/dev/null")
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+	root := t.TempDir()
+	run := func(dir string, args ...string) string {
+		c := exec.Command("git", append([]string{"-c", "user.name=t", "-c", "user.email=t@example.test", "-c", "init.defaultBranch=main"}, args...)...)
+		c.Dir = dir
+		out, err := c.CombinedOutput()
+		if err != nil {
+			t.Logf("git %v: %v %s", args, err, out)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	origin, evil, repo := filepath.Join(root, "origin.git"), filepath.Join(root, "evil"), filepath.Join(root, "repo")
+	run(root, "init", "-q", "--bare", origin)
+	run(root, "clone", "-q", origin, repo)
+	_ = os.WriteFile(filepath.Join(repo, "a"), []byte("a\n"), 0o644)
+	run(repo, "add", "a")
+	run(repo, "commit", "-qm", "base")
+	run(repo, "push", "-q", "-u", "origin", "main")
+	run(root, "clone", "-q", origin, evil)
+	_ = os.WriteFile(filepath.Join(evil, "a"), []byte("planted\n"), 0o644)
+	run(evil, "commit", "-qam", "planted")
+	run(repo, "config", "branch.main.remote", evil)
+	run(repo, "config", "branch.main.pushRemote", filepath.Join(root, "sink.git"))
+	run(root, "init", "-q", "--bare", filepath.Join(root, "sink.git"))
+	run(repo, "pull", "-q", "--ff-only")
+	b, _ := os.ReadFile(filepath.Join(repo, "a"))
+	_ = os.WriteFile(filepath.Join(repo, "b"), []byte("keeper work\n"), 0o644)
+	run(repo, "add", "b")
+	run(repo, "commit", "-qm", "keeper work")
+	run(repo, "push", "-q")
+	t.Logf("after argument-free pull, a = %q; origin main %s; sink main %s; local %s", strings.TrimSpace(string(b)),
+		run(origin, "rev-parse", "--short", "main"), run(filepath.Join(root, "sink.git"), "rev-parse", "--short", "main"), run(repo, "rev-parse", "--short", "HEAD"))
+}
+
+// C2b: how long one darwin ps sample takes, and what a 200 ms-lived
+// intermediate looks like to the tracker.
+func TestOpusConfirmPsCost(t *testing.T) {
+	var worst, total time.Duration
+	for i := 0; i < 20; i++ {
+		s := time.Now()
+		tab, err := procTable()
+		d := time.Since(s)
+		total += d
+		worst = max(worst, d)
+		if err != nil || len(tab) == 0 {
+			t.Fatalf("ps: %v", err)
+		}
+	}
+	t.Logf("%s: procTable mean %v worst %v", goruntime.GOOS, (total / 20).Round(time.Millisecond), worst.Round(time.Millisecond))
+	dir := t.TempDir()
+	pf := filepath.Join(dir, "pid")
+	script := `perl -MPOSIX -e 'if (my $p = fork) { waitpid($p, 0); exit 0 } POSIX::setsid(); if (fork) { select(undef, undef, undef, 0.2); exit 0 } open F, ">", $ARGV[0]; print F $$; close F; sleep 5' '` + pf + `'
+sleep 0.4`
+	root := exec.Command("/bin/sh", "-c", script)
+	root.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	_ = root.Start()
+	tr := newTracker(root.Process.Pid)
+	for i := 0; i < 12; i++ {
+		s := time.Now()
+		tr.poll()
+		var names []string
+		for _, p := range tr.live {
+			names = append(names, fmt.Sprintf("%d/%d %s", p.pid, p.ppid, p.comm))
+		}
+		t.Logf("poll %d (%v) live %v", i, time.Since(s).Round(time.Millisecond), names)
+	}
+	_ = root.Wait()
+	_ = syscall.Kill(readPid(pf), syscall.SIGKILL)
+}
+
+// C7: what TestRunLimitsKillTheGroup sees on linux: a same-group grandchild
+// killed by the group SIGKILL after the leader exits is adopted by the
+// subreaper and stays a zombie of this process, so kill(pid, 0) succeeds.
+func TestOpusConfirmGroupZombie(t *testing.T) {
+	dir := t.TempDir()
+	pf := filepath.Join(dir, "pid")
+	killed := trackRun(t, exec.Command("/bin/sh", "-c", "sleep 300 </dev/null >/dev/null 2>&1 &\necho $! > '"+pf+"'\nsleep 0.3"), pollEvery)
+	pid := readPid(pf)
+	time.Sleep(time.Second)
+	b, _ := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
+	t.Logf("%s: sweep killed %v; grandchild %d kill(0) succeeds %v; /proc stat %q; this pid %d", goruntime.GOOS, killed, pid, alive(pid), strings.TrimSpace(string(b)), os.Getpid())
+}
+
+// C3b: the sweep loop step by step against a 2 ms forker.
+func TestOpusConfirmSweepTrace(t *testing.T) {
+	dir := t.TempDir()
+	script := `perl -MPOSIX -e 'POSIX::setsid(); while (1) { if (!fork) { sleep 2; open M, ">", "$ARGV[0]/m$$"; close M; exit 0 } select(undef, undef, undef, 0.002) }' '` + dir + `' &
+sleep 0.3`
+	root := exec.Command("/bin/sh", "-c", script)
+	root.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	_ = root.Start()
+	tr := newTracker(root.Process.Pid)
+	for i := 0; i < 3; i++ {
+		tr.poll()
+		t.Logf("pre poll %d: live %d seen %d", i, len(tr.live), len(tr.seen))
+		time.Sleep(100 * time.Millisecond)
+	}
+	_ = root.Wait()
+	tr.reaped = true
+	for i := 0; i < 8; i++ {
+		s := time.Now()
+		tr.poll()
+		tab, _ := procTable()
+		orphans, z := 0, 0
+		for _, p := range tab {
+			if p.ppid == tr.self {
+				orphans++
+				if p.zombie {
+					z++
+				}
+			}
+		}
+		t.Logf("sweep %d (%v): live %d, table %d, ppid=self %d (zombies %d), rootStart %q", i, time.Since(s).Round(time.Millisecond), len(tr.live), len(tab), orphans, z, tr.rootStart)
+		for _, p := range tr.live {
+			_ = syscall.Kill(p.pid, syscall.SIGKILL)
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	_ = exec.Command("pkill", "-KILL", "-f", dir).Run()
+}

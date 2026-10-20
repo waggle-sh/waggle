@@ -1,0 +1,192 @@
+== environment
+Linux <container> 6.8.0-117-generic #117-Ubuntu SMP PREEMPT_DYNAMIC Thu May  7 17:26:37 UTC 2026 aarch64 GNU/Linux
+go version go1.23.12 linux/arm64
+git version 2.39.5
+nproc 2  loadavg 1.19 2.15 3.12 1/740 24  pid1 /sbin/docker-init--bash/probe/container.sh
+pid_max 4194304
+
+== A: sweep tests, -race -count=5, nothing else running
+=== RUN   TestSurvivorKilledAndRecorded
+--- PASS: TestSurvivorKilledAndRecorded (5.31s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.03s)
+=== RUN   TestStdoutHolder
+--- PASS: TestStdoutHolder (1.40s)
+=== RUN   TestBlankNameChildKilled
+--- PASS: TestBlankNameChildKilled (5.31s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.05s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (1.36s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (1.72s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (3.14s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (2.17s)
+=== RUN   TestSurvivorKilledAndRecorded
+--- PASS: TestSurvivorKilledAndRecorded (5.29s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.03s)
+=== RUN   TestStdoutHolder
+--- PASS: TestStdoutHolder (1.40s)
+=== RUN   TestBlankNameChildKilled
+--- PASS: TestBlankNameChildKilled (5.28s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.03s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (1.33s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (0.90s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (0.49s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (2.10s)
+=== RUN   TestSurvivorKilledAndRecorded
+--- PASS: TestSurvivorKilledAndRecorded (5.42s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.03s)
+=== RUN   TestStdoutHolder
+--- PASS: TestStdoutHolder (3.99s)
+=== RUN   TestBlankNameChildKilled
+--- PASS: TestBlankNameChildKilled (9.01s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.75s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (1.78s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (3.49s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (0.55s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (7.78s)
+=== RUN   TestSurvivorKilledAndRecorded
+--- PASS: TestSurvivorKilledAndRecorded (8.23s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.03s)
+=== RUN   TestStdoutHolder
+--- PASS: TestStdoutHolder (2.04s)
+=== RUN   TestBlankNameChildKilled
+--- PASS: TestBlankNameChildKilled (7.46s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.05s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (1.52s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (1.12s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (0.69s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (3.42s)
+=== RUN   TestSurvivorKilledAndRecorded
+--- PASS: TestSurvivorKilledAndRecorded (9.56s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.10s)
+=== RUN   TestStdoutHolder
+--- PASS: TestStdoutHolder (6.90s)
+=== RUN   TestBlankNameChildKilled
+--- PASS: TestBlankNameChildKilled (6.48s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.33s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (3.15s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (0.97s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (0.75s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (11.38s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	136.339s
+
+== B: same tests, -race -count=3, under load (2 busy loops)
+loadavg 9.28 5.18 4.12 7/802 4796
+=== RUN   TestSurvivorKilledAndRecorded
+--- PASS: TestSurvivorKilledAndRecorded (14.53s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.07s)
+=== RUN   TestStdoutHolder
+--- PASS: TestStdoutHolder (2.25s)
+=== RUN   TestBlankNameChildKilled
+--- PASS: TestBlankNameChildKilled (13.11s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.19s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (4.84s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (3.18s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (11.51s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (9.39s)
+=== RUN   TestSurvivorKilledAndRecorded
+    fix2_test.go:101: the killed survivor still wrote its marker
+--- FAIL: TestSurvivorKilledAndRecorded (12.90s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.06s)
+=== RUN   TestStdoutHolder
+--- PASS: TestStdoutHolder (5.22s)
+=== RUN   TestBlankNameChildKilled
+    fix3_test.go:60: exit 0 err <nil> survivors [] pid 5777
+--- FAIL: TestBlankNameChildKilled (10.39s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.07s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (3.10s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (5.65s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (5.10s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (17.74s)
+=== RUN   TestSurvivorKilledAndRecorded
+--- PASS: TestSurvivorKilledAndRecorded (11.87s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.05s)
+=== RUN   TestStdoutHolder
+    fix2_test.go:170: took 8.340706476s exit 0 held false survivors [{6378 dispatch.test}] warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_killed: 1 process(es) outlived the worker and were killed: [{6378 dispatch.test}]] err <nil>
+--- FAIL: TestStdoutHolder (8.71s)
+=== RUN   TestBlankNameChildKilled
+--- PASS: TestBlankNameChildKilled (20.26s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.50s)
+=== RUN   TestRenewalBounded
+--- PASS: TestRenewalBounded (5.31s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (8.50s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (14.67s)
+=== RUN   TestRunKeepalive
+--- PASS: TestRunKeepalive (10.36s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	201.020s
+FAIL
+loadavg after 22.00 13.92 7.87 16/832 6964
+
+== C: fix removal (each on a fresh copy of the file; whole dispatch package minus the two git>=2.48 tests)
+--- M1 sweep pid guard removed: diff
+< 			if k := (pkey{p.pid, p.start}); p.pid > 1 && p.pid != t.self && syscall.Kill(p.pid, syscall.SIGKILL) == nil && !done[k] {
+> 			if k := (pkey{p.pid, p.start}); syscall.Kill(p.pid, syscall.SIGKILL) == nil && !done[k] {
+M1 sweep pid guard removed: caught by:
+--- FAIL: TestCrossCompileWindows (38.05s)
+    misc_test.go:37: GOOS=windows go vet: exit status 1
+--- M2 sweep pgid guard removed: diff
+< 			if p.pgid > 1 && p.pgid != syscall.Getpgrp() {
+> 			if true {
+== done (run 1 was killed at M2 with exit 137; the rest is in run 2)

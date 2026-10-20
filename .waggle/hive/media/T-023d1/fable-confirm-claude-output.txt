@@ -1,0 +1,8 @@
+fable confirmation: the pinned Claude Code 2.1.304 (haiku) through the real Run on a NORMAL exit, darwin, poll 250 ms (default).
+Fixture brief: run exactly one Bash command, perl probe.pl (allowed through the WAGGLE.md command list). probe.pl forks; the parent exits at once so the Bash tool returns; the child closes its fds, records its pid, sleeps 40 s and leaves a marker. Claude replied done and exited normally (result subtype success, exit 1 no_change since nothing was committed).
+Source: fable-confirm-claude_test.go.txt (FABLE_REAL_CLAUDE=1). Temp paths redacted.
+
+    fable_claude_test.go:49: RESULT real claude: exit 1 end no_change subtype success err <nil> took 3.4s cost 0.0009 | perl pid 37944 now alive ps="37944     1 37941 S    perl" | survivors_killed [] | warnings []
+    fable_claude_test.go:52: final: "done"
+--- PASS: TestFableRealClaudeNormalExit (3.56s)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	3.735s

@@ -1,0 +1,36 @@
+=== RUN   TestFableC2SessionFacts
+    fable_c2_probe_test.go:50: dispatch (this test) pid 6159 pgid 6123 sid 6123
+    fable_c2_probe_test.go:52: worker pid 6175 ppid 6159 pgid 6175 sid 6123: Setpgid gives its own group, the session is inherited
+    fable_c2_probe_test.go:54: ancestor pid 6159 ppid 6125 pgid 6123 sid 6123 comm "dispatch.test"
+    fable_c2_probe_test.go:54: ancestor pid 6125 ppid 6123 pgid 6123 sid 6123 comm "go"
+    fable_c2_probe_test.go:54: ancestor pid 6123 ppid 39973 pgid 6123 sid 6123 comm "zsh"
+    fable_c2_probe_test.go:54: ancestor pid 39973 ppid 39746 pgid 39973 sid 39729 comm "claude.exe"
+    fable_c2_probe_test.go:54: ancestor pid 39746 ppid 39729 pgid 39746 sid 39729 comm "zsh"
+    fable_c2_probe_test.go:54: ancestor pid 39729 ppid 39341 pgid 39729 sid 39729 comm "login"
+    fable_c2_probe_test.go:54: ancestor pid 39341 ppid 1 pgid 39341 sid 1 comm "orca-terminal-ho"
+    fable_c2_probe_test.go:68: same-session group 0, skipped by the pgid guard: false, members [0:kernel_task]
+    fable_c2_probe_test.go:68: same-session group 6123, skipped by the pgid guard: true, members [6159:dispatch.test 6127:claude.exe 6126:tee 6125:go 6123:zsh]
+    fable_c2_probe_test.go:68: same-session group 6175, skipped by the pgid guard: false, members [6175:sleep]
+--- PASS: TestFableC2SessionFacts (1.01s)
+=== RUN   TestFableC2CatchRate
+    fable_c2_probe_test.go:144: CATCH poll 25ms, tool shell exits at once after `cmd &`: caught 7/20
+    fable_c2_probe_test.go:144: CATCH poll 10ms, tool shell exits at once after `cmd &`: caught 0/20
+    fable_c2_probe_test.go:144: CATCH poll 5ms, tool shell exits at once after `cmd &`: caught 4/20
+    fable_c2_probe_test.go:144: CATCH poll 2ms, tool shell exits at once after `cmd &`: caught 20/20
+    fable_c2_probe_test.go:144: CATCH poll 1ms, tool shell exits at once after `cmd &`: caught 20/20
+    fable_c2_probe_test.go:148: CATCH poll 25ms, tool shell lives 0.010 s after `cmd &`: caught 8/10
+    fable_c2_probe_test.go:148: CATCH poll 25ms, tool shell lives 0.030 s after `cmd &`: caught 10/10
+    fable_c2_probe_test.go:148: CATCH poll 25ms, tool shell lives 0.100 s after `cmd &`: caught 10/10
+--- PASS: TestFableC2CatchRate (32.19s)
+=== RUN   TestFableC2PollCost
+    fable_c2_probe_test.go:163: COST one sysctl table read: 271.837µs for 596 processes; at 25 ms that is 1.1% of a core, at 1 ms 27%
+--- PASS: TestFableC2PollCost (0.05s)
+=== RUN   TestFableC2LiveIsTheTargetList
+    fable_c2_probe_test.go:186: live pid 501 pgid 501: group kill would be sent true
+    fable_c2_probe_test.go:186: live pid 502 pgid 7000: group kill would be sent true
+    fable_c2_probe_test.go:186: live pid 503 pgid 4242: group kill would be sent false
+    fable_c2_probe_test.go:197: reused pid 502 with start 99: not live (live pids [501 503])
+    fable_c2_probe_test.go:199: after a failed read: live 0 blind true
+--- PASS: TestFableC2LiveIsTheTargetList (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	33.427s

@@ -1,0 +1,16 @@
+== environment: Linux 6.8.0-117-generic nproc 2 loadavg 15.23 17.83 19.98 5/844 14 mem 161852 kB avail
+== head, same tests, no -race (control)
+control exit 1
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+< 			if p.pgid > 1 && p.pgid != syscall.Getpgrp() {
+> 			if true {
+== M2 sweep pgid guard removed, no -race
+M2 exit 1; last test started: 
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+== W: TestCrossCompileWindows alone at head, no -race, loadavg 14.76
+--- PASS: TestCrossCompileWindows (255.23s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	255.232s
+== done

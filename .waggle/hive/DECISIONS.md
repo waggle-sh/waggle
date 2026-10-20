@@ -3620,3 +3620,101 @@
 **Keeper choice:** The host record compares the common config as parsed keys and ignores branch.<name>.* entries; every other difference is still exit 3. The record stores the snapshot the checks verified (fable B1), not a fresh hash after push and removal. Phase D2's dispatch clean --host-record prints the differences and re-baselines only after the Keeper confirms. The parse and snapshot land in the D1 fix round, the acknowledge step in D2. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
 
 **Rationale:** Keeps item 1 meaningful without training the queen to delete the record after every PR.
+
+## D-190: T-023 phase D1 accepted at 734 lines with a stop of 800; D2 gets its own budget
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** D-173
+
+**Question:** T-023 phase D1 reached 734 added non-test lines against its 665 stop after the D1 fix round built D-187 (about 190 lines against a 60 to 90 estimate), D-188 and D-189; the builder crossed the stop instead of pausing. The D-176 probe now passes. Accept, or split D-187 into its own PR?
+
+**Options considered:**
+1. Accept 734, D1 stop 800 including confirmation fix rounds; D2 own budget estimate 200, target 280, stop 350
+2. Split D-187 into a separate PR
+
+**Hive recommendation:** Accept 734, D1 stop 800 including confirmation fix rounds; D2 own budget estimate 200, target 280, stop 350
+
+**Keeper choice:** T-023 phase D1 is accepted at 734 added non-test lines (D-136) and its stop moves to 800 including the confirmation fix rounds. Phase D2 (clean, list, item 13, the D-189 host-record acknowledge, stale duplicate worktree entries) gets its own budget: estimate 200, target 280, stop 350. D-173's combined phase D stop of 960 no longer applies. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** The overage came from Keeper-ruled safety work (live descendant tracking) that has to land before phase F; splitting it would add a review cycle without reducing risk.
+
+## D-191: On macOS the D-187 tracker polls by sysctl every 25 ms; a detached background child stays a NotEnforced gap until T-024
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** D-187
+
+**Question:** Fable showed that on macOS a tool command that forks a detached background child escapes D-187's 250 ms ps polling almost every time (0 of 15; the real Claude Code run left the child alive), and its ref and main-checkout writes after the check are never named. Linux's subreaper catches every case. The queen's D-187 card had said this closes the common leak. How to proceed toward phase F?
+
+**Options considered:**
+1. Read the process table by sysctl (about 1 ms) and poll every 25 ms, record the macOS gap as NotEnforced, trial phase F on macOS, T-024 closes it
+2. Run phase F workers in a Linux VM or container
+3. Accept the 250 ms ps poll and document the gap
+
+**Hive recommendation:** Read the process table by sysctl (about 1 ms) and poll every 25 ms, record the macOS gap as NotEnforced, trial phase F on macOS, T-024 closes it
+
+**Keeper choice:** On darwin the descendant tracker reads the process table through sysctl (kern.proc) instead of /bin/ps and polls every 25 ms; linux keeps the subreaper. A process that daemonizes between two polls on macOS is a documented NotEnforced gap (an escaped child's hook and config writes are still named by the next dispatch's host record; its ref and main-checkout writes are not) until T-024's Cell closes it. The phase F trial runs on macOS with this gap stated in its report. Lands in the T-023 phase D1 second fix round. Amends D-187. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Narrows the macOS window about tenfold for about 30 lines without delaying phase F; only code a worker runs (go test and similar) can reach the gap, and the Cell runtime is the real fix.
+
+## D-192: The host record ignores only routine branch keys; pushRemote, path or URL values and global branch settings stay strict
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** D-189
+
+**Question:** D-189 ignores every branch.* key. A planted branch.<name>.pushRemote, or a branch remote that names a path, silently redirects the Keeper's own argument-free git push or pull in the main checkout, unflagged. Tighten?
+
+**Options considered:**
+1. Ignore only branch.<name>.merge and branch.<name>.remote values that name a configured remote; keep pushRemote, URL or path values and global branch.* settings strict
+2. Keep D-189 and name the gap in not_enforced
+
+**Hive recommendation:** Ignore only branch.<name>.merge and branch.<name>.remote values that name a configured remote; keep pushRemote, URL or path values and global branch.* settings strict
+
+**Keeper choice:** The cross-run host record ignores branch.<name>.merge and branch.<name>.remote when the value names a remote configured in the same file; every other branch key (pushRemote, a remote given as a URL or path, rebase or other per-branch settings) and every global branch.* setting is compared strictly. Lands in the T-023 phase D1 second fix round. Amends D-189. Decided by the Head Keeper via queen card on 2026-10-19; recorded by the queen.
+
+**Rationale:** Keeps git push -u from tripping the record while still catching a redirect of the Keeper's own push or pull.
+
+## D-193: Tests and probes that send real kill signals run only in the linux container
+
+- **Date:** 2026-10-20
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** An uncommitted guard probe (newTracker(0), poll, a forced procTable failure, sweep) SIGKILLed every process the Keeper owns on the Mac twice on 2026-10-20. Should a standing hive rule keep kill-sending tests off the Keeper's host?
+
+**Options considered:**
+1. Linux container only: any test or probe that calls sweep() or signals a process it did not spawn runs only in the Colima linux container; prefer pure data assertions; recorded and put in builder and guard briefs
+2. Allow on the host again after the D1 hardening lands and both guards pass it
+3. Put the rule in this round's briefs only, no standing decision
+
+**Hive recommendation:** Linux container only: any test or probe that calls sweep() or signals a process it did not spawn runs only in the Colima linux container; prefer pure data assertions; recorded and put in builder and guard briefs
+
+**Keeper choice:** Any test, probe or fix-removal check that calls the tracker's sweep(), or sends a signal to a process the test did not itself spawn, runs only inside the Colima linux container, never on the Keeper's darwin host. Builders and guards assert tracker and sweep behavior on data (fabricated process tables, returned target lists) wherever they can. Every builder and guard brief that touches internal/dispatch process handling states this rule. The darwin catch-rate measurements owed by D-191 are taken without sweep(). Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** A probe with a bad root took down the Keeper's whole session twice; a container's pid namespace bounds the damage of the next such bug at small cost in speed.
+
+## D-194: macOS tracker stays at 25 ms with honest NotEnforced wording in D1; group-leader sweep lands in D2
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Builder and both guards measured the darwin sysctl tracker: a background child whose parent exits within milliseconds (the usual cmd & from a tool shell) is caught 0 of 65 (builder) and 7 of 20 (fable) at 25 ms; shorter intervals cost CPU and close little, since the parent's lifetime after the fork decides the catch. What follows D-191?
+
+**Options considered:**
+1. Reword NotEnforced in D1, keep 25 ms; add a group-leader sweep in D2
+2. Reword in D1, defer the fix to T-024
+3. Drop the darwin tracker
+
+**Hive recommendation:** Reword NotEnforced in D1, keep 25 ms; add a group-leader sweep in D2
+
+**Keeper choice:** The darwin tracker keeps its 25 ms sysctl poll. In the T-023 D1 fix round the NotEnforced text says plainly that on macOS a background child whose parent exits before the next 25 ms read, which is the usual cmd & from a tool shell, escapes until T-024; the phase F trial report carries the same sentence. T-023 phase D2 adds a group-leader sweep: at cleanup, also kill the process group of every group leader the tracker saw, guarded so the group id is above 1, is not dispatch's own group, and its leader pid is absent or still has the recorded start time; tested on data per D-193. Amends D-191. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Honest wording costs no lines and must not wait; the group sweep closes most of the cmd & case for about 6 lines without waiting for the Cell runtime.

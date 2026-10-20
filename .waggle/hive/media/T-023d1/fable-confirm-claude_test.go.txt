@@ -1,0 +1,56 @@
+//go:build unix
+
+package dispatch
+
+// Throwaway: the pinned Claude Code through the real Run on a normal exit, with
+// a Bash tool child that daemonizes (fable confirmation at d95aa72). Runs only
+// with FABLE_REAL_CLAUDE=1. Not committed.
+
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestFableRealClaudeNormalExit(t *testing.T) {
+	if os.Getenv("FABLE_REAL_CLAUDE") != "1" {
+		return
+	}
+	f := newFixture(t, false, false)
+	cfgPath := filepath.Join(f.real, ".waggle/control/config.yaml")
+	cfg, _ := os.ReadFile(cfgPath)
+	c := strings.Replace(string(cfg), filepath.Join(f.binDir, "claude"), "/opt/homebrew/bin/claude", 1)
+	c = strings.Replace(c, "frontier: opus", "frontier: haiku", 1)
+	c = strings.Replace(c, "standard: sonnet", "standard: haiku", 1)
+	write(t, f.real, ".waggle/control/config.yaml", c)
+	md, _ := os.ReadFile(filepath.Join(f.real, ".waggle/control/WAGGLE.md"))
+	write(t, f.real, ".waggle/control/WAGGLE.md", strings.Replace(string(md), "- **Build:** `<build command>`", "- **Probe:** `perl probe.pl`", 1))
+	marker := filepath.Join(t.TempDir(), "perl-pid")
+	// probe.pl: fork; the parent exits at once (so the Bash tool returns), the
+	// child closes its fds, records its pid, sleeps 40 s and leaves a marker.
+	write(t, f.real, "probe.pl", "my $p = fork(); exit 0 if $p; close STDOUT; close STDERR; close STDIN; open(my $h, '>', '"+marker+"'); print $h $$; close $h; sleep 40; open($h, '>', '"+marker+".done'); print $h 'late'; close $h;\n")
+	write(t, f.real, ".waggle/hive/tasks/T-023.md", "# brief 023\n\nRun exactly one Bash command, verbatim: perl probe.pl\nIt returns at once. Then reply with the single word done and stop. Do not commit anything.\n")
+	f.git("add", "-A")
+	f.git("commit", "-q", "-m", "probe")
+	start := time.Now()
+	res, err := f.run("", func(r *Request, d *Deps) { d.Timeout = 120 * time.Second })
+	took := time.Since(start)
+	b, _ := os.ReadFile(marker)
+	pid, _ := strconv.Atoi(string(b))
+	ps, _ := exec.Command("/bin/ps", "-o", "pid=,ppid=,pgid=,stat=,comm=", "-p", strconv.Itoa(pid)).Output()
+	cost := 0.0
+	if res.CostUSD != nil {
+		cost = *res.CostUSD
+	}
+	t.Logf("RESULT real claude: exit %d end %s subtype %s err %v took %v cost %.4f | perl pid %d now %s ps=%q | survivors_killed %v | warnings %v",
+		res.ExitCode, res.End, res.ResultSubtype, err, took.Round(100*time.Millisecond), cost, pid, alive(pid), strings.TrimSpace(string(ps)), res.Survivors, res.Warnings)
+	fin, _ := os.ReadFile(filepath.Join(res.RunDir, "final.md"))
+	t.Logf("final: %q", strings.TrimSpace(string(fin)))
+	if pid > 0 {
+		_ = exec.Command("kill", "-9", strconv.Itoa(pid)).Run()
+	}
+}
