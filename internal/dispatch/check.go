@@ -36,7 +36,7 @@ const (
 // checkout's status and HEAD.
 type snap struct {
 	refs, files map[string]string
-	main        string
+	main, cfg   string // cfg: configKeys at the snapshot
 }
 
 // takeSnap records the snapshot with g, which must be pinned. admin is this
@@ -45,7 +45,7 @@ func takeSnap(ctx context.Context, g *Git, common, admin string) (s snap, err er
 	if s.refs, err = listRefs(ctx, g); err != nil {
 		return s, err
 	}
-	s.files = hostFiles(common, admin)
+	s.files, s.cfg = hostFiles(common, admin), configKeys(ctx, g, common)
 	s.main, err = mainState(ctx, g)
 	return s, err
 }

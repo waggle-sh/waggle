@@ -31,6 +31,9 @@ type CellSpec struct {
 // killGrace is the time between SIGTERM and SIGKILL for a stopped group.
 var killGrace = 10 * time.Second
 
+// pollEvery is how often the worker's descendant tree is sampled.
+var pollEvery = 250 * time.Millisecond
+
 // NotEnforced is what the host cell cannot promise (section 8); it is printed
 // on every run and recorded in result.json.
 var NotEnforced = []string{
@@ -41,7 +44,7 @@ var NotEnforced = []string{
 	"writes outside the repo (not detected), including the system gitconfig (user-writable with Homebrew git) and ~/.ssh/config (ProxyCommand, Match exec), which the host push reads",
 	"code run by allowed build and test commands (test files, go test -exec) is not confined",
 	"new or changed files in the main checkout that a .gitignore covers are not detected, including a .gitignore the agent writes there (.claude/settings.local.json, .waggle/control/local.yaml, a self-ignoring directory)",
-	"a process that leaves the worker's process group (setsid, a daemon) is not killed and can change host state after the checks",
+	"a process that leaves the worker's process group (setsid) is found by polling the process tree every 250 ms and killed after the worker exits; one that daemonizes between two polls (its parent gone before it is seen) escapes until T-024 and can change host state after the checks",
 	"an include.path or includeIf naming a file outside the hashed set can change effective config",
 	"during the session, claim renewals run git with the Keeper's environment against agent-writable repo config; a config written and reverted between the hash and a renewal is not caught (the post-run config hash is the backstop)",
 	"push tripwire is best effort: it misses bare relative paths, scp forms without git@, upper-case schemes, <transport>::<address>, pushurl, " +

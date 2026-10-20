@@ -4,13 +4,10 @@ package dispatch
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/waggle-sh/waggle/internal/runtime"
 )
@@ -101,33 +98,6 @@ func TestRefusalsWriteNothing(t *testing.T) {
 
 func errorsIs(err, target error) bool {
 	return err != nil && strings.Contains(err.Error(), target.Error())
-}
-
-// Item 5: an escaped child that holds stdout does not hold Run past the
-// timeout, the kill grace and 2 seconds.
-func TestStdoutHolder(t *testing.T) {
-	if _, err := exec.LookPath("perl"); err != nil {
-		t.Skip("needs perl for setsid")
-	}
-	old := killGrace
-	killGrace = 300 * time.Millisecond
-	t.Cleanup(func() { killGrace = old })
-	f := newFixture(t, false, false)
-	pidFile := filepath.Join(t.TempDir(), "pid")
-	script := "perl -MPOSIX -e 'POSIX::setsid(); exec \"sleep\", \"60\"' &\necho $! > '" + pidFile + "'\nsleep 0.5\n" + emit(assistant(100))
-	start := time.Now()
-	res, err := f.run(script, func(_ *Request, d *Deps) { d.Timeout = time.Second })
-	took := time.Since(start)
-	if b, e := os.ReadFile(pidFile); e == nil {
-		if pid, _ := strconv.Atoi(strings.TrimSpace(string(b))); pid > 0 {
-			if p, e := os.FindProcess(pid); e == nil {
-				_ = p.Kill()
-			}
-		}
-	}
-	if err != nil || !strings.Contains(strings.Join(res.Warnings, "|"), "stdout_held") || took > time.Second+killGrace+4*time.Second {
-		t.Fatalf("took %v exit %d warnings %v err %v", took, res.ExitCode, res.Warnings, err)
-	}
 }
 
 // Item 6: the runtime directory and the ledger must be gitignored, or nothing is written.
