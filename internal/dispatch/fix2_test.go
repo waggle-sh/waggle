@@ -132,7 +132,7 @@ func TestSweepSkipsReusedPid(t *testing.T) {
 	}) {
 		t.Fatal("the process table does not list the helper")
 	}
-	tr := newTracker(0)
+	tr := newTracker(cmd.Process.Pid)
 	tr.seen[pkey{real.pid, real.start + "x"}] = "sleep"
 	if k := tr.sweep(); len(k) != 0 || syscall.Kill(real.pid, 0) != nil {
 		t.Fatalf("a start time mismatch was killed: %v", k)

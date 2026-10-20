@@ -28,17 +28,24 @@ type tracker struct {
 	reaped     bool            // the leader is gone: on linux its orphans reparent to dispatch
 	seen       map[pkey]string // tracked processes and their command names
 	live       []proc          // tracked and alive at the last poll
+	blind      bool            // a poll failed or the root was unusable: survivors may have been missed
 }
 
 func newTracker(root int) *tracker {
+	if root <= 1 { // inert: pid 0 and init would make every process of the user a descendant
+		return &tracker{blind: true}
+	}
 	setSubreaper()
 	return &tracker{root: root, self: syscall.Getpid(), seen: map[pkey]string{}}
 }
 
-func (t *tracker) poll() {
-	tab, err := procTable()
-	if err != nil {
-		return
+func (t *tracker) poll() { t.observe(procTable()) }
+
+// observe selects the tracked descendants from one table. On a failed read the
+// table is dropped, so live empties (its pids may be reused) and blind says so.
+func (t *tracker) observe(tab []proc, err error) {
+	if err != nil || t.root <= 1 {
+		tab, t.blind = nil, true
 	}
 	kids := map[int]bool{t.root: !t.reaped, t.self: t.reaped && subreaper}
 	for _, p := range tab {
@@ -57,7 +64,7 @@ func (t *tracker) poll() {
 		grew = false
 		for _, p := range tab {
 			k := pkey{p.pid, p.start}
-			if _, known := t.seen[k]; known || p.zombie || p.pid == t.root || p.pid == t.self || !kids[p.ppid] ||
+			if _, known := t.seen[k]; known || p.zombie || p.pid <= 1 || p.ppid <= 1 || p.pid == t.root || p.pid == t.self || !kids[p.ppid] ||
 				(p.ppid == t.self && !startedAfter(p.start, t.rootStart)) { // an adopted orphan must be younger than the leader
 				continue
 			}
@@ -66,7 +73,7 @@ func (t *tracker) poll() {
 	}
 	t.live = t.live[:0]
 	for _, p := range tab {
-		if _, ok := t.seen[pkey{p.pid, p.start}]; ok && !p.zombie {
+		if _, ok := t.seen[pkey{p.pid, p.start}]; ok && !p.zombie && p.pid > 1 {
 			t.live = append(t.live, p)
 		}
 	}
@@ -86,7 +93,7 @@ func (t *tracker) sweep() (killed []Survivor) {
 			if p.pgid > 1 && p.pgid != syscall.Getpgrp() {
 				_ = syscall.Kill(-p.pgid, syscall.SIGKILL) // an unseen child left in a tracked process's group
 			}
-			if k := (pkey{p.pid, p.start}); syscall.Kill(p.pid, syscall.SIGKILL) == nil && !done[k] {
+			if k := (pkey{p.pid, p.start}); p.pid > 1 && p.pid != t.self && syscall.Kill(p.pid, syscall.SIGKILL) == nil && !done[k] {
 				done[k] = true
 				killed = append(killed, Survivor{p.pid, p.comm})
 			}
