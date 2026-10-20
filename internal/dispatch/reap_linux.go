@@ -31,9 +31,10 @@ func procTable() (tab []proc, err error) {
 		if perr != nil || rerr != nil || open < 0 || end < open {
 			continue
 		}
-		if f := strings.Fields(s[end+1:]); len(f) > 19 { // state ppid ..., starttime is f[19]
+		if f := strings.Fields(s[end+1:]); len(f) > 19 { // state ppid pgrp ..., starttime is f[19]
 			ppid, _ := strconv.Atoi(f[1])
-			tab = append(tab, proc{pid: pid, ppid: ppid, start: f[19], comm: s[open+1 : end], zombie: f[0] == "Z"})
+			pgid, _ := strconv.Atoi(f[2])
+			tab = append(tab, proc{pid: pid, ppid: ppid, pgid: pgid, start: f[19], comm: s[open+1 : end], zombie: f[0] == "Z"})
 		}
 	}
 	return tab, err

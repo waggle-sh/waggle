@@ -525,18 +525,27 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 	}
 	tctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	var wg sync.WaitGroup
-	wg.Add(1)
+	// A renewal that has started finishes (it may be mid-write) but is bounded;
+	// none starts once the session or the leader is over, and the sweep waits.
+	renewed := make(chan struct{})
 	go func() {
-		defer wg.Done()
+		defer close(renewed)
 		t := time.NewTicker(every)
 		defer t.Stop()
 		for {
 			select {
 			case <-tctx.Done():
 				return
+			case <-exited:
+				return
 			case <-t.C:
-				if e := renew(context.WithoutCancel(tctx)); e != nil && tctx.Err() == nil && len(s.Warnings) < 10 {
+				if tctx.Err() != nil {
+					return
+				}
+				rctx, rcancel := context.WithTimeout(context.WithoutCancel(tctx), renewBound)
+				e := renew(rctx)
+				rcancel()
+				if e != nil && tctx.Err() == nil && len(s.Warnings) < 10 {
 					s.Warnings = append(s.Warnings, "claim_renew_failed: "+e.Error())
 				}
 			}
@@ -565,6 +574,7 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 		defer close(swept)
 		<-exited
 		<-tracked
+		<-renewed
 		s.Survivors = tr.sweep()
 		select {
 		case <-collected:
@@ -577,7 +587,7 @@ func runSession(ctx context.Context, d Deps, cs CellSpec, spec runtime.LaunchSpe
 	s.RunResult, err = rt.Collect(tctx, tp, runtime.Limits{MaxTokens: rt.Config().MaxTokens}, stop)
 	close(collected)
 	cancel()
-	wg.Wait()
+	<-renewed
 	select {
 	case <-exited:
 	default:
