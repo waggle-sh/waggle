@@ -25,11 +25,10 @@ type CleanRequest struct {
 
 // Clean removes what a failed or tainted run left: the worktree and its
 // registration, the tainted marker, the takeover guard and the run lock. It
-// runs under dispatch.lock, because a prune inside another run's snapshot-to-
-// check window moves admin entries that run checks. It never deletes a branch,
-// touches a claim ref or changes host-files.json. Two admin entries naming one
-// worktree stop it with nothing removed: a prune would drop the higher id, which
-// can be a live run's.
+// removes only the given ticket's own entries and never prunes repo-wide (D-202):
+// a prune would drop other tickets' entries. It runs under dispatch.lock. It
+// never deletes a branch, touches a claim ref or changes host-files.json. Two
+// admin entries naming one worktree stop it with nothing removed.
 func Clean(ctx context.Context, r CleanRequest, out io.Writer) error {
 	id, err := comb.ParseTicketID(r.Ticket)
 	roles := []string{"builder", "forager", "guard"}
@@ -83,7 +82,10 @@ type cleaner struct {
 
 func (c *cleaner) role(ctx context.Context, wt string) error {
 	if !slices.ContainsFunc([]string{wt, wt + ".lock", wt + ".tainted", wt + ".lock.takeover"}, func(p string) bool { _, e := os.Lstat(p); return e == nil }) {
-		return nil
+		entry, err := c.entryFor(c.wants(wt))
+		if entry == "" && err == nil {
+			return nil
+		}
 	}
 	rel, _ := filepath.Rel(c.repo, wt)
 	warns, err := takeLock(wt+".lock", time.Now())
@@ -94,30 +96,39 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 	for _, w := range warns {
 		fmt.Fprintln(c.out, "warning: "+w)
 	}
-	wants := []string{filepath.Clean(wt)}
-	if _, serr := os.Lstat(wt); serr == nil {
+	wants := c.wants(wt)
+	_, serr := os.Lstat(wt)
+	if serr == nil {
 		real, rerr := filepath.EvalSymlinks(wt)
 		if err = errors.Join(requireRealDir(wt), rerr); err != nil {
 			return failf(ExitEnv, "%w", err)
 		}
 		wants = append(wants, real)
 	}
-	if err = c.noDuplicates(ctx); err != nil {
+	entry, err := c.entryFor(wants)
+	if err != nil {
 		return err
 	}
-	list, err := c.pg.Run(ctx, "worktree", "list", "--porcelain")
-	for _, l := range strings.Split(string(list), "\n") {
-		if p, ok := strings.CutPrefix(l, "worktree "); ok && err == nil && slices.Contains(wants, filepath.Clean(p)) {
-			if _, err = c.pg.Run(ctx, "worktree", "remove", "--force", p); err == nil {
-				fmt.Fprintln(c.out, "removed worktree "+rel)
+	if serr != nil {
+		// the directory is gone: drop its own admin entry, never a repo-wide prune
+		if entry != "" {
+			if err = os.RemoveAll(entry); err != nil {
+				return failf(ExitEnv, "cleaning %s: %w", rel, err)
+			}
+			fmt.Fprintln(c.out, "removed worktree "+rel)
+		}
+	} else {
+		list, lerr := c.pg.Run(ctx, "worktree", "list", "--porcelain")
+		for _, l := range strings.Split(string(list), "\n") {
+			if p, ok := strings.CutPrefix(l, "worktree "); ok && lerr == nil && slices.Contains(wants, filepath.Clean(p)) {
+				if _, lerr = c.pg.Run(ctx, "worktree", "remove", "--force", p); lerr == nil {
+					fmt.Fprintln(c.out, "removed worktree "+rel)
+				}
 			}
 		}
-	}
-	if err == nil {
-		_, err = c.pg.Run(ctx, "worktree", "prune")
-	}
-	if err != nil {
-		return failf(ExitEnv, "cleaning %s: %w", rel, err)
+		if lerr != nil {
+			return failf(ExitEnv, "cleaning %s: %w", rel, lerr)
+		}
 	}
 	if b, e := readSmall(wt + ".tainted"); e == nil {
 		fmt.Fprintf(c.out, "tainted by run %s\n", strings.Map(func(r rune) rune {
@@ -135,39 +146,39 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 	return nil
 }
 
-// noDuplicates refuses when an admin entry's gitdir is not a readable regular
-// file, then asks git's own prune dry run (C locale, same pinned env) for
-// duplicate entries: git prunes repository-wide, follows links and folds case
-// its own way, so only git can say which entries it treats as duplicates. A dry
-// run that fails refuses too. Other reasons (a missing worktree) are normal prunes.
-func (c *cleaner) noDuplicates(ctx context.Context) error {
+// wants lists the spellings of the worktree path git may have recorded.
+func (c *cleaner) wants(wt string) []string {
+	w := []string{filepath.Clean(wt)}
+	if real, err := filepath.EvalSymlinks(filepath.Dir(wt)); err == nil {
+		w = append(w, filepath.Join(real, filepath.Base(wt)))
+	}
+	return w
+}
+
+// entryFor returns the admin directory whose gitdir names one of the worktree
+// paths, "" when none does. A symlinked entry or a gitdir that is not a small
+// regular file refuses, and so do two entries naming the same worktree (exit 3,
+// nothing removed): clean cannot tell which one is live.
+func (c *cleaner) entryFor(wants []string) (string, error) {
 	root := filepath.Join(c.common, "worktrees")
 	ents, _ := os.ReadDir(root)
+	var found []string
 	for _, e := range ents {
-		_, err := readSmall(filepath.Join(root, e.Name(), "gitdir"))
-		if e.Type().IsRegular() || e.IsDir() && errors.Is(err, fs.ErrNotExist) { // git prunes a stray file, or a gitdir-less entry unless it is locked
+		b, err := readSmall(filepath.Join(root, e.Name(), "gitdir"))
+		if e.Type().IsRegular() || e.IsDir() && errors.Is(err, fs.ErrNotExist) { // a stray file or a gitdir-less entry names no worktree
 			continue
 		}
 		if err != nil || !e.IsDir() {
-			return failf(ExitEnv, "worktrees/%s has no readable gitdir; nothing was removed", e.Name())
+			return "", failf(ExitEnv, "worktrees/%s has no readable gitdir; nothing was removed", e.Name())
+		}
+		if g, ok := strings.CutSuffix(filepath.Clean(strings.TrimSpace(string(b))), string(filepath.Separator)+".git"); ok && slices.Contains(wants, g) {
+			found = append(found, filepath.Join(root, e.Name()))
 		}
 	}
-	dry := *c.pg
-	dry.CLocale = true
-	b, err := dry.Run(ctx, "worktree", "prune", "--dry-run", "-v")
-	if err != nil {
-		return failf(ExitEnv, "%w; nothing was removed", err)
+	if len(found) > 1 {
+		return "", failf(ExitEnv, "%d worktree entries name %s; nothing was removed", len(found), wants[0])
 	}
-	var dups []string
-	for _, l := range strings.Split(string(b), "\n") {
-		if n, ok := strings.CutSuffix(strings.TrimSpace(l), ": duplicate entry"); ok && strings.HasPrefix(n, "Removing ") {
-			dups = append(dups, strings.TrimPrefix(n, "Removing "))
-		}
-	}
-	if len(dups) > 0 {
-		return failf(ExitEnv, "git sees duplicate worktree entries (%s); nothing was removed", strings.Join(dups, ", "))
-	}
-	return nil
+	return strings.Join(found, ""), nil
 }
 
 // runs removes the ticket's run records for the roles, never following a link.
