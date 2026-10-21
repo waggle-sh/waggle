@@ -122,10 +122,10 @@ func checkHostRecord(ctx context.Context, pg *Git, dir, common string) error {
 		err = json.Unmarshal(data, &rec)
 	}
 	if err != nil {
-		return failf(ExitEnv, "%s is unreadable (%v); inspect the host files, then delete it", hostRecordName, err)
+		return failf(ExitEnv, "%s is unreadable (%v); inspect the host files, then run waggle dispatch clean --host-record", hostRecordName, err)
 	}
 	if keys := diffKeys(rec.Files, recordFiles(hostFiles(common, ""), configKeys(ctx, pg, common))); len(keys) > 0 {
-		return failf(ExitEnv, "host files changed since run %s: %s; inspect them, then delete %s", rec.Run, strings.Join(keys, ", "), hostRecordName)
+		return failf(ExitEnv, "host files changed since run %s: %s; inspect them, then run waggle dispatch clean --host-record", rec.Run, strings.Join(keys, ", "))
 	}
 	return nil
 }

@@ -22,7 +22,7 @@ func TestWorkerLeadsOwnSession(t *testing.T) {
 	}
 	b, _ := os.ReadFile(out)
 	got := strings.Fields(string(b)) // sid, leader pid, setpgid-EPERM
-	if len(got) != 3 || got[2] != "true" || (got[0] != "-1" && got[0] != got[1]) || got[0] == strconv.Itoa(getsid()) {
+	if len(got) != 3 || got[2] != "true" || (got[0] != "-1" && got[0] != got[1]) || getsid() != -1 && got[0] == strconv.Itoa(getsid()) {
 		t.Fatalf("helper reported %q (test session %d)", b, getsid())
 	}
 }

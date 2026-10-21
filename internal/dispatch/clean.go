@@ -12,7 +12,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/waggle-sh/waggle/internal/comb"
 )
@@ -40,50 +39,63 @@ func Clean(ctx context.Context, r CleanRequest, out io.Writer) error {
 	case r.Role != "":
 		roles = []string{r.Role}
 	}
-	repo, err := filepath.Abs(r.RepoDir)
-	if err != nil {
-		return failf(ExitEnv, "%w", err)
-	}
-	pg := (&Git{Bin: r.GitBin, Dir: repo}).pinned()
-	b, err := pg.Run(ctx, "rev-parse", "--path-format=absolute", "--git-common-dir")
-	if err != nil {
-		return failf(ExitEnv, "%w", err)
-	}
-	dir, err := worktreesDir(repo) // after rev-parse: a non-repo must not gain .waggle/worktrees
+	repo, pg, common, dir, release, err := lockRepo(ctx, r.RepoDir, r.GitBin, out)
 	if err != nil {
 		return err
 	}
-	lock := filepath.Join(dir, "dispatch.lock")
-	warns, err := takeLock(lock, time.Now())
-	if err != nil {
-		return failf(ExitEnv, "a dispatch run is in progress in this repo: %w", err)
-	}
-	defer os.Remove(lock)
-	c := &cleaner{repo: repo, common: strings.TrimSpace(string(b)), pg: pg, out: out}
-	for _, w := range warns {
-		fmt.Fprintln(out, "warning: "+w)
-	}
+	defer release()
+	c := &cleaner{repo: repo, common: common, pg: pg, out: out}
 	for _, role := range roles {
 		if err = c.role(ctx, filepath.Join(dir, id+"-"+role)); err != nil {
 			return err
 		}
 	}
 	if r.Runs {
-		return c.runs(filepath.Join(dir, "runs"), id, roles)
+		err = c.runs(filepath.Join(dir, "runs"), id, roles)
 	}
-	return nil
+	if !c.did && err == nil {
+		fmt.Fprintln(out, "nothing to clean for "+r.Ticket)
+	}
+	return err
+}
+
+// lockRepo resolves the repo and takes dispatch.lock, after the pinned
+// rev-parse so a non-repo gains no .waggle/worktrees. Held: exit 3.
+func lockRepo(ctx context.Context, repoDir, gitBin string, out io.Writer) (repo string, pg *Git, common, dir string, release func(), err error) {
+	if repo, err = filepath.Abs(repoDir); err != nil {
+		return "", nil, "", "", nil, failf(ExitEnv, "%w", err)
+	}
+	pg = (&Git{Bin: gitBin, Dir: repo}).pinned()
+	b, err := pg.Run(ctx, "rev-parse", "--path-format=absolute", "--git-common-dir")
+	if err != nil {
+		return "", nil, "", "", nil, failf(ExitEnv, "%w", err)
+	}
+	if dir, err = worktreesDir(repo); err != nil {
+		return "", nil, "", "", nil, err
+	}
+	lock := filepath.Join(dir, "dispatch.lock")
+	warns, err := takeLock(lock, time.Now())
+	if err != nil {
+		return "", nil, "", "", nil, failf(ExitEnv, "a dispatch run is in progress in this repo: %w", err)
+	}
+	for _, w := range warns {
+		fmt.Fprintln(out, "warning: "+w)
+	}
+	return repo, pg, strings.TrimSpace(string(b)), dir, func() { os.Remove(lock) }, nil
 }
 
 type cleaner struct {
 	repo, common string
 	pg           *Git
 	out          io.Writer
+	did          bool // something was cleaned or reported
 }
 
 func (c *cleaner) role(ctx context.Context, wt string) error {
 	if e, err := c.entryFor(c.wants(wt)); e == "" && err == nil && !slices.ContainsFunc([]string{wt, wt + ".lock", wt + ".tainted", wt + ".lock.takeover"}, func(p string) bool { _, e := os.Lstat(p); return e == nil }) {
 		return nil
 	}
+	c.did = true
 	rel, _ := filepath.Rel(c.repo, wt)
 	warns, err := takeLock(wt+".lock", time.Now())
 	if err != nil {
@@ -108,8 +120,10 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 	}
 	if serr == nil {
 		list, lerr := c.pg.Run(ctx, "worktree", "list", "--porcelain")
+		listed := false
 		for _, l := range strings.Split(string(list), "\n") {
 			if p, ok := strings.CutPrefix(l, "worktree "); ok && lerr == nil && slices.Contains(wants, filepath.Clean(p)) {
+				listed = true
 				if _, lerr = c.pg.Run(ctx, "worktree", "remove", "--force", p); lerr == nil {
 					fmt.Fprintln(c.out, "removed worktree "+rel)
 				}
@@ -118,19 +132,19 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 		if lerr != nil {
 			return failf(ExitEnv, "cleaning %s: %w", rel, lerr)
 		}
+		if !listed { // a plain directory or a mis-cased --repo: keep the taint markers
+			return failf(ExitEnv, "%s is not a registered worktree of this repo; nothing was removed", rel)
+		}
 	} else if entry != "" { // the directory is gone: drop its own admin entry, never a repo-wide prune
 		if err = os.RemoveAll(entry); err != nil {
 			return failf(ExitEnv, "cleaning %s: %w", rel, err)
 		}
 		fmt.Fprintln(c.out, "removed worktree "+rel)
+	} else {
+		fmt.Fprintln(c.out, "no worktree entry for "+rel)
 	}
 	if b, e := readSmall(wt + ".tainted"); e == nil {
-		fmt.Fprintf(c.out, "tainted by run %s\n", strings.Map(func(r rune) rune {
-			if unicode.IsControl(r) {
-				return -1
-			}
-			return r
-		}, string(b[:min(len(b), 100)])))
+		fmt.Fprintf(c.out, "tainted by run %s\n", printable(string(b)))
 	}
 	for _, p := range []string{wt + ".tainted", wt + ".lock.takeover"} {
 		if err = os.Remove(p); err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -192,6 +206,7 @@ func (c *cleaner) runs(root, id string, roles []string) error {
 	for _, e := range ents {
 		if re.MatchString(e.Name()) {
 			err = errors.Join(err, os.RemoveAll(filepath.Join(root, e.Name())))
+			c.did = true
 			fmt.Fprintln(c.out, "removed run record "+e.Name())
 		}
 	}
