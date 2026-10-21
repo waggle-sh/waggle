@@ -1,0 +1,53 @@
+#!/bin/sh
+# fable confirm5 probes: entryFor matching against git 2.54's written gitdir spellings. Git only, no signals.
+W="$1"; B="$W/.fable-probe/waggle"; P="$W/.fable-probe"
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+mk() { rm -rf "$P/$1"; mkdir -p "$P/$1"; git -C "$P/$1" init -q -b main; git -C "$P/$1" -c user.name=x -c user.email=x@x commit -q --allow-empty -m init; mkdir -p "$P/$1/.waggle/worktrees"; }
+show() { echo "  entries: $(ls "$P/$1/.git/worktrees" 2>/dev/null | tr '\n' ' ')"; }
+
+echo "=== P-A: worktree.useRelativePaths=true, worktree gone"
+mk A; git -C "$P/A" config worktree.useRelativePaths true
+git -C "$P/A" worktree add -q -b t-023 "$P/A/.waggle/worktrees/T-023-builder" main
+echo "  gitdir file: $(cat "$P/A/.git/worktrees/T-023-builder/gitdir")"
+rm -rf "$P/A/.waggle/worktrees/T-023-builder"
+"$B" dispatch clean 23 --repo "$P/A"; echo "  clean exit $?"; show A
+echo "  keeper re-add without prune:"; git -C "$P/A" worktree add -q "$P/A/.waggle/worktrees/T-023-builder" t-023 2>&1 | sed 's/^/    /'; echo "  add exit $?"
+
+echo "=== P-A2: useRelativePaths=true, worktree present"
+mk A2; git -C "$P/A2" config worktree.useRelativePaths true
+git -C "$P/A2" worktree add -q -b t-023 "$P/A2/.waggle/worktrees/T-023-builder" main
+"$B" dispatch clean 23 --repo "$P/A2"; echo "  clean exit $?"; show A2; [ -e "$P/A2/.waggle/worktrees/T-023-builder" ] && echo "  tree still there" || echo "  tree gone"
+
+echo "=== P-B: repo reached through a symlinked parent, absolute gitdir, worktree gone (same mechanism as /var vs /private/var)"
+mk B; ln -sfn "$P/B" "$P/Blink"
+git -C "$P/Blink" worktree add -q -b t-023 "$P/Blink/.waggle/worktrees/T-023-builder" main
+echo "  gitdir file: $(cat "$P/B/.git/worktrees/T-023-builder/gitdir")"
+rm -rf "$P/B/.waggle/worktrees/T-023-builder"
+"$B" dispatch clean 23 --repo "$P/Blink"; echo "  clean exit $?"; show B
+
+echo "=== P-B2: same, worktree added via the real path, cleaned via the link, worktree gone"
+mk B2; ln -sfn "$P/B2" "$P/B2link"
+git -C "$P/B2" worktree add -q -b t-023 "$P/B2/.waggle/worktrees/T-023-builder" main
+rm -rf "$P/B2/.waggle/worktrees/T-023-builder"
+"$B" dispatch clean 23 --repo "$P/B2link"; echo "  clean exit $?"; show B2
+
+echo "=== P-C: repo under a symlinked parent, useRelativePaths=true, worktree gone (both at once)"
+mk C; ln -sfn "$P/C" "$P/Clink"; git -C "$P/C" config worktree.useRelativePaths true
+git -C "$P/Clink" worktree add -q -b t-023 "$P/Clink/.waggle/worktrees/T-023-builder" main
+echo "  gitdir file: $(cat "$P/C/.git/worktrees/T-023-builder/gitdir")"
+rm -rf "$P/C/.waggle/worktrees/T-023-builder"
+"$B" dispatch clean 23 --repo "$P/Clink"; echo "  clean exit $?"; show C
+
+echo "=== P-D: --repo spelled with a different case (macOS case-insensitive), worktree present"
+mk D
+git -C "$P/D" worktree add -q -b t-023 "$P/D/.waggle/worktrees/T-023-builder" main
+UP="$(dirname "$P")/$(basename "$P" | tr 'a-z' 'A-Z')/D"
+if [ -d "$UP" ]; then "$B" dispatch clean 23 --repo "$UP"; echo "  clean exit $?"; show D; [ -e "$P/D/.waggle/worktrees/T-023-builder" ] && echo "  tree still there" || echo "  tree gone"; else echo "  case-sensitive fs, skipped"; fi
+
+echo "=== P-E: ordinary: two other tickets, one stale, T-023 gone, absolute gitdirs, plus git's own view after"
+mk E
+for n in 23 24 25; do git -C "$P/E" worktree add -q -b t-0$n "$P/E/.waggle/worktrees/T-0$n-builder" main; done
+rm -rf "$P/E/.waggle/worktrees/T-023-builder" "$P/E/.waggle/worktrees/T-025-builder"
+"$B" dispatch clean 23 --repo "$P/E"; echo "  clean exit $?"; show E
+git -C "$P/E" worktree list | sed 's/^/  /'
+git -C "$P/E/.waggle/worktrees/T-024-builder" status --short >/dev/null && echo "  T-024 usable"

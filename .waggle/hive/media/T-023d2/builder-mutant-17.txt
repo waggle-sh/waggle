@@ -1,0 +1,7 @@
++ GOOS=linux go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestCleanRefusesDuplicateEntries' -test.v
+=== RUN   TestCleanRefusesDuplicateEntries
+    clean_test.go:136: out "removed worktree .waggle/worktrees/T-023-builder\n" err cleaning .waggle/worktrees/T-023-builder: git worktree: exit status 128: fatal: validation failed, cannot remove working tree: '/tmp/TestCleanRefusesDuplicateEntries2251623384/001/repo/.waggle/worktrees/T-023-builder' does not point back to '.git/worktrees/0'
+--- FAIL: TestCleanRefusesDuplicateEntries (0.11s)
+FAIL
+exit: 1

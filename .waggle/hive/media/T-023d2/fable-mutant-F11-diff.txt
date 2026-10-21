@@ -1,0 +1,11 @@
+--- <path> 15:22:31
++++ <path> 15:25:35
+@@ -109,7 +109,7 @@
+ // or has the recorded start time. A table that does not list dispatch (empty,
+ // nil) yields nothing: it would make every leader look absent.
+ func (t *tracker) targets(tab []proc) (pids, groups []int) {
+-	if !slices.ContainsFunc(tab, func(p proc) bool { return p.pid == t.self }) {
++	if false {
+ 		return nil, nil
+ 	}
+ 	for _, p := range t.live {

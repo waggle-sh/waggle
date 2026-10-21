@@ -1,0 +1,10 @@
+ok  	github.com/waggle-sh/waggle/cmd/waggle	17.375s
+ok  	github.com/waggle-sh/waggle/internal/comb	29.911s
+ok  	github.com/waggle-sh/waggle/internal/config	1.419s
+ok  	github.com/waggle-sh/waggle/internal/decisions	3.746s
+ok  	github.com/waggle-sh/waggle/internal/dispatch	186.895s
+ok  	github.com/waggle-sh/waggle/internal/forge	11.950s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	5.425s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	11.010s
+ok  	github.com/waggle-sh/waggle/internal/usage	1.202s

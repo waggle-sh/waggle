@@ -1,0 +1,55 @@
+# Opus D2 confirmation 2 at 2d1a1b3 (host macOS, APFS case-insensitive, git only, no process signalled).
+# waggle built from 2d1a1b3. Each case is a fresh repo with T-023 and T-024 builder worktrees, then `waggle dispatch clean 23 --repo .`.
+# Helpers (setup, report, run) are those of opus-confirm-clean-probes.txt; plant() writes worktrees/0/gitdir as
+# `sed EXPR T-024-builder/gitdir` and copies T-024's HEAD and commondir beside it.
+# Cases:
+#   P-c   gitdir: .../worktrees/t-024-builder/.git                 (letter case of the leaf dir)
+#   P-c2  gitdir: .../.WAGGLE/WORKTREES/T-024-BUILDER/.GIT          (all upper-cased below the repo root)
+#   P-c3  gitdir: .../worktrees/T-024-builder/.GIT                  (suffix only)
+#   P-c4  gitdir: .../.WAGGLE/WORKTREES/T-024-BUILDER/.git          (dirs only, suffix kept)
+#   P-c5  gitdir: .../worktrees/T-024-builder/.Git
+#   H-3   touch worktrees/.DS_Store
+#   H-4   mkdir worktrees/half
+#   H-4b  mkdir worktrees/0 with T-024's HEAD and commondir, no gitdir
+#   S-1   ln -s T-024-builder worktrees/ln ; S-1b ln -s f worktrees/ln (f a regular file) ; S-1c ln -s nowhere worktrees/ln
+#   S-2   worktrees/0/gitdir -> nowhere (dangling link)
+#   S-3   cp -R T-024-builder worktrees/0; chmod 000 worktrees/0/gitdir
+#   S-4   cp -R T-024-builder worktrees/0; 8192 newlines appended to gitdir (over maxSmall 4096)
+#   S-5   cp -R T-024-builder worktrees/0; chmod 000 worktrees/0
+#   S-6   mkdir -p worktrees/0/gitdir
+#   S-7   mkfifo worktrees/p
+# Output:
+== P-c   core.ignorecase=true
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/c/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable | T-023 present
+== P-c2
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0 | admin after: 0 | T-024 worktree BROKEN | T-023 removed
+== P-c3
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0 | admin after: 0 | T-024 worktree BROKEN
+== P-c4
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/c4/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== P-c5
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0 | admin after: 0 | T-024 worktree BROKEN
+== H-3
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0 | admin after: T-024-builder | T-024 usable | T-023 removed
+== H-4
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0 | admin after: T-024-builder | T-024 usable | T-023 removed
+== H-4b
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0 | admin after: T-024-builder | T-024 usable | T-023 removed
+== S-1   waggle dispatch: worktrees/ln has no readable gitdir; nothing was removed | exit 3 | admin after: ln T-023-builder T-024-builder | T-024 usable
+== S-1b  waggle dispatch: worktrees/ln has no readable gitdir; nothing was removed | exit 3 | admin after: f ln T-023-builder T-024-builder | T-024 usable
+== S-1c  waggle dispatch: worktrees/ln has no readable gitdir; nothing was removed | exit 3 | admin after: ln T-023-builder T-024-builder | T-024 usable
+== S-2   waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed | exit 3 | T-024 usable
+== S-3   waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed | exit 3 | T-024 usable
+== S-4   waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed | exit 3 | T-024 usable
+== S-5   waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed | exit 3 | T-024 usable
+== S-6   waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed | exit 3 | T-024 usable
+== S-7   waggle dispatch: worktrees/p has no readable gitdir; nothing was removed | exit 3 | T-024 usable
+git version 2.54.0 (Apple Git-157)

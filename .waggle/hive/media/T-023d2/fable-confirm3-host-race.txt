@@ -1,0 +1,4 @@
+# go test -race ./internal/dispatch/... ./cmd/... on the host at ddccd51 (committed tree)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	186.190s
+ok  	github.com/waggle-sh/waggle/cmd/waggle	17.300s
+exit 0
