@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -127,17 +126,6 @@ func TestCleanRunsOnlyMatching(t *testing.T) {
 	}
 }
 
-// Two admin entries naming one worktree: exit 3, naming both, nothing removed.
-func TestCleanRefusesDuplicateEntries(t *testing.T) {
-	f, wt := cleanRepo(t, false)
-	real, _ := filepath.EvalSymlinks(wt)
-	write(t, f.common(), "worktrees/0/gitdir", real+"/.git\n")
-	out, err := doClean(f, "", false)
-	if code(err) != ExitEnv || err == nil || !strings.Contains(err.Error(), "duplicate worktree entries") || !exists(wt) || !exists(filepath.Join(f.common(), "worktrees/0")) || !exists(filepath.Join(f.common(), "worktrees/T-023-builder")) {
-		t.Fatalf("out %q err %v", out, err)
-	}
-}
-
 // Every git call runs pinned: the Keeper's global config must not reach it.
 func TestCleanGitCallsArePinned(t *testing.T) {
 	f, wt := cleanRepo(t, false)
@@ -161,68 +149,92 @@ func TestCleanGitCallsArePinned(t *testing.T) {
 	}
 }
 
-// Opus probes: a planted entry copying another ticket's, and a planted entry
-// whose gitdir is a link to the real one. Both exit 3 with nothing removed.
-func TestCleanRefusesForeignDuplicateAndLinkedGitdir(t *testing.T) {
-	for _, mode := range []string{"copy", "link", "case", "GIT", "Git", "upper", "parent", "relative"} {
-		link := mode == "link"
+// nameTwice plants admin entry 0 whose gitdir names the worktree wt.
+func nameTwice(t *testing.T, f *fixture, wt string) {
+	t.Helper()
+	real, _ := filepath.EvalSymlinks(wt)
+	write(t, f.common(), "worktrees/0/gitdir", real+"/.git\n")
+}
+
+// Two admin entries naming one worktree: exit 3, nothing removed, whether the
+// worktree directory exists or is gone.
+func TestCleanRefusesAmbiguousEntries(t *testing.T) {
+	for _, gone := range []bool{false, true} {
 		f, wt := cleanRepo(t, false)
-		other := filepath.Join(f.real, ".waggle/worktrees/T-024-builder")
-		f.git("worktree", "add", "-q", "-b", "t-024", other, "main")
-		src := filepath.Join(f.common(), "worktrees/T-024-builder/gitdir")
-		if link {
-			src = filepath.Join(f.common(), "worktrees/T-023-builder/gitdir")
-			if err := os.MkdirAll(filepath.Join(f.common(), "worktrees/0"), 0o755); err != nil || os.Symlink(src, filepath.Join(f.common(), "worktrees/0/gitdir")) != nil {
-				t.Fatal("cannot plant the link")
+		nameTwice(t, f, wt)
+		if gone {
+			if err := os.RemoveAll(wt); err != nil {
+				t.Fatal(err)
 			}
-		} else {
-			b, _ := os.ReadFile(src)
-			g := strings.TrimSpace(string(b)) // git folds case under core.ignorecase, the macOS default
-			switch mode {
-			case "case":
-				g = strings.Replace(g, "T-024-builder", "t-024-builder", 1)
-			case "GIT", "Git":
-				g = strings.TrimSuffix(g, ".git") + "." + mode
-			case "upper":
-				g = strings.ToUpper(g)
-			case "parent":
-				ln := filepath.Join(t.TempDir(), "ln")
-				if os.Symlink(filepath.Dir(filepath.Dir(g)), ln) != nil {
-					t.Fatal("cannot plant the parent link")
-				}
-				g = filepath.Join(ln, "T-024-builder", ".git")
-			}
-			if mode == "relative" { // fable P11/P12: a relative gitdir through a link, spelled for git's own resolution
-				if os.MkdirAll(filepath.Join(f.real, "Z"), 0o755) != nil || os.Symlink(other, filepath.Join(f.real, "Z/X")) != nil {
-					t.Fatal("cannot plant the relative link")
-				}
-				g = "../../../Z/X/../T-024-builder/.git"
-			} else if _, serr := os.Stat(filepath.Dir(g)); serr != nil {
-				continue // a case-sensitive filesystem cannot spell the same directory two ways
-			}
-			b = []byte(g + "\n")
-			write(t, f.common(), "worktrees/0/gitdir", string(b))
 		}
-		// the link mode is refused by the gitdir check, the others where git's own dry run sees a duplicate
-		dup := link || strings.Contains(f.git("worktree", "prune", "-n", "-v"), "duplicate entry")
 		out, err := doClean(f, "", false)
-		if !dup {
-			t.Logf("%s: git's dry run reports no duplicate on this filesystem", mode)
-			if err != nil || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-024-builder")) {
-				t.Fatalf("%s: T-024 was touched: out %q err %v", mode, out, err)
-			}
-			continue
-		}
-		if code(err) != ExitEnv || err == nil || !exists(wt) || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-023-builder")) || !exists(filepath.Join(f.common(), "worktrees/T-024-builder")) || strings.Contains(out, "removed") {
-			t.Fatalf("%s: out %q err %v", mode, out, err)
+		if code(err) != ExitEnv || err == nil || strings.Contains(out, "removed") || !exists(filepath.Join(f.common(), "worktrees/0")) || !exists(filepath.Join(f.common(), "worktrees/T-023-builder")) || gone == exists(wt) {
+			t.Fatalf("gone %v: out %q err %v", gone, out, err)
 		}
 	}
 }
 
-// A healthy repo, including relative worktree paths (fable P14) and a prunable
-// entry whose directory is gone, cleans with exit 0; git's other prune reasons
-// are not duplicates.
-func TestCleanHealthyRepoWithRelativeAndPrunableEntries(t *testing.T) {
+// Planted entries that copy or alias another ticket's (D-202): clean never
+// prunes, so they stay as planted and T-024's entry and worktree stay usable.
+func TestCleanLeavesPlantedEntriesAlone(t *testing.T) {
+	for _, mode := range []string{"copy", "case", "GIT", "upper", "parent", "relative"} {
+		f, wt := cleanRepo(t, false)
+		other := filepath.Join(f.real, ".waggle/worktrees/T-024-builder")
+		f.git("worktree", "add", "-q", "-b", "t-024", other, "main")
+		b, _ := os.ReadFile(filepath.Join(f.common(), "worktrees/T-024-builder/gitdir"))
+		g := strings.TrimSpace(string(b))
+		switch mode {
+		case "case":
+			g = strings.Replace(g, "T-024-builder", "t-024-builder", 1)
+		case "GIT":
+			g = strings.TrimSuffix(g, ".git") + ".GIT"
+		case "upper":
+			g = strings.ToUpper(g)
+		case "parent":
+			ln := filepath.Join(t.TempDir(), "ln")
+			if os.Symlink(filepath.Dir(filepath.Dir(g)), ln) != nil {
+				t.Fatal("cannot plant the parent link")
+			}
+			g = filepath.Join(ln, "T-024-builder", ".git")
+		case "relative":
+			if os.MkdirAll(filepath.Join(f.real, "Z"), 0o755) != nil || os.Symlink(other, filepath.Join(f.real, "Z/X")) != nil {
+				t.Fatal("cannot plant the relative link")
+			}
+			g = "../../../Z/X/../T-024-builder/.git"
+		}
+		write(t, f.common(), "worktrees/0/gitdir", g+"\n")
+		out, err := doClean(f, "", false)
+		if err != nil || exists(wt) || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/0/gitdir")) || !exists(filepath.Join(f.common(), "worktrees/T-024-builder/gitdir")) {
+			t.Fatalf("%s: out %q err %v", mode, out, err)
+		}
+		if _, err := (&Git{Dir: other}).Run(context.Background(), "status"); err != nil {
+			t.Fatalf("%s: T-024 is not usable: %v", mode, err)
+		}
+	}
+}
+
+// A missing T-023 worktree: its own admin entry goes, other tickets' entries
+// (usable and prunable alike) stay.
+func TestCleanMissingWorktreeRemovesOwnEntry(t *testing.T) {
+	eachRepoSpelling(t, func(t *testing.T, link bool) {
+		f, wt := cleanRepo(t, link)
+		other, gone := filepath.Join(f.real, ".waggle/worktrees/T-024-builder"), filepath.Join(f.real, ".waggle/worktrees/T-025-builder")
+		f.git("worktree", "add", "-q", "-b", "t-024", other, "main")
+		f.git("worktree", "add", "-q", "-b", "t-025", gone, "main")
+		if os.RemoveAll(gone) != nil || os.RemoveAll(wt) != nil {
+			t.Fatal("cannot remove the worktrees")
+		}
+		out, err := doClean(f, "", false)
+		w := filepath.Join(f.common(), "worktrees")
+		if err != nil || !strings.Contains(out, "removed worktree") || exists(filepath.Join(w, "T-023-builder")) || !exists(filepath.Join(w, "T-024-builder")) || !exists(filepath.Join(w, "T-025-builder")) || !exists(other) {
+			t.Fatalf("out %q err %v", out, err)
+		}
+	})
+}
+
+// A healthy repo with relative worktree paths and a prunable entry of another
+// ticket cleans with exit 0 and leaves that entry alone.
+func TestCleanKeepsOtherTicketsPrunableEntry(t *testing.T) {
 	f, wt := cleanRepo(t, false)
 	f.git("config", "worktree.useRelativePaths", "true")
 	other, gone := filepath.Join(f.real, ".waggle/worktrees/T-024-builder"), filepath.Join(f.real, ".waggle/worktrees/T-025-builder")
@@ -231,27 +243,19 @@ func TestCleanHealthyRepoWithRelativeAndPrunableEntries(t *testing.T) {
 	if err := os.RemoveAll(gone); err != nil {
 		t.Fatal(err)
 	}
-	if out, err := doClean(f, "", false); err != nil || exists(wt) || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-024-builder")) {
+	if out, err := doClean(f, "", false); err != nil || exists(wt) || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-024-builder")) || !exists(filepath.Join(f.common(), "worktrees/T-025-builder")) {
 		t.Fatalf("out %q err %v", out, err)
 	}
 }
 
-// A prune dry run that fails refuses with nothing removed.
-func TestCleanRefusesFailingDryRun(t *testing.T) {
+// A gitdir that is not a readable regular file (here a link) refuses with exit 3.
+func TestCleanRefusesLinkedGitdir(t *testing.T) {
 	f, wt := cleanRepo(t, false)
-	git, err := exec.LookPath("git")
-	if err != nil {
-		t.Skip("no git")
+	if err := os.MkdirAll(filepath.Join(f.common(), "worktrees/0"), 0o755); err != nil || os.Symlink(filepath.Join(f.common(), "worktrees/T-023-builder/gitdir"), filepath.Join(f.common(), "worktrees/0/gitdir")) != nil {
+		t.Fatal("cannot plant the link")
 	}
-	shim := filepath.Join(t.TempDir(), "git")
-	body := "#!/bin/sh\nfor a in \"$@\"; do [ \"$a\" = --dry-run ] && exit 1; done\nexec " + git + " \"$@\"\n"
-	if err := os.WriteFile(shim, []byte(body), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	var out bytes.Buffer
-	err = Clean(context.Background(), CleanRequest{RepoDir: f.repo, GitBin: shim, Ticket: "23"}, &out)
-	if code(err) != ExitEnv || err == nil || !strings.Contains(err.Error(), "nothing was removed") || !exists(wt) || strings.Contains(out.String(), "removed") {
-		t.Fatalf("out %q err %v", out.String(), err)
+	if _, err := doClean(f, "", false); code(err) != ExitEnv || !exists(wt) {
+		t.Fatalf("a linked gitdir: err %v", err)
 	}
 }
 
