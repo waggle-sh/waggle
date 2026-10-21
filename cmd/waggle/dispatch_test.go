@@ -136,3 +136,35 @@ func TestDispatchCLI(t *testing.T) {
 		t.Fatalf("--json output differs from result.json: %v", err)
 	}
 }
+
+// D2-T8: the clean subcommand's exit codes, and no U+2013 or U+2014 in its output.
+func TestDispatchCleanCLI(t *testing.T) {
+	repo := dispatchRepo(t)
+	cases := []struct {
+		name string
+		args []string
+		exit int
+	}{
+		{"nothing to clean", []string{"clean", "23", "--repo", repo}, 0},
+		{"ticket after the flags", []string{"clean", "--repo", repo, "--runs", "23"}, 0},
+		{"usage: no ticket", []string{"clean", "--repo", repo}, 2},
+		{"usage: two tickets", []string{"clean", "23", "24", "--repo", repo}, 2},
+		{"usage: bad ticket", []string{"clean", "x", "--repo", repo}, 2},
+		{"usage: bad role", []string{"clean", "23", "--role", "queen", "--repo", repo}, 2},
+		{"usage: unknown flag", []string{"clean", "23", "--force", "--repo", repo}, 2},
+		{"environment: not a repo", []string{"clean", "23", "--repo", t.TempDir()}, 3},
+	}
+	for _, c := range cases {
+		var out, errb bytes.Buffer
+		if got := runDispatch(c.args, &out, &errb); got != c.exit {
+			t.Fatalf("%s: exit %d, want %d\nstdout: %s\nstderr: %s", c.name, got, c.exit, out.String(), errb.String())
+		}
+		if all := out.String() + errb.String(); strings.ContainsAny(all, "\u2013\u2014") {
+			t.Fatalf("%s: output has an en or em dash: %s", c.name, all)
+		}
+	}
+	var out, errb bytes.Buffer
+	if runDispatch([]string{"--help"}, &out, &errb); !strings.Contains(errb.String(), "waggle dispatch clean <ticket>") {
+		t.Fatalf("usage does not list clean: %s", errb.String())
+	}
+}

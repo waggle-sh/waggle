@@ -8,7 +8,9 @@ import (
 )
 
 func ownGroup(cmd *exec.Cmd) error {
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	// A new session and a group led by the worker: setpgid cannot cross
+	// sessions, so no descendant can join a group of the Keeper's terminal.
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	return nil
 }
 

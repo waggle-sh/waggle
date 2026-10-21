@@ -234,7 +234,16 @@ func TestRunKeepalive(t *testing.T) {
 		f := newFixture(t, false, false)
 		b, _ := claimEnv(t, f.real)
 		cb := &countBackend{ClaimBackend: b, failRenew: fail}
-		res, err := f.run("sleep 1\n"+okScenario, func(_ *Request, d *Deps) { d.Backend, d.KeepaliveEvery = cb, 100*time.Millisecond })
+		gate, opened := filepath.Join(t.TempDir(), "gate"), make(chan struct{})
+		go func() { // the worker is held until three leases were written, at most 20 s
+			defer close(opened)
+			for end := time.Now().Add(20 * time.Second); cb.leases.Load() < 3 && time.Now().Before(end); time.Sleep(20 * time.Millisecond) {
+			}
+			_ = os.WriteFile(gate, nil, 0o644)
+		}()
+		hold := "i=0; while [ ! -e '" + gate + "' ] && [ $i -lt 250 ]; do sleep 0.1; i=$((i+1)); done\n"
+		res, err := f.run(hold+okScenario, func(_ *Request, d *Deps) { d.Backend, d.KeepaliveEvery = cb, 100*time.Millisecond })
+		<-opened
 		if err != nil || res.ExitCode != 0 || cb.leases.Load() < 3 {
 			t.Fatalf("fail=%v: exit %d leases %d err %v v=%v w=%v", fail, res.ExitCode, cb.leases.Load(), err, res.Violations, res.Warnings)
 		}

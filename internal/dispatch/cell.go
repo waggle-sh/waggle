@@ -47,7 +47,7 @@ var NotEnforced = []string{
 	"writes outside the repo (not detected), including the system gitconfig (user-writable with Homebrew git) and ~/.ssh/config (ProxyCommand, Match exec), which the host push reads",
 	"code run by allowed build and test commands (test files, go test -exec) is not confined",
 	"new or changed files in the main checkout that a .gitignore covers are not detected, including a .gitignore the agent writes there (.claude/settings.local.json, .waggle/control/local.yaml, a self-ignoring directory)",
-	"a process that leaves the worker's process group (setsid) is found by polling the process tree and killed after the worker exits; on linux the subreaper catches every orphan, on other unix systems no tracker runs and only the worker's own group is killed, on macOS (sysctl read every 25 ms) a background child whose parent exits before the next read, the usual cmd & from a tool shell, escapes until T-024: its hook and config writes are named by the next dispatch's host record, its ref and main-checkout writes are not",
+	"a process that leaves the worker's process group (setsid) is found by polling the process tree and killed after the worker exits; on linux the subreaper catches every orphan, on other unix systems no tracker runs and only the worker's own group is killed, on macOS (sysctl read every 25 ms) a background child escapes until T-024 when its tool shell started and exited between two reads, which is the usual cmd & from a short-lived shell (0 of 20 caught with a shell gone within 5 ms, 20 of 20 with one alive 20 ms), or when it calls setsid or daemonizes before the next read; a child that stays in the group of a tool shell the tracker listed alive is killed by the group sweep: its hook and config writes are named by the next dispatch's host record, its ref and main-checkout writes are not",
 	"an include.path or includeIf naming a file outside the hashed set can change effective config",
 	"during the session, claim renewals run git with the Keeper's environment against agent-writable repo config; a config written and reverted between the hash and a renewal is not caught (the post-run config hash is the backstop)",
 	"push tripwire is best effort: it misses bare relative paths, scp forms without git@, upper-case schemes, <transport>::<address>, pushurl, " +
@@ -61,7 +61,7 @@ var NotEnforced = []string{
 
 type hostCell struct{}
 
-// HostCell returns the v0.1 backend: own process group, adapter environment.
+// HostCell returns the v0.1 backend: own session, adapter environment.
 func HostCell() CellRuntime { return hostCell{} }
 
 func (hostCell) Name() string { return "host" }
