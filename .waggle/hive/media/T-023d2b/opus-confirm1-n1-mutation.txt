@@ -1,0 +1,36 @@
+# N1 mutation at c211ea0: drop the U+2028/U+2029 clause from printable, rerun, restore
+
+## mutation (the mutated blob fb63f0f is exactly the 9244e78 hostrecord.go)
+diff --git a/internal/dispatch/hostrecord.go b/internal/dispatch/hostrecord.go
+index b63c386..fb63f0f 100644
+--- a/internal/dispatch/hostrecord.go
++++ b/internal/dispatch/hostrecord.go
+@@ -105,7 +105,7 @@ func shortState(m map[string]string, k string) string {
+ // printable drops control and format runes (C0, C1, U+202E) and caps s at 100 bytes.
+ func printable(s string) string {
+ 	s = strings.Map(func(r rune) rune {
+-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) || r == ' ' || r == ' ' {
++		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+ 			return -1
+ 		}
+ 		return r
+
+## go test -race -count=1 -run TestHostDigestAndPrintable ./internal/dispatch/ (mutated): exit 1
+--- FAIL: TestHostDigestAndPrintable (0.00s)
+    hostrecord_test.go:76: printable = "abcdef g h"
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.222s
+FAIL
+
+## restored to c211ea0, same command: exit 0
+--- PASS: TestHostDigestAndPrintable (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	1.205s
+
+## test input bytes at hostrecord_test.go:75 (xxd)
+00000020: 635c 7530 3038 3564 e280 ae65 e280 8b66  c\u0085d...e...f
+00000030: e280 a867 e280 a968 5c6e 2229 3b20 676f  ...g...h\n"); go
+Input covers \x00 and \x1b (C0), \u0085 (C1), U+202E and U+200B (Cf),
+U+2028 (e2 80 a8), U+2029 (e2 80 a9) and \n; want "abcdefgh". The cap case,
+strings.Repeat of a 2-byte rune 80 times, still asserts <= 100 bytes with a
+valid prefix. Control and Cf drops and the 100-byte cap are unchanged.
