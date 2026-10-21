@@ -1,0 +1,243 @@
+//go:build unix
+
+package dispatch
+
+// Opus guard probes for T-023 D2b. Uncommitted; git and file only, no Run,
+// no signals, no sweep.
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestOpusAcceptHeldLockWritesNothing(t *testing.T) {
+	f := newFixture(t, false, false)
+	record := recordNow(t, f)
+	f.git("config", "remote.x.url", "y")
+	digest := listedDigest(t, mustOut(t, f))
+	before := read(t, record)
+	lock := filepath.Join(filepath.Dir(record), "dispatch.lock")
+	writeLock(t, lock, os.Getpid())
+	_, err := hostRec(f, digest, true)
+	t.Logf("held lock accept: code %d err %v", code(err), err)
+	if code(err) != ExitEnv || read(t, record) != before {
+		t.Fatal("accept under a held lock wrote or did not exit 3")
+	}
+	os.Remove(lock)
+}
+
+func TestOpusAcceptUnreadableRecords(t *testing.T) {
+	f := newFixture(t, false, false)
+	record := recordNow(t, f)
+	os.WriteFile(record, []byte("{bad1"), 0o600)
+	digest := listedDigest(t, mustOut(t, f))
+	os.WriteFile(record, []byte("{bad2"), 0o600) // a different unreadable record
+	if _, err := hostRec(f, digest, true); code(err) != ExitEnv || read(t, record) != "{bad2" {
+		t.Fatalf("bad JSON swapped: %v", err)
+	}
+	t.Log("bad JSON swapped after listing: refused, bytes kept")
+	// oversize swapped for bad JSON: "other" vs sha of content
+	os.WriteFile(record, bytes.Repeat([]byte(" "), maxHash+1), 0o600)
+	digest = listedDigest(t, mustOut(t, f))
+	os.WriteFile(record, []byte("{bad3"), 0o600)
+	if _, err := hostRec(f, digest, true); code(err) != ExitEnv || read(t, record) != "{bad3" {
+		t.Fatalf("oversize swapped: %v", err)
+	}
+	t.Log("oversize swapped for bad JSON: refused")
+	// Symlink retargeted between listing and accept: both "other".
+	os.Remove(record)
+	os.WriteFile(record+".a", []byte("A"), 0o600)
+	os.WriteFile(record+".b", []byte("B"), 0o600)
+	os.Symlink(record+".a", record)
+	out1 := mustOut(t, f)
+	digest = listedDigest(t, out1)
+	os.Remove(record)
+	os.Symlink(record+".b", record)
+	out2 := mustOut(t, f)
+	t.Logf("symlink retarget: listing identical %v", out1 == out2)
+	out, err := hostRec(f, digest, true)
+	t.Logf("symlink retarget accept: %q %v; targets %q %q", out, err, read(t, record+".a"), read(t, record+".b"))
+	// valid record, accept a digest of an unrelated state (all zeros)
+	recordNow(t, f)
+	f.git("config", "remote.x.url", "q")
+	before := read(t, record)
+	if _, err := hostRec(f, "0000000000000000", true); code(err) != ExitEnv || read(t, record) != before {
+		t.Fatalf("zero digest: %v", err)
+	}
+	t.Log("well-formed but wrong digest: exit 3, bytes kept")
+}
+
+func TestOpusForgedRecordKeysPrintable(t *testing.T) {
+	f := newFixture(t, false, false)
+	record := recordNow(t, f)
+	var rec hostRecord
+	json.Unmarshal([]byte(read(t, record)), &rec)
+	rec.Files["hooks/\x1b]8;;http://x\x07evil⁦‮​ \u0085"+strings.Repeat("A", 200)] = "\x1b[31m‮value-long-long-long"
+	b, _ := json.Marshal(rec)
+	os.WriteFile(record, b, 0o600)
+	write(t, f.common(), "info/\x1b[2Jx⁧y", "z")
+	out := mustOut(t, f)
+	t.Logf("forged listing: %q", out)
+	for _, bad := range []string{"\x1b", "⁦", "⁧", "‮", "​", "\x07", "\u0085"} {
+		if strings.Contains(out, bad) {
+			t.Errorf("output carries %q", bad)
+		}
+	}
+	for _, l := range strings.Split(out, "\n") {
+		k, _, _ := strings.Cut(l, ": recorded")
+		if len(k) > 100 {
+			t.Errorf("key over 100 bytes: %d", len(k))
+		}
+	}
+	if strings.Contains(out, " ") {
+		t.Log("NOTE: U+2028 (Zl) passes printable")
+	}
+}
+
+func TestOpusCleanMisCasedRepo(t *testing.T) {
+	dir, g := newRepo(t)
+	w, err := provisionAt(t, dir, g, "builder", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	os.WriteFile(w.Path+".tainted", []byte("run-1"), 0o600)
+	os.WriteFile(w.Path+".lock.takeover", []byte("x"), 0o600)
+	par := filepath.Dir(dir)
+	up := filepath.Join(filepath.Dir(par), strings.ToUpper(filepath.Base(par)), filepath.Base(dir))
+	if _, err := os.Stat(up); err != nil {
+		t.Skipf("case-sensitive volume: %v", err)
+	}
+	var out bytes.Buffer
+	err = Clean(context.Background(), CleanRequest{RepoDir: up, Ticket: "23"}, &out)
+	t.Logf("mis-cased --repo %s/%s: out %q code %d err %v", filepath.Base(filepath.Dir(up)), filepath.Base(up), out.String(), code(err), err)
+	if code(err) != ExitEnv || !exists(w.Path) || !exists(w.Path+".tainted") || !exists(w.Path+".lock.takeover") {
+		t.Fatal("mis-cased clean removed something or exited 0")
+	}
+	// Then the right case cleans it.
+	out.Reset()
+	if err := Clean(context.Background(), CleanRequest{RepoDir: dir, Ticket: "23"}, &out); err != nil || exists(w.Path) || exists(w.Path+".tainted") {
+		t.Fatalf("right case: %q %v", out.String(), err)
+	}
+	t.Logf("right case: %q", out.String())
+}
+
+func TestOpusCleanPlainDirWithTakeover(t *testing.T) {
+	f := newFixture(t, false, false)
+	wt := filepath.Join(f.real, ".waggle/worktrees/T-023-guard")
+	write(t, wt, "keep.txt", "x")
+	write(t, f.real, ".waggle/worktrees/T-023-guard.tainted", "run-1")
+	write(t, f.real, ".waggle/worktrees/T-023-guard.lock.takeover", "x")
+	out, err := doClean(f, "guard", false)
+	t.Logf("plain dir guard: out %q code %d err %v", out, code(err), err)
+	if code(err) != ExitEnv || !exists(wt+"/keep.txt") || !exists(wt+".tainted") || !exists(wt+".lock.takeover") || exists(wt+".lock") {
+		t.Fatal("plain dir: something removed, lock left, or exit 0")
+	}
+	// Every role: builder has nothing, guard refuses. The refusal must still win.
+	out, err = doClean(f, "", false)
+	t.Logf("plain dir all roles: out %q code %d", out, code(err))
+	if code(err) != ExitEnv || !exists(wt+".tainted") {
+		t.Fatal("all roles: marker gone")
+	}
+}
+
+func TestOpusTraceNoPruneAnywhere(t *testing.T) {
+	dir, g := newRepo(t)
+	trace := filepath.Join(t.TempDir(), "trace")
+	t.Setenv("GIT_TRACE", trace)
+	w24 := filepath.Join(dir, ".waggle/worktrees/T-024-builder")
+	sh(t, dir, "worktree", "add", "-q", "-b", "t-024", w24, "main")
+	os.RemoveAll(w24)
+	os.Truncate(trace, 0)
+	w, err := provisionAt(t, dir, g, "builder", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	os.RemoveAll(w.Path)
+	_, err = provisionAt(t, dir, g, "builder", "")
+	t.Logf("stale own: code %d err %v", code(err), err)
+	var out bytes.Buffer
+	if err := Clean(context.Background(), CleanRequest{RepoDir: dir, Ticket: "23"}, &out); err != nil {
+		t.Fatal(err)
+	}
+	w, err = provisionAt(t, dir, g, "guard", strings.TrimSpace(sh(t, dir, "rev-parse", "HEAD")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	b, _ := os.ReadFile(trace)
+	n := 0
+	for _, l := range strings.Split(string(b), "\n") {
+		if strings.Contains(l, "built-in: git") {
+			n++
+		}
+		if strings.Contains(l, "prune") || strings.Contains(l, " gc") || strings.Contains(l, "maintenance") {
+			t.Errorf("trace line: %s", l)
+		}
+	}
+	t.Logf("trace: %d built-in git calls, worktree add present %v", n, strings.Contains(string(b), "worktree add"))
+	if !exists(filepath.Join(dir, ".git/worktrees/T-024-builder")) {
+		t.Fatal("T-024 stale entry dropped")
+	}
+	t.Log("T-024 stale entry survived provision, clean T-023, guard provision")
+}
+
+func TestOpusHintOnlyWhenPathAbsent(t *testing.T) {
+	dir, g := newRepo(t)
+	// Path exists as a file: refusal without hint.
+	p := filepath.Join(dir, ".waggle/worktrees/T-023-builder")
+	write(t, dir, ".waggle/worktrees/T-023-builder", "x")
+	_, err := provisionAt(t, dir, g, "builder", "")
+	t.Logf("path is a file: %v", err)
+	if err == nil || strings.Contains(err.Error(), "waggle dispatch clean") {
+		t.Error("hint on an existing path")
+	}
+	os.Remove(p)
+	// Plain unregistered directory: reuse path, no hint.
+	os.MkdirAll(p, 0o755)
+	_, err = provisionAt(t, dir, g, "builder", "")
+	t.Logf("plain dir: %v", err)
+	if err != nil && strings.Contains(err.Error(), "if a stale entry") {
+		t.Error("hint on an existing dir")
+	}
+	os.RemoveAll(p)
+	// Branch checked out elsewhere (another stale tree): hint names own ticket.
+	sh(t, dir, "worktree", "add", "-q", filepath.Join(t.TempDir(), "o"), "-b", "t-023", "main")
+	_, err = provisionAt(t, dir, g, "builder", "")
+	t.Logf("branch elsewhere: %v", err)
+}
+
+func TestOpusNoHooksOrEnvConfigInProvision(t *testing.T) {
+	dir, g := newRepo(t)
+	canary := filepath.Join(t.TempDir(), "canary")
+	hookDir := t.TempDir()
+	os.WriteFile(filepath.Join(hookDir, "post-checkout"), []byte("#!/bin/sh\ntouch "+canary+".hook\n"), 0o755)
+	os.WriteFile(filepath.Join(dir, ".git/hooks/post-checkout"), []byte("#!/bin/sh\ntouch "+canary+".localhook\n"), 0o755)
+	write(t, dir, ".gitattributes", "* filter=canary\n")
+	write(t, dir, "f.txt", "c\n")
+	sh(t, dir, "add", "-A")
+	sh(t, dir, "commit", "-q", "-m", "attrs")
+	global := filepath.Join(t.TempDir(), "gitconfig")
+	os.WriteFile(global, []byte("[core]\n\thooksPath = "+hookDir+"\n[filter \"canary\"]\n\tsmudge = \"sh -c 'touch "+canary+".global; cat'\"\n\tprocess = \"sh -c 'touch "+canary+".process; exit 1'\"\n"), 0o644)
+	t.Setenv("GIT_CONFIG_GLOBAL", global)
+	t.Setenv("GIT_CONFIG_COUNT", "1")
+	t.Setenv("GIT_CONFIG_KEY_0", "filter.canary.smudge")
+	t.Setenv("GIT_CONFIG_VALUE_0", "sh -c 'touch "+canary+".env; cat'")
+	t.Setenv("GIT_CONFIG_PARAMETERS", "'filter.canary.clean'='sh -c \"touch "+canary+".params; cat\"'")
+	w, err := provisionAt(t, dir, g, "builder", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	ents, _ := filepath.Glob(canary + "*")
+	t.Logf("canaries written: %v", ents)
+	if len(ents) > 0 {
+		t.Fatal("a hook or filter ran during provision")
+	}
+}

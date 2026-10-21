@@ -1,0 +1,35 @@
+T-023 D2b opus guard checks, branch t-023d2b at 9244e78, base be3d121 (macOS host, git and file only)
+
+go build ./...                                   ok
+go vet ./...                                     ok
+GOOS=windows go vet ./internal/dispatch/ ./cmd/...                 ok
+GOOS=solaris GOARCH=amd64 go vet ./internal/dispatch/ ./cmd/...    ok
+GOOS=illumos GOARCH=amd64 go vet ./internal/dispatch/ ./cmd/...    ok
+go test -race ./internal/dispatch/... ./cmd/...
+  ok  github.com/waggle-sh/waggle/internal/dispatch  202.537s
+  ok  github.com/waggle-sh/waggle/cmd/waggle         16.439s
+
+git diff --numstat be3d121..9244e78
+  17  4  cmd/waggle/dispatch.go
+  19  1  cmd/waggle/dispatch_test.go
+  41 26  internal/dispatch/clean.go
+  32  1  internal/dispatch/clean_test.go
+   2  3  internal/dispatch/guard3_test.go
+ 114  0  internal/dispatch/hostrecord.go
+ 232  0  internal/dispatch/hostrecord_test.go
+   2  2  internal/dispatch/prerun.go
+ 109  0  internal/dispatch/provision_test.go
+   1  1  internal/dispatch/setsid_test.go
+  10  7  internal/dispatch/worktree.go
+Added non-test lines (D-136): 17 + 41 + 114 + 2 + 10 = 184 (estimate 140, target 190, stop 240; under 190, so items 4a and 4b stay per D-206)
+
+No diff to reap_*.go, run.go, cell*.go, guard.go, ledger.go, internal/runtime, go.mod, .github, .waggle.
+No added line names sweep, targets or observe.
+U+2013 / U+2014 in diff: 0; in commit message: 0. Signed-off-by present.
+No home path or email in added lines.
+grep prune in non-test internal/dispatch and cmd: comments only (clean.go:27, clean.go:138, worktree.go:231).
+
+gh pr checks 61 (head 9244e78):
+  product-ci               pass  https://github.com/waggle-sh/waggle/actions/runs/39535122375/job/119009886183
+  verify-leases-and-tiers  fail  "leases: no claim for T-023; claims must stay until merge"; tiers ok; decisions unchanged (expected until phase F, as the PR body says)
+  relay-claim              skipping

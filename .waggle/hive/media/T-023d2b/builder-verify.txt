@@ -1,0 +1,9 @@
+build ok
+vet ok
+gofmt:
+(end gofmt)
+vet windows ok
+go: unsupported GOOS/GOARCH pair solaris/arm64
+go: unsupported GOOS/GOARCH pair illumos/arm64
+vet solaris/amd64 ok
+vet illumos/amd64 ok

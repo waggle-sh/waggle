@@ -1,0 +1,70 @@
+== removal: digest compare in --accept | test: TestHostRecordAccept | FAILS as required
+--- FAIL: TestHostRecordAccept (0.44s)
+    hostrecord_test.go:169: stale config digest: <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.652s
+FAIL
+== removal: record-state term of the digest | test: TestHostRecordAccept | FAILS as required
+--- FAIL: TestHostRecordAccept (0.60s)
+    hostrecord_test.go:176: rewritten record: <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.789s
+FAIL
+== removal: write-nothing return on mismatch | test: TestHostRecordAccept | FAILS as required
+--- FAIL: TestHostRecordAccept (0.56s)
+    hostrecord_test.go:169: stale config digest: <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.763s
+FAIL
+== removal: printable in the listing | test: TestHostRecordListing | FAILS as required
+--- FAIL: TestHostRecordListing (0.24s)
+    hostrecord_test.go:103: listing: "config.keys: recorded db2b02856394 current 33a2cdeef9ba\nhooks/a\x1bb\u202ec: recorded missing current 2d711642b726\ndigest 4478da062eeb4be9\nwaggle dispatch clean --host-record --accept 4478da062eeb4be9\n"
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.413s
+FAIL
+== removal: prune deletion (prune restored) | test: TestProvisionLeavesOtherStaleEntriesAndHintsClean | FAILS as required
+--- FAIL: TestProvisionLeavesOtherStaleEntriesAndHintsClean (0.22s)
+    provision_test.go:45: stale own entry: <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.402s
+FAIL
+== removal: unregistered-directory refusal | test: TestCleanRefusesUnregisteredDirectory | FAILS as required
+--- FAIL: TestCleanRefusesUnregisteredDirectory (0.11s)
+    clean_test.go:317: out "tainted by run run-1\n" err <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.303s
+FAIL
+== removal: pinned() on worktree add --detach | test: TestProvisionRunsNoGlobalFilter/detach | FAILS as required
+--- FAIL: TestProvisionRunsNoGlobalFilter (0.24s)
+    --- FAIL: TestProvisionRunsNoGlobalFilter/detach (0.24s)
+        provision_test.go:105: the global smudge filter ran on the host
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.491s
+FAIL
+== removal: pinned() on worktree add (existing local branch) | test: TestProvisionRunsNoGlobalFilter/existing_branch | FAILS as required
+--- FAIL: TestProvisionRunsNoGlobalFilter (0.22s)
+    --- FAIL: TestProvisionRunsNoGlobalFilter/existing_branch (0.22s)
+        provision_test.go:105: the global smudge filter ran on the host
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.418s
+FAIL
+== removal: pinned() on worktree add --no-track | test: TestProvisionRunsNoGlobalFilter/remote_branch | FAILS as required
+--- FAIL: TestProvisionRunsNoGlobalFilter (0.23s)
+    --- FAIL: TestProvisionRunsNoGlobalFilter/remote_branch (0.23s)
+        provision_test.go:105: the global smudge filter ran on the host
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.405s
+FAIL
+== removal: pinned() on worktree add -b (new branch) | test: TestProvisionRunsNoGlobalFilter/new_branch | FAILS as required
+--- FAIL: TestProvisionRunsNoGlobalFilter (0.23s)
+    --- FAIL: TestProvisionRunsNoGlobalFilter/new_branch (0.23s)
+        provision_test.go:105: the global smudge filter ran on the host
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.432s
+FAIL
+== removal: SIGHUP in stopSignals | test: TestStopSignals | FAILS as required
+--- FAIL: TestStopSignals (0.00s)
+    dispatch_test.go:185: stopSignals lacks hangup
+FAIL
+FAIL	github.com/waggle-sh/waggle/cmd/waggle	0.098s
+FAIL
