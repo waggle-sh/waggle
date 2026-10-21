@@ -207,12 +207,10 @@ func (g *Git) branchRev(ctx context.Context, branch string) (string, bool) {
 }
 
 func (w *Worktree) provision(ctx context.Context, g *Git) error {
-	if _, err := g.Run(ctx, "worktree", "prune"); err != nil {
-		return err
-	}
 	rev, exists := g.branchRev(ctx, w.Branch)
 	fi, serr := os.Lstat(w.Path)
 	var err error
+	pg := g.pinned() // a branch's .gitattributes must not route the Keeper's global filters
 	switch {
 	case serr == nil && !fi.IsDir():
 		err = fmt.Errorf("%s exists but is not a real directory; remove it", w.Path)
@@ -222,13 +220,18 @@ func (w *Worktree) provision(ctx context.Context, g *Git) error {
 	case !errors.Is(serr, fs.ErrNotExist):
 		err = serr
 	case w.Detach != "":
-		_, err = g.Run(ctx, "worktree", "add", "--detach", w.Path, w.Detach)
+		_, err = pg.Run(ctx, "worktree", "add", "--detach", w.Path, w.Detach)
 	case rev == "refs/heads/"+w.Branch:
-		_, err = g.Run(ctx, "worktree", "add", w.Path, w.Branch)
+		_, err = pg.Run(ctx, "worktree", "add", w.Path, w.Branch)
 	case exists:
-		_, err = g.Run(ctx, "worktree", "add", "--no-track", "-b", w.Branch, w.Path, rev)
+		_, err = pg.Run(ctx, "worktree", "add", "--no-track", "-b", w.Branch, w.Path, rev)
 	default:
-		_, err = g.Run(ctx, "worktree", "add", "-b", w.Branch, w.Path, w.BaseOID)
+		_, err = pg.Run(ctx, "worktree", "add", "-b", w.Branch, w.Path, w.BaseOID)
+	}
+	if err != nil && errors.Is(serr, fs.ErrNotExist) { // git refuses a stale entry for the path; the prune is not dispatch's to run (D-202)
+		name := filepath.Base(w.Path)
+		ticket, role, _ := strings.Cut(name[len("T-"):], "-")
+		err = fmt.Errorf("%w; if a stale entry for %s remains, run waggle dispatch clean T-%s --role %s", err, name, ticket, role)
 	}
 	if err != nil {
 		return err
