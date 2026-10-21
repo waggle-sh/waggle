@@ -41,7 +41,7 @@ func TestProvisionLeavesOtherStaleEntriesAndHintsClean(t *testing.T) {
 	}
 	common := filepath.Join(dir, ".git")
 	_, err = provisionAt(t, dir, g, "builder", "")
-	if code(err) != ExitEnv || err == nil || !strings.Contains(err.Error(), "waggle dispatch clean T-023 --role builder") {
+	if code(err) != ExitEnv || err == nil || !strings.Contains(err.Error(), "waggle dispatch clean T-023 --role builder (not git worktree prune)") {
 		t.Fatalf("stale own entry: %v", err)
 	}
 	if !exists(filepath.Join(common, "worktrees/T-024-builder")) {

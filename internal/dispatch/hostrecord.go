@@ -105,7 +105,7 @@ func shortState(m map[string]string, k string) string {
 // printable drops control and format runes (C0, C1, U+202E) and caps s at 100 bytes.
 func printable(s string) string {
 	s = strings.Map(func(r rune) rune {
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) || r == '\u2028' || r == '\u2029' {
 			return -1
 		}
 		return r
