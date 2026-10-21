@@ -1,0 +1,172 @@
+# fable confirm 3 at ddccd51: probe set 1 (committed binary)
+git git version 2.54.0 (Apple Git-157), core.ignorecase in a fresh repo: true
+P1 .GIT: worktrees/0/gitdir names T-024-builder/.GIT (expect exit 3, nothing removed)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p1/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P1 .Git: worktrees/0/gitdir names T-024-builder/.Git (expect exit 3, nothing removed)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p1/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P1 .gIt: worktrees/0/gitdir names T-024-builder/.gIt (expect exit 3, nothing removed)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p1/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P2 fully upper-cased gitdir (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p2/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P3 symlinked parent: ln -> .waggle/worktrees, gitdir names ln/T-024-builder/.git (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p3/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P4 copy: gitdir copied from T-024-builder's (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p4/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P5 link: worktrees/0/gitdir is a symlink to T-024-builder's gitdir (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P6 healthy repo, mixed roles plus a user worktree outside .waggle (expect exit 0, only T-023-builder removed)
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: p6-Mine T-024-builder T-024-forager T-024-guard 
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+  worktree list: 5 entries (expect 5)
+P7 spellings git treats as different but Stat folds: trailing slash, /./, .., no .git suffix, .git file named twice via NFC/NFD (expect exit 3 each: the safe direction)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p7a/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p7b/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p7c/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p7d/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+  exit 3: waggle dispatch: worktrees/0 and worktrees/café both name $S/p7e/.waggle/worktrees/café; nothing was removed
+  admin: 0 café T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+  real entry gitdir: f726b74726565732f636166c3a92f2e6769740a
+P8 relative gitdir, plain: ../../../.waggle/worktrees/T-024-builder/.git (git realpaths a relative gitdir; expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p8/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P9 relative gitdir through a symlink then ..: T-023-builder/X -> T-023-builder; gitdir ../../../.waggle/worktrees/T-023-builder/X/../T-024-builder/.git
+   git realpath: .../T-024-builder/.git (equal to the real entry); Go Clean: .../T-023-builder/T-024-builder/.git (a different dir the builder created)
+  git worktree prune --dry-run -v says:
+    Removing worktrees/T-024-builder: duplicate entry
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder 
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+P9b same, but the lexical target does not exist (fi nil on the planted side)
+  git worktree prune --dry-run -v says:
+    Removing worktrees/T-024-builder: duplicate entry
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder 
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+P10 the reverse at 2d1a1b3 for comparison: which admin id does git drop in P9 when clean is not run (expect T-024-builder: ids sort 0 < T)
+    Removing worktrees/T-024-builder: duplicate entry
+  admin: 0 T-023-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: fatal: not a git repository: (null)
+
+# probe set 2 (committed binary): relative gitdir realpath gap, B6
+P11 relative gitdir through a symlink outside the cleaned worktree: repo/Z/X -> .waggle/worktrees/T-024-builder; gitdir ../../../Z/X/../T-024-builder/.git
+    git: realpath -> .waggle/worktrees/T-024-builder/.git, equal to the real entry. Go: Join cleans X/.. lexically -> repo/Z/T-024-builder/.git, a different dir
+  git worktree prune --dry-run -v says:
+    Removing worktrees/T-024-builder: duplicate entry
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: 0 
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: fatal: not a git repository: (null)
+  worktree list: worktree $S/p11 worktree $S/p11/.waggle/worktrees/T-024-builder 
+P12 same symlink planted inside a third ticket's worktree (T-025-builder/X), which clean 23 does not remove
+  git worktree prune --dry-run -v says:
+    Removing worktrees/T-024-builder: duplicate entry
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: 0 T-025-builder 
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: fatal: not a git repository: (null)
+  worktree list: worktree $S/p12 worktree $S/p12/.waggle/worktrees/T-024-builder worktree $S/p12/.waggle/worktrees/T-025-builder 
+P13 control: the same relative gitdir with no symlink in it, ../../../.waggle/worktrees/T-025-builder/../T-024-builder/.git (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p13/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder T-025-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+  worktree list: worktree $S/p13 worktree $S/p13/.waggle/worktrees/T-023-builder worktree $S/p13/.waggle/worktrees/T-024-builder worktree $S/p13/.waggle/worktrees/T-024-builder worktree $S/p13/.waggle/worktrees/T-025-builder 
+P14 worktree.useRelativePaths=true healthy repo (git writes relative gitdirs itself; expect exit 0, only T-023 removed)
+  T-024 gitdir content: ../../../.waggle/worktrees/T-024-builder/.git
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder 
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+  worktree list: worktree $S/p14 worktree $S/p14/.waggle/worktrees/T-024-builder 
+
+# probe set 2 against the proposed B6 patch (EvalSymlinks of admin/<relative gitdir>, refuse when it fails)
+P11 relative gitdir through a symlink outside the cleaned worktree: repo/Z/X -> .waggle/worktrees/T-024-builder; gitdir ../../../Z/X/../T-024-builder/.git
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p11/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-024 git status: ## t-024
+P12 same symlink planted inside a third ticket's worktree (T-025-builder/X), which clean 23 does not remove
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p12/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder T-025-builder 
+  T-024 git status: ## t-024
+P13 control: the same relative gitdir with no symlink in it, ../../../.waggle/worktrees/T-025-builder/../T-024-builder/.git (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p13/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder T-025-builder 
+  T-024 git status: ## t-024
+P14 worktree.useRelativePaths=true healthy repo (git writes relative gitdirs itself; expect exit 0, only T-023 removed)
+  T-024 gitdir content: ../../../.waggle/worktrees/T-024-builder/.git
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder 
+  T-024 git status: ## t-024
+
+# probe set 1 against the proposed B6 patch (exit lines only)
+P1 .GIT: worktrees/0/gitdir names T-024-builder/.GIT (expect exit 3, nothing removed)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p1/.waggle/worktrees/T-024-builder; nothing was removed
+P1 .Git: worktrees/0/gitdir names T-024-builder/.Git (expect exit 3, nothing removed)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p1/.waggle/worktrees/T-024-builder; nothing was removed
+P1 .gIt: worktrees/0/gitdir names T-024-builder/.gIt (expect exit 3, nothing removed)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p1/.waggle/worktrees/T-024-builder; nothing was removed
+P2 fully upper-cased gitdir (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p2/.waggle/worktrees/T-024-builder; nothing was removed
+P3 symlinked parent: ln -> .waggle/worktrees, gitdir names ln/T-024-builder/.git (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p3/.waggle/worktrees/T-024-builder; nothing was removed
+P4 copy: gitdir copied from T-024-builder's (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p4/.waggle/worktrees/T-024-builder; nothing was removed
+P5 link: worktrees/0/gitdir is a symlink to T-024-builder's gitdir (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+P6 healthy repo, mixed roles plus a user worktree outside .waggle (expect exit 0, only T-023-builder removed)
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+P7 spellings git treats as different but Stat folds: trailing slash, /./, .., no .git suffix, .git file named twice via NFC/NFD (expect exit 3 each: the safe direction)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p7a/.waggle/worktrees/T-024-builder; nothing was removed
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p7b/.waggle/worktrees/T-024-builder; nothing was removed
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p7c/.waggle/worktrees/T-024-builder; nothing was removed
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p7d/.waggle/worktrees/T-024-builder; nothing was removed
+  exit 3: waggle dispatch: worktrees/0 and worktrees/café both name $S/p7e/.waggle/worktrees/café; nothing was removed
+P8 relative gitdir, plain: ../../../.waggle/worktrees/T-024-builder/.git (git realpaths a relative gitdir; expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p8/.waggle/worktrees/T-024-builder; nothing was removed
+P9 relative gitdir through a symlink then ..: T-023-builder/X -> T-023-builder; gitdir ../../../.waggle/worktrees/T-023-builder/X/../T-024-builder/.git
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p9/.waggle/worktrees/T-024-builder; nothing was removed
+P9b same, but the lexical target does not exist (fi nil on the planted side)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name $S/p9b/.waggle/worktrees/T-024-builder; nothing was removed
+P10 the reverse at 2d1a1b3 for comparison: which admin id does git drop in P9 when clean is not run (expect T-024-builder: ids sort 0 < T)

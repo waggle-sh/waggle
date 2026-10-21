@@ -1,0 +1,34 @@
+//go:build linux
+
+package dispatch
+
+import (
+	"syscall"
+	"testing"
+)
+
+// fable confirmation probe (container only, linux build tag): the inert tracker
+// has real seams and its sweep reads the real table, signals nothing and
+// returns nothing. First with a recording kill seam, then with the real one.
+func TestFableConfirmInertSweep(t *testing.T) {
+	for _, root := range []int{0, 1, -7} {
+		tr := newTracker(root)
+		if tr.read == nil || tr.kill == nil || !tr.blind || tr.self != 0 || tr.seen != nil {
+			t.Fatalf("root %d: read nil %v kill nil %v blind %v self %d seen %v", root, tr.read == nil, tr.kill == nil, tr.blind, tr.self, tr.seen)
+		}
+		reads, calls := 0, 0
+		realRead := tr.read
+		tr.read = func() ([]proc, error) { reads++; return realRead() }
+		tr.kill = func(p int, s syscall.Signal) error { calls++; t.Errorf("root %d: kill(%d, %v) reached", root, p, s); return nil }
+		killed := tr.sweep()
+		if calls != 0 || len(killed) != 0 || len(tr.live) != 0 || len(tr.seen) != 0 || len(tr.leaders) != 0 || !tr.blind {
+			t.Fatalf("root %d: kills %d killed %v live %v seen %v leaders %v", root, calls, killed, tr.live, tr.seen, tr.leaders)
+		}
+		t.Logf("root %d: recorder seam: %d real table read(s), 0 kills, sweep returned %d survivors, blind %v", root, reads, len(killed), tr.blind)
+		tr2 := newTracker(root)
+		if k := tr2.sweep(); len(k) != 0 {
+			t.Fatalf("root %d: real seams: sweep returned %v", root, k)
+		}
+		t.Logf("root %d: real seams: sweep returned 0 survivors", root)
+	}
+}

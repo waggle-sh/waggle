@@ -1,0 +1,44 @@
++ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m -e GOGC=50 golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestSweep|TestToolShell|TestTargets|TestObserve|TestWorkerLeadsOwnSession|TestFastExitNeverBlind|TestRunLimitsKillTheGroup' -test.v
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (1.05s)
+=== RUN   TestObserveTracksOnlyTheRootSubtree
+--- PASS: TestObserveTracksOnlyTheRootSubtree (0.00s)
+=== RUN   TestObserveRefusesInitAndKernelRoots
+--- PASS: TestObserveRefusesInitAndKernelRoots (0.00s)
+=== RUN   TestObserveNeverTreatsInitAsTrackedParent
+--- PASS: TestObserveNeverTreatsInitAsTrackedParent (0.00s)
+=== RUN   TestObserveErrorClearsLive
+--- PASS: TestObserveErrorClearsLive (0.00s)
+=== RUN   TestRunLimitsKillTheGroup
+=== RUN   TestRunLimitsKillTheGroup/max_tokens
+=== RUN   TestRunLimitsKillTheGroup/timeout
+--- PASS: TestRunLimitsKillTheGroup (10.26s)
+    --- PASS: TestRunLimitsKillTheGroup/max_tokens (0.30s)
+    --- PASS: TestRunLimitsKillTheGroup/timeout (9.94s)
+=== RUN   TestWorkerLeadsOwnSession
+--- PASS: TestWorkerLeadsOwnSession (0.68s)
+=== RUN   TestFastExitNeverBlind
+--- PASS: TestFastExitNeverBlind (46.40s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.03s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.05s)
+=== RUN   TestSweepSignalsExactlyTargets
+--- PASS: TestSweepSignalsExactlyTargets (0.06s)
+=== RUN   TestSweepStopsAfter40Rounds
+--- PASS: TestSweepStopsAfter40Rounds (1.05s)
+=== RUN   TestSweepReadRetry
+--- PASS: TestSweepReadRetry (0.25s)
+=== RUN   TestToolShellChildKilled
+--- PASS: TestToolShellChildKilled (7.56s)
+=== RUN   TestTargetsOnFabricatedTables
+--- PASS: TestTargetsOnFabricatedTables (0.00s)
+=== RUN   TestTargetsRefuseInitSelfAndKernel
+--- PASS: TestTargetsRefuseInitSelfAndKernel (0.00s)
+=== RUN   TestObserveRecordsOnlyTrackedLeaders
+--- PASS: TestObserveRecordsOnlyTrackedLeaders (0.00s)
+=== RUN   TestObserveRootStartSetOnce
+--- PASS: TestObserveRootStartSetOnce (0.00s)
+PASS
+exit: 0

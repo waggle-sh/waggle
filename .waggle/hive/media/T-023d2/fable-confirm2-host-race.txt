@@ -1,0 +1,4 @@
+# go test -race -count=1 ./internal/dispatch/... ./cmd/... on the host at 2d1a1b3 (committed suite only, D-195)
+ok  	github.com/waggle-sh/waggle/internal/dispatch	184.821s
+ok  	github.com/waggle-sh/waggle/cmd/waggle	17.456s
+exit 0

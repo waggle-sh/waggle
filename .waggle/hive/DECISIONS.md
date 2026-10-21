@@ -3718,3 +3718,219 @@
 **Keeper choice:** The darwin tracker keeps its 25 ms sysctl poll. In the T-023 D1 fix round the NotEnforced text says plainly that on macOS a background child whose parent exits before the next 25 ms read, which is the usual cmd & from a tool shell, escapes until T-024; the phase F trial report carries the same sentence. T-023 phase D2 adds a group-leader sweep: at cleanup, also kill the process group of every group leader the tracker saw, guarded so the group id is above 1, is not dispatch's own group, and its leader pid is absent or still has the recorded start time; tested on data per D-193. Amends D-191. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
 
 **Rationale:** Honest wording costs no lines and must not wait; the group sweep closes most of the cmd & case for about 6 lines without waiting for the Cell runtime.
+
+## D-195: D-193 applies to ad hoc probes and fix-removal checks; committed tests that reach sweep() only through their own spawned run stay on unix
+
+- **Date:** 2026-10-20
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Q-T023-30: D-193 bans any test that calls sweep() from the Mac, but the committed suite already reaches sweep() on darwin (two direct callers, and every Run test through runSession). How far does D-193 reach into the committed suite?
+
+**Options considered:**
+1. Narrow: direct sweep() callers become linux-only; Run tests stay on unix; no test kills a pid read from a file; probes and fix-removal checks stay container-only
+2. Strict: every sweep-reaching test becomes linux-only
+
+**Hive recommendation:** Narrow: direct sweep() callers become linux-only; Run tests stay on unix; no test kills a pid read from a file; probes and fix-removal checks stay container-only
+
+**Keeper choice:** In T-023 phase D2 the committed tests that call sweep() directly (TestSweepKillsTrackedGroup, TestSweepSkipsReusedPid and any new one) move to linux-only files, and no committed test kills a pid it read from a file. Run tests that reach sweep() only through a run they spawned stay on unix, as the only darwin coverage of the sysctl tracker, so `go test ./...` on the Keeper's Mac is allowed. Every ad hoc probe, uncommitted test and fix-removal check that calls sweep() or signals a process it did not spawn stays container-only as D-193 says. Amends D-193 (Q-T023-30). Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Keeps the only darwin tracker coverage while removing the direct sweep() calls that resemble the incident probe.
+
+## D-196: waggle dispatch list moves from T-023 phase D2 to phase E
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Q-T023-28: D2 is estimated at 446 doubled lines with list and 336 without, against a 350 stop (D-190). Keep list in D2?
+
+**Options considered:**
+1. Move list to phase E and add cmd/waggle/dispatch.go to phase E's lease
+2. Keep list in D2 and raise the stop to 450
+
+**Hive recommendation:** Move list to phase E and add cmd/waggle/dispatch.go to phase E's lease
+
+**Keeper choice:** `waggle dispatch list` leaves T-023 phase D2 and lands in phase E, whose lease gains cmd/waggle/dispatch.go. D2 keeps the D-190 budget of 200 / 280 / 350; if the build passes 280 before review, the host-record acknowledge splits into a D2b PR on the same lease under D-185 (Q-T023-28). Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Phase F does not need list, and the cut keeps D2 inside its stop without raising a budget.
+
+## D-197: Workers start with Setsid; the D-176 proof moves to the first phase F macOS trial run
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Q-T023-29: D2 starts workers with Setsid instead of Setpgid. D-193 rules out rerunning the real Claude Code process-group probe on the Mac. How is the D-176 behavior proved?
+
+**Options considered:**
+1. Setsid plus narrowed group targets; the first phase F macOS trial run repeats probe 2's shape and must list the tool shell and child in survivors_killed or cutover is blocked
+2. Keep Setpgid
+3. Rerun the real probe in the linux container with an API key
+
+**Hive recommendation:** Setsid plus narrowed group targets; the first phase F macOS trial run repeats probe 2's shape and must list the tool shell and child in survivors_killed or cutover is blocked
+
+**Keeper choice:** In T-023 phase D2 the worker starts in its own session (Setsid) and the sweep signals only groups the tracker saw led by a tracked process (D-194 guards). There is no D2 rerun of the real Claude Code probe. The first phase F macOS trial run repeats the D-176 probe 2 shape and must list the tool shell and its background child in survivors_killed; if it does not, the phase F cutover is blocked (Q-T023-29). Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Closes the shared-session group gap (D1 guard N15) at no new credential or cost, and the trial is the first real run anyway.
+
+## D-198: dispatch clean --host-record uses a two-step digest; the queen accepts only after a Keeper card
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Q-T023-31: who accepts a changed host record with dispatch clean --host-record?
+
+**Options considered:**
+1. Two-step digest: --host-record lists differing keys and a digest; --accept <digest> re-baselines only if nothing changed; the queen runs --accept only after a Keeper card
+2. Interactive y/N prompt
+
+**Hive recommendation:** Two-step digest: --host-record lists differing keys and a digest; --accept <digest> re-baselines only if nothing changed; the queen runs --accept only after a Keeper card
+
+**Keeper choice:** `waggle dispatch clean --host-record` prints the differing keys and a digest of the new record and changes nothing; `--accept <digest>` re-baselines only when the current record still hashes to that digest. The queen runs --accept only after the Keeper approves the listed keys on a card (Q-T023-31). Implements the acknowledge step of D-189 and D-192. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Works from the queen's non-interactive tool shell and cannot accept a record that changed after the Keeper saw it.
+
+## D-199: The macOS NotEnforced clause states the measured group-sweep limit; the phase F trial measures a real tool shell
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** With the D2 group-leader sweep, a child left in its tool shell's group is killed only if some 25 ms read listed the shell alive (fable: 0 of 20 with a shell gone within 5 ms, 20 of 20 with one alive 20 ms). The builder's text claimed the group sweep always catches it; D-194's sentence names an outdated cause. Which sentence ships?
+
+**Options considered:**
+1. Fable's measured text
+2. Opus's shorter text
+3. Keep the D-194 sentence
+
+**Hive recommendation:** Fable's measured text
+
+**Keeper choice:** The macOS clause of NotEnforced in internal/dispatch/cell.go reads: "on macOS (sysctl read every 25 ms) a background child escapes until T-024 when its tool shell started and exited between two reads, which is the usual cmd & from a short-lived shell (0 of 20 caught with a shell gone within 5 ms, 20 of 20 with one alive 20 ms), or when it calls setsid or daemonizes before the next read; a child that stays in the group of a tool shell the tracker listed alive is killed by the group sweep"; the rest of the line is unchanged. The phase F trial report carries the same sentence, and the phase F macOS trial adds a `cmd >/dev/null 2>&1 &` tool command next to the D-197 probe 2 shape to measure whether a real Claude Code tool shell lives long enough to be listed. Lands in the T-023 phase D2 fix round. Amends D-194. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Both D2 guards found the builder's sentence overstated the catch; the measured text is honest and gives the trial a concrete number to check.
+
+## D-200: dispatch clean asks git's prune dry run for duplicate worktree entries instead of reimplementing git's rules
+
+- **Date:** 2026-10-20
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Four D2 guard rounds each found a planted admin entry that waggle's own duplicate comparison missed while git's prune still treated it as a duplicate and silently dropped another ticket's registration (symlinked gitdir, case, a .GIT suffix, a relative gitdir through a symlink). How should clean detect duplicates?
+
+**Options considered:**
+1. Run git worktree prune --dry-run -v first and refuse on any duplicate entry
+2. Patch the relative-gitdir case and keep waggle's comparison
+3. Move the precise check to D2b and refuse any foreign admin entry for now
+
+**Hive recommendation:** Run git worktree prune --dry-run -v first and refuse on any duplicate entry
+
+**Keeper choice:** Before it removes anything, `waggle dispatch clean` runs the pinned `git worktree prune --dry-run -v` and exits 3 with nothing removed if git reports any duplicate entry, naming the entries. Waggle's own path comparison for duplicates is removed; the refusals of a symlinked admin entry and of a symlinked, unreadable or oversized gitdir stay. If the change would take T-023 phase D2 past its 350-line stop (D-190), the duplicate check moves to D2b instead. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Git's own resolution matches git's own prune by construction, which ends the series of spelling bypasses and should cost fewer lines than the comparison it replaces.
+
+## D-201: dispatch clean re-runs git's duplicate dry run immediately before its real prune; guarding provision's prune moves to D2b
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Fable B7: clean's dry run happens before `worktree remove --force` deletes the cleaned tree, and a relative gitdir through a symlink in that tree resolves differently afterwards, so the real prune drops another ticket's entry. Provision runs an unguarded repo-wide prune too. How does D2 close B7?
+
+**Options considered:**
+1. Re-run the dry-run check right before the real prune; D2b guards provision's prune
+2. Drop clean's repo-wide prune
+3. Move clean to D2b
+
+**Hive recommendation:** Re-run the dry-run check right before the real prune; D2b guards provision's prune
+
+**Keeper choice:** `waggle dispatch clean` keeps its first duplicate dry run and runs the same check again immediately before its `git worktree prune`, so git judges the state it is about to act on; a refusal at the second check says that the ticket's own worktree was already removed and nothing else was pruned. The fix must stay within the D-190 stop of 350 added non-test lines for T-023 phase D2, or the builder stops. Guarding the repo-wide prune in Worktree.provision with the same check is a T-023 phase D2b item. Amends D-200. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Checks the exact state git will prune at the cost of 3 lines and keeps clean in D2 for phase F.
+
+## D-202: dispatch clean removes only its own ticket's worktree entries and never runs a repo-wide prune
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** D-200, D-201
+
+**Question:** Five D2 guard rounds each found a planted admin entry that steers clean's repo-wide git worktree prune into dropping another ticket's registration (B2, B4, B5, B6, B7). Planting one needs write access to the git dir, which already lets the attacker break any worktree directly. Change course?
+
+**Options considered:**
+1. Stop round 5; clean removes only its own ticket's entries and never runs a repo-wide prune; add a threat bar to every brief; adopt a two-round stop rule
+2. Finish the D-201 re-check first
+3. Keep patching
+
+**Hive recommendation:** Stop round 5; clean removes only its own ticket's entries and never runs a repo-wide prune; add a threat bar to every brief; adopt a two-round stop rule
+
+**Keeper choice:** `waggle dispatch clean` removes only the entries of the ticket and role it was given: `git worktree remove --force` for a worktree that exists, and that entry's own admin directory under the common git dir when its worktree is already gone. It never runs `git worktree prune` or any other repo-wide prune, so other stale or planted entries are left for the Keeper or git. The duplicate dry run and Git.CLocale added for D-200 are removed. Keeps the refusals of a symlinked admin entry and of a symlinked, unreadable or oversized gitdir for the entries it acts on. In T-023 phase D2b the repo-wide prune in Worktree.provision gets the same treatment. Supersedes D-200 and D-201. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Removes the whole class of prune steering instead of patching each spelling, and frees about 25 lines of D2's budget.
+
+## D-203: Every brief carries a threat bar: an attack that needs a capability already able to do the same damage is a note, not a must-fix
+
+- **Date:** 2026-10-21
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Five D2 guard rounds each found a planted admin entry that steers clean's repo-wide git worktree prune into dropping another ticket's registration (B2, B4, B5, B6, B7). Planting one needs write access to the git dir, which already lets the attacker break any worktree directly. Change course?
+
+**Options considered:**
+1. Stop round 5; clean removes only its own ticket's entries and never runs a repo-wide prune; add a threat bar to every brief; adopt a two-round stop rule
+2. Finish the D-201 re-check first
+3. Keep patching
+
+**Hive recommendation:** Stop round 5; clean removes only its own ticket's entries and never runs a repo-wide prune; add a threat bar to every brief; adopt a two-round stop rule
+
+**Keeper choice:** Every scout brief states its threat model, and every guard prompt repeats it: a finding whose attacker needs a capability that already lets them cause the same damage directly (for example write access to the git dir or to another ticket's worktree, or an escaped worker process) is recorded as a note, not a must-fix, unless the Keeper raises it. Must-fix stays for anything a worker inside its lease, a reviewer, or ordinary repo state can trigger, and for any path that signals or deletes outside the worker's own tree from ordinary inputs. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Without a bar, guards rank every silent failure as blocking, and fix rounds chase attacks that add no capability.
+
+## D-204: After two must-fix rounds on the same function, the queen brings a design card instead of a third patch round
+
+- **Date:** 2026-10-21
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Five D2 guard rounds each found a planted admin entry that steers clean's repo-wide git worktree prune into dropping another ticket's registration (B2, B4, B5, B6, B7). Planting one needs write access to the git dir, which already lets the attacker break any worktree directly. Change course?
+
+**Options considered:**
+1. Stop round 5; clean removes only its own ticket's entries and never runs a repo-wide prune; add a threat bar to every brief; adopt a two-round stop rule
+2. Finish the D-201 re-check first
+3. Keep patching
+
+**Hive recommendation:** Stop round 5; clean removes only its own ticket's entries and never runs a repo-wide prune; add a threat bar to every brief; adopt a two-round stop rule
+
+**Keeper choice:** When guards return must-fix findings on the same function or check in two consecutive fix rounds, the queen stops patching and brings the Keeper a design card (keep patching, change the design, or move the item to a later PR) before any third round. Amends D-186 for that case. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Caps the cost of a review loop that keeps finding variants of one weakness.
+
+## D-205: Fix rounds get two confirming guards only when they touch signals, deletes, leases or claims, or exceed 100 added non-test lines
+
+- **Date:** 2026-10-21
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Review turnaround is the bottleneck: small fix rounds, some almost all test lines, have been confirmed by both guards. Narrow D-184?
+
+**Options considered:**
+1. Two confirming guards only for fix rounds that touch signals, deletes, leases or claims or exceed 100 added non-test lines; one alternating guard otherwise
+2. Keep D-184 as is
+
+**Hive recommendation:** Two confirming guards only for fix rounds that touch signals, deletes, leases or claims or exceed 100 added non-test lines; one alternating guard otherwise
+
+**Keeper choice:** Every Tier 3 first review keeps two guards on different models. A fix round gets one confirming guard, alternating between the two models round to round, unless its diff changes code that sends signals, deletes files or git state, or touches leases or claims, or it adds more than 100 non-test lines (D-136 metric); those get two confirmations. If a single confirming guard finds a must-fix, the other model confirms the next round. Amends D-184. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Keeps two models on the dangerous paths and saves a guard pass on test-only and wording rounds.

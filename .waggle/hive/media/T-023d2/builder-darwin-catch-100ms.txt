@@ -1,0 +1,5 @@
+=== RUN   TestZZCatchMeasurement
+    zz_catch_darwin_test.go:50: 20 trials: leader seen alive in 20, group listed after the leader exited in 20
+--- PASS: TestZZCatchMeasurement (42.73s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	42.894s

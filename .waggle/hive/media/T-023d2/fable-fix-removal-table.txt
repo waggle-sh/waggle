@@ -1,0 +1,10 @@
+F1 | targets: group must have a listed live member | TestTargetsOnFabricatedTables | FAILS (caught)
+F3 | observe: leaders holds only tracked processes (every table leader recorded) | TestObserveRecordsOnlyTrackedLeaders|TestTargetsOnFabricatedTables | FAILS (caught)
+F5 | cell: Setsid (back to Setpgid) | TestWorkerLeadsOwnSession | FAILS (caught)
+F6 | run: tracker first read before the Wait goroutine (moved after it) | TestFastExitNeverBlind | FAILS (caught)
+F7 | observe: rootStart set once | TestObserveRootStartSetOnce | FAILS (caught)
+F8 | sweep: read retry bound of 3 | TestSweepReadRetry | FAILS (caught)
+F9 | targets: member comes from the table, not from live (an unseen orphan counts) | TestTargetsOnFabricatedTables | FAILS (caught)
+F10 | targets: leader pid listed with another start time excludes the group | TestTargetsOnFabricatedTables | FAILS (caught)
+F11 | targets: a table without self yields nothing | TestTargetsOnFabricatedTables | FAILS (caught)
+done

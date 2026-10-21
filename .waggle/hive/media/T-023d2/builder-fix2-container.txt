@@ -1,0 +1,12 @@
+Unable to find image 'debian:stable-slim' locally
+stable-slim: Pulling from library/debian
+f74dfaa3621f: Pulling fs layer
+f74dfaa3621f: Download complete
+0868be815123: Download complete
+f74dfaa3621f: Pull complete
+Digest: sha256:eb593cf2c358cacef45ca0a424bbc7d30cfa3466265fc2662b9466a0ca6ba1c5
+Status: Downloaded newer image for debian:stable-slim
+=== RUN   TestInertTrackerSweepSignalsNothing
+--- PASS: TestInertTrackerSweepSignalsNothing (0.00s)
+PASS
+exit 0

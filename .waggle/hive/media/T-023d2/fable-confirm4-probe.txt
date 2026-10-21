@@ -1,0 +1,171 @@
+git git version 2.54.0 (Apple Git-157), core.ignorecase in a fresh repo: true
+== (1) earlier bypasses: copy, link, case, GIT, Git, upper, parent (expect exit 3, nothing removed) ==
+copy
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+link
+  exit 3: waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+case
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+.GIT
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+.Git
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+upper
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+parent
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: 0|T-024-builder|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+== (1) B6 probes ==
+P11 relative gitdir through a symlink outside the cleaned worktree (expect exit 3)
+  git prune dry run says:
+    Removing worktrees/T-024-builder: duplicate entry
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P12 same symlink inside a third ticket's worktree (expect exit 3)
+  git prune dry run says:
+    Removing worktrees/T-024-builder: duplicate entry
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|T-025-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P14 worktree.useRelativePaths=true healthy repo (expect exit 0, only T-023 removed)
+  T-024 gitdir content: ../../../.waggle/worktrees/T-024-builder/.git
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+P6 healthy repo, mixed roles plus a user worktree outside .waggle (expect exit 0, only T-023-builder removed)
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: p6-Mine|T-024-builder|T-024-forager|T-024-guard|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+  worktree list: 5 entries (expect 5)
+== (4) TOCTOU: the dry run sees one resolution, the real prune after worktree remove sees another ==
+P15 T-023-builder/X -> D/E (inside the cleaned tree); gitdir ../../../.waggle/worktrees/T-023-builder/X/../../T-024-builder/.git
+    before remove: realpath follows X, two .. climb to T-023-builder: T-023-builder/T-024-builder/.git (absent). after remove: X missing, forgiving realpath strips lexically: .waggle/worktrees/T-024-builder/.git
+  git prune dry run says:
+    Removing worktrees/0: gitdir file points to non-existent location
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: 0|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: fatal: not a git repository: (null)
+  worktree list: worktree $S/p15 worktree $S/p15/.waggle/worktrees/T-024-builder 
+P15b same with T-023-builder/T-024-builder/.git present, so entry 0 is kept (not pruned) before the remove
+  git prune dry run says:
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: 0|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: fatal: not a git repository: (null)
+P15c reference: the same repo without clean, prune after rm -rf of T-023-builder (what the real prune does after the remove)
+  git prune dry run says:
+    Removing worktrees/0: gitdir file points to non-existent location
+  git prune dry run says:
+    Removing worktrees/T-023-builder: gitdir file points to non-existent location
+    Removing worktrees/T-024-builder: duplicate entry
+== (3) locked and expire ==
+P16 planted dup entry 0 carries a locked file (git skips locked entries in both the dry run and the real prune; expect exit 0, T-024 intact)
+  git prune dry run says:
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: 0|T-024-builder|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+  worktree list: worktree $S/p16 worktree $S/p16/.waggle/worktrees/T-024-builder worktree $S/p16/.waggle/worktrees/T-024-builder 
+P16b planted dup of the cleaned ticket itself, locked (two list lines for T-023's path)
+  exit 3: removed worktree .waggle/worktrees/T-023-builder
+waggle dispatch: cleaning .waggle/worktrees/T-023-builder: git worktree: exit status 128: fatal: cannot remove a locked working tree, lock reason: keep
+use 'remove -f -f' to override or unlock first
+  admin: 0|T-024-builder|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+P16c planted dup of the cleaned ticket itself, not locked
+  git prune dry run says:
+    Removing worktrees/T-023-builder: duplicate entry
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-023-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+== (2) parse robustness ==
+P17a planted id with a newline, sorting before the victim: id '0<nl>x', gitdir T-024 (git names the victim; expect exit 3)
+  git prune dry run says:
+    Removing worktrees/T-024-builder: duplicate entry
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|x|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P17b planted id with a newline, sorting after the victim: id 'z<nl>x' (git drops the planted one; clean cannot parse the split line; expect exit 0 and T-024 intact)
+  git prune dry run says:
+    Removing worktrees/z
+    x: duplicate entry
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+P18a planted id '0: duplicate entry' with a gitdir to nowhere (reason suffix is not the dup one; expect exit 0, T-024 intact)
+  git prune dry run says:
+    Removing worktrees/0: duplicate entry: gitdir file points to non-existent location
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+P18b planted id 'Removing worktrees/q: duplicate entry' locked and a valid gitdir (kept, never printed; expect exit 0)
+  git prune dry run says:
+    Removing worktrees/Removing worktrees: gitdir file does not exist
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+P19 GIT_TRACE=1 in the parent env (healthy then dup)
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P20 LC_ALL=de_DE.UTF-8 LANG=de_DE.UTF-8 LANGUAGE=de in the parent env (healthy then dup; this git ships no .mo files)
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder|
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/T-024-builder); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P21 planted entry naming the main worktree (git drops the planted one as the dup; expect exit 3, safe direction)
+  git prune dry run says:
+    Removing worktrees/0: duplicate entry
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/0); nothing was removed
+  admin: 0|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P22 three entries: planted 0 and 1 both name T-024 (expect exit 3 naming T-024-builder once or more)
+  git prune dry run says:
+    Removing worktrees/1: duplicate entry
+    Removing worktrees/T-024-builder: duplicate entry
+  exit 3: waggle dispatch: git sees duplicate worktree entries (worktrees/1, worktrees/T-024-builder); nothing was removed
+  admin: 0|1|T-023-builder|T-024-builder|
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024

@@ -1,0 +1,3 @@
+ok  	github.com/waggle-sh/waggle/internal/dispatch	189.998s
+ok  	github.com/waggle-sh/waggle/cmd/waggle	17.763s
+exit 0
