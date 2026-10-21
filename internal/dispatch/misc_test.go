@@ -31,10 +31,12 @@ func TestCrossCompileWindows(t *testing.T) {
 		}
 		t.Fatal("no go.mod above the test directory")
 	}
-	cmd := exec.Command(filepath.Join(runtime.GOROOT(), "bin", "go"), "vet", "./internal/dispatch/", "./cmd/waggle/")
-	cmd.Dir, cmd.Env = root, append(os.Environ(), "GOOS=windows", "GOARCH=amd64", "CGO_ENABLED=0")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("GOOS=windows go vet: %v\n%s", err, out)
+	for _, target := range []string{"windows", "solaris", "illumos"} {
+		cmd := exec.Command(filepath.Join(runtime.GOROOT(), "bin", "go"), "vet", "./internal/dispatch/", "./cmd/waggle/")
+		cmd.Dir, cmd.Env = root, append(os.Environ(), "GOOS="+target, "GOARCH=amd64", "CGO_ENABLED=0")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("GOOS=%s go vet: %v\n%s", target, err, out)
+		}
 	}
 }
 
