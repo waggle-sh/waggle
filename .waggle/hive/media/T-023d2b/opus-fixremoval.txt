@@ -1,0 +1,79 @@
+== removal: digest compare in --accept | tests: TestHostRecordAccept$ | FAILS as required
+--- FAIL: TestHostRecordAccept (0.16s)
+    hostrecord_test.go:169: stale config digest: <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.337s
+FAIL
+== removal: record-state term of the digest | tests: TestHostRecordAccept$|TestOpusAcceptUnreadableRecords | FAILS as required
+--- FAIL: TestHostRecordAccept (0.18s)
+    hostrecord_test.go:176: rewritten record: <nil>
+--- FAIL: TestOpusAcceptUnreadableRecords (0.12s)
+    opusprobe_test.go:41: bad JSON swapped: <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.464s
+FAIL
+== removal: printable in the listing | tests: TestHostRecordListing$|TestOpusForgedRecordKeysPrintable | FAILS as required
+--- FAIL: TestHostRecordListing (0.17s)
+    hostrecord_test.go:103: listing: "config.keys: recorded db2b02856394 current 33a2cdeef9ba\nhooks/a\x1bb\u202ec: recorded missing current 2d711642b726\ndigest 4478da062eeb4be9\nwaggle dispatch clean --host-record --accept 4478da062eeb4be9\n"
+--- FAIL: TestOpusForgedRecordKeysPrintable (0.11s)
+    opusprobe_test.go:85: forged listing: "hooks/\x1b]8;;http://x\aevil\u2066\u202e\u200b\u2028\u0085AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: recorded [31mvalu current missing\ninfo/\x1b[2Jx\u2067y: recorded missing current 594e519ae499\ndigest 5a6045c371ec4e6f\nwaggle dispatch clean --host-record --accept 5a6045c371ec4e6f\n"
+    opusprobe_test.go:88: output carries "\x1b"
+    opusprobe_test.go:88: output carries "\u2066"
+    opusprobe_test.go:88: output carries "\u2067"
+    opusprobe_test.go:88: output carries "\u202e"
+    opusprobe_test.go:88: output carries "\u200b"
+    opusprobe_test.go:88: output carries "\a"
+    opusprobe_test.go:88: output carries "\u0085"
+    opusprobe_test.go:94: key over 100 bytes: 238
+    opusprobe_test.go:98: NOTE: U+2028 (Zl) passes printable
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.473s
+FAIL
+== removal: unregistered-directory refusal | tests: TestCleanRefusesUnregisteredDirectory$|TestOpusCleanMisCasedRepo|TestOpusCleanPlainDirWithTakeover | FAILS as required
+FAIL	github.com/waggle-sh/waggle/internal/dispatch [build failed]
+FAIL
+== removal: prune deletion (prune restored) | tests: TestProvisionLeavesOtherStaleEntriesAndHintsClean$|TestOpusTraceNoPruneAnywhere | FAILS as required
+--- FAIL: TestOpusTraceNoPruneAnywhere (0.29s)
+    opusprobe_test.go:164: stale own: code 0 err <nil>
+    opusprobe_test.go:167: run in progress: $TMPDIR/TestOpusTraceNoPruneAnywhere364262942/001/.waggle/worktrees/T-023-builder.lock held by pid <pid> on <host> since 2026-10-18T12:00:00Z
+--- FAIL: TestProvisionLeavesOtherStaleEntriesAndHintsClean (0.27s)
+    provision_test.go:45: stale own entry: <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.737s
+FAIL
+== removal: pinned() on worktree add (all four) | tests: TestProvisionRunsNoGlobalFilter|TestOpusNoHooksOrEnvConfigInProvision | FAILS as required
+--- FAIL: TestOpusNoHooksOrEnvConfigInProvision (0.16s)
+    opusprobe_test.go:235: git worktree: exit status 128: Preparing worktree (new branch 't-023')
+--- FAIL: TestProvisionRunsNoGlobalFilter (0.97s)
+    --- FAIL: TestProvisionRunsNoGlobalFilter/new_branch (0.23s)
+        provision_test.go:105: the global smudge filter ran on the host
+    --- FAIL: TestProvisionRunsNoGlobalFilter/existing_branch (0.22s)
+        provision_test.go:105: the global smudge filter ran on the host
+    --- FAIL: TestProvisionRunsNoGlobalFilter/remote_branch (0.27s)
+        provision_test.go:105: the global smudge filter ran on the host
+    --- FAIL: TestProvisionRunsNoGlobalFilter/detach (0.25s)
+        provision_test.go:105: the global smudge filter ran on the host
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	1.284s
+FAIL
+== removal: SIGHUP in stopSignals | tests: TestStopSignals$ | FAILS as required
+--- FAIL: TestStopSignals (0.00s)
+    dispatch_test.go:185: stopSignals lacks hangup
+FAIL
+FAIL	github.com/waggle-sh/waggle/cmd/waggle	0.151s
+FAIL
+git status after restore: ?? internal/dispatch/opusprobe_test.go
+
+
+# rerun of the unregistered-directory removal with "_ = listed" (the first attempt did not compile)
+== removal: unregistered-directory refusal (replaced by _ = listed) | FAILS as required
+    clean_test.go:317: out "tainted by run run-1\n" err <nil>
+--- FAIL: TestCleanRefusesUnregisteredDirectory (0.16s)
+    opusprobe_test.go:118: mis-cased --repo TESTOPUSCLEANMISCASEDREPO4190300847/001: out "tainted by run run-1\n" code 0 err <nil>
+    opusprobe_test.go:120: mis-cased clean removed something or exited 0
+--- FAIL: TestOpusCleanMisCasedRepo (0.21s)
+    opusprobe_test.go:137: plain dir guard: out "tainted by run run-1\n" code 0 err <nil>
+    opusprobe_test.go:139: plain dir: something removed, lock left, or exit 0
+--- FAIL: TestOpusCleanPlainDirWithTakeover (0.16s)
+?? internal/dispatch/opusprobe_test.go
+

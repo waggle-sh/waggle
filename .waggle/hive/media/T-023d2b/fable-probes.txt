@@ -1,0 +1,39 @@
+    zz_fable_probe_test.go:39: P1 mis-cased: out="" err=.waggle/worktrees/T-023-builder is not a registered worktree of this repo; nothing was removed code=3
+    zz_fable_probe_test.go:40: P1 dir kept=true tainted kept=true
+--- PASS: TestProbeCleanMisCasedRepo (0.30s)
+    zz_fable_probe_test.go:55: P2 trailing slash: out="removed worktree .waggle/worktrees/T-023-builder\ntainted by run run-1\n" err=<nil> dir kept=false tainted kept=false
+--- PASS: TestProbeCleanTrailingSlash (0.26s)
+    zz_fable_probe_test.go:63: P3 symlinked repo: out="removed worktree .waggle/worktrees/T-023-builder\ntainted by run run-1\n" err=<nil> dir kept=false tainted kept=false
+--- PASS: TestProbeCleanSymlinkedRepo (0.28s)
+    zz_fable_probe_test.go:74: P4 gitdir line: "../../../.waggle/worktrees/T-023-builder/.git"
+    zz_fable_probe_test.go:80: P4 gone=false: out="removed worktree .waggle/worktrees/T-023-builder\ntainted by run run-1\n" err=<nil> dir kept=false tainted kept=false entry kept=false
+    zz_fable_probe_test.go:74: P4 gitdir line: "../../../.waggle/worktrees/T-023-builder/.git"
+    zz_fable_probe_test.go:80: P4 gone=true: out="removed worktree .waggle/worktrees/T-023-builder\ntainted by run run-1\n" err=<nil> dir kept=false tainted kept=false entry kept=false
+--- PASS: TestProbeCleanRelativePaths (0.62s)
+    zz_fable_probe_test.go:95: P5a deleted by hand: code=3 err=git worktree: exit status 128: Preparing worktree (checking out 't-023')
+        fatal: '$TMPTestProbeProvisionStaleCases108594705/001/.waggle/worktrees/T-023-builder' is a missing but already registered worktree;
+        use 'add -f' to override, or 'prune' or 'remove' to clear; if a stale entry for T-023-builder remains, run waggle dispatch clean T-023 --role builder
+    zz_fable_probe_test.go:100: P5b locked: code=3 err=git worktree: exit status 128: Preparing worktree (checking out 't-023')
+        fatal: '$TMPTestProbeProvisionStaleCases108594705/001/.waggle/worktrees/T-023-builder' is a missing but locked worktree;
+        use 'add -f -f' to override, or 'unlock' and 'prune' or 'remove' to clear; if a stale entry for T-023-builder remains, run waggle dispatch clean T-023 --role builder
+    zz_fable_probe_test.go:103: P5b clean: out="removed worktree .waggle/worktrees/T-023-builder\n" err=<nil> entry kept=false
+    zz_fable_probe_test.go:105: P5b provision after clean: err=<nil>
+    zz_fable_probe_test.go:121: P5c checked out elsewhere: code=3 err=git worktree: exit status 128: Preparing worktree (checking out 't-023')
+        fatal: 't-023' is already used by worktree at '/private$TMPTestProbeProvisionStaleCases108594705/003/scratch'; if a stale entry for T-023-builder remains, run waggle dispatch clean T-023 --role builder
+    zz_fable_probe_test.go:124: P5c clean: out="nothing to clean for 23\n" err=<nil>
+    zz_fable_probe_test.go:130: P5d bad base: code=3 err=git worktree: exit status 128: fatal: invalid reference: 0000000000000000000000000000000000000000; if a stale entry for T-023-builder remains, run waggle dispatch clean T-023 --role builder
+--- PASS: TestProbeProvisionStaleCases (0.97s)
+    zz_fable_probe_test.go:144: P6 listing:
+        config.keys: recorded db2b02856394 current 33a2cdeef9ba
+        hooks/gone: recorded abc current missing
+        digest 7b75190ccb0be7a9
+        waggle dispatch clean --host-record --accept 7b75190ccb0be7a9
+         err=<nil>
+    zz_fable_probe_test.go:149: P6 accept after a whitespace edit of the record: code=3 err=host files changed since the listing; list them again
+    zz_fable_probe_test.go:152: P6 accept: out="host record accepted\n" err=<nil>
+    zz_fable_probe_test.go:154: P6 accept again (same digest, now matching): out="host record matches\n" err=<nil>
+    zz_fable_probe_test.go:156: P6 list after accept: out="host record matches\n"
+    zz_fable_probe_test.go:158: P6 record run field: {"run":"accepted"
+--- PASS: TestProbeHostRecordFlows (0.40s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	3.077s

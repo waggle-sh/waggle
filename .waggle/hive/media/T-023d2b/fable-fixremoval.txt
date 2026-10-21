@@ -1,0 +1,47 @@
+== removal: record-state term of the digest | test: TestHostRecordAccept$
+--- FAIL: TestHostRecordAccept (0.22s)
+    hostrecord_test.go:176: rewritten record: <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.378s
+FAIL
+
+== removal: printable in the listing | test: TestHostRecordListing$
+--- FAIL: TestHostRecordListing (0.15s)
+    hostrecord_test.go:103: listing: "config.keys: recorded db2b02856394 current 33a2cdeef9ba\nhooks/a\x1bb\u202ec: recorded missing current 2d711642b726\ndigest 4478da062eeb4be9\nwaggle dispatch clean --host-record --accept 4478da062eeb4be9\n"
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.309s
+FAIL
+
+== removal: pinned() on worktree add -b (new branch) | test: TestProvisionRunsNoGlobalFilter/new_branch
+--- FAIL: TestProvisionRunsNoGlobalFilter (0.22s)
+    --- FAIL: TestProvisionRunsNoGlobalFilter/new_branch (0.22s)
+        provision_test.go:105: the global smudge filter ran on the host
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.393s
+FAIL
+
+== removal: unregistered-directory refusal | test: TestCleanRefusesUnregisteredDirectory$
+--- FAIL: TestCleanRefusesUnregisteredDirectory (0.15s)
+    clean_test.go:317: out "tainted by run run-1\n" err <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.338s
+FAIL
+
+== removal: SIGHUP in stopSignals | test: TestStopSignals$
+--- FAIL: TestStopSignals (0.00s)
+    dispatch_test.go:185: stopSignals lacks hangup
+FAIL
+FAIL	github.com/waggle-sh/waggle/cmd/waggle	0.174s
+FAIL
+
+== removal: own stale admin entry removal in clean (prune gone, nothing replaces it) | test: TestProvisionLeavesOtherStaleEntriesAndHintsClean$
+--- FAIL: TestProvisionLeavesOtherStaleEntriesAndHintsClean (0.22s)
+    provision_test.go:58: after clean: git worktree: exit status 128: Preparing worktree (checking out 't-023')
+        fatal: '$TMP/TestProvisionLeavesOtherStaleEntriesAndHintsClean132340682/001/.waggle/worktrees/T-023-builder' is a missing but already registered worktree;
+        use 'add -f' to override, or 'prune' or 'remove' to clear; if a stale entry for T-023-builder remains, run waggle dispatch clean T-023 --role builder
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.396s
+FAIL
+
+== restored working tree:
+?? internal/dispatch/zz_fable_probe_test.go
