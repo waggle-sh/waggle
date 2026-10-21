@@ -1,0 +1,160 @@
+== probe source (uncommitted, deleted after the review)
+//go:build unix
+
+package dispatch
+
+// Throwaway guard probes for the D2b review (fable). Git and file only: they
+// call Clean, Provision and HostRecord directly and never Run. Deleted after
+// the review; never committed.
+
+import (
+	"bytes"
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func probeClean(repoDir string) (string, error) {
+	var out bytes.Buffer
+	err := Clean(context.Background(), CleanRequest{RepoDir: repoDir, Ticket: "23"}, &out)
+	return out.String(), err
+}
+
+func scrub(s string) string {
+	home, _ := os.UserHomeDir()
+	s = strings.ReplaceAll(s, os.TempDir(), "$TMP")
+	return strings.ReplaceAll(s, home, "~")
+}
+
+// P1: a mis-cased --repo on a case-insensitive volume.
+func TestProbeCleanMisCasedRepo(t *testing.T) {
+	f, wt := cleanRepo(t, false)
+	write(t, f.real, ".waggle/worktrees/T-023-builder.tainted", "run-1")
+	mis := filepath.Join(filepath.Dir(f.real), "REPO")
+	if _, err := os.Stat(mis); err != nil {
+		t.Skipf("volume is case-sensitive: %v", err)
+	}
+	out, err := probeClean(mis)
+	t.Logf("P1 mis-cased: out=%q err=%v code=%d", out, scrub(errStr(err)), code(err))
+	t.Logf("P1 dir kept=%v tainted kept=%v", exists(wt), exists(wt+".tainted"))
+}
+
+func errStr(err error) string {
+	if err == nil {
+		return "<nil>"
+	}
+	return err.Error()
+}
+
+// P2: a trailing slash on --repo.
+func TestProbeCleanTrailingSlash(t *testing.T) {
+	f, wt := cleanRepo(t, false)
+	write(t, f.real, ".waggle/worktrees/T-023-builder.tainted", "run-1")
+	out, err := probeClean(f.real + "/")
+	t.Logf("P2 trailing slash: out=%q err=%v dir kept=%v tainted kept=%v", out, scrub(errStr(err)), exists(wt), exists(wt+".tainted"))
+}
+
+// P3: a symlinked repo path.
+func TestProbeCleanSymlinkedRepo(t *testing.T) {
+	f, wt := cleanRepo(t, true)
+	write(t, f.real, ".waggle/worktrees/T-023-builder.tainted", "run-1")
+	out, err := probeClean(f.repo)
+	t.Logf("P3 symlinked repo: out=%q err=%v dir kept=%v tainted kept=%v", out, scrub(errStr(err)), exists(wt), exists(wt+".tainted"))
+}
+
+// P4: worktree.useRelativePaths, both with the directory present and gone.
+func TestProbeCleanRelativePaths(t *testing.T) {
+	for _, gone := range []bool{false, true} {
+		f := newFixture(t, false, false)
+		f.git("config", "worktree.useRelativePaths", "true")
+		wt := filepath.Join(f.real, ".waggle/worktrees/T-023-builder")
+		f.git("worktree", "add", "-q", "-b", "t-023", wt, "main")
+		gd, _ := os.ReadFile(filepath.Join(f.common(), "worktrees/T-023-builder/gitdir"))
+		t.Logf("P4 gitdir line: %q", strings.TrimSpace(scrub(string(gd))))
+		write(t, f.real, ".waggle/worktrees/T-023-builder.tainted", "run-1")
+		if gone {
+			os.RemoveAll(wt)
+		}
+		out, err := probeClean(f.real)
+		t.Logf("P4 gone=%v: out=%q err=%v dir kept=%v tainted kept=%v entry kept=%v", gone, out, scrub(errStr(err)), exists(wt), exists(wt+".tainted"), exists(filepath.Join(f.common(), "worktrees/T-023-builder")))
+	}
+}
+
+// P5: a locked entry whose directory is gone, then clean, then provision.
+func TestProbeProvisionStaleCases(t *testing.T) {
+	// (a) directory deleted by hand, entry remains
+	dir, g := newRepo(t)
+	w, err := provisionAt(t, dir, g, "builder", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Unlock()
+	os.RemoveAll(w.Path)
+	_, err = provisionAt(t, dir, g, "builder", "")
+	t.Logf("P5a deleted by hand: code=%d err=%v", code(err), scrub(errStr(err)))
+
+	// (b) entry locked, directory gone
+	sh(t, dir, "worktree", "lock", "--reason", "keeper", w.Path)
+	_, err = provisionAt(t, dir, g, "builder", "")
+	t.Logf("P5b locked: code=%d err=%v", code(err), scrub(errStr(err)))
+	var out bytes.Buffer
+	cerr := Clean(context.Background(), CleanRequest{RepoDir: dir, Ticket: "23"}, &out)
+	t.Logf("P5b clean: out=%q err=%v entry kept=%v", out.String(), scrub(errStr(cerr)), exists(filepath.Join(dir, ".git/worktrees/T-023-builder")))
+	w, err = provisionAt(t, dir, g, "builder", "")
+	t.Logf("P5b provision after clean: err=%v", scrub(errStr(err)))
+	if w != nil {
+		_ = w.Unlock()
+	}
+
+	// (c) the branch is checked out elsewhere (an entry pointing elsewhere)
+	dir2, g2 := newRepo(t)
+	w2, err := provisionAt(t, dir2, g2, "builder", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w2.Unlock()
+	sh(t, dir2, "worktree", "remove", "--force", w2.Path)
+	other := filepath.Join(t.TempDir(), "scratch")
+	sh(t, dir2, "worktree", "add", "-q", other, "t-023")
+	_, err = provisionAt(t, dir2, g2, "builder", "")
+	t.Logf("P5c checked out elsewhere: code=%d err=%v", code(err), scrub(errStr(err)))
+	out.Reset()
+	cerr = Clean(context.Background(), CleanRequest{RepoDir: dir2, Ticket: "23"}, &out)
+	t.Logf("P5c clean: out=%q err=%v", out.String(), scrub(errStr(cerr)))
+
+	// (d) a non-existent base OID with the path absent: the hint still fires
+	dir3, g3 := newRepo(t)
+	req := mustValid(t, okReq(dir3))
+	_, err = Provision(context.Background(), g3, req, "0000000000000000000000000000000000000000", t0)
+	t.Logf("P5d bad base: code=%d err=%v", code(err), scrub(errStr(err)))
+}
+
+// P6: the host-record listing for a readable record that differs, a key only
+// in the record, accept twice, and a one-byte record edit after the listing.
+func TestProbeHostRecordFlows(t *testing.T) {
+	f := newFixture(t, false, false)
+	record := recordNow(t, f)
+	b, _ := os.ReadFile(record)
+	// add a key only the record has
+	s := strings.Replace(string(b), `"files":{`, `"files":{"hooks/gone":"abc",`, 1)
+	os.WriteFile(record, []byte(s), 0o600)
+	f.git("config", "remote.x.url", "y")
+	out, err := hostRec(f, "", false)
+	t.Logf("P6 listing:\n%s err=%v", scrub(out), errStr(err))
+	d := listedDigest(t, out)
+	// a one-byte whitespace edit of the record after the listing
+	os.WriteFile(record, []byte(s+" "), 0o600)
+	_, err = hostRec(f, d, true)
+	t.Logf("P6 accept after a whitespace edit of the record: code=%d err=%v", code(err), errStr(err))
+	d = listedDigest(t, mustOut(t, f))
+	out, err = hostRec(f, d, true)
+	t.Logf("P6 accept: out=%q err=%v", out, errStr(err))
+	out, err = hostRec(f, d, true)
+	t.Logf("P6 accept again (same digest, now matching): out=%q err=%v", out, errStr(err))
+	out, err = hostRec(f, "", false)
+	t.Logf("P6 list after accept: out=%q", out)
+	rb, _ := os.ReadFile(record)
+	t.Logf("P6 record run field: %s", strings.SplitN(string(rb), ",", 2)[0])
+}

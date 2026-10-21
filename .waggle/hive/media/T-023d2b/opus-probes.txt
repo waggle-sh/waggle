@@ -1,0 +1,40 @@
+=== RUN   TestOpusAcceptHeldLockWritesNothing
+    opusprobe_test.go:27: held lock accept: code 3 err a dispatch run is in progress in this repo: run in progress: $TMPDIR/TestOpusAcceptHeldLockWritesNothing3292332935/001/repo/.waggle/worktrees/dispatch.lock held by pid <pid> on <host> since 2026-10-20T19:59:57-07:00
+--- PASS: TestOpusAcceptHeldLockWritesNothing (0.16s)
+=== RUN   TestOpusAcceptUnreadableRecords
+    opusprobe_test.go:43: bad JSON swapped after listing: refused, bytes kept
+    opusprobe_test.go:51: oversize swapped for bad JSON: refused
+    opusprobe_test.go:62: symlink retarget: listing identical true
+    opusprobe_test.go:64: symlink retarget accept: "host record accepted\n" <nil>; targets "A" "B"
+    opusprobe_test.go:72: well-formed but wrong digest: exit 3, bytes kept
+--- PASS: TestOpusAcceptUnreadableRecords (0.27s)
+=== RUN   TestOpusForgedRecordKeysPrintable
+    opusprobe_test.go:85: forged listing: "hooks/]8;;http://xevil\u2028AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: recorded [31mvalu current missing\ninfo/[2Jxy: recorded missing current 594e519ae499\ndigest 5a6045c371ec4e6f\nwaggle dispatch clean --host-record --accept 5a6045c371ec4e6f\n"
+    opusprobe_test.go:98: NOTE: U+2028 (Zl) passes printable
+--- PASS: TestOpusForgedRecordKeysPrintable (0.11s)
+=== RUN   TestOpusCleanMisCasedRepo
+    opusprobe_test.go:118: mis-cased --repo TESTOPUSCLEANMISCASEDREPO2634222939/001: out "" code 3 err .waggle/worktrees/T-023-builder is not a registered worktree of this repo; nothing was removed
+    opusprobe_test.go:127: right case: "removed worktree .waggle/worktrees/T-023-builder\ntainted by run run-1\n"
+--- PASS: TestOpusCleanMisCasedRepo (0.17s)
+=== RUN   TestOpusCleanPlainDirWithTakeover
+    opusprobe_test.go:137: plain dir guard: out "" code 3 err .waggle/worktrees/T-023-guard is not a registered worktree of this repo; nothing was removed
+    opusprobe_test.go:143: plain dir all roles: out "" code 3
+--- PASS: TestOpusCleanPlainDirWithTakeover (0.12s)
+=== RUN   TestOpusTraceNoPruneAnywhere
+    opusprobe_test.go:164: stale own: code 3 err git worktree: exit status 128: Preparing worktree (checking out 't-023')
+        fatal: '$TMPDIR/TestOpusTraceNoPruneAnywhere1296193559/001/.waggle/worktrees/T-023-builder' is a missing but already registered worktree;
+        use 'add -f' to override, or 'prune' or 'remove' to clear; if a stale entry for T-023-builder remains, run waggle dispatch clean T-023 --role builder
+    opusprobe_test.go:184: trace: 17 built-in git calls, worktree add present true
+    opusprobe_test.go:188: T-024 stale entry survived provision, clean T-023, guard provision
+--- PASS: TestOpusTraceNoPruneAnywhere (0.24s)
+=== RUN   TestOpusHintOnlyWhenPathAbsent
+    opusprobe_test.go:197: path is a file: $TMPDIR/TestOpusHintOnlyWhenPathAbsent3361658459/001/.waggle/worktrees/T-023-builder exists but is not a real directory; remove it
+    opusprobe_test.go:205: plain dir: $TMPDIR/TestOpusHintOnlyWhenPathAbsent3361658459/001/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it
+    opusprobe_test.go:213: branch elsewhere: git worktree: exit status 128: Preparing worktree (checking out 't-023')
+        fatal: 't-023' is already used by worktree at '$TMPDIR/TestOpusHintOnlyWhenPathAbsent3361658459/002/o'; if a stale entry for T-023-builder remains, run waggle dispatch clean T-023 --role builder
+--- PASS: TestOpusHintOnlyWhenPathAbsent (0.14s)
+=== RUN   TestOpusNoHooksOrEnvConfigInProvision
+    opusprobe_test.go:239: canaries written: []
+--- PASS: TestOpusNoHooksOrEnvConfigInProvision (0.14s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	2.492s
