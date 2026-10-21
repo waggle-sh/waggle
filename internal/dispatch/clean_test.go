@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -132,7 +133,7 @@ func TestCleanRefusesDuplicateEntries(t *testing.T) {
 	real, _ := filepath.EvalSymlinks(wt)
 	write(t, f.common(), "worktrees/0/gitdir", real+"/.git\n")
 	out, err := doClean(f, "", false)
-	if code(err) != ExitEnv || err == nil || !strings.Contains(err.Error(), "worktrees/0 and worktrees/T-023-builder") || !exists(wt) || !exists(filepath.Join(f.common(), "worktrees/0")) || !exists(filepath.Join(f.common(), "worktrees/T-023-builder")) {
+	if code(err) != ExitEnv || err == nil || !strings.Contains(err.Error(), "duplicate worktree entries") || !exists(wt) || !exists(filepath.Join(f.common(), "worktrees/0")) || !exists(filepath.Join(f.common(), "worktrees/T-023-builder")) {
 		t.Fatalf("out %q err %v", out, err)
 	}
 }
@@ -163,7 +164,7 @@ func TestCleanGitCallsArePinned(t *testing.T) {
 // Opus probes: a planted entry copying another ticket's, and a planted entry
 // whose gitdir is a link to the real one. Both exit 3 with nothing removed.
 func TestCleanRefusesForeignDuplicateAndLinkedGitdir(t *testing.T) {
-	for _, mode := range []string{"copy", "link", "case", "GIT", "Git", "upper", "parent"} {
+	for _, mode := range []string{"copy", "link", "case", "GIT", "Git", "upper", "parent", "relative"} {
 		link := mode == "link"
 		f, wt := cleanRepo(t, false)
 		other := filepath.Join(f.real, ".waggle/worktrees/T-024-builder")
@@ -191,16 +192,66 @@ func TestCleanRefusesForeignDuplicateAndLinkedGitdir(t *testing.T) {
 				}
 				g = filepath.Join(ln, "T-024-builder", ".git")
 			}
-			if _, serr := os.Stat(filepath.Dir(g)); serr != nil {
+			if mode == "relative" { // fable P11/P12: a relative gitdir through a link, spelled for git's own resolution
+				if os.MkdirAll(filepath.Join(f.real, "Z"), 0o755) != nil || os.Symlink(other, filepath.Join(f.real, "Z/X")) != nil {
+					t.Fatal("cannot plant the relative link")
+				}
+				g = "../../../Z/X/../T-024-builder/.git"
+			} else if _, serr := os.Stat(filepath.Dir(g)); serr != nil {
 				continue // a case-sensitive filesystem cannot spell the same directory two ways
 			}
 			b = []byte(g + "\n")
 			write(t, f.common(), "worktrees/0/gitdir", string(b))
 		}
+		// the link mode is refused by the gitdir check, the others where git's own dry run sees a duplicate
+		dup := link || strings.Contains(f.git("worktree", "prune", "-n", "-v"), "duplicate entry")
 		out, err := doClean(f, "", false)
-		if code(err) != ExitEnv || err == nil || !exists(wt) || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-023-builder")) || strings.Contains(out, "removed") {
+		if !dup {
+			t.Logf("%s: git's dry run reports no duplicate on this filesystem", mode)
+			if err != nil || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-024-builder")) {
+				t.Fatalf("%s: T-024 was touched: out %q err %v", mode, out, err)
+			}
+			continue
+		}
+		if code(err) != ExitEnv || err == nil || !exists(wt) || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-023-builder")) || !exists(filepath.Join(f.common(), "worktrees/T-024-builder")) || strings.Contains(out, "removed") {
 			t.Fatalf("%s: out %q err %v", mode, out, err)
 		}
+	}
+}
+
+// A healthy repo, including relative worktree paths (fable P14) and a prunable
+// entry whose directory is gone, cleans with exit 0; git's other prune reasons
+// are not duplicates.
+func TestCleanHealthyRepoWithRelativeAndPrunableEntries(t *testing.T) {
+	f, wt := cleanRepo(t, false)
+	f.git("config", "worktree.useRelativePaths", "true")
+	other, gone := filepath.Join(f.real, ".waggle/worktrees/T-024-builder"), filepath.Join(f.real, ".waggle/worktrees/T-025-builder")
+	f.git("worktree", "add", "-q", "-b", "t-024", other, "main")
+	f.git("worktree", "add", "-q", "-b", "t-025", gone, "main")
+	if err := os.RemoveAll(gone); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := doClean(f, "", false); err != nil || exists(wt) || !exists(other) || !exists(filepath.Join(f.common(), "worktrees/T-024-builder")) {
+		t.Fatalf("out %q err %v", out, err)
+	}
+}
+
+// A prune dry run that fails refuses with nothing removed.
+func TestCleanRefusesFailingDryRun(t *testing.T) {
+	f, wt := cleanRepo(t, false)
+	git, err := exec.LookPath("git")
+	if err != nil {
+		t.Skip("no git")
+	}
+	shim := filepath.Join(t.TempDir(), "git")
+	body := "#!/bin/sh\nfor a in \"$@\"; do [ \"$a\" = --dry-run ] && exit 1; done\nexec " + git + " \"$@\"\n"
+	if err := os.WriteFile(shim, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	err = Clean(context.Background(), CleanRequest{RepoDir: f.repo, GitBin: shim, Ticket: "23"}, &out)
+	if code(err) != ExitEnv || err == nil || !strings.Contains(err.Error(), "nothing was removed") || !exists(wt) || strings.Contains(out.String(), "removed") {
+		t.Fatalf("out %q err %v", out.String(), err)
 	}
 }
 

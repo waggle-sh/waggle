@@ -102,7 +102,7 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 		}
 		wants = append(wants, real)
 	}
-	if err = c.noDuplicates(); err != nil {
+	if err = c.noDuplicates(ctx); err != nil {
 		return err
 	}
 	list, err := c.pg.Run(ctx, "worktree", "list", "--porcelain")
@@ -135,41 +135,37 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 	return nil
 }
 
-// noDuplicates reads every admin entry's gitdir (bounded, links not followed)
-// and refuses when any two name the same worktree, or when an entry's gitdir is
-// not a readable regular file: git prunes repository-wide and follows links.
-func (c *cleaner) noDuplicates() error {
+// noDuplicates refuses when an admin entry's gitdir is not a readable regular
+// file, then asks git's own prune dry run (C locale, same pinned env) for
+// duplicate entries: git prunes repository-wide, follows links and folds case
+// its own way, so only git can say which entries it treats as duplicates. A dry
+// run that fails refuses too. Other reasons (a missing worktree) are normal prunes.
+func (c *cleaner) noDuplicates(ctx context.Context) error {
 	root := filepath.Join(c.common, "worktrees")
-	type entry struct {
-		name, key string
-		fi        os.FileInfo
-	}
-	var seen []entry
 	ents, _ := os.ReadDir(root)
 	for _, e := range ents {
-		admin := filepath.Join(root, e.Name())
-		b, err := readSmall(filepath.Join(admin, "gitdir"))
+		_, err := readSmall(filepath.Join(root, e.Name(), "gitdir"))
 		if e.Type().IsRegular() || e.IsDir() && errors.Is(err, fs.ErrNotExist) { // git prunes a stray file, or a gitdir-less entry unless it is locked
 			continue
 		}
 		if err != nil || !e.IsDir() {
 			return failf(ExitEnv, "worktrees/%s has no readable gitdir; nothing was removed", e.Name())
 		}
-		g := strings.TrimSpace(string(b))
-		if !filepath.IsAbs(g) {
-			g = filepath.Join(admin, g)
+	}
+	dry := *c.pg
+	dry.CLocale = true
+	b, err := dry.Run(ctx, "worktree", "prune", "--dry-run", "-v")
+	if err != nil {
+		return failf(ExitEnv, "%w; nothing was removed", err)
+	}
+	var dups []string
+	for _, l := range strings.Split(string(b), "\n") {
+		if n, ok := strings.CutSuffix(strings.TrimSpace(l), ": duplicate entry"); ok && strings.HasPrefix(n, "Removing ") {
+			dups = append(dups, strings.TrimPrefix(n, "Removing "))
 		}
-		p := filepath.Clean(g)
-		if strings.EqualFold(filepath.Base(p), ".git") {
-			p = filepath.Dir(p)
-		}
-		fi, _ := os.Stat(p) // file identity folds links, case and suffix spelling; a missing worktree falls back to its lowercased path
-		for _, s := range seen {
-			if fi != nil && s.fi != nil && os.SameFile(fi, s.fi) || fi == nil && s.fi == nil && s.key == strings.ToLower(p) {
-				return failf(ExitEnv, "worktrees/%s and worktrees/%s both name %s; nothing was removed", s.name, e.Name(), p)
-			}
-		}
-		seen = append(seen, entry{e.Name(), strings.ToLower(p), fi})
+	}
+	if len(dups) > 0 {
+		return failf(ExitEnv, "git sees duplicate worktree entries (%s); nothing was removed", strings.Join(dups, ", "))
 	}
 	return nil
 }
