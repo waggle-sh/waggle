@@ -1,0 +1,93 @@
+#!/bin/zsh
+# fable confirm 3 probes for T-023 D2 fix round 3 at ddccd51: git only, no signals.
+set -u
+W="$1"            # waggle binary
+S="$2"            # scratch root, inside the guard's own worktree
+fresh() {         # a repo with T-023-builder and T-024-builder worktrees; echoes the repo path
+  local r="$S/$1"; rm -rf "$r"; mkdir -p "$r"
+  git -C "$r" init -q -b main >/dev/null
+  git -C "$r" config --local user.name k; git -C "$r" config --local user.email k@example.com
+  git -C "$r" config --local commit.gpgsign false
+  echo x > "$r/f"; git -C "$r" add f; git -C "$r" commit -qm init >/dev/null
+  git -C "$r" worktree add -q -b t-023 "$r/.waggle/worktrees/T-023-builder" main
+  git -C "$r" worktree add -q -b t-024 "$r/.waggle/worktrees/T-024-builder" main
+  git -C "$r" update-ref refs/waggle/claims/ticket-23 HEAD
+  echo "$r"
+}
+state() {         # what is left: admin entries and the two worktrees
+  local r="$1"
+  echo "  admin: $(ls -A "$r/.git/worktrees" | tr '\n' ' ')"
+  echo "  T-023 wt: $([ -e "$r/.waggle/worktrees/T-023-builder" ] && echo present || echo gone)   T-024 wt: $([ -e "$r/.waggle/worktrees/T-024-builder" ] && echo present || echo gone)"
+  echo "  T-024 git status: $(git -C "$r/.waggle/worktrees/T-024-builder" status --porcelain -b 2>&1 | head -1)"
+}
+run() {           # run clean and report exit and output
+  local r="$1"; shift
+  local out; out=$("$W" dispatch clean 23 --repo "$r" "$@" 2>&1); local rc=$?
+  echo "  exit $rc: $out"
+}
+plant() {         # plant admin entry 0 with the given gitdir content
+  mkdir -p "$1/.git/worktrees/0"; printf '%s\n' "$2" > "$1/.git/worktrees/0/gitdir"
+}
+
+echo "git $(git --version), core.ignorecase in a fresh repo: $(git -C "$(fresh ig)" config --get core.ignorecase)"
+
+for sfx in .GIT .Git .gIt; do
+  echo "P1 $sfx: worktrees/0/gitdir names T-024-builder/$sfx (expect exit 3, nothing removed)"
+  r=$(fresh p1); plant "$r" "$r/.waggle/worktrees/T-024-builder/$sfx"
+  run "$r"; state "$r"
+done
+
+echo "P2 fully upper-cased gitdir (expect exit 3)"
+r=$(fresh p2); plant "$r" "$(echo "$r/.waggle/worktrees/T-024-builder/.git" | tr a-z A-Z)"
+run "$r"; state "$r"
+
+echo "P3 symlinked parent: ln -> .waggle/worktrees, gitdir names ln/T-024-builder/.git (expect exit 3)"
+r=$(fresh p3); ln -s "$r/.waggle/worktrees" "$S/p3-ln"; plant "$r" "$S/p3-ln/T-024-builder/.git"
+run "$r"; state "$r"; rm -f "$S/p3-ln"
+
+echo "P4 copy: gitdir copied from T-024-builder's (expect exit 3)"
+r=$(fresh p4); plant "$r" "$(cat "$r/.git/worktrees/T-024-builder/gitdir")"
+run "$r"; state "$r"
+
+echo "P5 link: worktrees/0/gitdir is a symlink to T-024-builder's gitdir (expect exit 3)"
+r=$(fresh p5); mkdir -p "$r/.git/worktrees/0"; ln -s "$r/.git/worktrees/T-024-builder/gitdir" "$r/.git/worktrees/0/gitdir"
+run "$r"; state "$r"
+
+echo "P6 healthy repo, mixed roles plus a user worktree outside .waggle (expect exit 0, only T-023-builder removed)"
+r=$(fresh p6)
+git -C "$r" worktree add -q -b t-024g "$r/.waggle/worktrees/T-024-guard" main
+git -C "$r" worktree add -q -b t-024f "$r/.waggle/worktrees/T-024-forager" main
+git -C "$r" worktree add -q -b mine "$S/p6-Mine" main
+run "$r"; state "$r"
+echo "  worktree list: $(git -C "$r" worktree list --porcelain | grep -c '^worktree ') entries (expect 5)"
+
+echo "P7 spellings git treats as different but Stat folds: trailing slash, /./, .., no .git suffix, .git file named twice via NFC/NFD (expect exit 3 each: the safe direction)"
+r=$(fresh p7a); plant "$r" "$r/.waggle/worktrees/T-024-builder/.git/"; run "$r"; state "$r"
+r=$(fresh p7b); plant "$r" "$r/.waggle/worktrees/./T-024-builder/.git"; run "$r"; state "$r"
+r=$(fresh p7c); plant "$r" "$r/.waggle/worktrees/T-023-builder/../T-024-builder/.git"; run "$r"; state "$r"
+r=$(fresh p7d); plant "$r" "$r/.waggle/worktrees/T-024-builder"; run "$r"; state "$r"
+r=$(fresh p7e); nfc=$(printf 'caf\xc3\xa9'); nfd=$(printf 'cafe\xcc\x81')
+git -C "$r" worktree add -q -b u "$r/.waggle/worktrees/$nfc" main
+plant "$r" "$r/.waggle/worktrees/$nfd/.git"; run "$r"; state "$r"
+echo "  real entry gitdir: $(cat "$r/.git/worktrees/$nfc/gitdir" | xxd -p | tail -c 40)"
+
+echo "P8 relative gitdir, plain: ../../../.waggle/worktrees/T-024-builder/.git (git realpaths a relative gitdir; expect exit 3)"
+r=$(fresh p8); plant "$r" "../../../.waggle/worktrees/T-024-builder/.git"; run "$r"; state "$r"
+
+echo "P9 relative gitdir through a symlink then ..: T-023-builder/X -> T-023-builder; gitdir ../../../.waggle/worktrees/T-023-builder/X/../T-024-builder/.git"
+echo "   git realpath: .../T-024-builder/.git (equal to the real entry); Go Clean: .../T-023-builder/T-024-builder/.git (a different dir the builder created)"
+r=$(fresh p9); ln -s "$r/.waggle/worktrees/T-023-builder" "$r/.waggle/worktrees/T-023-builder/X"; mkdir -p "$r/.waggle/worktrees/T-023-builder/T-024-builder"
+plant "$r" "../../../.waggle/worktrees/T-023-builder/X/../T-024-builder/.git"
+echo "  git worktree prune --dry-run -v says:"; git -C "$r" worktree prune --dry-run -v 2>&1 | sed 's/^/    /'
+run "$r"; state "$r"
+
+echo "P9b same, but the lexical target does not exist (fi nil on the planted side)"
+r=$(fresh p9b); ln -s "$r/.waggle/worktrees/T-023-builder" "$r/.waggle/worktrees/T-023-builder/X"
+plant "$r" "../../../.waggle/worktrees/T-023-builder/X/../T-024-builder/.git"
+echo "  git worktree prune --dry-run -v says:"; git -C "$r" worktree prune --dry-run -v 2>&1 | sed 's/^/    /'
+run "$r"; state "$r"
+
+echo "P10 the reverse at 2d1a1b3 for comparison: which admin id does git drop in P9 when clean is not run (expect T-024-builder: ids sort 0 < T)"
+r=$(fresh p10); ln -s "$r/.waggle/worktrees/T-023-builder" "$r/.waggle/worktrees/T-023-builder/X"; mkdir -p "$r/.waggle/worktrees/T-023-builder/T-024-builder"
+plant "$r" "../../../.waggle/worktrees/T-023-builder/X/../T-024-builder/.git"
+git -C "$r" worktree prune -v 2>&1 | sed 's/^/    /'; state "$r"

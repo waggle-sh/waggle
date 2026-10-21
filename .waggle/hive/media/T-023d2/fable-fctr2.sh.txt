@@ -1,0 +1,21 @@
+#!/bin/sh
+# fable D2 guard container runner, per-run binary (D-193, D-195).
+# usage: fctr2.sh <src dir> <out file> <go test -run pattern> [extra test flags]
+S=<path>
+src="$1"; out="$2"; pat="$3"; shift 3
+bin="<path>"
+mkdir -p "$bin"
+( cd "$src" && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c -o "$bin/dispatch.test" ./internal/dispatch/ ) || { echo "cross-compile failed" > "$out"; exit 1; }
+until mkdir "$S/colima.lock" 2>/dev/null; do sleep 10; done
+trap 'rmdir "$S/colima.lock" 2>/dev/null' EXIT INT TERM
+{
+  echo "+ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c ./internal/dispatch/   (compiled on the host, run only in the container)"
+  echo "+ docker run --rm --init --cpus 1 --memory 700m -e GOGC=50 golang:1.23-bookworm dispatch.test -test.count=1 -test.run '$pat' $*"
+  docker run --rm --init --cpus 1 --memory 700m -e GOGC=50 \
+    -v "$src":/src -v "$bin":/bin2 -w /src/internal/dispatch golang:1.23-bookworm \
+    /bin2/dispatch.test -test.count=1 -test.run "$pat" "$@" 2>&1
+  echo "exit: $?"
+} | sed -e "s#<path> ]*#<path>#g" -e "s#<path> ]*#<path>#g" > "$out"
+rmdir "$S/colima.lock" 2>/dev/null
+rm -rf "$bin"
+tail -12 "$out"

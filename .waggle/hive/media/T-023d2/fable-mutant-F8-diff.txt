@@ -1,0 +1,11 @@
+--- <path> 15:22:31
++++ <path> 15:25:14
+@@ -147,7 +147,7 @@
+ 	for range 40 {
+ 		tab, err := t.read()
+ 		if t.observe(tab, err); err != nil {
+-			if fails++; fails > 3 {
++			if fails++; fails > 1000 {
+ 				break
+ 			}
+ 			time.Sleep(25 * time.Millisecond)

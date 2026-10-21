@@ -1,0 +1,7 @@
++ GOOS=linux go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestTargetsOnFabricatedTables' -test.v
+=== RUN   TestTargetsOnFabricatedTables
+    targets_test.go:61: leader group is dispatch's own: pids [501 502 510 511] groups [501 510], want [501 502 510 511] [510]
+--- FAIL: TestTargetsOnFabricatedTables (0.14s)
+FAIL
+exit: 1

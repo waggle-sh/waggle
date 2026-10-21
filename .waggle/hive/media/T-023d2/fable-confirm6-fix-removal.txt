@@ -1,0 +1,5 @@
+--- FAIL: TestCleanDropsMissingWorktreeEntryWithRelativeGitdir (0.17s)
+    clean_test.go:264: out "" err <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	1.663s
+FAIL

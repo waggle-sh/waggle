@@ -1,0 +1,11 @@
++ GOOS=linux go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestNoRenewalStartsAfterSessionEnds' -test.v
+=== RUN   TestNoRenewalStartsAfterSessionEnds
+    renewal_test.go:61: start at -737.848357ms from the marker
+    renewal_test.go:61: start at -539.164102ms from the marker
+    renewal_test.go:61: start at -243.885299ms from the marker
+    renewal_test.go:61: start at 158.192571ms from the marker
+    renewal_test.go:63: a renewal started 158.192571ms after the worker ended
+--- FAIL: TestNoRenewalStartsAfterSessionEnds (6.91s)
+FAIL
+exit: 1

@@ -1,0 +1,81 @@
+# fable confirmation 2 at 2d1a1b3: git-only clean probes on the host (macOS, APFS case-insensitive), no signals.
+# binary: go build ./cmd/waggle at 2d1a1b3; script: fable-confirm2-probe.sh.txt, run as: zsh probe.sh <bin> <work>
+
+git git version 2.54.0 (Apple Git-157), core.ignorecase in a fresh repo: true
+P1 case-only planted duplicate: worktrees/0/gitdir names t-024-builder/.git (expect exit 3, nothing removed)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <work>/p1/.waggle/worktrees/T-024-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P1b case-only duplicate of the cleaned ticket itself: worktrees/0/gitdir names t-023-builder/.git (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 and worktrees/T-023-builder both name <work>/p1b/.waggle/worktrees/T-023-builder; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P2 healthy repo, mixed roles plus a user worktree outside .waggle (expect exit 0, only T-023-builder removed)
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: p2-Mine T-024-builder T-024-forager T-024-guard 
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+  worktree list: 5 entries (expect 5)
+P3 stray entries: worktrees/.DS_Store file, worktrees/half dir with no gitdir, worktrees/lk dir with locked and no gitdir (expect exit 0, T-023 removed, T-024 intact)
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: lk T-024-builder 
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+P4a symlinked admin entry worktrees/ln -> T-024-builder (expect exit 3)
+  exit 3: waggle dispatch: worktrees/ln has no readable gitdir; nothing was removed
+  admin: ln T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P4b planted entry whose gitdir is a symlink to T-024-builder's gitdir (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P4c planted entry whose gitdir is a dangling symlink (expect exit 3: Lstat sees a link, not ENOENT)
+  exit 3: waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P4d planted entry whose gitdir is unreadable, mode 000 (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P4e planted entry whose gitdir is 4097 bytes (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P4f planted entry whose gitdir is a directory (expect exit 3)
+  exit 3: waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+  admin: 0 T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+P4g planted directory entry named like the real one but one letter case off, no gitdir: worktrees/t-024-builder (case-insensitive fs: mkdir fails or aliases; expect exit 0 and T-024 intact either way)
+  mkdir: mkdir: <work>/p4g/.git/worktrees/t-024-builder: File exists
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder 
+  T-023 wt: gone   T-024 wt: present
+  T-024 git status: ## t-024
+P5 what git itself does with the P3 strays after a plain prune on an untouched repo (reference)
+  Removing worktrees/.DS_Store: not a valid directory
+  Removing worktrees/half: gitdir file does not exist
+  admin: lk T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+  T-024 git status: ## t-024
+
+# extra entry shapes (script: fable-confirm2-probe2.sh.txt)
+P4h dangling symlink as the admin entry: worktrees/dl -> nowhere (ENOENT on its gitdir, but the entry is neither a file nor a directory; expect exit 3)
+  exit 3: waggle dispatch: worktrees/dl has no readable gitdir; nothing was removed
+  admin: dl T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+P4i FIFO as the admin entry: worktrees/ff (expect exit 3)
+  exit 3: waggle dispatch: worktrees/ff has no readable gitdir; nothing was removed
+  admin: ff T-023-builder T-024-builder 
+  T-023 wt: present   T-024 wt: present
+P4j planted directory entry whose gitdir is empty (git prunes it as invalid; expect exit 0, T-024 intact)
+  exit 0: removed worktree .waggle/worktrees/T-023-builder
+  admin: T-024-builder 
+  T-023 wt: gone   T-024 wt: present

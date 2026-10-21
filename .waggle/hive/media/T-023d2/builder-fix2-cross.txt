@@ -1,0 +1,7 @@
+darwin/arm64 build+vet ok
+linux/amd64 build+vet ok
+freebsd/amd64 build+vet ok
+windows/amd64 build+vet ok
+solaris/amd64 build+vet ok
+illumos/amd64 build+vet ok
+gofmt -l: []

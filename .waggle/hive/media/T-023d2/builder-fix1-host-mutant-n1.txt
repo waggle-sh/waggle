@@ -1,0 +1,6 @@
+=== RUN   TestTrackerStartsBeforeWait
+    setsid_test.go:48: newTracker at 19346, first cmd.Wait at 19285, err <nil>
+--- FAIL: TestTrackerStartsBeforeWait (0.00s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.168s
+FAIL

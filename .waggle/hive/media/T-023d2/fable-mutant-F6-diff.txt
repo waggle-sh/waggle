@@ -1,0 +1,13 @@
+--- <path> 15:22:31
++++ <path> 15:24:34
+@@ -508,9 +508,9 @@
+ 	// it, so its start time is known. The pipe is the stream's only way to EOF:
+ 	// when the leader exits, the whole group is killed, so a lingering
+ 	// grandchild cannot hold it open.
+-	tr := newTracker(cmd.Process.Pid)
+ 	exited := make(chan struct{})
+ 	go func() { _ = cmd.Wait(); signalGroup(cmd, true); close(exited) }()
++	tr := newTracker(cmd.Process.Pid)
+ 	var mu sync.Mutex
+ 	var killer *time.Timer
+ 	finished := false

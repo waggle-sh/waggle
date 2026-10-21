@@ -1,0 +1,16 @@
+# Opus D2 probe (host, no signals): a planted worktrees/0 whose gitdir file is a symlink to a real entry's gitdir. readSmall skips it, the git binary follows it. Built from 2f1352d.
+
+== planted worktrees/0 with gitdir -> worktrees/T-023-builder/gitdir (symlink)
+admin entries before: 0 T-023-builder T-024-builder 
+removed worktree .waggle/worktrees/T-023-builder
+removed worktree .waggle/worktrees/T-023-builder
+waggle dispatch: cleaning .waggle/worktrees/T-023-builder: git worktree: exit status 128: fatal: '<tmp>/repo2-T-023-builder/.waggle/worktrees/T-023-builder' is not a working tree
+clean exit 3
+admin entries after: 0 T-024-builder 
+T-024 worktree usable
+== planted worktrees/0 with gitdir -> worktrees/T-024-builder/gitdir (symlink)
+admin entries before: 0 T-023-builder T-024-builder 
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0
+admin entries after: 0 
+T-024 worktree BROKEN

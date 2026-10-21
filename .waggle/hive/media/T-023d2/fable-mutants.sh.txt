@@ -1,0 +1,68 @@
+#!/bin/sh
+# fable D2 guard fix-removal checks. Each mutant is a copy of the branch under
+# the worktree's .fable-scratch, edited by one substitution, cross-compiled for
+# linux on the host and run only in the container (D-193, D-195). A mutant that
+# does not apply (substitution count 0) is reported as NOT APPLIED, never run.
+S=<path>
+W=<path>
+table="$S/out/fable-fix-removal-table.txt"
+: > "$table"
+
+# mutant <name> <file> <perl substitution> <test pattern> <what was removed>
+mutant() {
+  name="$1"; file="$2"; sub="$3"; pat="$4"; what="$5"
+  d="$W/m/$name"
+  rm -rf "$d"; cp -R "$W/src" "$d"
+  n=$(perl -0pi -e "$sub" "$d/$file" 2>&1 | tail -1)
+  if cmp -s "$W/src/$file" "$d/$file"; then
+    echo "$name | $what | $pat | NOT APPLIED" >> "$table"
+    return
+  fi
+  diff -u "$W/src/$file" "$d/$file" | sed -e "s#<path> ]*#<path>#g" > "$S/out/fable-mutant-$name.diff"
+  "$S/fctr2.sh" "$d" "$S/out/fable-mutant-$name.txt" "$pat" -test.v > /dev/null
+  if grep -q '^exit: 0$' "$S/out/fable-mutant-$name.txt"; then
+    echo "$name | $what | $pat | PASSES (NOT CAUGHT)" >> "$table"
+  else
+    echo "$name | $what | $pat | FAILS (caught)" >> "$table"
+  fi
+  rm -rf "$d"
+}
+
+mutant F1 internal/dispatch/reap_unix.go \
+  's/k\.pid != t\.group && member && same \{/k.pid != t.group \&\& same {/' \
+  'TestTargetsOnFabricatedTables' 'targets: group must have a listed live member'
+
+mutant F3 internal/dispatch/reap_unix.go \
+  's|if p\.pid == t\.self \{ // from the table|if p.pgid == p.pid \&\& p.pid > 1 { if t.leaders == nil { t.leaders = map[pkey]bool{} }; t.leaders[pkey{p.pid, p.start}] = true }\n\t\tif p.pid == t.self { // from the table|' \
+  'TestObserveRecordsOnlyTrackedLeaders|TestTargetsOnFabricatedTables' 'observe: leaders holds only tracked processes (every table leader recorded)'
+
+mutant F5 internal/dispatch/cell_unix.go \
+  's/Setsid: true/Setpgid: true/' \
+  'TestWorkerLeadsOwnSession' 'cell: Setsid (back to Setpgid)'
+
+mutant F6 internal/dispatch/run.go \
+  's/\ttr := newTracker\(cmd\.Process\.Pid\)\n\texited := make\(chan struct\{\}\)\n\tgo func\(\) \{ _ = cmd\.Wait\(\); signalGroup\(cmd, true\); close\(exited\) \}\(\)\n/\texited := make(chan struct{})\n\tgo func() { _ = cmd.Wait(); signalGroup(cmd, true); close(exited) }()\n\ttr := newTracker(cmd.Process.Pid)\n/' \
+  'TestFastExitNeverBlind' 'run: tracker first read before the Wait goroutine (moved after it)'
+
+mutant F7 internal/dispatch/reap_unix.go \
+  's/\} else if p\.pid == t\.root && t\.rootStart == "" \{/} else if p.pid == t.root {/' \
+  'TestObserveRootStartSetOnce' 'observe: rootStart set once'
+
+mutant F8 internal/dispatch/reap_unix.go \
+  's/if fails\+\+; fails > 3 \{/if fails++; fails > 1000 {/' \
+  'TestSweepReadRetry' 'sweep: read retry bound of 3'
+
+mutant F9 internal/dispatch/reap_unix.go \
+  's/member = member \|\| p\.pgid == k\.pid && !p\.zombie/member = member || slices.ContainsFunc(t.live, func(q proc) bool { return q.pgid == k.pid })/' \
+  'TestTargetsOnFabricatedTables' 'targets: member comes from the table, not from live (an unseen orphan counts)'
+
+mutant F10 internal/dispatch/reap_unix.go \
+  's/same = same && \(p\.pid != k\.pid \|\| p\.start == k\.start\)/same = true/' \
+  'TestTargetsOnFabricatedTables' 'targets: leader pid listed with another start time excludes the group'
+
+mutant F11 internal/dispatch/reap_unix.go \
+  's/if !slices\.ContainsFunc\(tab, func\(p proc\) bool \{ return p\.pid == t\.self \}\) \{\n\t\treturn nil, nil\n\t\}/if false {\n\t\treturn nil, nil\n\t}/' \
+  'TestTargetsOnFabricatedTables' 'targets: a table without self yields nothing'
+
+echo "done" >> "$table"
+cat "$table"

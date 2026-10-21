@@ -1,0 +1,47 @@
+//go:build linux
+
+package dispatch
+
+import (
+	"slices"
+	"testing"
+)
+
+// Opus D2 guard probes. Data only: no table read, no signal, no sweep().
+
+// P1: a recorded leader's group dies completely, its pid is reused by a
+// foreign process that leads a new group and exits, leaving a foreign member
+// (the double-fork daemon shape, or `cat f | less` at the Keeper's prompt).
+// The leader pid is absent, so D-194's guards accept the foreign group.
+func TestOpusForeignGroupAtRecordedLeaderPid(t *testing.T) {
+	tr := &tracker{root: 500, self: 4242, seen: map[pkey]string{}}
+	tr.observe(targetTable(), nil) // leaders 501 and 510 recorded
+	gone := without(targetTable(), 510, 511)
+	tr.observe(gone, nil) // a poll that lists group 510 with no member at all
+	_, groups := tr.targets(gone)
+	t.Logf("group 510 empty: groups %v leaders %v", groups, tr.leaders)
+	foreign := append(without(targetTable(), 510, 511), pr(9000, 1, 510, "f9000")) // leader 510 (start f510) exited
+	tr.observe(foreign, nil)
+	_, groups = tr.targets(foreign)
+	t.Logf("foreign group 510 with absent leader: groups %v", groups)
+	if slices.Contains(groups, 510) {
+		t.Errorf("FOREIGN GROUP TARGETED: groups %v include 510, whose only member 9000 was never tracked", groups)
+	}
+}
+
+// P2: a tracked process first seen inside the root's group that later calls
+// setsid is never recorded as a leader, so an orphan left in its new group is
+// not targeted (darwin: no subreaper, ppid 1).
+func TestOpusLateSetsidNotRecorded(t *testing.T) {
+	tr := &tracker{root: 500, self: 4242, seen: map[pkey]string{}}
+	base := append(targetTable(), pr(520, 500, 500, "520"))
+	tr.observe(base, nil)
+	tr.observe(append(targetTable(), pr(520, 500, 520, "520")), nil) // 520 called setsid
+	orphan := append(targetTable(), pr(521, 1, 520, "521"))          // 520 exited before its child was seen
+	tr.observe(orphan, nil)
+	pids, groups := tr.targets(orphan)
+	t.Logf("late setsid: pids %v groups %v leaders %v", pids, groups, tr.leaders)
+	if !slices.Contains(groups, 520) {
+		t.Logf("NOTE: group 520 is not targeted; 521 escapes on darwin")
+	}
+}

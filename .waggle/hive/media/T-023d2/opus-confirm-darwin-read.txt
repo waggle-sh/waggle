@@ -1,0 +1,82 @@
+# Opus D2 confirmation at 9edaf84 (host darwin, read only: procTable reads and its own child shells, no sweep, no signal; uncommitted file deleted after the run).
+# Question: can a darwin kern.proc.all read that lists dispatch miss every member of a live group while a leader forks its last child and exits (the read the B1 drop trusts)?
+# Source:
+    package dispatch
+    
+    // Opus confirmation probe (uncommitted, deleted after the run). Reads the
+    // process table only: no sweep, no signal. Each trial starts its own shell P
+    // leading group G (Setpgid), which sleeps d then starts `sleep 0.15 &` (C,
+    // group G) and exits; Go's Wait reaps P at once. The probe reads the table and
+    // records, per trial, whether some read that lists self showed group G empty
+    // after a read listed P alive, followed by a read that lists C in group G.
+    // That sequence is what makes the B1 fix drop G while a real member remains.
+    
+    import (
+    	"fmt"
+    	"os"
+    	"os/exec"
+    	"syscall"
+    	"testing"
+    	"time"
+    )
+    
+    func TestOpusTornRead(t *testing.T) {
+    	self := os.Getpid()
+    	for _, mode := range []string{"poll25ms", "continuous"} {
+    		trials, leaderSeen, torn, cSeen := 300, 0, 0, 0
+    		for i := 0; i < trials; i++ {
+    			d := float64(5+i%25) / 1000
+    			cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("sleep %.3f; /bin/sleep 0.15 & exit 0", d))
+    			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+    			if err := cmd.Start(); err != nil {
+    				t.Fatal(err)
+    			}
+    			g := cmd.Process.Pid
+    			go func() { _ = cmd.Wait() }()
+    			phase, seenC := 0, false // 0: no read listed P alive yet; 1: recorded; 2: dropped
+    			end := time.Now().Add(120 * time.Millisecond)
+    			for time.Now().Before(end) {
+    				tab, err := procTable()
+    				hasSelf, members, pAlive, cMember := false, 0, false, false
+    				for _, p := range tab {
+    					hasSelf = hasSelf || p.pid == self
+    					if p.pgid == g {
+    						members++
+    						pAlive = pAlive || (p.pid == g && !p.zombie)
+    						cMember = cMember || (p.pid != g && !p.zombie)
+    					}
+    				}
+    				if err != nil || !hasSelf {
+    					continue
+    				}
+    				seenC = seenC || cMember
+    				switch {
+    				case phase == 0 && pAlive:
+    					phase = 1
+    				case phase == 1 && members == 0:
+    					phase = 2
+    				case phase == 2 && cMember:
+    					phase = 3
+    				}
+    				if mode == "poll25ms" {
+    					time.Sleep(25 * time.Millisecond)
+    				}
+    			}
+    			if phase >= 1 {
+    				leaderSeen++
+    			}
+    			if phase == 3 {
+    				torn++
+    			}
+    			if seenC {
+    				cSeen++
+    			}
+    			time.Sleep(60 * time.Millisecond) // C (0.15 s) exits on its own before the next trial reuses nothing of it
+    		}
+    		t.Logf("%s: trials %d, P listed alive %d, C listed %d, G empty then C listed (drop would lose C) %d", mode, trials, leaderSeen, cSeen, torn)
+    	}
+    }
+# Output (go test -run TestOpusTornRead -count=1 -v ./internal/dispatch/):
+    poll25ms: trials 300, P listed alive 300, C listed 300, G empty then C listed (drop would lose C) 0
+    continuous: trials 300, P listed alive 300, C listed 300, G empty then C listed (drop would lose C) 0
+    --- PASS: TestOpusTornRead (115.15s)

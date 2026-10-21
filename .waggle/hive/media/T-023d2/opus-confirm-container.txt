@@ -1,0 +1,95 @@
+# Opus D2 confirmation at 9edaf84 (container: cross-compiled on the host, docker run --rm --init --cpus 1 --memory 700m -e GOGC=50 golang:1.23-bookworm, -test.run only, shared lock held for the run).
+# head = 9edaf84 plus the uncommitted opus_inert_linux_test.go below; m1 = the same with the B1 drop's self check removed:
+    -	if slices.ContainsFunc(tab, func(p proc) bool { return p.pid == t.self }) {
+    +	if true { // MUTANT M1: drop without the self check
+# TestSurvivorKilledAndRecorded fails in both only because the test binary was named head.test / m1.test: the test wants "dispatch" in the survivor's command name; the pid matched.
+# Probe source:
+    package dispatch
+    
+    // Opus confirmation probe (uncommitted, container only). An inert tracker's
+    // sweep reads the real table and must call kill zero times; kill is a
+    // recorder, so nothing is signalled whatever happens.
+    
+    import (
+    	"syscall"
+    	"testing"
+    )
+    
+    func TestOpusInertSweepSignalsNothing(t *testing.T) {
+    	for _, root := range []int{0, 1, -5} {
+    		tr := newTracker(root)
+    		calls := 0
+    		tr.kill = func(int, syscall.Signal) error { calls++; return nil }
+    		killed := tr.sweep()
+    		t.Logf("root %d: kill calls %d, killed %v, blind %v, self %d, group %d, leaders %d", root, calls, killed, tr.blind, tr.self, tr.group, len(tr.leaders))
+    		if calls != 0 || len(killed) != 0 || !tr.blind {
+    			t.Errorf("root %d: inert sweep signalled", root)
+    		}
+    	}
+    }
+    
+    // After a failed read (observe drops the table), the leaders survive: a later
+    // good read still targets the live group.
+    func TestOpusFailedReadKeepsLeaders(t *testing.T) {
+    	tr := &tracker{root: 500, self: 4242, group: 4000, seen: map[pkey]string{}}
+    	tr.observe(targetTable(), nil)
+    	n := len(tr.leaders)
+    	tr.observe(nil, syscall.EIO)
+    	tr.observe([]proc{}, nil)
+    	if len(tr.leaders) != n {
+    		t.Errorf("leaders %d after a failed or empty read, want %d", len(tr.leaders), n)
+    	}
+    }
+# Output:
+=== head
+    fix2_test.go:101: survivors [{67 head.test}], want pid 67
+--- FAIL: TestSurvivorKilledAndRecorded (1.16s)
+--- PASS: TestSweepWaitsForRenewal (9.99s)
+--- PASS: TestObserveTracksOnlyTheRootSubtree (0.12s)
+--- PASS: TestObserveRefusesInitAndKernelRoots (0.03s)
+--- PASS: TestObserveNeverTreatsInitAsTrackedParent (0.15s)
+--- PASS: TestObserveErrorClearsLive (0.21s)
+    opus_inert_linux_test.go:18: root 0: kill calls 0, killed [], blind true, self 0, group 0, leaders 0
+    opus_inert_linux_test.go:18: root 1: kill calls 0, killed [], blind true, self 0, group 0, leaders 0
+    opus_inert_linux_test.go:18: root -5: kill calls 0, killed [], blind true, self 0, group 0, leaders 0
+--- PASS: TestOpusInertSweepSignalsNothing (22.23s)
+--- PASS: TestOpusFailedReadKeepsLeaders (2.31s)
+--- PASS: TestSweepSkipsReusedPid (0.06s)
+--- PASS: TestSweepKillsTrackedGroup (0.05s)
+--- PASS: TestSweepSignalsExactlyTargets (0.05s)
+--- PASS: TestSweepStopsAfter40Rounds (1.04s)
+--- PASS: TestSweepReadRetry (0.23s)
+--- PASS: TestToolShellChildKilled (18.94s)
+--- PASS: TestTargetsOnFabricatedTables (0.00s)
+--- PASS: TestTargetsRefuseInitSelfAndKernel (0.00s)
+--- PASS: TestObserveRecordsOnlyTrackedLeaders (0.00s)
+--- PASS: TestObserveRootStartSetOnce (0.00s)
+--- PASS: TestTargetsDropGroupSeenEmpty (0.00s)
+FAIL
+=== m1
+    fix2_test.go:101: survivors [{67 m1.test}], want pid 67
+--- FAIL: TestSurvivorKilledAndRecorded (17.58s)
+--- PASS: TestSweepWaitsForRenewal (2.59s)
+--- PASS: TestObserveTracksOnlyTheRootSubtree (0.00s)
+--- PASS: TestObserveRefusesInitAndKernelRoots (0.00s)
+--- PASS: TestObserveNeverTreatsInitAsTrackedParent (0.00s)
+--- PASS: TestObserveErrorClearsLive (0.00s)
+    opus_inert_linux_test.go:18: root 0: kill calls 0, killed [], blind true, self 0, group 0, leaders 0
+    opus_inert_linux_test.go:18: root 1: kill calls 0, killed [], blind true, self 0, group 0, leaders 0
+    opus_inert_linux_test.go:18: root -5: kill calls 0, killed [], blind true, self 0, group 0, leaders 0
+--- PASS: TestOpusInertSweepSignalsNothing (0.01s)
+    opus_inert_linux_test.go:34: leaders 0 after a failed or empty read, want 2
+--- FAIL: TestOpusFailedReadKeepsLeaders (0.00s)
+--- PASS: TestSweepSkipsReusedPid (0.07s)
+--- PASS: TestSweepKillsTrackedGroup (0.33s)
+--- PASS: TestSweepSignalsExactlyTargets (0.10s)
+--- PASS: TestSweepStopsAfter40Rounds (2.34s)
+    sweep_linux_test.go:169: a read that recovers: kills [{501 9} {502 9} {510 9} {511 9}] reads 3
+--- FAIL: TestSweepReadRetry (1.14s)
+--- PASS: TestToolShellChildKilled (13.94s)
+--- PASS: TestTargetsOnFabricatedTables (0.02s)
+--- PASS: TestTargetsRefuseInitSelfAndKernel (0.02s)
+--- PASS: TestObserveRecordsOnlyTrackedLeaders (0.00s)
+--- PASS: TestObserveRootStartSetOnce (0.00s)
+--- PASS: TestTargetsDropGroupSeenEmpty (0.01s)
+FAIL
