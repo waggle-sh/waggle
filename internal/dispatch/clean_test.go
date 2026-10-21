@@ -92,7 +92,7 @@ func TestCleanRemovesWorktreeAndMarkers(t *testing.T) {
 		if b, _ := os.ReadFile(record); string(b) != `{"run":"r","files":{}}` {
 			t.Fatalf("host-files.json changed: %s", b)
 		}
-		if out, err := doClean(f, "", false); err != nil || out != "" {
+		if out, err := doClean(f, "", false); err != nil || out != "nothing to clean for 23\n" {
 			t.Fatalf("nothing left to clean: out %q err %v", out, err)
 		}
 	})
@@ -302,5 +302,36 @@ func TestCleanOutsideRepoCreatesNothing(t *testing.T) {
 	err := Clean(context.Background(), CleanRequest{RepoDir: dir, Ticket: "23"}, &bytes.Buffer{})
 	if code(err) != ExitEnv || exists(filepath.Join(dir, ".waggle")) {
 		t.Fatalf("err %v", err)
+	}
+}
+
+// D2b-T6: a plain directory at the worktree path is not a registered worktree:
+// exit 3, directory and tainted marker kept.
+func TestCleanRefusesUnregisteredDirectory(t *testing.T) {
+	f := newFixture(t, false, false)
+	wt := filepath.Join(f.real, ".waggle/worktrees/T-023-builder")
+	write(t, wt, "keep.txt", "x")
+	write(t, f.real, ".waggle/worktrees/T-023-builder.tainted", "run-1")
+	out, err := doClean(f, "", false)
+	if code(err) != ExitEnv || err == nil || !strings.Contains(err.Error(), "not a registered worktree") || !exists(wt+"/keep.txt") || !exists(wt+".tainted") || strings.Contains(out, "removed") {
+		t.Fatalf("out %q err %v", out, err)
+	}
+}
+
+// D2b-T6: a gone directory with no entry says so before the markers go.
+func TestCleanSaysWhenNoEntryNamesTheDirectory(t *testing.T) {
+	f := newFixture(t, false, false)
+	write(t, f.real, ".waggle/worktrees/T-023-builder.tainted", "run-1")
+	out, err := doClean(f, "", false)
+	if err != nil || !strings.Contains(out, "no worktree entry for .waggle/worktrees/T-023-builder") || exists(filepath.Join(f.real, ".waggle/worktrees/T-023-builder.tainted")) {
+		t.Fatalf("out %q err %v", out, err)
+	}
+}
+
+// D2b-T6: nothing to clean prints its line.
+func TestCleanNothingPrintsALine(t *testing.T) {
+	f := newFixture(t, false, false)
+	if out, err := doClean(f, "", false); err != nil || out != "nothing to clean for 23\n" {
+		t.Fatalf("out %q err %v", out, err)
 	}
 }
