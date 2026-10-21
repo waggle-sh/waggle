@@ -81,11 +81,8 @@ type cleaner struct {
 }
 
 func (c *cleaner) role(ctx context.Context, wt string) error {
-	if !slices.ContainsFunc([]string{wt, wt + ".lock", wt + ".tainted", wt + ".lock.takeover"}, func(p string) bool { _, e := os.Lstat(p); return e == nil }) {
-		entry, err := c.entryFor(c.wants(wt))
-		if entry == "" && err == nil {
-			return nil
-		}
+	if e, err := c.entryFor(c.wants(wt)); e == "" && err == nil && !slices.ContainsFunc([]string{wt, wt + ".lock", wt + ".tainted", wt + ".lock.takeover"}, func(p string) bool { _, e := os.Lstat(p); return e == nil }) {
+		return nil
 	}
 	rel, _ := filepath.Rel(c.repo, wt)
 	warns, err := takeLock(wt+".lock", time.Now())
@@ -109,15 +106,7 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 	if err != nil {
 		return err
 	}
-	if serr != nil {
-		// the directory is gone: drop its own admin entry, never a repo-wide prune
-		if entry != "" {
-			if err = os.RemoveAll(entry); err != nil {
-				return failf(ExitEnv, "cleaning %s: %w", rel, err)
-			}
-			fmt.Fprintln(c.out, "removed worktree "+rel)
-		}
-	} else {
+	if serr == nil {
 		list, lerr := c.pg.Run(ctx, "worktree", "list", "--porcelain")
 		for _, l := range strings.Split(string(list), "\n") {
 			if p, ok := strings.CutPrefix(l, "worktree "); ok && lerr == nil && slices.Contains(wants, filepath.Clean(p)) {
@@ -129,6 +118,11 @@ func (c *cleaner) role(ctx context.Context, wt string) error {
 		if lerr != nil {
 			return failf(ExitEnv, "cleaning %s: %w", rel, lerr)
 		}
+	} else if entry != "" { // the directory is gone: drop its own admin entry, never a repo-wide prune
+		if err = os.RemoveAll(entry); err != nil {
+			return failf(ExitEnv, "cleaning %s: %w", rel, err)
+		}
+		fmt.Fprintln(c.out, "removed worktree "+rel)
 	}
 	if b, e := readSmall(wt + ".tainted"); e == nil {
 		fmt.Fprintf(c.out, "tainted by run %s\n", strings.Map(func(r rune) rune {
