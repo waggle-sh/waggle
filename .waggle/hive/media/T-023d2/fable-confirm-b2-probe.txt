@@ -1,0 +1,102 @@
+== A: healthy repo plus a prunable entry (worktree directory deleted) for a third branch
+  entries: a-old T-023-builder T-024-builder 
+  list:
+    <work>/a                                 f3a4d9e [main]
+    <work>/a-old                             f3a4d9e [old] prunable
+    <work>/a/.waggle/worktrees/T-023-builder f3a4d9e [t-023]
+    <work>/a/.waggle/worktrees/T-024-builder f3a4d9e [t-024]
++ waggle dispatch clean 23 --repo .
+    removed worktree .waggle/worktrees/T-023-builder
+  exit 0
+  after:
+  entries: T-024-builder 
+  list:
+    <work>/a                                 f3a4d9e [main]
+    <work>/a/.waggle/worktrees/T-024-builder f3a4d9e [t-024]
+  T-024 worktree intact: t-024
+== B: a worktree removed with rm -rf and added again at the same path (git 2.26+ reuses the entry)
+fatal: '<path>' is a missing but already registered worktree;
+use 'add -f' to override, or 'prune' or 'remove' to clear
+  entries: b-again T-023-builder T-024-builder 
+  list:
+    <work>/b                                 9e57ba5 [main]
+    <work>/b-again                           9e57ba5 [again] prunable
+    <work>/b/.waggle/worktrees/T-023-builder 9e57ba5 [t-023]
+    <work>/b/.waggle/worktrees/T-024-builder 9e57ba5 [t-024]
++ waggle dispatch clean 23 --repo .
+    removed worktree .waggle/worktrees/T-023-builder
+  exit 0
+  after:
+  entries: T-024-builder 
+  list:
+    <work>/b                                 9e57ba5 [main]
+    <work>/b/.waggle/worktrees/T-024-builder 9e57ba5 [t-024]
+  again worktree intact: fatal: cannot change to '<path>': No such file or directory
+== C: a locked worktree entry (worktrees/<id>/locked) for another ticket
+commondir gitdir HEAD index locked logs ORIG_HEAD refs 
++ waggle dispatch clean 23 --repo .
+    removed worktree .waggle/worktrees/T-023-builder
+  exit 0
+  after:
+  entries: T-024-builder 
+  list:
+    <work>/c                                 9e57ba5 [main]
+    <work>/c/.waggle/worktrees/T-024-builder 9e57ba5 [t-024] locked
+== D: a stray regular file in <common>/worktrees (.DS_Store): what clean does, then what git prune does
+  entries: T-023-builder T-024-builder 
+  list:
+    <work>/d                                 9e57ba5 [main]
+    <work>/d/.waggle/worktrees/T-023-builder 9e57ba5 [t-023]
+    <work>/d/.waggle/worktrees/T-024-builder 9e57ba5 [t-024]
++ waggle dispatch clean 23 --repo .
+    waggle dispatch: worktrees/.DS_Store has no readable gitdir; nothing was removed
+  exit 3
+  after clean:
+  entries: T-023-builder T-024-builder 
+  list:
+    <work>/d                                 9e57ba5 [main]
+    <work>/d/.waggle/worktrees/T-023-builder 9e57ba5 [t-023]
+    <work>/d/.waggle/worktrees/T-024-builder 9e57ba5 [t-024]
++ git worktree prune -v
+    Removing worktrees/.DS_Store: not a valid directory
+  exit 0
+  entries: T-023-builder T-024-builder 
+  list:
+    <work>/d                                 9e57ba5 [main]
+    <work>/d/.waggle/worktrees/T-023-builder 9e57ba5 [t-023]
+    <work>/d/.waggle/worktrees/T-024-builder 9e57ba5 [t-024]
+== E: an admin entry directory with no gitdir file (interrupted add): clean, then git prune
+  entries: half T-023-builder T-024-builder 
+  list:
+    <work>/e                                 9e57ba5 [main]
+    <work>/e/.waggle/worktrees/T-023-builder 9e57ba5 [t-023]
+    <work>/e/.waggle/worktrees/T-024-builder 9e57ba5 [t-024]
++ waggle dispatch clean 23 --repo .
+    waggle dispatch: worktrees/half has no readable gitdir; nothing was removed
+  exit 3
+  after clean:
+  entries: half T-023-builder T-024-builder 
+  list:
+    <work>/e                                 9e57ba5 [main]
+    <work>/e/.waggle/worktrees/T-023-builder 9e57ba5 [t-023]
+    <work>/e/.waggle/worktrees/T-024-builder 9e57ba5 [t-024]
++ git worktree prune -v
+    Removing worktrees/half: gitdir file does not exist
+  exit 0
+  entries: T-023-builder T-024-builder 
+  list:
+    <work>/e                                 9e57ba5 [main]
+    <work>/e/.waggle/worktrees/T-023-builder 9e57ba5 [t-023]
+    <work>/e/.waggle/worktrees/T-024-builder 9e57ba5 [t-024]
+== F: the T-023 worktree reached through a symlinked parent (entry path through the link)
+  gitdir files:
+    T-023-builder: <work>/f-real/.waggle/worktrees/T-023-builder/.git
+    T-024-builder: <work>/f-real/.waggle/worktrees/T-024-builder/.git
++ waggle dispatch clean 23 --repo .
+    removed worktree .waggle/worktrees/T-023-builder
+  exit 0
+  after:
+  entries: T-024-builder 
+  list:
+    <work>/f-real                                 8b976b6 [main]
+    <work>/f-real/.waggle/worktrees/T-024-builder 8b976b6 [t-024]

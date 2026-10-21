@@ -1,0 +1,117 @@
+# Opus D2 confirmation 3 at ddccd51 (host macOS, APFS case-insensitive, core.ignorecase=true, git only, no process signalled).
+# waggle built from ddccd51. Each case is a fresh repo with T-023 and T-024 builder worktrees, then 'git worktree prune -n -v'
+# (dry run: what git itself would prune) and 'waggle dispatch clean 23 --repo .'.
+# Script:
+    #!/bin/bash
+    # usage: probe.sh <dir> <waggle>   host, git only, no signals
+    D=$1; W=$2
+    setup() { R=$D/$1; rm -rf "$R"; mkdir -p "$R"; cd "$R" || exit 1
+      git init -q -b main . && git -c user.email=x@example.invalid -c user.name=a commit -q --allow-empty -m init
+      mkdir -p .waggle/worktrees
+      git worktree add -q -b t-023 .waggle/worktrees/T-023-builder main
+      git worktree add -q -b t-024 .waggle/worktrees/T-024-builder main; }
+    G() { cat .git/worktrees/T-024-builder/gitdir; }
+    plant() { mkdir .git/worktrees/0; printf '%s\n' "$1" > .git/worktrees/0/gitdir; cp .git/worktrees/T-024-builder/HEAD .git/worktrees/T-024-builder/commondir .git/worktrees/0/; }
+    gitview() { echo "git prune -n: $(git worktree prune -n -v 2>&1 | sed "s#$D#<tmp>#g" | tr '\n' ' ')"; }
+    run() { "$W" dispatch clean 23 --repo . 2>&1 | sed "s#$D#<tmp>#g"; echo "clean exit ${PIPESTATUS[0]} | admin after: $(ls -A .git/worktrees 2>/dev/null | tr '\n' ' ')| T-024 $(git -C .waggle/worktrees/T-024-builder rev-parse --git-dir >/dev/null 2>&1 && echo usable || echo BROKEN-or-absent)"; }
+    c() { echo "== $1  planted: $(sed "s#$D#<tmp>#" .git/worktrees/0/gitdir 2>/dev/null)"; gitview; run; }
+    setup a; cp -R .git/worktrees/T-024-builder .git/worktrees/0; c "P-a copy"
+    setup b2; mkdir .git/worktrees/0; ln -s ../T-024-builder/gitdir .git/worktrees/0/gitdir; c "P-b2 gitdir link"
+    setup c; plant "$(G | sed 's#T-024-builder/.git$#t-024-builder/.git#')"; c "P-c leaf case"
+    setup c2; plant "$D/c2$(G | sed "s#^$D/c2##" | tr a-z A-Z)"; c "P-c2 upper below root"
+    setup c3; plant "$(G | sed 's#/.git$#/.GIT#')"; c "P-c3 .GIT"
+    setup c4; plant "$D/c4$(G | sed "s#^$D/c4##" | tr a-z A-Z | sed 's#/.GIT$#/.git#')"; c "P-c4 dirs upper"
+    setup c5; plant "$(G | sed 's#/.git$#/.Git#')"; c "P-c5 .Git"
+    setup d; ln -s .waggle wlink; plant "$(G | sed 's#/.waggle/worktrees/T-024#/wlink/worktrees/T-024#')"; c "P-d link parent"
+    setup n1; plant "$(G)/"; c "N-1 trailing slash"
+    setup n2; plant "$(G | sed 's#/worktrees/T-024#/worktrees/./T-024#')"; c "N-2 /./"
+    setup n3; plant "$(G | sed 's#/worktrees/T-024#/worktrees/T-023-builder/../T-024#')"; c "N-3 .. segment"
+    setup n4; plant "$(G | sed 's#/.git$##')"; c "N-4 worktree dir, no .git"
+    setup n5; plant "$(G | sed 's#/.git$#/.git/#')"; c "N-5 .git/"
+    setup n6; plant "$(G | sed 's#/.git$#/.git/.#')"; c "N-6 .git/."
+    setup n7; plant "../../../.waggle/worktrees/T-024-builder/.git"; c "N-7 relative"
+    setup n8; plant "$(G | sed 's#T-024-builder#T-099-builder#')"; c "N-8 planted path missing"
+    setup n9; rm -rf .waggle/worktrees/T-024-builder; plant "$(G | sed 's#T-024-builder#t-024-builder#')"; c "N-9 both missing, case"
+    setup n10; rm -rf .waggle/worktrees/T-024-builder; plant "$(G)"; c "N-10 both missing, same string"
+    NFC=$(printf 'caf\xc3\xa9'); NFD=$(printf 'cafe\xcc\x81')
+    setup "u$NFC"; echo "real gitdir has NFC bytes: $(G | grep -c "$NFC")"; plant "$(G | sed "s#$NFC#$NFD#")"; c "N-11 NFD spelling of NFC dir"
+    git --version
+# Output:
+== P-a copy  planted: <tmp>/a/.waggle/worktrees/T-024-builder/.git
+git prune -n: Removing worktrees/T-024-builder: duplicate entry 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/a/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== P-b2 gitdir link  planted: <tmp>/b2/.waggle/worktrees/T-024-builder/.git
+git prune -n: Removing worktrees/T-024-builder: duplicate entry 
+waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== P-c leaf case  planted: <tmp>/c/.waggle/worktrees/t-024-builder/.git
+git prune -n: Removing worktrees/T-024-builder: duplicate entry 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/c/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== P-c2 upper below root  planted: <tmp>/c2/.WAGGLE/WORKTREES/T-024-BUILDER/.GIT
+git prune -n: Removing worktrees/T-024-builder: duplicate entry 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/c2/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== P-c3 .GIT  planted: <tmp>/c3/.waggle/worktrees/T-024-builder/.GIT
+git prune -n: Removing worktrees/T-024-builder: duplicate entry 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/c3/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== P-c4 dirs upper  planted: <tmp>/c4/.WAGGLE/WORKTREES/T-024-BUILDER/.git
+git prune -n: Removing worktrees/T-024-builder: duplicate entry 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/c4/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== P-c5 .Git  planted: <tmp>/c5/.waggle/worktrees/T-024-builder/.Git
+git prune -n: Removing worktrees/T-024-builder: duplicate entry 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/c5/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== P-d link parent  planted: <tmp>/d/wlink/worktrees/T-024-builder/.git
+git prune -n: 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/d/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== N-1 trailing slash  planted: <tmp>/n1/.waggle/worktrees/T-024-builder/.git/
+git prune -n: Removing worktrees/0: gitdir file points to non-existent location 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/n1/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== N-2 /./  planted: <tmp>/n2/.waggle/worktrees/./T-024-builder/.git
+git prune -n: 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/n2/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== N-3 .. segment  planted: <tmp>/n3/.waggle/worktrees/T-023-builder/../T-024-builder/.git
+git prune -n: 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/n3/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== N-4 worktree dir, no .git  planted: <tmp>/n4/.waggle/worktrees/T-024-builder
+git prune -n: 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/n4/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== N-5 .git/  planted: <tmp>/n5/.waggle/worktrees/T-024-builder/.git/
+git prune -n: Removing worktrees/0: gitdir file points to non-existent location 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/n5/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== N-6 .git/.  planted: <tmp>/n6/.waggle/worktrees/T-024-builder/.git/.
+git prune -n: Removing worktrees/0: gitdir file points to non-existent location 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/n6/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== N-7 relative  planted: ../../../.waggle/worktrees/T-024-builder/.git
+git prune -n: Removing worktrees/T-024-builder: duplicate entry 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/n7/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+== N-8 planted path missing  planted: <tmp>/n8/.waggle/worktrees/T-099-builder/.git
+git prune -n: Removing worktrees/0: gitdir file points to non-existent location 
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0 | admin after: T-024-builder | T-024 usable
+== N-9 both missing, case  planted: <tmp>/n9/.waggle/worktrees/t-024-builder/.git
+git prune -n: Removing worktrees/0: gitdir file points to non-existent location Removing worktrees/T-024-builder: gitdir file points to non-existent location 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/n9/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 BROKEN-or-absent
+== N-10 both missing, same string  planted: <tmp>/n10/.waggle/worktrees/T-024-builder/.git
+git prune -n: Removing worktrees/0: gitdir file points to non-existent location Removing worktrees/T-024-builder: gitdir file points to non-existent location 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/n10/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 BROKEN-or-absent
+real gitdir has NFC bytes: 1
+== N-11 NFD spelling of NFC dir  planted: <tmp>/ucafé/.waggle/worktrees/T-024-builder/.git
+git prune -n: 
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/ucafé/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3 | admin after: 0 T-023-builder T-024-builder | T-024 usable
+git version 2.54.0 (Apple Git-157)

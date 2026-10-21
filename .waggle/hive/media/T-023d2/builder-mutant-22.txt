@@ -1,0 +1,9 @@
++ GOOS=linux go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestCleanRunsOnlyMatching' -test.v
+=== RUN   TestCleanRunsOnlyMatching
+    clean_test.go:113: T-024-builder-1: kept false, want true
+    clean_test.go:113: T-0230-builder-1: kept false, want true
+    clean_test.go:117: all roles: err <nil>
+--- FAIL: TestCleanRunsOnlyMatching (0.07s)
+FAIL
+exit: 1

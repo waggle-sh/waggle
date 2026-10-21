@@ -1,0 +1,7 @@
++ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m -e GOGC=50 golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestWorkerLeadsOwnSession' -test.v
+=== RUN   TestWorkerLeadsOwnSession
+    setsid_test.go:26: helper reported "1 64 false" (test session 1)
+--- FAIL: TestWorkerLeadsOwnSession (0.48s)
+FAIL
+exit: 1

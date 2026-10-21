@@ -1,0 +1,51 @@
+=== P-A: useRelativePaths=true, plain parent, T-023 gone, T-024 live, T-025 prunable
+  gitdir files: ../../../.waggle/worktrees/T-023-builder/.git | ../../../.waggle/worktrees/T-024-builder/.git
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: T-024-builder T-025-builder 
+  re-add at same path exit 0
+  T-024 usable
+  <wt>/.fable-probe/A                                 030aed3 [main]
+  <wt>/.fable-probe/A/.waggle/worktrees/T-023-builder 030aed3 [t-023]
+  <wt>/.fable-probe/A/.waggle/worktrees/T-024-builder 030aed3 [t-024]
+  <wt>/.fable-probe/A/.waggle/worktrees/T-025-builder 030aed3 [t-025] prunable
+=== P-C: repo under a symlinked parent, useRelativePaths=true, added and cleaned via the link, T-023 gone
+  gitdir file: ../../../.waggle/worktrees/T-023-builder/.git
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: T-024-builder T-025-builder 
+  re-add via link exit 0
+  T-024 usable
+  <wt>/.fable-probe/C                                 030aed3 [main]
+  <wt>/.fable-probe/C/.waggle/worktrees/T-023-builder 030aed3 [t-023]
+  <wt>/.fable-probe/C/.waggle/worktrees/T-024-builder 030aed3 [t-024]
+  <wt>/.fable-probe/C/.waggle/worktrees/T-025-builder 030aed3 [t-025] prunable
+=== P-C2: symlinked parent, useRelativePaths=true, added via the real path, cleaned via the link, T-023 gone
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: T-024-builder T-025-builder 
+  re-add via real exit 0
+=== P-C3: symlinked parent, useRelativePaths=true, added via the link, cleaned via the real path, T-023 gone
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: T-024-builder T-025-builder 
+=== P-F: ordinary cross-match attempt: useRelativePaths=true, T-023 never added, T-024 live, T-025 prunable; clean 23
+  clean exit 0
+  entries: T-024-builder T-025-builder 
+=== P-G: useRelativePaths=true, T-023 present (list path); other entries relative
+  entries: T-023-builder T-024-builder T-025-builder 
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: T-024-builder T-025-builder 
+  tree gone
+  T-024 usable
+  <wt>/.fable-probe/G                                 a45739f [main]
+  <wt>/.fable-probe/G/.waggle/worktrees/T-024-builder a45739f [t-024]
+  <wt>/.fable-probe/G/.waggle/worktrees/T-025-builder a45739f [t-025] prunable
+=== P-H: .git is a symlink to a store outside the repo, useRelativePaths=true, T-023 gone, T-024 live
+  common dir: <wt>/.fable-probe/Hstore
+  gitdir file: ../../../H/.waggle/worktrees/T-023-builder/.git
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: T-024-builder 
+  re-add exit 0

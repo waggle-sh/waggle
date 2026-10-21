@@ -1,0 +1,5 @@
+--- FAIL: TestCleanRefusesForeignDuplicateAndLinkedGitdir (0.79s)
+    clean_test.go:202: GIT: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	1.310s
+FAIL

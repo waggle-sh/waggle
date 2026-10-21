@@ -1,0 +1,9 @@
+=== RUN   TestZZFableCatch
+    zz_fable_catch_darwin_test.go:78: tool shell lives 0 ms before the fork: 20 trials, shell seen alive as a leader 0, child tracked by pid 0, child's group listed by targets after the shell exited 0
+    zz_fable_catch_darwin_test.go:78: tool shell lives 5 ms before the fork: 20 trials, shell seen alive as a leader 0, child tracked by pid 0, child's group listed by targets after the shell exited 0
+    zz_fable_catch_darwin_test.go:78: tool shell lives 20 ms before the fork: 20 trials, shell seen alive as a leader 20, child tracked by pid 0, child's group listed by targets after the shell exited 20
+    zz_fable_catch_darwin_test.go:78: tool shell lives 50 ms before the fork: 20 trials, shell seen alive as a leader 20, child tracked by pid 0, child's group listed by targets after the shell exited 20
+--- PASS: TestZZFableCatch (99.48s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	99.712s
+exit 0

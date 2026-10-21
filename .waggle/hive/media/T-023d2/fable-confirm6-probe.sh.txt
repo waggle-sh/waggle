@@ -1,0 +1,57 @@
+#!/bin/sh
+# fable confirm6 probes: entryFor with a relative gitdir (B8 fix at bfdb82f). Git only, no signals.
+W="$1"; B="$W/.fable-probe/waggle"; P="$W/.fable-probe"
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+mk() { rm -rf "$P/$1"; mkdir -p "$P/$1"; git -C "$P/$1" init -q -b main; git -C "$P/$1" -c user.name=x -c user.email=x@x commit -q --allow-empty -m init; mkdir -p "$P/$1/.waggle/worktrees"; }
+show() { echo "  entries: $(ls "$P/$1/.git/worktrees" 2>/dev/null | tr '\n' ' ')"; }
+three() { for n in 23 24 25; do git -C "$2" worktree add -q -b t-0$n "$2/.waggle/worktrees/T-0$n-builder" main; done; rm -rf "$P/$1/.waggle/worktrees/T-023-builder" "$P/$1/.waggle/worktrees/T-025-builder"; }
+after() { git -C "$P/$1/.waggle/worktrees/T-024-builder" status --short >/dev/null && echo "  T-024 usable"; git -C "$P/$1" worktree list | sed 's/^/  /'; }
+
+echo "=== P-A: useRelativePaths=true, plain parent, T-023 gone, T-024 live, T-025 prunable"
+mk A; git -C "$P/A" config worktree.useRelativePaths true; three A "$P/A"
+echo "  gitdir files: $(cat "$P/A/.git/worktrees/T-023-builder/gitdir") | $(cat "$P/A/.git/worktrees/T-024-builder/gitdir")"
+"$B" dispatch clean 23 --repo "$P/A"; echo "  clean exit $?"; show A
+git -C "$P/A" worktree add -q "$P/A/.waggle/worktrees/T-023-builder" t-023 2>&1 | sed 's/^/    /'; echo "  re-add at same path exit $?"
+after A
+
+echo "=== P-C: repo under a symlinked parent, useRelativePaths=true, added and cleaned via the link, T-023 gone"
+mk C; ln -sfn "$P/C" "$P/Clink"; git -C "$P/C" config worktree.useRelativePaths true; three C "$P/Clink"
+echo "  gitdir file: $(cat "$P/C/.git/worktrees/T-023-builder/gitdir")"
+"$B" dispatch clean 23 --repo "$P/Clink"; echo "  clean exit $?"; show C
+git -C "$P/Clink" worktree add -q "$P/Clink/.waggle/worktrees/T-023-builder" t-023 2>&1 | sed 's/^/    /'; echo "  re-add via link exit $?"
+after C
+
+echo "=== P-C2: symlinked parent, useRelativePaths=true, added via the real path, cleaned via the link, T-023 gone"
+mk C2; ln -sfn "$P/C2" "$P/C2link"; git -C "$P/C2" config worktree.useRelativePaths true; three C2 "$P/C2"
+"$B" dispatch clean 23 --repo "$P/C2link"; echo "  clean exit $?"; show C2
+git -C "$P/C2" worktree add -q "$P/C2/.waggle/worktrees/T-023-builder" t-023 2>&1 | sed 's/^/    /'; echo "  re-add via real exit $?"
+
+echo "=== P-C3: symlinked parent, useRelativePaths=true, added via the link, cleaned via the real path, T-023 gone"
+mk C3; ln -sfn "$P/C3" "$P/C3link"; git -C "$P/C3" config worktree.useRelativePaths true; three C3 "$P/C3link"
+"$B" dispatch clean 23 --repo "$P/C3"; echo "  clean exit $?"; show C3
+
+echo "=== P-F: ordinary cross-match attempt: useRelativePaths=true, T-023 never added, T-024 live, T-025 prunable; clean 23"
+mk F; git -C "$P/F" config worktree.useRelativePaths true
+for n in 24 25; do git -C "$P/F" worktree add -q -b t-0$n "$P/F/.waggle/worktrees/T-0$n-builder" main; done; rm -rf "$P/F/.waggle/worktrees/T-025-builder"
+"$B" dispatch clean 23 --repo "$P/F"; echo "  clean exit $?"; show F
+
+echo "=== P-G: useRelativePaths=true, T-023 present (list path); other entries relative"
+mk G; git -C "$P/G" config worktree.useRelativePaths true; three G "$P/G"; git -C "$P/G" worktree add -q "$P/G/.waggle/worktrees/T-023-builder" t-023 2>/dev/null || git -C "$P/G" worktree add -q -f "$P/G/.waggle/worktrees/T-023-builder" t-023
+show G
+"$B" dispatch clean 23 --repo "$P/G"; echo "  clean exit $?"; show G; [ -e "$P/G/.waggle/worktrees/T-023-builder" ] && echo "  tree still there" || echo "  tree gone"
+after G
+#!/bin/sh
+# fable confirm6 note probe: .git itself a symlink to a store dir, useRelativePaths=true, T-023 gone. Git only.
+W="$1"; B="$W/.fable-probe/waggle"; P="$W/.fable-probe"
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+echo "=== P-H: .git is a symlink to a store outside the repo, useRelativePaths=true, T-023 gone, T-024 live"
+rm -rf "$P/H" "$P/Hstore"; mkdir -p "$P/H"; git -C "$P/H" init -q -b main; git -C "$P/H" -c user.name=x -c user.email=x@x commit -q --allow-empty -m init
+mv "$P/H/.git" "$P/Hstore"; ln -s "$P/Hstore" "$P/H/.git"; mkdir -p "$P/H/.waggle/worktrees"
+git -C "$P/H" config worktree.useRelativePaths true
+for n in 23 24; do git -C "$P/H" worktree add -q -b t-0$n "$P/H/.waggle/worktrees/T-0$n-builder" main; done
+echo "  common dir: $(git -C "$P/H" rev-parse --path-format=absolute --git-common-dir)"
+echo "  gitdir file: $(cat "$P/Hstore/worktrees/T-023-builder/gitdir")"
+rm -rf "$P/H/.waggle/worktrees/T-023-builder"
+"$B" dispatch clean 23 --repo "$P/H"; echo "  clean exit $?"
+echo "  entries: $(ls "$P/Hstore/worktrees" | tr '\n' ' ')"
+git -C "$P/H" worktree add -q "$P/H/.waggle/worktrees/T-023-builder" t-023 2>&1 | sed 's/^/    /'; echo "  re-add exit $?"

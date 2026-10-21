@@ -1,0 +1,8 @@
+# Opus D2 mutant (container only): newTracker moved back to its D1 position (after the Wait and renewal goroutines, before the poll goroutine). TestFastExitNeverBlind still passes 20 of 20.
+
++ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m -e GOGC=50 golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestFastExitNeverBlind' -test.v
+=== RUN   TestFastExitNeverBlind
+--- PASS: TestFastExitNeverBlind (24.73s)
+PASS
+exit: 0

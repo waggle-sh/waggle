@@ -1,0 +1,15 @@
++ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m -e GOGC=50 golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestObserveRecordsOnlyTrackedLeaders|TestTargetsOnFabricatedTables' -test.v
+=== RUN   TestTargetsOnFabricatedTables
+    targets_test.go:61: all tracked: pids [501 502 510 511] groups [500 501 510 7000], want [501 502 510 511] [501 510]
+    targets_test.go:61: leader gone, orphan stays in its group: pids [501 502] groups [500 501 510 7000], want [501 502] [501 510]
+    targets_test.go:61: leader pid reused: pids [501 502 511] groups [500 501 510 7000], want [501 502 511] [501]
+    targets_test.go:61: leader group is dispatch's own: pids [501 502 510 511] groups [500 510 7000], want [501 502 510 511] [510]
+    targets_test.go:61: group with no listed member: pids [510 511] groups [500 510 7000], want [510 511] [510]
+    targets_test.go:61: only zombie members: pids [510 511] groups [500 510 7000], want [510 511] [510]
+--- FAIL: TestTargetsOnFabricatedTables (0.00s)
+=== RUN   TestObserveRecordsOnlyTrackedLeaders
+    targets_test.go:84: leaders map[{500 500}:true {501 501}:true {510 510}:true {7000 7000}:true]
+--- FAIL: TestObserveRecordsOnlyTrackedLeaders (0.00s)
+FAIL
+exit: 1

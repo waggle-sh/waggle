@@ -1,0 +1,12 @@
+# Opus D2 confirmation at 9edaf84: go build ./..., go vet ./..., gofmt -l cmd internal (all clean), then go test -race -count=1 ./... on the host (committed suite only).
+ok  	github.com/waggle-sh/waggle/cmd/waggle	18.268s
+ok  	github.com/waggle-sh/waggle/internal/comb	30.709s
+ok  	github.com/waggle-sh/waggle/internal/config	1.498s
+ok  	github.com/waggle-sh/waggle/internal/decisions	3.870s
+ok  	github.com/waggle-sh/waggle/internal/dispatch	186.668s
+ok  	github.com/waggle-sh/waggle/internal/forge	12.203s
+?   	github.com/waggle-sh/waggle/internal/layout	[no test files]
+ok  	github.com/waggle-sh/waggle/internal/runtime	5.227s
+ok  	github.com/waggle-sh/waggle/internal/scaffold	11.524s
+ok  	github.com/waggle-sh/waggle/internal/usage	1.184s
+exit 0
