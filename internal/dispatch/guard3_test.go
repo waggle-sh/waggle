@@ -92,9 +92,8 @@ func extraRegistrationRefused(t *testing.T, gitdirOf func(wt, aaa string) string
 }
 
 func TestReuseRefusesExtraRegistration(t *testing.T) {
-	// Byte-identical to the real registration: on Linux prune removes the real
-	// entry and only AAA survives (commondir refusal); on macOS the /var vs
-	// /private/var spelling keeps both (registrations refusal).
+	// Byte-identical to the real registration: provision runs no prune, so the
+	// real entry stays and both entries are refused (registrations refusal).
 	t.Run("absolute", func(t *testing.T) {
 		extraRegistrationRefused(t, func(wt, aaa string) string { return filepath.Join(wt, ".git") })
 	})

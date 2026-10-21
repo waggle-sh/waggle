@@ -8,7 +8,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/waggle-sh/waggle/internal/scaffold"
@@ -152,6 +154,13 @@ func TestDispatchCleanCLI(t *testing.T) {
 		{"usage: bad ticket", []string{"clean", "x", "--repo", repo}, 2},
 		{"usage: bad role", []string{"clean", "23", "--role", "queen", "--repo", repo}, 2},
 		{"usage: unknown flag", []string{"clean", "23", "--force", "--repo", repo}, 2},
+		{"host record: absent", []string{"clean", "--host-record", "--repo", repo}, 0},
+		{"usage: host record with a ticket", []string{"clean", "23", "--host-record", "--repo", repo}, 2},
+		{"usage: accept without host record", []string{"clean", "23", "--accept", "0123456789abcdef", "--repo", repo}, 2},
+		{"usage: host record with a role", []string{"clean", "--host-record", "--role", "builder", "--repo", repo}, 2},
+		{"usage: host record with runs", []string{"clean", "--host-record", "--runs", "--repo", repo}, 2},
+		{"usage: bad digest", []string{"clean", "--host-record", "--accept", "xyz", "--repo", repo}, 2},
+		{"usage: empty digest", []string{"clean", "--host-record", "--accept", "", "--repo", repo}, 2},
 		{"environment: not a repo", []string{"clean", "23", "--repo", t.TempDir()}, 3},
 	}
 	for _, c := range cases {
@@ -164,7 +173,16 @@ func TestDispatchCleanCLI(t *testing.T) {
 		}
 	}
 	var out, errb bytes.Buffer
-	if runDispatch([]string{"--help"}, &out, &errb); !strings.Contains(errb.String(), "waggle dispatch clean <ticket>") {
+	if runDispatch([]string{"--help"}, &out, &errb); !strings.Contains(errb.String(), "waggle dispatch clean <ticket>") || !strings.Contains(errb.String(), "waggle dispatch clean --host-record [--accept <digest>] [--repo <dir>]") {
 		t.Fatalf("usage does not list clean: %s", errb.String())
+	}
+}
+
+// D2b-T7: a closed terminal stops dispatch like Ctrl-C. No signal is sent.
+func TestStopSignals(t *testing.T) {
+	for _, want := range []os.Signal{os.Interrupt, syscall.SIGTERM, syscall.SIGHUP} {
+		if !slices.Contains(stopSignals, want) {
+			t.Errorf("stopSignals lacks %v", want)
+		}
 	}
 }
