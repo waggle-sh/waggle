@@ -22,6 +22,9 @@ type listFlag []string
 func (l *listFlag) String() string     { return strings.Join(*l, ",") }
 func (l *listFlag) Set(v string) error { *l = append(*l, v); return nil }
 
+// stopSignals end a run like Ctrl-C: SIGHUP is a closed terminal.
+var stopSignals = []os.Signal{os.Interrupt, syscall.SIGTERM, syscall.SIGHUP}
+
 // runDispatch implements `waggle dispatch <ticket>` (T-023 section 4). Exit
 // codes: 0 done, 1 run failed, 2 usage, 3 environment, 4 claim refused, 5 needs
 // the Keeper. There is no flag that skips a check, lowers a model or forces.
@@ -35,6 +38,7 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "Usage: waggle dispatch <ticket> --role builder|forager --dir <path>... --gate light|full --no-cell")
 		fmt.Fprintln(stderr, "       waggle dispatch <ticket> --role guard --branch <branch> --no-cell [--second] [--base <rev>] [--tier 0-3] [--json]")
 		fmt.Fprintln(stderr, "       waggle dispatch clean <ticket> [--role builder|forager|guard] [--runs] [--repo <dir>]")
+		fmt.Fprintln(stderr, "       waggle dispatch clean --host-record [--accept <digest>] [--repo <dir>]")
 		fmt.Fprintln(stderr, "       [--branch <b>] [--base <rev>] [--tier 0-3] [--read <path>...] [--timeout 120m] [--no-push] [--keep-worktree] [--json] [--repo <dir>]")
 	}
 	var dirs, reads listFlag
@@ -78,7 +82,7 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 	if !*asJSON {
 		d.OnEvent = func(e dispatch.Event) { fmt.Fprintf(stdout, "%s: %s\n", e.Kind, e.Msg) }
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), stopSignals...)
 	defer stop()
 	res, err := dispatch.Run(ctx, req, d)
 	if err != nil {
@@ -112,6 +116,7 @@ func runClean(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	role, repo := fs.String("role", "", "builder, forager or guard; default every role"), fs.String("repo", ".", "repository")
 	runs := fs.Bool("runs", false, "also remove this ticket's run records")
+	hostRec, accept := fs.Bool("host-record", false, "list the host files that differ from the record"), fs.String("accept", "", "with --host-record: record the state this digest was listed for")
 	ticket := ""
 	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
 		ticket, args = args[0], args[1:]
@@ -122,13 +127,21 @@ func runClean(args []string, stdout, stderr io.Writer) int {
 		}
 		return dispatch.ExitUsage
 	}
-	if ticket == "" && fs.NArg() == 1 {
+	accepting := false
+	fs.Visit(func(f *flag.Flag) { accepting = accepting || f.Name == "accept" })
+	if ticket == "" && fs.NArg() == 1 && !*hostRec {
 		ticket = fs.Arg(0)
-	} else if ticket == "" || fs.NArg() > 0 {
+	} else if (ticket == "") != *hostRec || fs.NArg() > 0 || accepting && !*hostRec || *hostRec && (*role != "" || *runs) {
 		fmt.Fprintln(stderr, "Usage: waggle dispatch clean <ticket> [--role builder|forager|guard] [--runs] [--repo <dir>]")
+		fmt.Fprintln(stderr, "       waggle dispatch clean --host-record [--accept <digest>] [--repo <dir>]")
 		return dispatch.ExitUsage
 	}
-	err := dispatch.Clean(context.Background(), dispatch.CleanRequest{RepoDir: *repo, Ticket: ticket, Role: *role, Runs: *runs}, stdout)
+	var err error
+	if *hostRec {
+		err = dispatch.HostRecord(context.Background(), dispatch.HostRecordRequest{RepoDir: *repo, Accept: *accept, Accepting: accepting}, stdout)
+	} else {
+		err = dispatch.Clean(context.Background(), dispatch.CleanRequest{RepoDir: *repo, Ticket: ticket, Role: *role, Runs: *runs}, stdout)
+	}
 	if err != nil {
 		fmt.Fprintf(stderr, "waggle dispatch: %v\n", err)
 	}
