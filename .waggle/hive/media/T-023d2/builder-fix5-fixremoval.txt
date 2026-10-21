@@ -1,0 +1,16 @@
+--- FAIL: TestCleanRefusesAmbiguousEntries (0.18s)
+    clean_test.go:172: gone false: out "" err cleaning .waggle/worktrees/T-023-builder: git worktree: exit status 128: fatal: validation failed, cannot remove working tree: '<path> is not a .git file, error code 7
+--- FAIL: TestCleanLeavesPlantedEntriesAlone (0.22s)
+    clean_test.go:208: copy: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+--- FAIL: TestCleanMissingWorktreeRemovesOwnEntry (0.46s)
+    --- FAIL: TestCleanMissingWorktreeRemovesOwnEntry/plain (0.23s)
+        clean_test.go:230: out "" err <nil>
+    --- FAIL: TestCleanMissingWorktreeRemovesOwnEntry/symlinked (0.23s)
+        clean_test.go:230: out "" err <nil>
+--- FAIL: TestCleanKeepsOtherTicketsPrunableEntry (0.26s)
+    clean_test.go:247: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+--- FAIL: TestCleanSkipsStrayAdminEntries (0.35s)
+    clean_test.go:278: a symlinked entry: err <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	3.014s
+FAIL

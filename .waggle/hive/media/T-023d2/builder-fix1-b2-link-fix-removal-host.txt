@@ -1,0 +1,5 @@
+--- FAIL: TestCleanRefusesForeignDuplicateAndLinkedGitdir (0.21s)
+    clean_test.go:182: link true: out "removed worktree .waggle/worktrees/T-023-builder\n" err cleaning .waggle/worktrees/T-023-builder: git worktree: exit status 128: fatal: '<path> is not a working tree
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.371s
+FAIL

@@ -1,0 +1,11 @@
+--- <path> 15:22:31
++++ <path> 15:25:05
+@@ -65,7 +65,7 @@
+ 		}
+ 		if _, ok := t.seen[pkey{p.pid, p.start}]; ok && !p.zombie {
+ 			kids[p.pid] = true
+-		} else if p.pid == t.root && t.rootStart == "" { // a reused root pid after the reap must not move the threshold
++		} else if p.pid == t.root { // a reused root pid after the reap must not move the threshold
+ 			t.rootStart = p.start
+ 		}
+ 	}

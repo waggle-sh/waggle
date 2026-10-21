@@ -1,0 +1,34 @@
++ GOOS=linux go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestCleanGitCallsArePinned' -test.v
+=== RUN   TestCleanGitCallsArePinned
+    clean_test.go:159: an unpinned git call ran: {"event":"version","sid":"20261020T215348.445546Z-H7c9f5765-P00000018","thread":"main","time":"2026-10-20T21:53:48.445565Z","file":"common-main.c","line":50,"evt":"3","exe":"2.39.5"}
+        {"event":"start","sid":"20261020T215348.445546Z-H7c9f5765-P00000018","thread":"main","time":"2026-10-20T21:53:48.445574Z","file":"common-main.c","line":51,"t_abs":0.000088,"argv":["git","-c","core.hooksPath=/dev/null","-c","core.fsmonitor=false","-c","log.showSignature=false","-c","maintenance.auto=false","-c","gc.auto=0","rev-parse","--path-format=absolute","--git-common-dir"]}
+        {"event":"cmd_ancestry","sid":"20261020T215348.445546Z-H7c9f5765-P00000018","thread":"main","time":"2026-10-20T21:53:48.445597Z","file":"compat/linux/procinfo.c","line":170,"ancestry":["dispatch.test","docker-init"]}
+        {"event":"cmd_name","sid":"20261020T215348.445546Z-H7c9f5765-P00000018","thread":"main","time":"2026-10-20T21:53:48.445612Z","file":"git.c","line":461,"name":"rev-parse","hierarchy":"rev-parse"}
+        {"event":"def_repo","sid":"20261020T215348.445546Z-H7c9f5765-P00000018","thread":"main","time":"2026-10-20T21:53:48.445976Z","file":"repository.c","line":136,"repo":1,"worktree":"/tmp/TestCleanGitCallsArePinned3888510717/001/repo"}
+        {"event":"exit","sid":"20261020T215348.445546Z-H7c9f5765-P00000018","thread":"main","time":"2026-10-20T21:53:48.446022Z","file":"git.c","line":721,"t_abs":0.000538,"code":0}
+        {"event":"atexit","sid":"20261020T215348.445546Z-H7c9f5765-P00000018","thread":"main","time":"2026-10-20T21:53:48.446025Z","file":"trace2/tr2_tgt_event.c","line":204,"t_abs":0.000541,"code":0}
+        {"event":"version","sid":"20261020T215348.446888Z-H7c9f5765-P00000019","thread":"main","time":"2026-10-20T21:53:48.446904Z","file":"common-main.c","line":50,"evt":"3","exe":"2.39.5"}
+        {"event":"start","sid":"20261020T215348.446888Z-H7c9f5765-P00000019","thread":"main","time":"2026-10-20T21:53:48.446909Z","file":"common-main.c","line":51,"t_abs":0.000087,"argv":["git","-c","core.hooksPath=/dev/null","-c","core.fsmonitor=false","-c","log.showSignature=false","-c","maintenance.auto=false","-c","gc.auto=0","worktree","list","--porcelain"]}
+        {"event":"cmd_ancestry","sid":"20261020T215348.446888Z-H7c9f5765-P00000019","thread":"main","time":"2026-10-20T21:53:48.446926Z","file":"compat/linux/procinfo.c","line":170,"ancestry":["dispatch.test","docker-init"]}
+        {"event":"def_repo","sid":"20261020T215348.446888Z-H7c9f5765-P00000019","thread":"main","time":"2026-10-20T21:53:48.447545Z","file":"repository.c","line":136,"repo":1,"worktree":"/tmp/TestCleanGitCallsArePinned3888510717/001/repo"}
+        {"event":"cmd_name","sid":"20261020T215348.446888Z-H7c9f5765-P00000019","thread":"main","time":"2026-10-20T21:53:48.447573Z","file":"git.c","line":461,"name":"worktree","hierarchy":"worktree"}
+        {"event":"exit","sid":"20261020T215348.446888Z-H7c9f5765-P00000019","thread":"main","time":"2026-10-20T21:53:48.447659Z","file":"git.c","line":721,"t_abs":0.000837,"code":0}
+        {"event":"atexit","sid":"20261020T215348.446888Z-H7c9f5765-P00000019","thread":"main","time":"2026-10-20T21:53:48.447670Z","file":"trace2/tr2_tgt_event.c","line":204,"t_abs":0.000847,"code":0}
+        {"event":"version","sid":"20261020T215348.450573Z-H7c9f5765-P0000001a","thread":"main","time":"2026-10-20T21:53:48.451028Z","file":"common-main.c","line":50,"evt":"3","exe":"2.39.5"}
+        {"event":"start","sid":"20261020T215348.450573Z-H7c9f5765-P0000001a","thread":"main","time":"2026-10-20T21:53:48.451034Z","file":"common-main.c","line":51,"t_abs":0.000584,"argv":["git","-c","core.hooksPath=/dev/null","-c","core.fsmonitor=false","-c","log.showSignature=false","-c","maintenance.auto=false","-c","gc.auto=0","worktree","remove","--force","/tmp/TestCleanGitCallsArePinned3888510717/001/repo/.waggle/worktrees/T-023-builder"]}
+        {"event":"cmd_ancestry","sid":"20261020T215348.450573Z-H7c9f5765-P0000001a","thread":"main","time":"2026-10-20T21:53:48.451054Z","file":"compat/linux/procinfo.c","line":170,"ancestry":["dispatch.test","docker-init"]}
+        {"event":"def_repo","sid":"20261020T215348.450573Z-H7c9f5765-P0000001a","thread":"main","time":"2026-10-20T21:53:48.451093Z","file":"repository.c","line":136,"repo":1,"worktree":"/tmp/TestCleanGitCallsArePinned3888510717/001/repo"}
+        {"event":"cmd_name","sid":"20261020T215348.450573Z-H7c9f5765-P0000001a","thread":"main","time":"2026-10-20T21:53:48.451120Z","file":"git.c","line":461,"name":"worktree","hierarchy":"worktree"}
+        {"event":"exit","sid":"20261020T215348.450573Z-H7c9f5765-P0000001a","thread":"main","time":"2026-10-20T21:53:48.452384Z","file":"git.c","line":721,"t_abs":0.001934,"code":0}
+        {"event":"atexit","sid":"20261020T215348.450573Z-H7c9f5765-P0000001a","thread":"main","time":"2026-10-20T21:53:48.452389Z","file":"trace2/tr2_tgt_event.c","line":204,"t_abs":0.001939,"code":0}
+        {"event":"version","sid":"20261020T215348.455400Z-H7c9f5765-P0000001b","thread":"main","time":"2026-10-20T21:53:48.455420Z","file":"common-main.c","line":50,"evt":"3","exe":"2.39.5"}
+        {"event":"start","sid":"20261020T215348.455400Z-H7c9f5765-P0000001b","thread":"main","time":"2026-10-20T21:53:48.455425Z","file":"common-main.c","line":51,"t_abs":0.000114,"argv":["git","-c","core.hooksPath=/dev/null","-c","core.fsmonitor=false","-c","log.showSignature=false","-c","maintenance.auto=false","-c","gc.auto=0","worktree","prune"]}
+        {"event":"cmd_ancestry","sid":"20261020T215348.455400Z-H7c9f5765-P0000001b","thread":"main","time":"2026-10-20T21:53:48.455449Z","file":"compat/linux/procinfo.c","line":170,"ancestry":["dispatch.test","docker-init"]}
+        {"event":"def_repo","sid":"20261020T215348.455400Z-H7c9f5765-P0000001b","thread":"main","time":"2026-10-20T21:53:48.455494Z","file":"repository.c","line":136,"repo":1,"worktree":"/tmp/TestCleanGitCallsArePinned3888510717/001/repo"}
+        {"event":"cmd_name","sid":"20261020T215348.455400Z-H7c9f5765-P0000001b","thread":"main","time":"2026-10-20T21:53:48.455541Z","file":"git.c","line":461,"name":"worktree","hierarchy":"worktree"}
+        {"event":"exit","sid":"20261020T215348.455400Z-H7c9f5765-P0000001b","thread":"main","time":"2026-10-20T21:53:48.455568Z","file":"git.c","line":721,"t_abs":0.000257,"code":0}
+        {"event":"atexit","sid":"20261020T215348.455400Z-H7c9f5765-P0000001b","thread":"main","time":"2026-10-20T21:53:48.455571Z","file":"trace2/tr2_tgt_event.c","line":204,"t_abs":0.000260,"code":0}
+--- FAIL: TestCleanGitCallsArePinned (0.11s)
+FAIL
+exit: 1

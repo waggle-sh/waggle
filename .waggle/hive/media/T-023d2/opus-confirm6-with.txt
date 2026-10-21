@@ -1,0 +1,24 @@
+--- PASS: TestCleanRefusesLiveLocks (0.17s)
+--- PASS: TestCleanTakesOverDeadLock (0.18s)
+--- PASS: TestCleanRemovesWorktreeAndMarkers (0.51s)
+    --- PASS: TestCleanRemovesWorktreeAndMarkers/plain (0.25s)
+    --- PASS: TestCleanRemovesWorktreeAndMarkers/symlinked (0.26s)
+--- PASS: TestCleanRunsOnlyMatching (0.20s)
+--- PASS: TestCleanGitCallsArePinned (0.19s)
+--- PASS: TestCleanRefusesAmbiguousEntries (0.31s)
+--- PASS: TestCleanLeavesPlantedEntriesAlone (1.38s)
+--- PASS: TestCleanMissingWorktreeRemovesOwnEntry (0.45s)
+    --- PASS: TestCleanMissingWorktreeRemovesOwnEntry/plain (0.22s)
+    --- PASS: TestCleanMissingWorktreeRemovesOwnEntry/symlinked (0.22s)
+--- PASS: TestCleanKeepsOtherTicketsPrunableEntry (0.26s)
+--- PASS: TestCleanDropsMissingWorktreeEntryWithRelativeGitdir (0.20s)
+--- PASS: TestCleanRefusesLinkedGitdir (0.15s)
+--- PASS: TestCleanSkipsStrayAdminEntries (0.32s)
+--- PASS: TestCleanOutsideRepoCreatesNothing (0.01s)
+    zz_opus7_test.go:18: gitdir "../../../.waggle/worktrees/T-023-builder/.git\n"
+    zz_opus7_test.go:23: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+    zz_opus7_test.go:26: left T-0230-builder
+    zz_opus7_test.go:26: left T-024-builder
+--- PASS: TestOpus7RelLinked (0.23s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	5.812s

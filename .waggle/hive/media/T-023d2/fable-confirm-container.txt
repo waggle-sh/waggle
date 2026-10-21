@@ -1,0 +1,52 @@
++ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c ./internal/dispatch/   (compiled on the host from the 9edaf84 tree plus the linux-tagged probe, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m -e GOGC=50 golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestFableConfirmInertSweep|TestFableConfirmLeaderDrop|TestTargetsDropGroupSeenEmpty|TestSweep|TestObserve|TestTargets|TestTrackerStartsBeforeWait' -test.v
+=== RUN   TestFableConfirmLeaderDrop
+    fable_confirm_data_test.go:55: P1 foreign member after a read listed the group empty: leaders [501], targets pids [501 502] groups [501]
+    fable_confirm_data_test.go:55: orphan catch: leader gone, child listed on every read: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: zombie leader holds the group, then the orphan alone: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: transient omission: one good read lists no member, then the orphan: leaders [501], targets pids [501 502 511] groups [501]
+    fable_confirm_data_test.go:55: failed read between: not a drop: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: table without self between: not a drop: leaders [501 510], targets pids [501 502 511] groups [501 510]
+--- PASS: TestFableConfirmLeaderDrop (0.00s)
+=== RUN   TestFableConfirmInertSweep
+    fable_confirm_linux_test.go:27: root 0: recorder seam: 1 real table read(s), 0 kills, sweep returned 0 survivors, blind true
+    fable_confirm_linux_test.go:32: root 0: real seams: sweep returned 0 survivors
+    fable_confirm_linux_test.go:27: root 1: recorder seam: 1 real table read(s), 0 kills, sweep returned 0 survivors, blind true
+    fable_confirm_linux_test.go:32: root 1: real seams: sweep returned 0 survivors
+    fable_confirm_linux_test.go:27: root -7: recorder seam: 1 real table read(s), 0 kills, sweep returned 0 survivors, blind true
+    fable_confirm_linux_test.go:32: root -7: real seams: sweep returned 0 survivors
+--- PASS: TestFableConfirmInertSweep (0.00s)
+=== RUN   TestSweepWaitsForRenewal
+--- PASS: TestSweepWaitsForRenewal (11.51s)
+=== RUN   TestObserveTracksOnlyTheRootSubtree
+--- PASS: TestObserveTracksOnlyTheRootSubtree (0.00s)
+=== RUN   TestObserveRefusesInitAndKernelRoots
+--- PASS: TestObserveRefusesInitAndKernelRoots (0.00s)
+=== RUN   TestObserveNeverTreatsInitAsTrackedParent
+--- PASS: TestObserveNeverTreatsInitAsTrackedParent (0.00s)
+=== RUN   TestObserveErrorClearsLive
+--- PASS: TestObserveErrorClearsLive (0.00s)
+=== RUN   TestTrackerStartsBeforeWait
+--- PASS: TestTrackerStartsBeforeWait (0.00s)
+=== RUN   TestSweepSkipsReusedPid
+--- PASS: TestSweepSkipsReusedPid (0.03s)
+=== RUN   TestSweepKillsTrackedGroup
+--- PASS: TestSweepKillsTrackedGroup (0.05s)
+=== RUN   TestSweepSignalsExactlyTargets
+--- PASS: TestSweepSignalsExactlyTargets (0.05s)
+=== RUN   TestSweepStopsAfter40Rounds
+--- PASS: TestSweepStopsAfter40Rounds (1.27s)
+=== RUN   TestSweepReadRetry
+--- PASS: TestSweepReadRetry (0.67s)
+=== RUN   TestTargetsOnFabricatedTables
+--- PASS: TestTargetsOnFabricatedTables (0.01s)
+=== RUN   TestTargetsRefuseInitSelfAndKernel
+--- PASS: TestTargetsRefuseInitSelfAndKernel (0.05s)
+=== RUN   TestObserveRecordsOnlyTrackedLeaders
+--- PASS: TestObserveRecordsOnlyTrackedLeaders (0.15s)
+=== RUN   TestObserveRootStartSetOnce
+--- PASS: TestObserveRootStartSetOnce (0.01s)
+=== RUN   TestTargetsDropGroupSeenEmpty
+--- PASS: TestTargetsDropGroupSeenEmpty (0.03s)
+PASS
+exit: 0

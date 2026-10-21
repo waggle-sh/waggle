@@ -1,0 +1,11 @@
+--- <path> 15:22:31
++++ <path> 15:25:21
+@@ -120,7 +120,7 @@
+ 	for k := range t.leaders {
+ 		member, same := false, true
+ 		for _, p := range tab {
+-			member = member || p.pgid == k.pid && !p.zombie
++			member = member || slices.ContainsFunc(t.live, func(q proc) bool { return q.pgid == k.pid })
+ 			same = same && (p.pid != k.pid || p.start == k.start)
+ 		}
+ 		if k.pid > 1 && t.group > 1 && k.pid != t.group && member && same {

@@ -1,0 +1,16 @@
+== darwin
+ok
+== linux
+ok
+== freebsd
+ok
+== solaris
+go: unsupported GOOS/GOARCH pair solaris/arm64
+== illumos
+go: unsupported GOOS/GOARCH pair illumos/arm64
+== windows
+ok
+== solaris
+ok
+== illumos
+ok

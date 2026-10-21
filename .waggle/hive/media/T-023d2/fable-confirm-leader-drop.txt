@@ -1,0 +1,27 @@
+fable confirmation, data only: observe and targets on fabricated tables (no table read, no signal, no sweep()).
+The probe file fable-confirm-data_test.go.txt was copied into extracted copies (git archive) of each tree and run on the host:
++ go test -count=1 -run TestFableConfirmLeaderDrop -v ./internal/dispatch/
+
+== 2f1352d
+    fable_confirm_data_test.go:55: P1 foreign member after a read listed the group empty: leaders [501 510], targets pids [501 502] groups [501 510]
+    fable_confirm_data_test.go:55: orphan catch: leader gone, child listed on every read: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: zombie leader holds the group, then the orphan alone: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: transient omission: one good read lists no member, then the orphan: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: failed read between: not a drop: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: table without self between: not a drop: leaders [501 510], targets pids [501 502 511] groups [501 510]
+--- PASS: TestFableConfirmLeaderDrop (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	0.158s
+
+== 9edaf84
+    fable_confirm_data_test.go:55: P1 foreign member after a read listed the group empty: leaders [501], targets pids [501 502] groups [501]
+    fable_confirm_data_test.go:55: orphan catch: leader gone, child listed on every read: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: zombie leader holds the group, then the orphan alone: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: transient omission: one good read lists no member, then the orphan: leaders [501], targets pids [501 502 511] groups [501]
+    fable_confirm_data_test.go:55: failed read between: not a drop: leaders [501 510], targets pids [501 502 511] groups [501 510]
+    fable_confirm_data_test.go:55: table without self between: not a drop: leaders [501 510], targets pids [501 502 511] groups [501 510]
+--- PASS: TestFableConfirmLeaderDrop (0.00s)
+PASS
+ok  	github.com/waggle-sh/waggle/internal/dispatch	0.300s
+
+The same probe also ran in the linux container at 9edaf84 with the same six results (fable-confirm-container.txt).

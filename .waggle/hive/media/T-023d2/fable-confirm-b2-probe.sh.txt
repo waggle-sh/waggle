@@ -1,0 +1,43 @@
+#!/bin/sh
+# fable confirmation probe for opus B2 (host, git only, no process is signalled).
+# usage: b2-probe.sh <waggle binary> <work dir>
+W="$1"; D="$2"
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+mk() { # mk <repo dir>: a repo with T-023 and T-024 builder worktrees, as runs leave them
+  rm -rf "$1"; mkdir -p "$1"; cd "$1"
+  git init -q -b main . && git config user.name k && git config user.email <email>
+  echo r > README && git add -A && git commit -q -m init
+  mkdir -p .waggle/worktrees
+  git worktree add -q -b t-023 .waggle/worktrees/T-023-builder main
+  git worktree add -q -b t-024 .waggle/worktrees/T-024-builder main
+}
+show() { echo "  entries: $(ls .git/worktrees | tr '\n' ' ')"; echo "  list:"; git worktree list | sed "s#$D#<work>#g; s#^#    #"; }
+run() { echo "+ waggle dispatch clean 23 --repo ."; "$W" dispatch clean 23 --repo . 2>&1 | sed "s#$D#<work>#g; s#^#    #"; echo "  exit $?"; }
+# sh pipelines hide the exit code; capture it separately
+run() { echo "+ waggle dispatch clean 23 --repo ."; out=$("$W" dispatch clean 23 --repo . 2>&1); rc=$?; printf '%s\n' "$out" | sed "s#$D#<work>#g; s#^#    #"; echo "  exit $rc"; }
+
+echo "== A: healthy repo plus a prunable entry (worktree directory deleted) for a third branch"
+mk "$D/a"; git worktree add -q -b old "$D/a-old" main; rm -rf "$D/a-old"; show; run; echo "  after:"; show
+echo "  T-024 worktree intact: $(git -C .waggle/worktrees/T-024-builder rev-parse --abbrev-ref HEAD 2>&1)"
+
+echo "== B: a worktree removed with rm -rf and added again at the same path (git 2.26+ reuses the entry)"
+mk "$D/b"; git worktree add -q -b again "$D/b-again" main; rm -rf "$D/b-again"; git worktree add -q "$D/b-again" again; show; run; echo "  after:"; show
+echo "  again worktree intact: $(git -C "$D/b-again" rev-parse --abbrev-ref HEAD 2>&1)"
+
+echo "== C: a locked worktree entry (worktrees/<id>/locked) for another ticket"
+mk "$D/c"; git worktree lock .waggle/worktrees/T-024-builder; ls .git/worktrees/T-024-builder | tr '\n' ' '; echo; run; echo "  after:"; show
+
+echo "== D: a stray regular file in <common>/worktrees (.DS_Store): what clean does, then what git prune does"
+mk "$D/d"; : > .git/worktrees/.DS_Store; show; run; echo "  after clean:"; show
+echo "+ git worktree prune -v"; git worktree prune -v 2>&1 | sed "s#$D#<work>#g; s#^#    #"; echo "  exit $?"; show
+
+echo "== E: an admin entry directory with no gitdir file (interrupted add): clean, then git prune"
+mk "$D/e"; mkdir .git/worktrees/half; show; run; echo "  after clean:"; show
+echo "+ git worktree prune -v"; git worktree prune -v 2>&1 | sed "s#$D#<work>#g; s#^#    #"; echo "  exit $?"; show
+
+echo "== F: the T-023 worktree reached through a symlinked parent (entry path through the link)"
+rm -rf "$D/f-real" "$D/f"; mkdir -p "$D/f-real"; ln -s "$D/f-real" "$D/f"; cd "$D/f"
+git init -q -b main . && git config user.name k && git config user.email <email> && echo r > README && git add -A && git commit -q -m init
+mkdir -p .waggle/worktrees; git worktree add -q -b t-023 "$D/f/.waggle/worktrees/T-023-builder" main; git worktree add -q -b t-024 "$D/f-real/.waggle/worktrees/T-024-builder" main
+echo "  gitdir files:"; for e in .git/worktrees/*; do echo "    $(basename $e): $(sed "s#$D#<work>#g" $e/gitdir)"; done
+run; echo "  after:"; show
