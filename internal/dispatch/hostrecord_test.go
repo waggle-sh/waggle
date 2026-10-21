@@ -72,7 +72,7 @@ func TestHostDigestAndPrintable(t *testing.T) {
 			t.Errorf("digest ignores a change of the %s", name)
 		}
 	}
-	if got := printable("a\x00b\x1bc\u0085d‮e​f\n"); got != "abcdef" {
+	if got := printable("a\x00b\x1bc\u0085d‮e​f g h\n"); got != "abcdefgh" {
 		t.Errorf("printable = %q", got)
 	}
 	if got := printable(strings.Repeat("é", 80)); len(got) > 100 || !strings.HasPrefix(got, "éé") {

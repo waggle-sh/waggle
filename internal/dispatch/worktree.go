@@ -231,7 +231,7 @@ func (w *Worktree) provision(ctx context.Context, g *Git) error {
 	if err != nil && errors.Is(serr, fs.ErrNotExist) { // git refuses a stale entry for the path; the prune is not dispatch's to run (D-202)
 		name := filepath.Base(w.Path)
 		ticket, role, _ := strings.Cut(name[len("T-"):], "-")
-		err = fmt.Errorf("%w; if a stale entry for %s remains, run waggle dispatch clean T-%s --role %s", err, name, ticket, role)
+		err = fmt.Errorf("%w; if a stale entry for %s remains, run waggle dispatch clean T-%s --role %s (not git worktree prune)", err, name, ticket, role)
 	}
 	if err != nil {
 		return err
@@ -268,7 +268,7 @@ func requireRealDir(p string) error {
 // runs inside the path until the registration is pinned, and then only with an
 // explicit --git-dir. The caller has already Lstat-checked the path.
 func (w *Worktree) checkReusable(ctx context.Context, g *Git, branchExists bool) error {
-	bad := fmt.Errorf("%s exists but is not a worktree on branch %s; run waggle dispatch clean or remove it", w.Path, w.Branch)
+	bad := fmt.Errorf("%s exists but is not a worktree on branch %s; remove it by hand", w.Path, w.Branch)
 	if !branchExists && w.Detach == "" {
 		return bad
 	}
