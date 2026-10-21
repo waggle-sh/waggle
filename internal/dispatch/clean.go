@@ -165,7 +165,11 @@ func (c *cleaner) entryFor(wants []string) (string, error) {
 		if err != nil || !e.IsDir() {
 			return "", failf(ExitEnv, "worktrees/%s has no readable gitdir; nothing was removed", e.Name())
 		}
-		if g, ok := strings.CutSuffix(filepath.Clean(strings.TrimSpace(string(b))), string(filepath.Separator)+".git"); ok && slices.Contains(wants, g) {
+		gd := strings.TrimSpace(string(b))
+		if !filepath.IsAbs(gd) { // worktree.useRelativePaths
+			gd = filepath.Join(root, e.Name(), gd)
+		}
+		if g, ok := strings.CutSuffix(filepath.Clean(gd), string(filepath.Separator)+".git"); ok && slices.Contains(wants, g) {
 			found = append(found, filepath.Join(root, e.Name()))
 		}
 	}

@@ -248,6 +248,23 @@ func TestCleanKeepsOtherTicketsPrunableEntry(t *testing.T) {
 	}
 }
 
+// Under worktree.useRelativePaths a missing worktree's own entry (relative
+// gitdir) is still found and dropped, and other entries stay.
+func TestCleanDropsMissingWorktreeEntryWithRelativeGitdir(t *testing.T) {
+	f := newFixture(t, false, false)
+	f.git("config", "worktree.useRelativePaths", "true")
+	wt, other := filepath.Join(f.real, ".waggle/worktrees/T-023-builder"), filepath.Join(f.real, ".waggle/worktrees/T-024-builder")
+	f.git("worktree", "add", "-q", "-b", "t-023", wt, "main")
+	f.git("worktree", "add", "-q", "-b", "t-024", other, "main")
+	f.git("update-ref", "refs/waggle/claims/ticket-23", "HEAD")
+	if err := os.RemoveAll(wt); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := doClean(f, "", false); err != nil || exists(filepath.Join(f.common(), "worktrees/T-023-builder")) || !exists(filepath.Join(f.common(), "worktrees/T-024-builder")) || !exists(other) {
+		t.Fatalf("out %q err %v", out, err)
+	}
+}
+
 // A gitdir that is not a readable regular file (here a link) refuses with exit 3.
 func TestCleanRefusesLinkedGitdir(t *testing.T) {
 	f, wt := cleanRepo(t, false)
