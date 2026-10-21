@@ -1,0 +1,48 @@
+== branch t-023d2b head
+9244e78099145cbb069cc5aa28c9d2c9c2f90f8d
+== merge-base with be3d121
+be3d1217f6de43c7b3ed1ae17343b7ad0bf75fcd
+== numstat be3d121..HEAD
+17	4	cmd/waggle/dispatch.go
+19	1	cmd/waggle/dispatch_test.go
+41	26	internal/dispatch/clean.go
+32	1	internal/dispatch/clean_test.go
+2	3	internal/dispatch/guard3_test.go
+114	0	internal/dispatch/hostrecord.go
+232	0	internal/dispatch/hostrecord_test.go
+2	2	internal/dispatch/prerun.go
+109	0	internal/dispatch/provision_test.go
+1	1	internal/dispatch/setsid_test.go
+10	7	internal/dispatch/worktree.go
+== added non-test lines (D-136)
+184
+== em or en dash count in diff (expect 0)
+grep: invalid option -- P
+usage: grep [-abcdDEFGHhIiJLlMmnOopqRSsUVvwXxZz] [-A num] [-B num] [-C[num]]
+	[-e pattern] [-f file] [--binary-files=value] [--color=when]
+	[--context[=num]] [--directories=action] [--label] [--line-buffered]
+	[--null] [pattern] [file ...]
+== trailers
+Signed-off-by: paulternate <<email>>
+
+== diff lines to reap_*.go run.go cell*.go (expect 0)
+       0
+== worktree prune in non-test dispatch code (expect none)
+== gofmt -l (expect none)
+== go vet (host)
+vet ok
+== GOOS=windows vet
+ok
+== GOOS=solaris amd64 vet
+ok
+== GOOS=illumos amd64 vet
+ok
+== gh pr checks 61
+verify-leases-and-tiers	fail	28s	https://github.com/waggle-sh/waggle/actions/runs/39535122480/job/119009886340	
+product-ci	pass	2m44s	https://github.com/waggle-sh/waggle/actions/runs/39535122375/job/119009886183	
+relay-claim	skipping	0	https://github.com/waggle-sh/waggle/actions/runs/39535122480/job/119009889216	
+== git version
+git version 2.54.0 (Apple Git-157)
+== global filter config on this host (names only)
+(end)
+em or en dash count in diff (perl, expect 0): 0

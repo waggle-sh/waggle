@@ -1,0 +1,9 @@
+17	4	cmd/waggle/dispatch.go
+19	1	cmd/waggle/dispatch_test.go
+41	26	internal/dispatch/clean.go
+32	1	internal/dispatch/clean_test.go
+2	3	internal/dispatch/guard3_test.go
+114	0	internal/dispatch/hostrecord.go
+2	2	internal/dispatch/prerun.go
+1	1	internal/dispatch/setsid_test.go
+10	7	internal/dispatch/worktree.go

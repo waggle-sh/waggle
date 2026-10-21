@@ -1,0 +1,52 @@
+# Confirmation checks at c211ea0 (opus)
+
+## git diff --stat 9244e78 c211ea0
+ internal/dispatch/hostrecord.go      | 2 +-
+ internal/dispatch/hostrecord_test.go | 2 +-
+ internal/dispatch/provision_test.go  | 2 +-
+ internal/dispatch/worktree.go        | 4 ++--
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+## D-136 size: git diff --numstat be3d121 c211ea0 -- . ':!*_test.go'
+17	4	cmd/waggle/dispatch.go
+41	26	internal/dispatch/clean.go
+114	0	internal/dispatch/hostrecord.go
+2	2	internal/dispatch/prerun.go
+11	8	internal/dispatch/worktree.go
+added non-test lines: 185 (stop 240)
+
+## dashes: grep -c -P '[\x{2013}\x{2014}]' (pattern checked on a planted U+2014: 1)
+git diff be3d121 c211ea0: 0
+git log --format=%B be3d121..c211ea0: 0
+
+## c211ea0 commit
+author paulternate
+T-023: phase D2b polish, printable drops U+2028/U+2029, clearer stale-entry and plain-directory hints
+Signed-off-by: paulternate <noreply address>
+
+## git's own messages on this Mac (git 2.54.0), scratch repo
+stale entry:   fatal: '<scratch>/T-024-builder' is a missing but already registered worktree;
+               use 'add -f' to override, or 'prune' or 'remove' to clear
+branch in use: fatal: 't-023' is already used by worktree at '<scratch>/other'
+(the N3 suffix "(not git worktree prune)" answers the first; on the second the
+conditional hint is harmless: clean for this path finds no entry and says so)
+
+## host suite: go test -race -count=1 ./internal/dispatch/... ./cmd/...
+ok  	github.com/waggle-sh/waggle/internal/dispatch	156.447s
+ok  	github.com/waggle-sh/waggle/cmd/waggle	14.593s
+
+## gh pr checks 61 at head c211ea04f493
+product-ci               fail  2m31s  run 39604347542
+verify-leases-and-tiers  fail  26s    run 39604347694 (expected: missing T-023 claim)
+relay-claim              skipping
+product-ci at 9244e78 (run 39535122375): success
+
+## product-ci failure (gh run view 39604347542 --log-failed)
+--- FAIL: TestRunBaseAndBranch (1.29s)
+    --- FAIL: TestRunBaseAndBranch/remote_tracking_only (0.35s)
+        testing.go:1232: TempDir RemoveAll cleanup: unlinkat /tmp/TestRunBaseAndBranchremote_tracking_only.../001/origin.git/objects: directory not empty
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	83.173s
+All other packages ok. The test and its fixture are unchanged since be3d121.
+Same subtest and cause as the detached-maintenance flake in T-023c-reopus.md:
+a push or commit in the fixture starts git maintenance --auto --detach, which
+writes into origin.git/objects while t.TempDir cleanup removes it.
