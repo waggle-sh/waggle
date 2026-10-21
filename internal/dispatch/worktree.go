@@ -28,9 +28,6 @@ type Git struct {
 	Dir    string
 	Remote string
 	Pinned bool
-	// CLocale runs git with untranslated messages and stderr merged into the
-	// result, for callers that match them.
-	CLocale bool
 }
 
 // pinned returns a copy of g that runs under pinnedEnv.
@@ -58,14 +55,8 @@ func (g *Git) RunIn(ctx context.Context, dir string, args ...string) ([]byte, er
 	if g.Pinned {
 		cmd.Env = pinnedEnv(cmd.Env)
 	}
-	if g.CLocale {
-		cmd.Env = append(cmd.Env, "LC_ALL=C", "LANGUAGE=C")
-	}
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
-	if g.CLocale {
-		cmd.Stderr = &out
-	}
 	if err := cmd.Run(); err != nil {
 		return out.Bytes(), fmt.Errorf("git %s: %w: %s", args[0], err, strings.TrimSpace(errb.String()))
 	}
