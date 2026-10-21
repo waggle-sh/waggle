@@ -1,0 +1,5 @@
+--- FAIL: TestHostDigestAndPrintable (0.00s)
+    hostrecord_test.go:76: printable = "abcdef\u2028g\u2029h"
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.190s
+FAIL

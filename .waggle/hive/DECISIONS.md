@@ -3934,3 +3934,101 @@
 **Keeper choice:** Every Tier 3 first review keeps two guards on different models. A fix round gets one confirming guard, alternating between the two models round to round, unless its diff changes code that sends signals, deletes files or git state, or touches leases or claims, or it adds more than 100 non-test lines (D-136 metric); those get two confirmations. If a single confirming guard finds a must-fix, the other model confirms the next round. Amends D-184. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
 
 **Rationale:** Keeps two models on the dangerous paths and saves a guard pass on test-only and wording rounds.
+
+## D-206: T-023 phase D2b budget is 140 / 190 / 240 added non-test lines
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Q-T023-32: what line budget does T-023 phase D2b get? The raw estimate is 69 lines; D2 ran 2.07x its estimate and the worst observed overrun is 3.3x (about 228).
+
+**Options considered:**
+1. Estimate 140, target 190, stop 240
+2. 100 / 140 / 180
+3. 180 / 250 / 320
+
+**Hive recommendation:** Estimate 140, target 190, stop 240
+
+**Keeper choice:** T-023 phase D2b has an estimate of 140, a target of 190 and a stop of 240 added non-test lines (D-136 metric), fix rounds counted. If the build passes 190 before review, items 4a (SIGHUP) and 4b (pinned worktree add) move to phase E (section 10.8.2) (Q-T023-32). Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Covers the worst observed overrun on the 69-line raw estimate without leaving slack for fix-round surface.
+
+## D-207: Nothing replaces provision's repo-wide prune; git's worktree add refusal surfaces with a clean hint
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Q-T023-33: D-202 removes the repo-wide git worktree prune in Worktree.provision. What replaces it?
+
+**Options considered:**
+1. Nothing: git's worktree add refusal becomes exit 3 with a waggle dispatch clean hint
+2. Provision pre-checks with entryFor and refuses with the hint
+3. Provision drops its own stale entry before worktree add
+
+**Hive recommendation:** Nothing: git's worktree add refusal becomes exit 3 with a waggle dispatch clean hint
+
+**Keeper choice:** In T-023 phase D2b, Worktree.provision loses its repo-wide git worktree prune and gains no replacement: when git worktree add refuses a stale entry, dispatch exits 3 with a hint to run waggle dispatch clean. A Keeper who deletes a worktree directory by hand runs clean once before the next dispatch (Q-T023-33). Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** About 3 lines and no new delete path in every dispatch; one bad entry elsewhere does not block dispatch.
+
+## D-208: The remaining T-023 D1 notes carry to phase E
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Q-T023-34: where do D1 opus N3 (identity scope, prerun.go), opus N7 (skip-worktree edits invisible to rule 3, check.go) and fable D1 N4 (verdict on the last non-blank line, guard.go) land? About 20 doubled lines; none blocks phase F.
+
+**Options considered:**
+1. Phase E carry, with phase E's lease widened to those three functions
+2. Add to D2b and raise its numbers by 20
+3. A follow-up ticket after phase F
+
+**Hive recommendation:** Phase E carry, with phase E's lease widened to those three functions
+
+**Keeper choice:** D1 opus N3 and N7 and fable D1 N4 carry to T-023 phase E, whose lease widens to the three named functions in prerun.go, check.go and guard.go (Q-T023-34). Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Low risk and keeps D2b small ahead of phase F.
+
+## D-209: T-023 phase D2b design defaults: stricter host-record digest, pinned provision worktree add, host-only tests
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** The D2b scout brief makes three design choices without a Keeper question: the host-record digest also covers the stored record's file state; provision's git worktree add is pinned; every D2b test and fix-removal check is git and file only. Accept them?
+
+**Options considered:**
+1. Accept all three
+2. Discuss before the build
+
+**Hive recommendation:** Accept all three
+
+**Keeper choice:** T-023 phase D2b follows section 10.8 as written: the --accept digest covers the stored host record's file state as well as the current map, so a record rewritten after the listing is refused (stricter than D-198); provision's git worktree add calls run through the pinned git, so a git-lfs repo's worker worktree holds pointer files; every D2b test and fix-removal check is git and file only and avoids Run, so it runs on the host under D-193 and D-195, and anything needing Run, a signal or the tracker runs only on docker --context colima-waggle. Decided by the Head Keeper via queen card on 2026-10-20; recorded by the queen.
+
+**Rationale:** Each choice is the safer reading and can change in a later lease.
+
+## D-210: T-023 D2b: the 190 cut applies only before review; post-review rounds count toward the 240 stop
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** D2b passed both guards at 184 added non-test lines against a 190 target. A polish round for opus N1, N3 and N4 may cross 190. Do items 4a and 4b stay in?
+
+**Options considered:**
+1. Stay in: the D-206 cut applies only past 190 before review; post-review rounds count toward the 240 stop
+2. Cut at 190 at any time
+
+**Hive recommendation:** Stay in: the D-206 cut applies only past 190 before review; post-review rounds count toward the 240 stop
+
+**Keeper choice:** The D-206 cut of items 4a and 4b applies only when the build passes 190 before review. Fix and polish rounds after review count toward the 240 stop and do not move 4a or 4b. T-023 phase D2b gets one polish round before merge for opus N1 (printable also drops U+2028 and U+2029), N3 (the D-207 hint says not to run git worktree prune) and N4 (provision tells the Keeper to remove a plain directory by hand), confirmed by one guard (D-205). Decided by the Head Keeper via queen card on 2026-10-21; recorded by the queen.
+
+**Rationale:** Keeps the reviewed scope intact and fixes guidance phase F would show the Keeper.

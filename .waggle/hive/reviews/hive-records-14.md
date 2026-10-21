@@ -1,0 +1,53 @@
+# Guard review: hive records batch 14 (PR #62, `hive-records-14` at `b663b31`, base main `e454cc1`)
+
+Verdict: must-fix
+Risk-Tier: 3
+
+Guard on fable. Records-only batch under the D-183 records card. Threat bar D-203 as given: must-fix is for wrong or misleading records, privacy leaks, a broken append-only `DECISIONS.md`, or anything that would steer phase F (2026-10-22) or a later builder wrongly. The one must-fix below is a wrong date in the committed queen summary; it is a one-word edit that needs no re-review.
+
+## Intent Summary
+
+Three commits. `1cc63ab` appends D-206 to D-210 to `DECISIONS.md` (the Q-T023-32 to Q-T023-34 rulings, the D2b design defaults, and the post-review budget rule), adds the two D2b first reviews (`reviews/T-023d2b-{opus,fable}.md`, the opus file holding the `c211ea0` confirmation) and 20 evidence files under `media/T-023d2b/`. `fc0d6d9` refreshes the committed queen summary to main at `e454cc1`. `b663b31` brings `tasks/T-023.md` up to the D2b merge: status, section 3, the phase E lease and carry (10.3), the phase F trial items (10.4), the merged 10.8 paragraph with its rules in force, and 15.4 as ruled; the full D2b plan (10.8.1 to 10.8.8) and the 15.4 question text are trimmed to `git show 1cc63ab:.waggle/hive/tasks/T-023.md`. Blast radius: these are the records phase F runs from tomorrow and the pointers phase E's scout will follow; no product file changes.
+
+## Checks
+
+1. **DECISIONS.md.** Pure append: `git diff origin/main..HEAD` removes 0 lines; 98 added lines are D-206 to D-210 with Date, Kind, Tickets, Supersedes, Question, Options, Hive recommendation, Keeper choice and Rationale on each. `go run ./cmd/waggle gate decisions --base origin/main --head HEAD` prints `decisions: ok, appended D-206, D-207, D-208, D-209, D-210`, exit 0. 210 entries, last `## D-210`. Each Keeper choice matches the `e454cc1` merge commit: D-206 budget 140/190/240 and the 4a/4b cut ("estimate 140, target 190, stop 240, D-206"); D-207 no replacement for provision's prune, exit 3 with the clean hint ("nothing replaces it (D-202, D-207)"); D-208 the three D1 notes to phase E ("Carry to phase E: D1 opus N3 and N7 and fable D1 N4 (D-208)"); D-209 record-state term in the digest, pinned `worktree add`, git-and-file-only tests ("stricter than D-198", "pinned git", "avoids Run (D-209)"); D-210 the polish round for opus N1, N3 and N4 confirmed by one guard ("polish round c211ea0 for opus N1, N3 and N4 (D-210) confirmed by one opus guard (D-205)"). Line counts: `git diff --numstat be3d121 <head>` over non-test files gives 184 at `9244e78` (D-210's "passed both guards at 184") and 185 at `c211ea0` (the merge's and the brief's 185). Both figures are right.
+
+2. **T-023.md.** `git show 1cc63ab:.waggle/hive/tasks/T-023.md` resolves (391 lines) and is byte-identical to main at `e454cc1`, so the pointer reaches the full D2b plan. Status: D2b at `e454cc1` (#61, confirmed by `gh pr view 61`), 185 lines against stop 240, phase D complete, next phase F then E (D-117). Section 3 row and the D-210 sentence match D-206 and D-210. 10.3: the D-208 carry names the right functions (see flagged item b); fable D2b N4, opus D2b N2, the `printable` doc comment and the fixture flake match the merge commit's "Carry to phase E" and the opus confirmation's two notes; "item 15's per-turn `usage` event" is 10.6 item 15 at `c98d130` ("moved to phase E in 9.2"). 10.4 phase F still carries the D-197 `survivors_killed` gate with cutover blocked on a miss, the D-199 `cmd >/dev/null 2>&1 &` command and report sentence, the host-record listing with `--accept` only after a Keeper card (D-198), fable D2b N7 (takeover warning before the listing, match on the digest line) and N5 (SIGHUP under `nohup`). 10.8 merged paragraph: reviews at `9244e78`, one polish round at `c211ea0` with one opus confirmation, 185 lines, the three deltas (4a and 4b shipped, the polish items, `hostrecord.go` and `setsid_test.go` per hive-records-13 N9), and the rules in force match the code and the merge. 15.4 matches D-206 to D-210 and the dates in their Keeper choices. Nothing phase E or F needs was lost: every 10.8.8 triage row that is still open is in the "Still open" paragraph or in 10.3 and 10.4, and item 1's "a line for the phase F queen template" is now 10.4's host-record bullet.
+
+   Scout's flagged items:
+   - (a) The flake item's text is accurate. `shIn` (`internal/dispatch/dispatch_test.go:30`) passes `-c maintenance.auto=false` only to the test's own client-side git processes. The `c211ea0` failure was `origin.git/objects: directory not empty` at tempdir cleanup, and the writer in `origin.git` is `receive-pack` (spawned by the fixture's `push` and by the product's remote-mode claim pushes), which reads origin's own config, not the client's `-c`. So "set `maintenance.auto=false` and `gc.auto=0` in every fixture repo, origin included" is the right fix and the existing `-c` is indeed partial. Note N3 offers one clause that says so.
+   - (b) The D-208 mapping is right. D1 opus N3 ("identity keys fall back one at a time", `reviews/T-023d1-opus.md:89`) is `resolveIdentity` (`prerun.go:32`). D1 opus N7 ("a guard's own skip-worktree edit is invisible to rule 3", line 93) is 7.2 rule 3, the worktree-clean check, which is the `status --porcelain` call under `ruleDirty` in `checker.run` (`check.go:223` to 226). Fable D1 N4 ("the verdict is the last matching line anywhere in the final message", `reviews/T-023d1-fable.md:48`) is `parseVerdict` (`guard.go:24`).
+   - (c) D2 opus N2 and fable N3 and N11 (sweep leader tracking, `reap_*.go`) are tracked only in `tasks/T-023.md` line 266 and the trimmed 10.8.8 table. `tasks/T-024.md` does not mention them, and every T-024 lease is under `internal/cell/` except phase F, so "T-024's brief" names a ticket that cannot lease the code. A future session will find the line only by reading T-023.md. Note N2 gives a fix.
+
+3. **queen.md.** Every fact checked against main at `e454cc1` and D-206 to D-210 holds except the refresh date (B1): D2b at `e454cc1` #61 and 185 of 240 lines; what D2b shipped; the D-210 habit; the flake habit, whose rerun (`gh run view 39604347542`: attempt 2, success at `c211ea0`) matches what the opus confirmation asked for; "210 entries once hive-records-14 merges. Next ID D-211"; the phase F item with the host-record listing and `--accept` after a Keeper card; D2b item removed from "Next work".
+
+4. **scan-hive.** Copied `scan-names.local` into the worktree, ran `.waggle/control/scripts/scan-hive.sh origin/main HEAD`, deleted the copy (`git status` clean). Exit 2, 0 hits, 3 commits scanned, decisions gate exit 0, `tasks/T-023.md` the one HOLD. Added lines: no home-directory path, no macOS per-user temp-folder path, no email other than the noreply handle, no machine hostname, no Keeper name outside the handle. No U+2013 or U+2014 in any added line or any commit message (perl scan). `Signed-off-by: paulternate <27632860+paulternate@users.noreply.github.com>` on all three commits, matching the author.
+
+5. **Media.** Every file the two D2b reviews cite exists under `media/T-023d2b/`: `opus-checks.txt`, `opus-probes.txt`, `opus-fixremoval.txt`, `opus-probe-src.txt`, `opus-confirm1-checks.txt`, `opus-confirm1-n1-mutation.txt`, `fable-probes.txt`, `fable-probe-source.txt`, `fable-fixremoval.txt`, `fable-hostsuite.txt`, `fable-verify.txt`. The builder's 9 files are there too.
+
+## Blocking Issues (Must-Fix Only)
+
+### B1. `queen.md` line 3 dates the refresh a day early
+
+The D2b merge `e454cc1` is 2026-10-21 06:10 and the refresh commit `fc0d6d9` is 2026-10-21 06:12, but the line says "refreshed by the queen on 2026-10-20 (tenth session, after T-023 phase D2b)". A session reads this line first to judge how stale the summary is. One word; no re-review needed.
+
+Replace in `.waggle/hive/handoff/queen.md` line 3:
+
+`Summary refreshed by the queen on 2026-10-20 (tenth session, after T-023 phase D2b).`
+
+with
+
+`Summary refreshed by the queen on 2026-10-21 (tenth session, after T-023 phase D2b).`
+
+## Notes (non-blocking)
+
+- **N1 (T-023.md 10.8, phase E guard prompts).** The 10.8.1 sentence every D2b guard prompt carried is now only behind the `git show 1cc63ab` pointer, while phase E's lease touches `hostrecord.go` and `checkHostRecord`. Suggest inlining it in the last rules-in-force bullet. Replace "the plan's 10.8.1 threat bar sentence extends the 10.7 one for any re-review." with: "for any re-review the guard prompt adds the plan's 10.8.1 sentence to the 10.7 one: \"In D2b the host record and the `.waggle/worktrees/` markers are writable by an escaped process; the digest guards the Keeper's card against change between the listing and `--accept`, not against that writer.\""
+- **N2 (scout item c, where D2 opus N2, fable N3 and N11 live).** Add to `tasks/T-024.md` under Status, or to the T-023.md line 266 sentence, a pointer a T-024 scout will meet. Suggested bullet for T-024.md after the Status line: "- **Carry from T-023 D2 (sweep code in `internal/dispatch/reap_*.go`, not in any T-024 lease):** D2 opus N2 and fable N3 (record a leader for every live tracked process with `pgid == pid` on each read, not only at first sight) and fable N11 (drop a leader only after two consecutive empty reads); text in `reviews/T-023d2-{opus,fable}.md`. The phase that makes the Cell kill the worker's process tree decides whether the sweep still needs them; otherwise they go to the next `internal/dispatch/` sweep lease." If the queen prefers not to touch T-024.md in this batch, changing line 266's "go to T-024's brief" to "go to T-024's brief or the next `reap_*.go` lease, whichever comes first (not in `tasks/T-024.md` yet)" keeps the record honest.
+- **N3 (scout item a, precision).** Append to the 10.3 flake bullet: " (`shIn`'s `-c maintenance.auto=false` at `dispatch_test.go:30` covers only the test's own client-side git; `receive-pack` in `origin.git` and the product's own calls read the repo config)."
+- **N4 (10.8 "not carried" list).** Fable D2b N6 (headroom) is neither carried nor in the "not carried" list; D-210 answered it. Optional: add "fable N6 (answered by D-210)" to that sentence.
+- **N5 (D-203 to D-205 and D-209 Question fields).** D-203, D-204 and D-205 share one Question and option list (one card, three rulings); D-209's Question names the three defaults without a Q-T023 number. Both read fine and the gate accepts them; recorded here so the next records review does not raise it again.
+
+## Evidence
+
+Commands and outputs are in this review's Checks; no media file was written. The `scan-names.local` copy was removed and the worktree is clean apart from this file.

@@ -1,0 +1,4 @@
+build ok
+vet ok
+gofmt:
+end
