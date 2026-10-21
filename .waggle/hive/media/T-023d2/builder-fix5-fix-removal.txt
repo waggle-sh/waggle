@@ -1,0 +1,6 @@
+=== RUN   TestCleanRefusesDuplicateThatAppearsAfterRemove
+    clean_test.go:294: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+--- FAIL: TestCleanRefusesDuplicateThatAppearsAfterRemove (0.25s)
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.443s
+FAIL

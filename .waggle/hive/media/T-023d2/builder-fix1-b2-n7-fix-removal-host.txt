@@ -1,0 +1,7 @@
+--- FAIL: TestCleanRefusesForeignDuplicateAndLinkedGitdir (0.21s)
+    clean_test.go:182: link false: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+--- FAIL: TestCleanOutsideRepoCreatesNothing (0.01s)
+    clean_test.go:192: err git rev-parse: exit status 128: fatal: not a git repository (or any of the parent directories): .git
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	0.556s
+FAIL

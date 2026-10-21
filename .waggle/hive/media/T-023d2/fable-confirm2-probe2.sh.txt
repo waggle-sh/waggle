@@ -1,0 +1,32 @@
+#!/bin/zsh
+# fable confirm 2, extra: a dangling symlink as the admin entry itself, and a FIFO entry (git only).
+set -u
+W="$1"; S="$2"
+fresh() {
+  local r="$S/$1"; rm -rf "$r"; mkdir -p "$r"
+  git -C "$r" init -q -b main >/dev/null
+  git -C "$r" config --local user.name k; git -C "$r" config --local user.email k@example.com
+  git -C "$r" config --local commit.gpgsign false
+  echo x > "$r/f"; git -C "$r" add f; git -C "$r" commit -qm init >/dev/null
+  git -C "$r" worktree add -q -b t-023 "$r/.waggle/worktrees/T-023-builder" main
+  git -C "$r" worktree add -q -b t-024 "$r/.waggle/worktrees/T-024-builder" main
+  echo "$r"
+}
+state() {
+  local r="$1"
+  echo "  admin: $(ls -A "$r/.git/worktrees" | tr '\n' ' ')"
+  echo "  T-023 wt: $([ -e "$r/.waggle/worktrees/T-023-builder" ] && echo present || echo gone)   T-024 wt: $([ -e "$r/.waggle/worktrees/T-024-builder" ] && echo present || echo gone)"
+}
+run() { local r="$1"; shift; local out; out=$("$W" dispatch clean 23 --repo "$r" "$@" 2>&1); echo "  exit $?: $out"; }
+
+echo "P4h dangling symlink as the admin entry: worktrees/dl -> nowhere (ENOENT on its gitdir, but the entry is neither a file nor a directory; expect exit 3)"
+r=$(fresh p4h); ln -s "$r/nowhere" "$r/.git/worktrees/dl"
+run "$r"; state "$r"
+
+echo "P4i FIFO as the admin entry: worktrees/ff (expect exit 3)"
+r=$(fresh p4i); mkfifo "$r/.git/worktrees/ff"
+run "$r"; state "$r"
+
+echo "P4j planted directory entry whose gitdir is empty (git prunes it as invalid; expect exit 0, T-024 intact)"
+r=$(fresh p4j); mkdir "$r/.git/worktrees/0"; : > "$r/.git/worktrees/0/gitdir"
+run "$r"; state "$r"

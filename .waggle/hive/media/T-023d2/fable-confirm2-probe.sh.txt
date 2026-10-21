@@ -1,0 +1,83 @@
+#!/bin/zsh
+# fable confirm 2 probes for T-023 D2 fix round 2 at 2d1a1b3: git only, no signals.
+set -u
+W="$1"            # waggle binary
+S="$2"            # scratch root
+fresh() {         # a repo with T-023-builder and T-024-builder worktrees; echoes the repo path
+  local r="$S/$1"; rm -rf "$r"; mkdir -p "$r"
+  git -C "$r" init -q -b main >/dev/null
+  git -C "$r" config --local user.name k; git -C "$r" config --local user.email k@example.com
+  git -C "$r" config --local commit.gpgsign false
+  echo x > "$r/f"; git -C "$r" add f; git -C "$r" commit -qm init >/dev/null
+  git -C "$r" worktree add -q -b t-023 "$r/.waggle/worktrees/T-023-builder" main
+  git -C "$r" worktree add -q -b t-024 "$r/.waggle/worktrees/T-024-builder" main
+  git -C "$r" update-ref refs/waggle/claims/ticket-23 HEAD
+  echo "$r"
+}
+state() {         # what is left: admin entries and the two worktrees
+  local r="$1"
+  echo "  admin: $(ls -A "$r/.git/worktrees" | tr '\n' ' ')"
+  echo "  T-023 wt: $([ -e "$r/.waggle/worktrees/T-023-builder" ] && echo present || echo gone)   T-024 wt: $([ -e "$r/.waggle/worktrees/T-024-builder" ] && echo present || echo gone)"
+  echo "  T-024 git status: $(git -C "$r/.waggle/worktrees/T-024-builder" status --porcelain -b 2>&1 | head -1)"
+}
+run() {           # run clean and report exit and output
+  local r="$1"; shift
+  local out; out=$("$W" dispatch clean 23 --repo "$r" "$@" 2>&1); local rc=$?
+  echo "  exit $rc: $out"
+}
+
+echo "git $(git --version), core.ignorecase in a fresh repo: $(git -C "$(fresh ig)" config --get core.ignorecase)"
+
+echo "P1 case-only planted duplicate: worktrees/0/gitdir names t-024-builder/.git (expect exit 3, nothing removed)"
+r=$(fresh p1); mkdir "$r/.git/worktrees/0"
+printf '%s\n' "$r/.waggle/worktrees/t-024-builder/.git" > "$r/.git/worktrees/0/gitdir"
+run "$r"; state "$r"
+
+echo "P1b case-only duplicate of the cleaned ticket itself: worktrees/0/gitdir names t-023-builder/.git (expect exit 3)"
+r=$(fresh p1b); mkdir "$r/.git/worktrees/0"
+printf '%s\n' "$r/.waggle/worktrees/t-023-builder/.git" > "$r/.git/worktrees/0/gitdir"
+run "$r"; state "$r"
+
+echo "P2 healthy repo, mixed roles plus a user worktree outside .waggle (expect exit 0, only T-023-builder removed)"
+r=$(fresh p2)
+git -C "$r" worktree add -q -b t-024g "$r/.waggle/worktrees/T-024-guard" main
+git -C "$r" worktree add -q -b t-024f "$r/.waggle/worktrees/T-024-forager" main
+git -C "$r" worktree add -q -b mine "$S/p2-Mine" main
+run "$r"; state "$r"
+echo "  worktree list: $(git -C "$r" worktree list --porcelain | grep -c '^worktree ') entries (expect 5)"
+
+echo "P3 stray entries: worktrees/.DS_Store file, worktrees/half dir with no gitdir, worktrees/lk dir with locked and no gitdir (expect exit 0, T-023 removed, T-024 intact)"
+r=$(fresh p3); echo x > "$r/.git/worktrees/.DS_Store"; mkdir "$r/.git/worktrees/half" "$r/.git/worktrees/lk"; echo keep > "$r/.git/worktrees/lk/locked"
+run "$r"; state "$r"
+
+echo "P4a symlinked admin entry worktrees/ln -> T-024-builder (expect exit 3)"
+r=$(fresh p4a); ln -s "$r/.git/worktrees/T-024-builder" "$r/.git/worktrees/ln"
+run "$r"; state "$r"
+
+echo "P4b planted entry whose gitdir is a symlink to T-024-builder's gitdir (expect exit 3)"
+r=$(fresh p4b); mkdir "$r/.git/worktrees/0"; ln -s "$r/.git/worktrees/T-024-builder/gitdir" "$r/.git/worktrees/0/gitdir"
+run "$r"; state "$r"
+
+echo "P4c planted entry whose gitdir is a dangling symlink (expect exit 3: Lstat sees a link, not ENOENT)"
+r=$(fresh p4c); mkdir "$r/.git/worktrees/0"; ln -s "$r/nowhere" "$r/.git/worktrees/0/gitdir"
+run "$r"; state "$r"
+
+echo "P4d planted entry whose gitdir is unreadable, mode 000 (expect exit 3)"
+r=$(fresh p4d); mkdir "$r/.git/worktrees/0"; printf '%s\n' "$r/.waggle/worktrees/T-024-builder/.git" > "$r/.git/worktrees/0/gitdir"; chmod 000 "$r/.git/worktrees/0/gitdir"
+run "$r"; state "$r"; chmod 600 "$r/.git/worktrees/0/gitdir"
+
+echo "P4e planted entry whose gitdir is 4097 bytes (expect exit 3)"
+r=$(fresh p4e); mkdir "$r/.git/worktrees/0"; head -c 4097 /dev/zero | tr '\0' a > "$r/.git/worktrees/0/gitdir"
+run "$r"; state "$r"
+
+echo "P4f planted entry whose gitdir is a directory (expect exit 3)"
+r=$(fresh p4f); mkdir -p "$r/.git/worktrees/0/gitdir"
+run "$r"; state "$r"
+
+echo "P4g planted directory entry named like the real one but one letter case off, no gitdir: worktrees/t-024-builder (case-insensitive fs: mkdir fails or aliases; expect exit 0 and T-024 intact either way)"
+r=$(fresh p4g); mkdir "$r/.git/worktrees/t-024-builder" 2>&1 | sed 's/^/  mkdir: /'
+run "$r"; state "$r"
+
+echo "P5 what git itself does with the P3 strays after a plain prune on an untouched repo (reference)"
+r=$(fresh p5); echo x > "$r/.git/worktrees/.DS_Store"; mkdir "$r/.git/worktrees/half" "$r/.git/worktrees/lk"; echo keep > "$r/.git/worktrees/lk/locked"
+git -C "$r" worktree prune -v 2>&1 | sed 's/^/  /'; state "$r"

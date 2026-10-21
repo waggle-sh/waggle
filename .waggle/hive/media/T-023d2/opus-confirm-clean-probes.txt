@@ -1,0 +1,94 @@
+# Opus D2 confirmation at 9edaf84 (host, git only, no process signalled). waggle built from 9edaf84; each case is a fresh repo with T-023 and T-024 builder worktrees.
+# Script:
+    #!/bin/bash
+    # usage: probe.sh <dir> <waggle>   host, git only, no signals
+    D=$1; W=$2
+    setup() { # $1 name
+      R=$D/$1; rm -rf "$R"; mkdir -p "$R"; cd "$R" || exit 1
+      git init -q -b main . && git -c user.email=<email> -c user.name=a commit -q --allow-empty -m init
+      mkdir -p .waggle/worktrees
+      git worktree add -q -b t-023 .waggle/worktrees/T-023-builder main
+      git worktree add -q -b t-024 .waggle/worktrees/T-024-builder main
+    }
+    report() {
+      echo "admin entries after: $(ls -A .git/worktrees 2>/dev/null | tr '\n' ' ')"
+      if git -C .waggle/worktrees/T-024-builder rev-parse --git-dir >/dev/null 2>&1; then echo "T-024 worktree usable"; else echo "T-024 worktree BROKEN"; fi
+      if [ -d .waggle/worktrees/T-023-builder ]; then echo "T-023 worktree still present"; else echo "T-023 worktree removed"; fi
+    }
+    run() { "$W" dispatch clean 23 --repo . 2>&1 | sed "s#$D#<tmp>#g"; echo "clean exit ${PIPESTATUS[0]}"; }
+    echo "== P-a: planted worktrees/0 copying T-024-builder (other ticket duplicate)"
+    setup a; cp -R .git/worktrees/T-024-builder .git/worktrees/0; run; report
+    echo "== P-b1: worktrees/0/gitdir symlink to T-023-builder/gitdir"
+    setup b1; mkdir .git/worktrees/0; ln -s ../T-023-builder/gitdir .git/worktrees/0/gitdir; run; report
+    echo "== P-b2: worktrees/0/gitdir symlink to T-024-builder/gitdir"
+    setup b2; mkdir .git/worktrees/0; ln -s ../T-024-builder/gitdir .git/worktrees/0/gitdir; run; report
+    echo "== P-c: worktrees/0 whose gitdir names T-024's path in another letter case (core.ignorecase=$(git config core.ignorecase))"
+    setup c; mkdir .git/worktrees/0; sed 's#T-024-builder/.git$#t-024-builder/.git#' .git/worktrees/T-024-builder/gitdir > .git/worktrees/0/gitdir; cp .git/worktrees/T-024-builder/HEAD .git/worktrees/T-024-builder/commondir .git/worktrees/0/; echo "planted gitdir: $(sed "s#$D#<tmp>#" .git/worktrees/0/gitdir)"; run; report
+    echo "== P-d: worktrees/0 whose gitdir names T-024's path through a symlinked parent"
+    setup d; ln -s .waggle wlink; mkdir .git/worktrees/0; sed 's#/.waggle/worktrees/T-024#/wlink/worktrees/T-024#' .git/worktrees/T-024-builder/gitdir > .git/worktrees/0/gitdir; cp .git/worktrees/T-024-builder/HEAD .git/worktrees/T-024-builder/commondir .git/worktrees/0/; run; report
+    echo "== H-1 healthy: T-024 worktree deleted by hand (prunable entry), clean 23"
+    setup h1; rm -rf .waggle/worktrees/T-024-builder; echo "prunable entries: $(git worktree list --porcelain | grep -c prunable)"; run; echo "admin entries after: $(ls -A .git/worktrees 2>/dev/null | tr '\n' ' ')"
+    echo "== H-2 healthy: re-add over a missing registered path with add -f, then clean 23"
+    setup h2; rm -rf .waggle/worktrees/T-024-builder; git worktree add -q -f .waggle/worktrees/T-024-builder t-024 2>&1; echo "admin entries: $(ls -A .git/worktrees | tr '\n' ' ')"; run
+    echo "== H-3: a stray .DS_Store file in .git/worktrees, clean 23"
+    setup h3; touch .git/worktrees/.DS_Store; run; echo "admin entries after: $(ls -A .git/worktrees 2>/dev/null | tr '\n' ' ')"
+    echo "== H-4: an admin entry missing gitdir (interrupted add), clean 23"
+    setup h4; mkdir .git/worktrees/half; run
+    echo "== H-5: a locked T-024 worktree, clean 23"
+    setup h5; git worktree lock .waggle/worktrees/T-024-builder; run; report
+    git --version
+# Output:
+== P-a: planted worktrees/0 copying T-024-builder (other ticket duplicate)
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/a/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3
+admin entries after: 0 T-023-builder T-024-builder 
+T-024 worktree usable
+T-023 worktree still present
+== P-b1: worktrees/0/gitdir symlink to T-023-builder/gitdir
+waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+clean exit 3
+admin entries after: 0 T-023-builder T-024-builder 
+T-024 worktree usable
+T-023 worktree still present
+== P-b2: worktrees/0/gitdir symlink to T-024-builder/gitdir
+waggle dispatch: worktrees/0 has no readable gitdir; nothing was removed
+clean exit 3
+admin entries after: 0 T-023-builder T-024-builder 
+T-024 worktree usable
+T-023 worktree still present
+== P-c: worktrees/0 whose gitdir names T-024's path in another letter case (core.ignorecase=true)
+planted gitdir: <tmp>/c/.waggle/worktrees/t-024-builder/.git
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0
+admin entries after: 0 
+T-024 worktree BROKEN
+T-023 worktree removed
+== P-d: worktrees/0 whose gitdir names T-024's path through a symlinked parent
+waggle dispatch: worktrees/0 and worktrees/T-024-builder both name <tmp>/d/.waggle/worktrees/T-024-builder; nothing was removed
+clean exit 3
+admin entries after: 0 T-023-builder T-024-builder 
+T-024 worktree usable
+T-023 worktree still present
+== H-1 healthy: T-024 worktree deleted by hand (prunable entry), clean 23
+prunable entries: 1
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0
+admin entries after: 
+== H-2 healthy: re-add over a missing registered path with add -f, then clean 23
+admin entries: T-023-builder T-024-builder 
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0
+== H-3: a stray .DS_Store file in .git/worktrees, clean 23
+waggle dispatch: worktrees/.DS_Store has no readable gitdir; nothing was removed
+clean exit 3
+admin entries after: .DS_Store T-023-builder T-024-builder 
+== H-4: an admin entry missing gitdir (interrupted add), clean 23
+waggle dispatch: worktrees/half has no readable gitdir; nothing was removed
+clean exit 3
+== H-5: a locked T-024 worktree, clean 23
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0
+admin entries after: T-024-builder 
+T-024 worktree usable
+T-023 worktree removed
+git version 2.54.0 (Apple Git-157)

@@ -1,0 +1,15 @@
+  --- PASS: TestCleanRefusesLiveLocks (0.15s)
+  --- PASS: TestCleanTakesOverDeadLock (0.18s)
+  --- PASS: TestCleanRemovesWorktreeAndMarkers (0.48s)
+  --- PASS: TestCleanRunsOnlyMatching (0.19s)
+  --- PASS: TestCleanGitCallsArePinned (0.20s)
+  --- PASS: TestCleanRefusesAmbiguousEntries (0.29s)
+  --- PASS: TestCleanLeavesPlantedEntriesAlone (1.29s)
+  --- PASS: TestCleanMissingWorktreeRemovesOwnEntry (0.41s)
+  --- PASS: TestCleanKeepsOtherTicketsPrunableEntry (0.23s)
+  --- PASS: TestCleanDropsMissingWorktreeEntryWithRelativeGitdir (0.19s)
+  --- PASS: TestCleanRefusesLinkedGitdir (0.14s)
+  --- PASS: TestCleanSkipsStrayAdminEntries (0.29s)
+  --- PASS: TestCleanOutsideRepoCreatesNothing (0.01s)
+  PASS
+  ok  	github.com/waggle-sh/waggle/internal/dispatch	4.210s

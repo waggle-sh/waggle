@@ -1,0 +1,10 @@
+--- <path> 15:22:31
++++ <path> 15:24:07
+@@ -60,6 +60,7 @@
+ 	}
+ 	kids := map[int]bool{t.root: !t.reaped, t.self: t.reaped && subreaper}
+ 	for _, p := range tab {
++		if p.pgid == p.pid && p.pid > 1 { if t.leaders == nil { t.leaders = map[pkey]bool{} }; t.leaders[pkey{p.pid, p.start}] = true }
+ 		if p.pid == t.self { // from the table, because solaris and illumos lack syscall.Getpgid and Getpgrp
+ 			t.group = p.pgid
+ 		}

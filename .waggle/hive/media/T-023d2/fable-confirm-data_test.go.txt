@@ -1,0 +1,57 @@
+//go:build unix
+
+package dispatch
+
+import (
+	"errors"
+	"slices"
+	"testing"
+)
+
+// fable confirmation probe, data only: observe and targets on fabricated
+// tables. No table read, no signal, no sweep(). Run against 2f1352d and 9edaf84.
+func TestFableConfirmLeaderDrop(t *testing.T) {
+	fresh := func() *tracker {
+		tr := &tracker{root: 500, self: 4242, group: 4000, seen: map[pkey]string{}}
+		tr.observe(targetTable(), nil)
+		return tr
+	}
+	zombie := func(p proc) proc { p.zombie = true; return p }
+	orphan := pr(511, 1, 510, "511") // the shell's child after the shell exited
+	cases := []struct {
+		name string
+		tabs [][]proc // observed in order; the last is also the targets table
+	}{
+		{"P1 foreign member after a read listed the group empty",
+			[][]proc{without(targetTable(), 510, 511), append(without(targetTable(), 510, 511), pr(9000, 1, 510, "f9000"))}},
+		{"orphan catch: leader gone, child listed on every read",
+			[][]proc{append(without(targetTable(), 510, 511), orphan), append(without(targetTable(), 510, 511), orphan)}},
+		{"zombie leader holds the group, then the orphan alone",
+			[][]proc{append(without(targetTable(), 510, 511), zombie(pr(510, 500, 510, "510"))), append(without(targetTable(), 510, 511), orphan)}},
+		{"transient omission: one good read lists no member, then the orphan",
+			[][]proc{without(targetTable(), 510, 511), append(without(targetTable(), 510, 511), orphan)}},
+		{"failed read between: not a drop",
+			[][]proc{nil, append(without(targetTable(), 510, 511), orphan)}},
+		{"table without self between: not a drop",
+			[][]proc{without(targetTable(), 4242, 510, 511), append(without(targetTable(), 510, 511), orphan)}},
+	}
+	for _, c := range cases {
+		tr := fresh()
+		for i, tab := range c.tabs {
+			var err error
+			if tab == nil {
+				err = errors.New("read failed")
+			}
+			_ = i
+			tr.observe(tab, err)
+		}
+		last := c.tabs[len(c.tabs)-1]
+		leaders := []int{}
+		for k := range tr.leaders {
+			leaders = append(leaders, k.pid)
+		}
+		slices.Sort(leaders)
+		pids, groups := tr.targets(last)
+		t.Logf("%s: leaders %v, targets pids %v groups %v", c.name, leaders, pids, groups)
+	}
+}

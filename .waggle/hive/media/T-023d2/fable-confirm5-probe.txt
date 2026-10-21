@@ -1,0 +1,38 @@
+=== P-A: worktree.useRelativePaths=true, worktree gone
+  gitdir file: ../../../.waggle/worktrees/T-023-builder/.git
+  clean exit 0
+  entries: T-023-builder 
+  keeper re-add without prune:
+    fatal: '<wt>/.fable-probe/A/.waggle/worktrees/T-023-builder' is a missing but already registered worktree;
+    use 'add -f' to override, or 'prune' or 'remove' to clear
+  add exit 0
+=== P-A2: useRelativePaths=true, worktree present
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: 
+  tree gone
+=== P-B: repo reached through a symlinked parent, absolute gitdir, worktree gone (same mechanism as /var vs /private/var)
+  gitdir file: <wt>/.fable-probe/B/.waggle/worktrees/T-023-builder/.git
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: 
+=== P-B2: same, worktree added via the real path, cleaned via the link, worktree gone
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: 
+=== P-C: repo under a symlinked parent, useRelativePaths=true, worktree gone (both at once)
+  gitdir file: ../../../.waggle/worktrees/T-023-builder/.git
+  clean exit 0
+  entries: T-023-builder 
+=== P-D: --repo spelled with a different case (macOS case-insensitive), worktree present
+  clean exit 0
+  entries: T-023-builder 
+  tree still there
+=== P-E: ordinary: two other tickets, one stale, T-023 gone, absolute gitdirs, plus git's own view after
+removed worktree .waggle/worktrees/T-023-builder
+  clean exit 0
+  entries: T-024-builder T-025-builder 
+  <wt>/.fable-probe/E                                 63dfc36 [main]
+  <wt>/.fable-probe/E/.waggle/worktrees/T-024-builder 63dfc36 [t-024]
+  <wt>/.fable-probe/E/.waggle/worktrees/T-025-builder 63dfc36 [t-025] prunable
+  T-024 usable

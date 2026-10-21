@@ -1,0 +1,4 @@
+# Opus D2 confirmation 4 at 5ecb9c0, host macOS: go test -race ./internal/dispatch/... ./cmd/...
+ok  	github.com/waggle-sh/waggle/internal/dispatch	182.504s
+ok  	github.com/waggle-sh/waggle/cmd/waggle	16.928s
+exit 0

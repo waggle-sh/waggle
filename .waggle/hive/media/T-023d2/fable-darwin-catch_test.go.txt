@@ -1,0 +1,98 @@
+//go:build darwin
+
+package dispatch
+
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"slices"
+	"strconv"
+	"strings"
+	"syscall"
+	"testing"
+	"time"
+)
+
+// Fable D2 guard, data-only darwin measurement (D-193: no sweep(), no signal
+// of any kind; every process exits on its own). Uncommitted, run from a
+// scratch copy. A worker stand-in W (Setsid, as the product starts it) runs a
+// tool-shell stand-in that starts its own session, lives hold ms, backgrounds
+// sleep 1 in its group, then exits; W lives 0.5 s more. The tracker is polled
+// every 25 ms while W runs, as runSession does. After W exits, one observe and
+// targets on a fresh table: "group" means the tool shell's pid is in groups,
+// "pid" means the child itself was tracked, "leader" means the shell was seen
+// alive and recorded as a group leader.
+func TestZZFableCatch(t *testing.T) {
+	exe, _ := os.Executable()
+	for _, hold := range []string{"0", "5", "20", "50"} {
+		leader, pid, group := 0, 0, 0
+		for range 20 {
+			dir := t.TempDir()
+			pidf := filepath.Join(dir, "pid")
+			w := exec.Command("sh", "-c", "GO_WANT_HELPER_PROCESS=1 '"+exe+"' -test.run='^TestZZFableHelper$' -- "+pidf+" "+hold+"; sleep 0.5")
+			w.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+			if err := w.Start(); err != nil {
+				t.Fatal(err)
+			}
+			tr := newTracker(w.Process.Pid)
+			done := make(chan struct{})
+			go func() { _ = w.Wait(); close(done) }()
+			tick := time.NewTicker(25 * time.Millisecond)
+		loop:
+			for {
+				select {
+				case <-done:
+					break loop
+				case <-tick.C:
+					tr.poll()
+				}
+			}
+			tick.Stop()
+			tr.reaped = true
+			tab, err := procTable()
+			tr.observe(tab, err)
+			_, groups := tr.targets(tab)
+			b, _ := os.ReadFile(pidf)
+			f := strings.Fields(string(b))
+			if len(f) != 2 {
+				t.Fatalf("helper wrote %q", b)
+			}
+			shell, _ := strconv.Atoi(f[0])
+			child, _ := strconv.Atoi(f[1])
+			for k := range tr.leaders {
+				if k.pid == shell {
+					leader++
+				}
+			}
+			for k := range tr.seen {
+				if k.pid == child {
+					pid++
+				}
+			}
+			if slices.Contains(groups, shell) {
+				group++
+			}
+			time.Sleep(700 * time.Millisecond) // the sleep 1 child exits on its own before the next trial
+		}
+		t.Logf("tool shell lives %s ms before the fork: 20 trials, shell seen alive as a leader %d, child tracked by pid %d, child's group listed by targets after the shell exited %d", hold, leader, pid, group)
+	}
+}
+
+// TestZZFableHelper is the tool-shell stand-in: own session, write own pid,
+// wait hold ms, background sleep 1 (same group), write its pid, exit.
+func TestZZFableHelper(t *testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		return
+	}
+	a := os.Args[len(os.Args)-2:]
+	_, _ = syscall.Setsid()
+	ms, _ := strconv.Atoi(a[1])
+	time.Sleep(time.Duration(ms) * time.Millisecond)
+	c := exec.Command("sleep", "1")
+	if err := c.Start(); err != nil {
+		os.Exit(1)
+	}
+	_ = os.WriteFile(a[0], []byte(strconv.Itoa(os.Getpid())+" "+strconv.Itoa(c.Process.Pid)), 0o644)
+	os.Exit(0)
+}

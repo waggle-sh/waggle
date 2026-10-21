@@ -1,0 +1,14 @@
+== darwin
+ok
+== linux
+ok
+== freebsd
+ok
+== windows
+ok
+== solaris
+ok
+== illumos
+ok
+== gofmt
+done

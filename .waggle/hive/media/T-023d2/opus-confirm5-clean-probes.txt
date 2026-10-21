@@ -1,0 +1,73 @@
+# T-023d2 opus confirm 5 probes at f519bf6 (waggle built from f519bf6, git 2.54.0)
+# repo reached through a symlinked parent (link) or its real path (real); two tickets T-001 and T-002;
+# 'missing' deletes both worktree directories before clean T-001 --role builder
+===== A abs no link
+--- gitdirs
+T-001-builder: <S>/A/real/repo/.waggle/worktrees/T-001-builder/.git
+T-002-builder: <S>/A/real/repo/.waggle/worktrees/T-002-builder/.git
+--- clean T-001 (repo via link)
+removed worktree .waggle/worktrees/T-001-builder
+exit 0
+--- after
+T-002-builder
+T-002-builder
+<S>/A/real/repo                                 532dd00 [main]
+<S>/A/real/repo/.waggle/worktrees/T-002-builder 532dd00 [T-002]
+===== B abs missing link
+--- gitdirs
+T-001-builder: <S>/B/real/repo/.waggle/worktrees/T-001-builder/.git
+T-002-builder: <S>/B/real/repo/.waggle/worktrees/T-002-builder/.git
+--- clean T-001 (repo via link)
+removed worktree .waggle/worktrees/T-001-builder
+exit 0
+--- after
+T-002-builder
+<S>/B/real/repo                                 532dd00 [main]
+<S>/B/real/repo/.waggle/worktrees/T-002-builder 532dd00 [T-002] prunable
+===== C abs missing real
+--- gitdirs
+T-001-builder: <S>/C/real/repo/.waggle/worktrees/T-001-builder/.git
+T-002-builder: <S>/C/real/repo/.waggle/worktrees/T-002-builder/.git
+--- clean T-001 (repo via real)
+removed worktree .waggle/worktrees/T-001-builder
+exit 0
+--- after
+T-002-builder
+<S>/C/real/repo                                 ff432c1 [main]
+<S>/C/real/repo/.waggle/worktrees/T-002-builder ff432c1 [T-002] prunable
+===== D rel no link
+--- gitdirs
+T-001-builder: ../../../.waggle/worktrees/T-001-builder/.git
+T-002-builder: ../../../.waggle/worktrees/T-002-builder/.git
+--- clean T-001 (repo via link)
+removed worktree .waggle/worktrees/T-001-builder
+exit 0
+--- after
+T-002-builder
+T-002-builder
+<S>/D/real/repo                                 ff432c1 [main]
+<S>/D/real/repo/.waggle/worktrees/T-002-builder ff432c1 [T-002]
+===== E rel missing link
+--- gitdirs
+T-001-builder: ../../../.waggle/worktrees/T-001-builder/.git
+T-002-builder: ../../../.waggle/worktrees/T-002-builder/.git
+--- clean T-001 (repo via link)
+exit 0
+--- after
+T-001-builder
+T-002-builder
+<S>/E/real/repo                                 ff432c1 [main]
+<S>/E/real/repo/.waggle/worktrees/T-001-builder ff432c1 [T-001] prunable
+<S>/E/real/repo/.waggle/worktrees/T-002-builder ff432c1 [T-002] prunable
+===== F rel missing real
+--- gitdirs
+T-001-builder: ../../../.waggle/worktrees/T-001-builder/.git
+T-002-builder: ../../../.waggle/worktrees/T-002-builder/.git
+--- clean T-001 (repo via real)
+exit 0
+--- after
+T-001-builder
+T-002-builder
+<S>/F/real/repo                                 ff432c1 [main]
+<S>/F/real/repo/.waggle/worktrees/T-001-builder ff432c1 [T-001] prunable
+<S>/F/real/repo/.waggle/worktrees/T-002-builder ff432c1 [T-002] prunable

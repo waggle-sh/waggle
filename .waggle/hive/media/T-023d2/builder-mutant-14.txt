@@ -1,0 +1,7 @@
++ GOOS=linux go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestSweepReadRetry' -test.v
+=== RUN   TestSweepReadRetry
+    sweep_linux_test.go:159: kills [] reads 1 blind true
+--- FAIL: TestSweepReadRetry (0.00s)
+FAIL
+exit: 1

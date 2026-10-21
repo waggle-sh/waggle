@@ -1,0 +1,13 @@
+--- FAIL: TestCleanRefusesDuplicateEntries (0.21s)
+    clean_test.go:137: out "removed worktree .waggle/worktrees/T-023-builder\nremoved worktree .waggle/worktrees/T-023-builder\n" err <nil>
+--- FAIL: TestCleanRefusesForeignDuplicateAndLinkedGitdir (1.82s)
+    clean_test.go:217: copy: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+    clean_test.go:217: case: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+    clean_test.go:217: GIT: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+    clean_test.go:217: Git: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+    clean_test.go:217: upper: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+    clean_test.go:210: parent: git's dry run reports no duplicate on this filesystem
+    clean_test.go:217: relative: out "removed worktree .waggle/worktrees/T-023-builder\n" err <nil>
+FAIL
+FAIL	github.com/waggle-sh/waggle/internal/dispatch	4.239s
+FAIL

@@ -1,0 +1,11 @@
+--- <path> 15:22:31
++++ <path> 15:25:30
+@@ -121,7 +121,7 @@
+ 		member, same := false, true
+ 		for _, p := range tab {
+ 			member = member || p.pgid == k.pid && !p.zombie
+-			same = same && (p.pid != k.pid || p.start == k.start)
++			same = true
+ 		}
+ 		if k.pid > 1 && t.group > 1 && k.pid != t.group && member && same {
+ 			groups = append(groups, k.pid)

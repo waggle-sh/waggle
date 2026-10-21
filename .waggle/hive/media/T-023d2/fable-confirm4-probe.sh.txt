@@ -1,0 +1,101 @@
+#!/bin/zsh
+# fable confirm 4 probes for T-023 D2 fix round 4 at 5ecb9c0 (D-200): git only, no signals.
+set -u
+W="$1"            # waggle binary
+S="$2"            # scratch root, inside the guard's own worktree
+fresh() {         # a repo with T-023-builder and T-024-builder worktrees; echoes the repo path
+  local r="$S/$1"; rm -rf "$r"; mkdir -p "$r"
+  git -C "$r" init -q -b main >/dev/null
+  git -C "$r" config --local user.name k; git -C "$r" config --local user.email k@example.com
+  git -C "$r" config --local commit.gpgsign false
+  echo x > "$r/f"; git -C "$r" add f; git -C "$r" commit -qm init >/dev/null
+  git -C "$r" worktree add -q -b t-023 "$r/.waggle/worktrees/T-023-builder" main
+  git -C "$r" worktree add -q -b t-024 "$r/.waggle/worktrees/T-024-builder" main
+  git -C "$r" update-ref refs/waggle/claims/ticket-23 HEAD
+  echo "$r"
+}
+state() {         # what is left: admin entries and the two worktrees
+  local r="$1"
+  echo "  admin: $(ls -A "$r/.git/worktrees" | tr '\n' '|' | tr -c 'A-Za-z0-9|_. :-' '?')"
+  echo "  T-023 wt: $([ -e "$r/.waggle/worktrees/T-023-builder" ] && echo present || echo gone)   T-024 wt: $([ -e "$r/.waggle/worktrees/T-024-builder" ] && echo present || echo gone)"
+  echo "  T-024 git status: $(git -C "$r/.waggle/worktrees/T-024-builder" status --porcelain -b 2>&1 | head -1)"
+}
+dry() { echo "  git prune dry run says:"; git -C "$1" worktree prune --dry-run -v 2>&1 | sed 's/^/    /' | tr -c 'A-Za-z0-9|_./ :\n-' '?'; }
+run() {           # run clean and report exit and output
+  local r="$1"; shift
+  local out; out=$("$W" dispatch clean 23 --repo "$r" "$@" 2>&1); local rc=$?
+  echo "  exit $rc: $out"
+}
+plant() {         # plant admin entry $3 (default 0) with the given gitdir content
+  local id="${3:-0}"; mkdir -p "$1/.git/worktrees/$id"; printf '%s\n' "$2" > "$1/.git/worktrees/$id/gitdir"
+}
+
+echo "git $(git --version), core.ignorecase in a fresh repo: $(git -C "$(fresh ig)" config --get core.ignorecase)"
+
+echo "== (1) earlier bypasses: copy, link, case, GIT, Git, upper, parent (expect exit 3, nothing removed) =="
+echo "copy"; r=$(fresh copy); plant "$r" "$(cat "$r/.git/worktrees/T-024-builder/gitdir")"; run "$r"; state "$r"
+echo "link"; r=$(fresh link); mkdir -p "$r/.git/worktrees/0"; ln -s "$r/.git/worktrees/T-024-builder/gitdir" "$r/.git/worktrees/0/gitdir"; run "$r"; state "$r"
+echo "case"; r=$(fresh case); plant "$r" "$r/.waggle/worktrees/t-024-builder/.git"; run "$r"; state "$r"
+for sfx in .GIT .Git; do echo "$sfx"; r=$(fresh sfx); plant "$r" "$r/.waggle/worktrees/T-024-builder/$sfx"; run "$r"; state "$r"; done
+echo "upper"; r=$(fresh upper); plant "$r" "$(echo "$r/.waggle/worktrees/T-024-builder/.git" | tr a-z A-Z)"; run "$r"; state "$r"
+echo "parent"; r=$(fresh parent); ln -s "$r/.waggle/worktrees" "$S/parent-ln"; plant "$r" "$S/parent-ln/T-024-builder/.git"; run "$r"; state "$r"; rm -f "$S/parent-ln"
+
+echo "== (1) B6 probes =="
+echo "P11 relative gitdir through a symlink outside the cleaned worktree (expect exit 3)"
+r=$(fresh p11); mkdir -p "$r/Z/T-024-builder"; ln -s "$r/.waggle/worktrees/T-024-builder" "$r/Z/X"
+plant "$r" "../../../Z/X/../T-024-builder/.git"; dry "$r"; run "$r"; state "$r"
+echo "P12 same symlink inside a third ticket's worktree (expect exit 3)"
+r=$(fresh p12); git -C "$r" worktree add -q -b t-025 "$r/.waggle/worktrees/T-025-builder" main
+mkdir -p "$r/.waggle/worktrees/T-025-builder/T-024-builder"; ln -s "$r/.waggle/worktrees/T-025-builder" "$r/.waggle/worktrees/T-025-builder/X"
+plant "$r" "../../../.waggle/worktrees/T-025-builder/X/../T-024-builder/.git"; dry "$r"; run "$r"; state "$r"
+echo "P14 worktree.useRelativePaths=true healthy repo (expect exit 0, only T-023 removed)"
+r="$S/p14"; rm -rf "$r"; mkdir -p "$r"; git -C "$r" init -q -b main >/dev/null; git -C "$r" config --local user.name k; git -C "$r" config --local user.email k@example.com; git -C "$r" config --local commit.gpgsign false; git -C "$r" config --local worktree.useRelativePaths true
+echo x > "$r/f"; git -C "$r" add f; git -C "$r" commit -qm init >/dev/null
+git -C "$r" worktree add -q -b t-023 "$r/.waggle/worktrees/T-023-builder" main; git -C "$r" worktree add -q -b t-024 "$r/.waggle/worktrees/T-024-builder" main
+echo "  T-024 gitdir content: $(cat "$r/.git/worktrees/T-024-builder/gitdir")"; run "$r"; state "$r"
+echo "P6 healthy repo, mixed roles plus a user worktree outside .waggle (expect exit 0, only T-023-builder removed)"
+r=$(fresh p6); git -C "$r" worktree add -q -b t-024g "$r/.waggle/worktrees/T-024-guard" main; git -C "$r" worktree add -q -b t-024f "$r/.waggle/worktrees/T-024-forager" main; git -C "$r" worktree add -q -b mine "$S/p6-Mine" main
+run "$r"; state "$r"; echo "  worktree list: $(git -C "$r" worktree list --porcelain | grep -c '^worktree ') entries (expect 5)"
+
+echo "== (4) TOCTOU: the dry run sees one resolution, the real prune after worktree remove sees another =="
+echo "P15 T-023-builder/X -> D/E (inside the cleaned tree); gitdir ../../../.waggle/worktrees/T-023-builder/X/../../T-024-builder/.git"
+echo "    before remove: realpath follows X, two .. climb to T-023-builder: T-023-builder/T-024-builder/.git (absent). after remove: X missing, forgiving realpath strips lexically: .waggle/worktrees/T-024-builder/.git"
+r=$(fresh p15); mkdir -p "$r/.waggle/worktrees/T-023-builder/D/E"; ln -s "D/E" "$r/.waggle/worktrees/T-023-builder/X"
+plant "$r" "../../../.waggle/worktrees/T-023-builder/X/../../T-024-builder/.git"; dry "$r"; run "$r"; state "$r"
+echo "  worktree list: $(git -C "$r" worktree list --porcelain 2>&1 | grep '^worktree ' | tr '\n' ' ')"
+echo "P15b same with T-023-builder/T-024-builder/.git present, so entry 0 is kept (not pruned) before the remove"
+r=$(fresh p15b); mkdir -p "$r/.waggle/worktrees/T-023-builder/D/E" "$r/.waggle/worktrees/T-023-builder/T-024-builder/.git"; ln -s "D/E" "$r/.waggle/worktrees/T-023-builder/X"
+plant "$r" "../../../.waggle/worktrees/T-023-builder/X/../../T-024-builder/.git"; dry "$r"; run "$r"; state "$r"
+echo "P15c reference: the same repo without clean, prune after rm -rf of T-023-builder (what the real prune does after the remove)"
+r=$(fresh p15c); mkdir -p "$r/.waggle/worktrees/T-023-builder/D/E"; ln -s "D/E" "$r/.waggle/worktrees/T-023-builder/X"
+plant "$r" "../../../.waggle/worktrees/T-023-builder/X/../../T-024-builder/.git"; dry "$r"; rm -rf "$r/.waggle/worktrees/T-023-builder"; dry "$r"
+
+echo "== (3) locked and expire =="
+echo "P16 planted dup entry 0 carries a locked file (git skips locked entries in both the dry run and the real prune; expect exit 0, T-024 intact)"
+r=$(fresh p16); plant "$r" "$r/.waggle/worktrees/T-024-builder/.git"; echo keep > "$r/.git/worktrees/0/locked"; dry "$r"; run "$r"; state "$r"
+echo "  worktree list: $(git -C "$r" worktree list --porcelain 2>&1 | grep '^worktree ' | tr '\n' ' ')"
+echo "P16b planted dup of the cleaned ticket itself, locked (two list lines for T-023's path)"
+r=$(fresh p16b); plant "$r" "$r/.waggle/worktrees/T-023-builder/.git"; echo keep > "$r/.git/worktrees/0/locked"; run "$r"; state "$r"
+echo "P16c planted dup of the cleaned ticket itself, not locked"
+r=$(fresh p16c); plant "$r" "$r/.waggle/worktrees/T-023-builder/.git"; dry "$r"; run "$r"; state "$r"
+
+echo "== (2) parse robustness =="
+echo "P17a planted id with a newline, sorting before the victim: id '0<nl>x', gitdir T-024 (git names the victim; expect exit 3)"
+r=$(fresh p17a); plant "$r" "$r/.waggle/worktrees/T-024-builder/.git" $'0\nx'; dry "$r"; run "$r"; state "$r"
+echo "P17b planted id with a newline, sorting after the victim: id 'z<nl>x' (git drops the planted one; clean cannot parse the split line; expect exit 0 and T-024 intact)"
+r=$(fresh p17b); plant "$r" "$r/.waggle/worktrees/T-024-builder/.git" $'z\nx'; dry "$r"; run "$r"; state "$r"
+echo "P18a planted id '0: duplicate entry' with a gitdir to nowhere (reason suffix is not the dup one; expect exit 0, T-024 intact)"
+r=$(fresh p18a); plant "$r" "$r/nowhere/.git" '0: duplicate entry'; dry "$r"; run "$r"; state "$r"
+echo "P18b planted id 'Removing worktrees/q: duplicate entry' locked and a valid gitdir (kept, never printed; expect exit 0)"
+r=$(fresh p18b); mkdir -p "$r/q"; plant "$r" "$r/q/.git" 'Removing worktrees/q: duplicate entry'; echo k > "$r/.git/worktrees/Removing worktrees/q: duplicate entry/locked" 2>/dev/null || plant "$r" "$r/.waggle/worktrees/T-024-builder/.git" 'Removing worktrees-q: duplicate entry'
+dry "$r"; run "$r"; state "$r"
+echo "P19 GIT_TRACE=1 in the parent env (healthy then dup)"
+r=$(fresh p19a); GIT_TRACE=1 run "$r"; state "$r"
+r=$(fresh p19b); plant "$r" "$r/.waggle/worktrees/T-024-builder/.git"; GIT_TRACE=1 run "$r"; state "$r"
+echo "P20 LC_ALL=de_DE.UTF-8 LANG=de_DE.UTF-8 LANGUAGE=de in the parent env (healthy then dup; this git ships no .mo files)"
+r=$(fresh p20a); LC_ALL=de_DE.UTF-8 LANG=de_DE.UTF-8 LANGUAGE=de run "$r"; state "$r"
+r=$(fresh p20b); plant "$r" "$r/.waggle/worktrees/T-024-builder/.git"; LC_ALL=de_DE.UTF-8 LANG=de_DE.UTF-8 LANGUAGE=de run "$r"; state "$r"
+echo "P21 planted entry naming the main worktree (git drops the planted one as the dup; expect exit 3, safe direction)"
+r=$(fresh p21); plant "$r" "$r/.git"; dry "$r"; run "$r"; state "$r"
+echo "P22 three entries: planted 0 and 1 both name T-024 (expect exit 3 naming T-024-builder once or more)"
+r=$(fresh p22); plant "$r" "$r/.waggle/worktrees/T-024-builder/.git" 0; plant "$r" "$r/.waggle/worktrees/T-024-builder/.git" 1; dry "$r"; run "$r"; state "$r"

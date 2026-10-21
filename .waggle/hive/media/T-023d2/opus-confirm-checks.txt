@@ -1,0 +1,19 @@
+# Opus D2 confirmation at 9edaf84: D-199 text, line count, CI.
+## cell.go line 50 against the D-199 Keeper choice (the quoted clause extracted from DECISIONS.md, matched as a substring between the unchanged head and tail)
+D-199 clause: 422 chars
+cell.go:50 carries the D-199 clause verbatim between the unchanged head and tail
+--- grep for 'killed by the group sweep', 'stays in its tool shell', 'daemonizes before the next read' outside .git, reviews and media (the only hit is the D-199 clause itself, which ends with the qualified 'killed by the group sweep'):
+./internal/dispatch/cell.go:50:	"a process that leaves the worker's process group (setsid) is found by polling the proce
+## git diff --numstat c98d130..9edaf84, non-test files outside .waggle
+34	0	cmd/waggle/dispatch.go
+2	2	internal/dispatch/cell.go
+3	1	internal/dispatch/cell_unix.go
+186	0	internal/dispatch/clean.go
+101	19	internal/dispatch/reap_unix.go
+5	4	internal/dispatch/run.go
+added: 331 (stop 350)
+## gh pr checks 59 (head 9edaf84)
+verify-leases-and-tiers	fail	28s
+product-ci	pass	2m18s
+relay-claim	skipping	0
+verify-leases-and-tiers error: leases: no claim for T-023; claims must stay until merge

@@ -1,0 +1,9 @@
+# Opus D2 probe (host, no signals): clean T-023 while T-024's worktree has a planted duplicate admin entry worktrees/0 (a copy of worktrees/T-024-builder). Built from 2f1352d. Steps: build waggle; worktree add T-023-builder and T-024-builder; cp -R .git/worktrees/T-024-builder .git/worktrees/0; waggle dispatch clean 23.
+
+admin entries before: 0 T-023-builder T-024-builder 
+T-024 .git file: gitdir: <tmp>/repo/.git/worktrees/T-024-builder
+removed worktree .waggle/worktrees/T-023-builder
+clean exit 0
+admin entries after: 0 
+T-024 worktree BROKEN: its admin entry was pruned
+git: git version 2.54.0 (Apple Git-157)

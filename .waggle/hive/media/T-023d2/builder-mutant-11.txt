@@ -1,0 +1,7 @@
++ GOOS=linux go test -c ./internal/dispatch/   (compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m golang:1.23-bookworm dispatch.test -test.count=1 -test.run 'TestFastExitNeverBlind' -test.v
+=== RUN   TestFastExitNeverBlind
+    setsid_test.go:37: exit 1 warnings [no_waggle_commands: WAGGLE.md has no "Build and Verification Commands" bullets; the worker may run no build or test command survivors_unchecked: the process table could not be read, so leftover processes may remain] err <nil>
+--- FAIL: TestFastExitNeverBlind (0.25s)
+FAIL
+exit: 1
