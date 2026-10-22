@@ -143,8 +143,9 @@ func roundMustFix(ctx context.Context, g *Git, baseOID string, req Request) (n i
 }
 
 // TaskLines are the variable per-task lines after the brief (T-023 section
-// 5.3). lease is the claim as stored, so the directories are normalized.
-func TaskLines(req Request, baseOID string, lease comb.Lease) []string {
+// 5.3). lease is the claim as stored, so the directories are normalized. bash is
+// the validated runtime.BashCommands list the settings allow.
+func TaskLines(req Request, baseOID string, lease comb.Lease, bash []string) []string {
 	prefix := req.Ticket + ": "
 	return []string{
 		"Ticket: " + req.Ticket,
@@ -153,8 +154,32 @@ func TaskLines(req Request, baseOID string, lease comb.Lease) []string {
 		"Base: " + baseOID,
 		"Lease directories: " + strings.Join(lease.Directories, ", "),
 		"Gate: " + lease.Gate,
+		bashLine(bash),
 		fmt.Sprintf("Rules: commit every change with git commit -s (sign-off) and subject prefix %q; do not push and do not open PRs; end with your report as the final message.", prefix),
 	}
+}
+
+// bashLine tells the worker which Bash forms its settings allow. cmds comes only
+// from runtime.BashCommands, so it is already validated plain words.
+func bashLine(cmds []string) string {
+	if len(cmds) == 0 {
+		return "Bash: no commands are allowed; use the Read, Grep, Glob, Edit and Write tools."
+	}
+	quoted := make([]string, len(cmds))
+	hasTest := false
+	for i, c := range cmds {
+		quoted[i] = "`" + c + "`"
+		hasTest = hasTest || strings.HasPrefix(c, "go test")
+	}
+	eg := ""
+	if hasTest {
+		eg = " (for example go test -race ./... -run 'TestX')"
+	}
+	return "Bash: one command per call, and it must start with exactly one of these: " + strings.Join(quoted, ", ") +
+		". Add arguments after them" + eg + "; do not change the listed words or the package path. " +
+		"No cd, &&, ;, pipes, redirects or subshells (a | inside a quoted -run regexp is part of the argument), " +
+		"and no other programs; use the Read, Grep, Glob, Edit and Write tools for files. " +
+		"A denied call means that form is not allowed, not that Bash is off."
 }
 
 // WritePrompts assembles the stable and variable prompt halves and saves them

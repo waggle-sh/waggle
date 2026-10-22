@@ -99,8 +99,11 @@ func TestPrepareArgv(t *testing.T) {
 	if err := json.Unmarshal([]byte(raw), &settings); err != nil {
 		t.Fatalf("settings JSON: %v", err)
 	}
-	if len(settings) != 1 || settings["permissions"]["defaultMode"] != "dontAsk" {
-		t.Errorf("settings must hold only permissions (no hooks): %s", raw)
+	if len(settings) != 2 || settings["permissions"]["defaultMode"] != "dontAsk" {
+		t.Errorf("settings must hold only permissions and attribution (no hooks): %s", raw)
+	}
+	if !strings.Contains(raw, `"attribution":{"commit":"","pr":"","sessionUrl":false}`) {
+		t.Errorf("settings lacks the attribution key: %s", raw)
 	}
 	for _, want := range []string{`"Bash(go test *)"`, `"Bash(git commit *)"`, `"Edit(./**)"`, `"Write(./**)"`} {
 		if !strings.Contains(raw, want) {

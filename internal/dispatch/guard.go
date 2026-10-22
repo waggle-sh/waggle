@@ -29,8 +29,9 @@ func parseVerdict(final []byte) string {
 	return string(m[len(m)-1][1])
 }
 
-// guardTaskLines replace the commit rules of TaskLines (T-023 10.2).
-func guardTaskLines(req Request, baseOID string, lease comb.Lease) []string {
+// guardTaskLines replace the commit rules of TaskLines (T-023 10.2). bash is the
+// guard's runtime.BashCommands list, without git add or git commit.
+func guardTaskLines(req Request, baseOID string, lease comb.Lease, bash []string) []string {
 	return []string{
 		"Ticket: " + req.Ticket,
 		"Role: guard",
@@ -39,6 +40,7 @@ func guardTaskLines(req Request, baseOID string, lease comb.Lease) []string {
 		"Head under review: " + req.Head,
 		"Lease directories: " + strings.Join(lease.Directories, ", "),
 		"Gate: " + lease.Gate,
+		bashLine(bash),
 		"Rules: do not commit; delete any probe files before your final message; end with `Verdict: pass` or `Verdict: must-fix` as the last line of your final message.",
 	}
 }
