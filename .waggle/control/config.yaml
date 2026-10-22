@@ -33,6 +33,8 @@ runtimes:
         frontier: opus
         standard: sonnet
         fast: haiku
+      alternates: # second-guard model when builder and first guard use both standard and frontier (D-224)
+        standard: fable
 
 # Token use per role. Never changes models; never weakens the guard on Tier 2+ (D-075).
 context:
