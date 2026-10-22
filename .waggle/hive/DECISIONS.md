@@ -4147,3 +4147,23 @@
 **Keeper choice:** Standing rule: for every budgeted brief, a target cut applies only before review, and fix and polish rounds after review count toward the stop.
 
 **Rationale:** Matches how D-205 and D-206 are applied and keeps budgets predictable across tickets.
+
+## D-217: D-214 trial gate cannot pass without sweep evidence; pid path proven too
+
+- **Date:** 2026-10-22
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Two consecutive must-fix rounds on the D-214 trial gate (D-204 design card): the gate could pass over zero listable pids, and hold.sh left held.pl on the tool shell's stdout pipe so it died before the sweep. How should round 2 fix it?
+
+**Options considered:**
+1. Converged fix plus pid path
+2. Converged fix only
+3. Fix, skip confirmation
+
+**Hive recommendation:** Converged fix plus pid path
+
+**Keeper choice:** Converged fix plus pid path: hold.sh redirects held.pl's output so the tool call returns; the gate passes only if run 0a wrote held.pid, that pid is in survivors_killed and it is dead after; a missing or never-listed pid means sweep not exercised: rerun run 0a once, and if still not exercised the cutover card says so and cannot cite the gate as passed. A second probe child (held2.pl, own process group via setpgrp) proves the pid path and backs up held.pl. Opus and fable confirm the round.
+
+**Rationale:** Closes the vacuous pass both confirming guards found and the pipe hold that would misattribute the result, and adds the pid-path evidence fable N1 showed was missing, all as runbook text.
