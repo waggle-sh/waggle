@@ -1,0 +1,10 @@
+Hive: waggle  pin 790ade0...  comb direct (origin)
+waggled: stopped (no .waggle/control/run.sock)
+
+Claims (1 active):
+  T-026  builder  paulternate  full  internal/dispatch/  expires in 1h54m
+
+Usage (this machine, .waggle/control/usage.jsonl):
+  T-026  builder 2 sess  guard 1 sess  in 852k (91% cached)  out 22k  est. $0.81
+  total                                in 852k (91% cached)  out 22k  est. $0.81
+  Not counted: sessions a Keeper starts directly (today the queen and the planning role) and other Keepers' machines.
