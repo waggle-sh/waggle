@@ -32,6 +32,20 @@ func TestRunPlantDuringAutoMaintenance(t *testing.T) {
 	})
 }
 
+// TestFixtureReposQuietGit: every fixture repo, the bare origin included, keeps
+// auto maintenance off in its own config (a local push drops the client's -c).
+func TestFixtureReposQuietGit(t *testing.T) {
+	f := newFixture(t, true, false)
+	rdir, _ := newRepo(t)
+	for _, dir := range []string{f.real, f.origin, rdir} {
+		for key, want := range map[string]string{"maintenance.auto": "false", "gc.auto": "0", "receive.autogc": "false"} {
+			if got := sh(t, dir, "config", "--local", "--get", key); got != want {
+				t.Errorf("%s: %s = %q, want %q", dir, key, got, want)
+			}
+		}
+	}
+}
+
 // TestRunInDisablesAutoMaintenance: host-side git never starts auto maintenance or gc.
 func TestRunInDisablesAutoMaintenance(t *testing.T) {
 	dir := t.TempDir()
