@@ -14,6 +14,7 @@ hive:
 
 forge:
   provider: github
+  remote: origin # claims reach the remote so the CI gate can see them (D-051, D-119)
   comb_mode: direct # "direct" (git push refs) | "relay" (GitHub Action comment relay)
   merge_strategy: up_to_date # "up_to_date" (branch must be current with main before merge) | "native_queue" (opt in where the plan supports a merge queue)
 
@@ -32,6 +33,10 @@ runtimes:
         frontier: opus
         standard: sonnet
         fast: haiku
+
+# Token use per role. Never changes models; never weakens the guard on Tier 2+ (D-075).
+context:
+  profile: balanced # lean | balanced | thorough
 
 cell:
   enforce_ro_root: true
