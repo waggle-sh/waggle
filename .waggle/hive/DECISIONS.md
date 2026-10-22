@@ -4089,3 +4089,121 @@
 **Keeper choice:** Yes: the trial closes a session during one run and saves what result.json shows in .waggle/hive/media/T-023/trial/; the template wording stays.
 
 **Rationale:** Nobody has confirmed which signal the host sends background shells on exit; about ten minutes of trial time settles it before cutover.
+
+## D-214: Phase F trial proves the D-197 sweep with an outliving child
+
+- **Date:** 2026-10-22
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** With the real 10 s killGrace, Claude Code kills its own tool shell and child on SIGTERM, so the probe 2 shape (which listed survivors only with a forced 1 ns grace) likely ends with survivors_killed empty. How should the phase F trial prove the sweep before cutover?
+
+**Options considered:**
+1. Outliving-child shape
+2. Keep D-197 literal (needs a product change to shorten killGrace)
+3. Both shapes, either passes
+
+**Hive recommendation:** Outliving-child shape
+
+**Keeper choice:** Outliving-child shape: the trial adds a probe child that outlives the worker's normal exit so the sweep fires on the product path. Cutover gate: every listable leftover pid appears in survivors_killed and is dead in the after capture; any live pid blocks cutover. A SIGTERM self-cleanup by Claude Code is recorded as not evidence and not a block; whether the SIGKILL path was reached is recorded, not required.
+
+**Rationale:** Clarifies the D-197 trial gate only; the rest of D-197 stands. The literal D-197 shape cannot reach the sweep on the real timeout path without a product change; the outliving-child shape tests the same guarantee (no worker leftovers survive dispatch) through shipped code. Raised by the T-023 phase F step 3 fable guard (must-fix 1).
+
+## D-215: Phase F step 3 design defaults accepted
+
+- **Date:** 2026-10-22
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Accept the scout's and guards' defaults for the T-023 phase F step 3 hive PR (#65)?
+
+**Options considered:**
+1. Accept all
+2. Accept, but discuss one
+
+**Hive recommendation:** Accept all
+
+**Keeper choice:** Accept all: rules the upgrade erased from roles/queen.md and roles/scout.md live in WAGGLE.md section 4; queen.local.md and its Stop check stay until the cutover card, then retire; the trial probes run in a local-only scratch hive and run 1 is the first remote-mode run; the trial guard is opus by policy; the pin-move decide entry goes in the next records batch.
+
+**Rationale:** waggle upgrade rewrites role files from templates, so hive rules there do not survive; keeping the local handoff until cutover keeps the queen's session working through the trial.
+
+## D-216: D-210 becomes a standing hive rule
+
+- **Date:** 2026-10-22
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** D-210 ruled only on T-023 D2b. Should it be a standing hive rule stated in WAGGLE.md section 4?
+
+**Options considered:**
+1. Standing rule
+2. D2b only
+
+**Hive recommendation:** Standing rule
+
+**Keeper choice:** Standing rule: for every budgeted brief, a target cut applies only before review, and fix and polish rounds after review count toward the stop.
+
+**Rationale:** Matches how D-205 and D-206 are applied and keeps budgets predictable across tickets.
+
+## D-217: D-214 trial gate cannot pass without sweep evidence; pid path proven too
+
+- **Date:** 2026-10-22
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Two consecutive must-fix rounds on the D-214 trial gate (D-204 design card): the gate could pass over zero listable pids, and hold.sh left held.pl on the tool shell's stdout pipe so it died before the sweep. How should round 2 fix it?
+
+**Options considered:**
+1. Converged fix plus pid path
+2. Converged fix only
+3. Fix, skip confirmation
+
+**Hive recommendation:** Converged fix plus pid path
+
+**Keeper choice:** Converged fix plus pid path: hold.sh redirects held.pl's output so the tool call returns; the gate passes only if run 0a wrote held.pid, that pid is in survivors_killed and it is dead after; a missing or never-listed pid means sweep not exercised: rerun run 0a once, and if still not exercised the cutover card says so and cannot cite the gate as passed. A second probe child (held2.pl, own process group via setpgrp) proves the pid path and backs up held.pl. Opus and fable confirm the round.
+
+**Rationale:** Closes the vacuous pass both confirming guards found and the pipe hold that would misattribute the result, and adds the pid-path evidence fable N1 showed was missing, all as runbook text.
+
+## D-218: held2.pl pauses 0.2 s before setpgrp so the trial proves the pid path
+
+- **Date:** 2026-10-22
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Third must-fix round on the trial gate (D-204 design card): held2.pl calls setpgrp before the tracker's first 25 ms poll, so the tracker can record it as a group leader and sweep kills it on the group path, making the D-217 pid-path claim a coin flip. How do we finish the gate?
+
+**Options considered:**
+1. Apply the 0.2 s fix
+2. Drop the pid-path claim
+3. Fix and skip the guard
+
+**Hive recommendation:** Apply the 0.2 s fix
+
+**Keeper choice:** Apply the 0.2 s fix: held2.pl starts with select(undef, undef, undef, 0.2); setpgrp(0, 0); and runbook 2.2 is reworded to explain first-sight leader tracking. One confirming guard.
+
+**Rationale:** Both round 2 confirming guards found the race independently and gave the same fix; the opus guard measured the pid path at 15 of 15 with the pause.
+
+## D-219: TestRepoConfig accepts forge.remote empty or origin, in a product PR before the hive switch
+
+- **Date:** 2026-10-22
+- **Kind:** technical
+- **Tickets:** T-004, T-023
+- **Supersedes:** none
+
+**Question:** product-ci fails on PR #65 because TestRepoConfig (internal/config/config_test.go) loads the hive config.yaml and asserts forge.remote is empty, and phase F sets forge.remote: origin. How do we fix it?
+
+**Options considered:**
+1. Product PR first
+2. Fix it inside #65
+3. Drop the hive coupling
+
+**Hive recommendation:** Product PR first
+
+**Keeper choice:** Product PR first: a small internal/config test change accepts an empty remote or origin, gets one guard and merges; then #65 rebases.
+
+**Rationale:** Keeps product and hive changes in separate PRs while letting the hive config move to remote mode.
