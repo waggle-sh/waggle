@@ -170,6 +170,7 @@ type checker struct {
 	claimOID   string // the local claim ref after the acquire and each renewal (local mode); it must still be there
 	guard      bool   // a guard run: no commits, no ref moves, a detached HEAD at head
 	before     snap
+	trailers   int // commits in the range with a Co-authored-by line (a warning, never a violation)
 }
 
 // run applies every rule and returns every violation, plus the number of
@@ -245,6 +246,7 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 		add(ruleCommit, rng, "more than 500 commits")
 		recs = recs[:maxCommits]
 	}
+	c.trailers = c.countTrailers(ctx, rng)
 	prefix := c.lease.TicketID + ": "
 	var changes []comb.Change
 	for _, rec := range recs {
@@ -268,6 +270,25 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 		changes = append(changes, c.changes(ctx, oid, add)...)
 	}
 	return append(vs, comb.CheckChanges(c.lease, changes)...), commits
+}
+
+// countTrailers returns how many commits in rng have a message line starting
+// with Co-authored-by (any case). It reads messages through the pinned git and
+// never keeps their text; a failed read counts as none.
+func (c *checker) countTrailers(ctx context.Context, rng string) (n int) {
+	out, err := c.g.Run(ctx, "log", "-z", "-n", "501", "--format=%B", rng)
+	if err != nil {
+		return 0
+	}
+	for _, msg := range strings.Split(string(out), "\x00") {
+		for _, line := range strings.Split(msg, "\n") {
+			if len(line) >= 15 && strings.EqualFold(line[:15], "co-authored-by:") {
+				n++
+				break
+			}
+		}
+	}
+	return n
 }
 
 // changes parses diff-tree -z output for one commit, deletions and both sides

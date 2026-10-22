@@ -407,7 +407,7 @@ func TestInputsComeFromBase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stable, variable, err := WritePrompts(runDir, in, TaskLines(req, base, lease), runtime.ContextSettings{InlineReadOnly: true})
+	stable, variable, err := WritePrompts(runDir, in, TaskLines(req, base, lease, nil), runtime.ContextSettings{InlineReadOnly: true})
 	if err != nil {
 		t.Fatal(err)
 	}

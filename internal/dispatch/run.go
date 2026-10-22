@@ -261,12 +261,16 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			return
 		},
 		func() (e error) {
-			lines := TaskLines(req, baseOID, want)
+			cmds = waggleCommands(in.WaggleMD)
+			bash, e := runtime.BashCommands(req.Role, cmds)
+			if e != nil {
+				return e
+			}
+			lines := TaskLines(req, baseOID, want, bash)
 			if guard {
-				lines = guardTaskLines(req, baseOID, want)
+				lines = guardTaskLines(req, baseOID, want, bash)
 			}
 			stable, variable = BuildPrompts(in, lines, cs)
-			cmds = waggleCommands(in.WaggleMD)
 			spec, e = rt.Prepare(runtime.Invocation{Role: req.Role, TaskID: req.Ticket, WorktreeDir: wtPath,
 				Selection: sel, Commands: cmds, GitIdentity: id}, cs, stable, variable)
 			return
@@ -352,6 +356,9 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	var commits int
 	res.Violations, commits = ck.run(pctx)
 	res.HeadOID = ck.head
+	if ck.trailers > 0 {
+		res.Warnings = append(res.Warnings, fmt.Sprintf("attribution_trailer: %d commit(s) carry a Co-authored-by trailer; drop it before merge", ck.trailers))
+	}
 	if slices.ContainsFunc(res.Violations, func(v comb.Violation) bool { return v.Rule == ruleHost }) {
 		if err := writeFile(dir, filepath.Base(w.Path)+".tainted", []byte(filepath.Base(runDir))); err != nil {
 			res.Warnings = append(res.Warnings, "tainted_marker_failed: "+err.Error())
