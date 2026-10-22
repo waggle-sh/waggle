@@ -4286,3 +4286,23 @@
 **Keeper choice:** Merge, take recommendations. Q-T027-1: no role-template copy; the generated task line is the only statement. Q-T027-2: unit test on the settings JSON plus a check of the first dispatched builder commit; a trailer means a follow-up. Q-T027-3: a trailer is a warning. Q-T028-1: per-run scratch TMPDIR with a longest-match self-rewrite. Q-T028-2: remove the scratch dir only when empty, else a scratch_left warning. Q-T029-1: keep a reused branch, tell the worker the branch point, document fields, warn branch_behind_base. Q-T029-2: cost_usd stays null on timeout and interrupt, documented. Q-T030-1: an owner-only release verb that refuses until merged, --unmerged for tickets with no PR. Q-T030-2: the queen runs release without a card on a ticket whose PR she merged; --unmerged always on a card; until the records batch that updates the role template and handoff/queen.md, release only on a card. Dispatch order: T-027, T-030, then T-028 and T-029.
 
 **Rationale:** Briefs passed two guard rounds plus confirms (opus and fable) with all must-fixes folded; scan-hive clean. Each ticket stays Tier 3 with two guards at build time.
+
+## D-224: fable as the standard-level alternate so a Tier 3 second guard can resolve
+
+- **Date:** 2026-10-22
+- **Kind:** policy
+- **Tickets:** T-027
+- **Supersedes:** none
+
+**Question:** The second T-027 guard was refused (exit 3): with only opus, sonnet and haiku mapped and the guard minimum at standard, a sonnet builder plus an opus first guard leaves no model for --second. How should the second guard run?
+
+**Options considered:**
+1. Add alternates.standard: fable to config.yaml
+2. Run this second guard as a fable guard subagent
+3. Hold T-027
+
+**Hive recommendation:** Add alternates.standard: fable to config.yaml
+
+**Keeper choice:** Add alternates.standard: fable under runtimes.adapters.claude-code in .waggle/control/config.yaml through a control PR, then rerun the T-027 second guard through dispatch. Applies to every later Tier 3 ticket.
+
+**Rationale:** Keeps every second guard inside waggle dispatch with a run record and head_oid check; one line, reverted by a one-line PR. Decided by the Head Keeper via queen card on 2026-10-22; recorded by the queen.
