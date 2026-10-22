@@ -3,6 +3,8 @@ bin/
 # --- waggle:start ---
 .waggle/control/local.yaml
 .waggle/control/run.sock
+.waggle/control/handoffs/
+.waggle/control/usage.jsonl
 .waggle/worktrees/
 .claude/agents/waggle-*.md
 # --- waggle:end ---
