@@ -43,7 +43,7 @@ Two layers. Product is Waggle itself (cmd/, internal/ including internal/scaffol
 - A guard report that calls verify-leases-and-tiers a blocker is wrong for a PR with no claim ref on the remote or with an update-branch merge commit; merge through `--admin`. For a dispatched ticket, a gate failure other than those two goes to the Keeper.
 - Hand off before context passes about 200k and ask the Keeper for a fresh session: write the next unused `.waggle/control/handoffs/queen-<n>.md` in the role template's format. Refer to the Keeper by role, never by name, in every committed file, card, PR body and handoff. Refresh this summary at phase merges and in records batches (D-182).
 
-## State at this summary (main at `18961b5`)
+## State at this summary (main at `6fd0d0f`)
 
 T-023 phases A to D2b and F are merged; the phase F trial ran on 2026-10-22 (`media/T-023/trial/report.md`): D-214 gate passed on the first run 0a, pid path proven by `held2`, run 0p hit Claude Code's own SIGTERM cleanup, D-213 exercised (`/exit` gave `end: interrupted` with the record written and the lock released). T-026 was built, guarded (opus pass, `reviews/T-026-opus.md`) and merged through dispatch in remote mode (#68 `18961b5`, about $0.81 by `waggle status`). Cutover approved (D-220); pin move recorded (D-221). The brief fix that made the T-026 rerun work merged as #67 `8deba1c`.
 
@@ -61,7 +61,7 @@ Keeper status: `local.yaml` fixed (keeper_id `paulternate`). Repo-local git `use
 
 ## Next work, in order
 
-1. Follow-up control PR (runbook 8.2, Tier 3): drop the transitional Stop hook and its `settings.json` entry, the `queen.local.md` ignore line and the legacy sentences in WAGGLE.md section 4; also WAGGLE.md section 4 still says "each non-merge commit" and scan-hive prints path-name hits as is.
+1. Control PR (Tier 3): WAGGLE.md section 4 Hive scan bullet still says "each non-merge commit", and scan-hive prints path-name hits as is (leftovers from runbook 8.2; the Stop hook and `queen.local.md` were retired in #70 `6fd0d0f`, reviews `T-023f4-{opus,fable}.md`). `tasks/T-025.md:117` still names the deleted `handoff-check.sh`; fix at the next T-025 brief edit.
 2. Tickets for the trial follow-ups (scout), the Bash-forms one first since every dispatched brief depends on it.
 3. T-023 phase E (list, D-208 carry, fable D2b N4, opus D2b N2, opus N1 printable), then T-024 (Cell runtime) phases A to E (D-123).
 4. Off the critical path: T-008 (ends the D-143 revert), T-018 C, T-025 B then C, T-021 phase C.
