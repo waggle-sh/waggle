@@ -4167,3 +4167,43 @@
 **Keeper choice:** Converged fix plus pid path: hold.sh redirects held.pl's output so the tool call returns; the gate passes only if run 0a wrote held.pid, that pid is in survivors_killed and it is dead after; a missing or never-listed pid means sweep not exercised: rerun run 0a once, and if still not exercised the cutover card says so and cannot cite the gate as passed. A second probe child (held2.pl, own process group via setpgrp) proves the pid path and backs up held.pl. Opus and fable confirm the round.
 
 **Rationale:** Closes the vacuous pass both confirming guards found and the pipe hold that would misattribute the result, and adds the pid-path evidence fable N1 showed was missing, all as runbook text.
+
+## D-218: held2.pl pauses 0.2 s before setpgrp so the trial proves the pid path
+
+- **Date:** 2026-10-22
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Third must-fix round on the trial gate (D-204 design card): held2.pl calls setpgrp before the tracker's first 25 ms poll, so the tracker can record it as a group leader and sweep kills it on the group path, making the D-217 pid-path claim a coin flip. How do we finish the gate?
+
+**Options considered:**
+1. Apply the 0.2 s fix
+2. Drop the pid-path claim
+3. Fix and skip the guard
+
+**Hive recommendation:** Apply the 0.2 s fix
+
+**Keeper choice:** Apply the 0.2 s fix: held2.pl starts with select(undef, undef, undef, 0.2); setpgrp(0, 0); and runbook 2.2 is reworded to explain first-sight leader tracking. One confirming guard.
+
+**Rationale:** Both round 2 confirming guards found the race independently and gave the same fix; the opus guard measured the pid path at 15 of 15 with the pause.
+
+## D-219: TestRepoConfig accepts forge.remote empty or origin, in a product PR before the hive switch
+
+- **Date:** 2026-10-22
+- **Kind:** technical
+- **Tickets:** T-004, T-023
+- **Supersedes:** none
+
+**Question:** product-ci fails on PR #65 because TestRepoConfig (internal/config/config_test.go) loads the hive config.yaml and asserts forge.remote is empty, and phase F sets forge.remote: origin. How do we fix it?
+
+**Options considered:**
+1. Product PR first
+2. Fix it inside #65
+3. Drop the hive coupling
+
+**Hive recommendation:** Product PR first
+
+**Keeper choice:** Product PR first: a small internal/config test change accepts an empty remote or origin, gets one guard and merges; then #65 rebases.
+
+**Rationale:** Keeps product and hive changes in separate PRs while letting the hive config move to remote mode.
