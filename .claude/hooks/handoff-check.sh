@@ -1,30 +1,22 @@
 #!/bin/sh
-# Stop hook (hive): refuse to end the queen's turn while the local handoff is
-# missing, longer than 40 lines, or older than the last commit on main (D-182).
-# Exit 2 feeds the message back to the model. The committed queen.md summary
-# is not checked; the queen refreshes it at phase merges and in records batches.
-#
-# Starter for .waggle/hive/handoff/queen.local.md (gitignored, facts only, at
-# most 40 lines; rewrite the facts rather than append, and `touch` is not a
-# refresh):
-#
-#   # Queen handoff (local)
-#   Role and framing: .waggle/control/roles/queen.md, WAGGLE.md section 4.
-#   Standing facts and habits: the committed .waggle/hive/handoff/queen.md.
-#   ## Live state (main at <sha>, <date>)
-#   - merged since the summary: <PR, sha, one line each>
-#   - open PRs and branches: <number, branch, state>
-#   - uncommitted hive records: <paths, or none>
-#   ## Running agents
-#   - <role, model, worktree or branch, what it writes and where>
-#   ## Next work
-#   1. <step, owner, gate>
+# Stop hook (hive), transitional until the T-023 phase F cutover card. The
+# queen's working handoff follows the role template's Handoff section
+# (.waggle/control/handoffs/queen-<n>.md, written when the context is large);
+# no hook checks those files or the committed queen.md summary (WAGGLE.md
+# section 4). While the legacy gitignored queen.local.md still exists (D-182),
+# this hook keeps its old check: refuse to end the queen's turn while it is
+# longer than 40 lines or older than the last commit on main. At cutover the
+# queen writes the next unused queen-<n>.md from it and deletes it, and this hook passes from
+# then on; a later control PR removes the hook. Exit 2 feeds the message back
+# to the model. The repo is CLAUDE_PROJECT_DIR, so a cd into a worktree does
+# not change which file is checked.
 input=$(cat)
 case "$input" in *'"stop_hook_active":true'*|*'"stop_hook_active": true'*) exit 0;; esac
-root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+root=${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)} || exit 0
+[ -n "$root" ] || exit 0
 rel=.waggle/hive/handoff/queen.local.md
 f="$root/$rel"
-[ -f "$f" ] || { echo "Handoff missing: write $rel (facts only, at most 40 lines; starter in .claude/hooks/handoff-check.sh) before stopping." >&2; exit 2; }
+[ -f "$f" ] || exit 0
 lines=$(wc -l <"$f" | tr -d ' ')
 if [ "$lines" -gt 40 ]; then
   echo "Handoff $rel is $lines lines; the cap is 40 (D-182). Cut it to facts only (live state, running agents, next work) before stopping." >&2
