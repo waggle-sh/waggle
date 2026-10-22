@@ -78,8 +78,9 @@ func TestRepoConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load(%s): %v", path, err)
 	}
+	// The hive moves to remote mode in T-023 phase F, so Remote is "" or "origin".
 	if c.Version != 1 || c.Forge.Provider != "github" || c.Forge.CombMode != "direct" ||
-		c.Forge.MergeStrategy != "up_to_date" || c.Forge.Remote != "" {
+		c.Forge.MergeStrategy != "up_to_date" || (c.Forge.Remote != "" && c.Forge.Remote != "origin") {
 		t.Fatalf("unexpected config %+v", *c)
 	}
 }
