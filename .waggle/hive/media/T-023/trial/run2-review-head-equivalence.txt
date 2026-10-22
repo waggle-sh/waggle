@@ -1,0 +1,13 @@
+reviewed head 1e4889f (base 5df0422); merged head e429d97 (rebase onto 8deba1c, AI co-author trailer dropped)
+1:  1e4889f ! 1:  e429d97 T-026: fixture repos turn off git auto maintenance in their own config
+    @@ Metadata
+      ## Commit message ##
+         T-026: fixture repos turn off git auto maintenance in their own config
+     
+    -    Co-Authored-By: Claude Sonnet 5.5 <email>
+         Signed-off-by: paulternate <email>
+     
+      ## internal/dispatch/dispatch_test.go ##
+patch-id:
+53a036af42472c53e925e118f25ae36d61630832 1e4889f703bf972e40fe3d7ab06f912f781910c6
+53a036af42472c53e925e118f25ae36d61630832 e429d976eb2932382e6abad05b13e614bc52c97e
