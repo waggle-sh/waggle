@@ -85,6 +85,7 @@ func newFixture(t *testing.T, remote, link bool) *fixture {
 		}
 	}
 	sh(t, f.real, "init", "-q", "-b", "main")
+	quietGit(t, f.real)
 	sh(t, f.real, "config", "--local", "user.name", "Fixture Keeper")
 	sh(t, f.real, "config", "--local", "user.email", "keeper@example.com")
 	opts := scaffold.InitOptions{TargetDir: f.real, Profile: "cli", Delivery: "installed", Forge: "github", CombMode: "direct", Runtime: "claude-code", Out: io.Discard}
@@ -110,6 +111,7 @@ func newFixture(t *testing.T, remote, link bool) *fixture {
 	sh(t, f.real, "commit", "-q", "-m", "init")
 	if remote {
 		sh(t, root, "init", "-q", "--bare", "-b", "main", f.origin)
+		quietGit(t, f.origin)
 		sh(t, f.real, "remote", "add", "origin", f.origin)
 		sh(t, f.real, "push", "-q", "origin", "main")
 		sh(t, f.real, "fetch", "-q", "origin")
