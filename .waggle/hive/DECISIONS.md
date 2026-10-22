@@ -4246,3 +4246,43 @@
 **Keeper choice:** Move the pin from 6a4886eb16e0de1d005a4ba354e72ecd1dd63756 to 790ade0b64b8cf5a6d6f6c1522c47cf5fdcd3548; managed files re-rendered by waggle upgrade from the target build, gate workflow kept (D-143). Merged by the Head Keeper in #65; recorded in this records batch per D-215.
 
 **Rationale:** 790ade0 carries T-023 phases A to D2b and the phase F queen template, which the phase F trial ran on (D-220).
+
+## D-222: T-030 release counts a branch as merged only when its head is a second or later merge parent on main
+
+- **Date:** 2026-10-22
+- **Kind:** technical
+- **Tickets:** T-030
+- **Supersedes:** none
+
+**Question:** T-030's merged check failed two guard rounds in a row (D-204): an ancestor test, then any-parent-of-a-merge, both pass a branch with no commits of its own once a later merge lands. How should release decide a ticket's branch has merged?
+
+**Options considered:**
+1. Second-or-later parent
+2. Require own commits too
+3. Drop the merged check
+
+**Hive recommendation:** Second-or-later parent
+
+**Keeper choice:** Second-or-later parent: the branch head must be the second or a later parent of a merge commit reachable from <remote>/main (git rev-list --parents --merges <head>..<remote>/main, pinned git, fields 3 onward), never only a first parent. Squash, rebase and no-commit heads count as unmerged and need --unmerged on a Keeper card.
+
+**Rationale:** Every queen merge uses --merge, so real tickets always qualify; a no-commit branch tip is only ever a first parent. Verified with plain git by the queen and two guards. Decided on a D-204 design card. Scope of the brief's must-fix bar (round 3 opus confirm N1): it means a no-commit branch at a main tip, whose head is only ever a first parent; a branch that points at a commit already merged as a second parent passes by design and is not a must-fix.
+
+## D-223: T-027 to T-030 briefs merged with the recommended answers to their open questions
+
+- **Date:** 2026-10-22
+- **Kind:** scope
+- **Tickets:** T-025, T-027, T-028, T-029, T-030
+- **Supersedes:** none
+
+**Question:** Merge the trial follow-up briefs T-027 to T-030 (and the T-025 phase B fix), and how to settle their nine open questions?
+
+**Options considered:**
+1. Merge, take recommendations
+2. Merge, rule questions later
+3. Hold
+
+**Hive recommendation:** Merge, take recommendations
+
+**Keeper choice:** Merge, take recommendations. Q-T027-1: no role-template copy; the generated task line is the only statement. Q-T027-2: unit test on the settings JSON plus a check of the first dispatched builder commit; a trailer means a follow-up. Q-T027-3: a trailer is a warning. Q-T028-1: per-run scratch TMPDIR with a longest-match self-rewrite. Q-T028-2: remove the scratch dir only when empty, else a scratch_left warning. Q-T029-1: keep a reused branch, tell the worker the branch point, document fields, warn branch_behind_base. Q-T029-2: cost_usd stays null on timeout and interrupt, documented. Q-T030-1: an owner-only release verb that refuses until merged, --unmerged for tickets with no PR. Q-T030-2: the queen runs release without a card on a ticket whose PR she merged; --unmerged always on a card; until the records batch that updates the role template and handoff/queen.md, release only on a card. Dispatch order: T-027, T-030, then T-028 and T-029.
+
+**Rationale:** Briefs passed two guard rounds plus confirms (opus and fable) with all must-fixes folded; scan-hive clean. Each ticket stays Tier 3 with two guards at build time.
