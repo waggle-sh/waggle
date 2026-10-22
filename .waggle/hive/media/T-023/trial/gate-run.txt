@@ -1,0 +1,28 @@
+# gh pr checks 68
+product-ci	pass	2m11s	https://github.com/waggle-sh/waggle/actions/runs/39837484631/job/120029495111	
+verify-leases-and-tiers	pass	31s	https://github.com/waggle-sh/waggle/actions/runs/39837484688/job/120029495359	
+relay-claim	skipping	0	https://github.com/waggle-sh/waggle/actions/runs/39837484688/job/120029497299	
+
+# verify-leases-and-tiers: waggle gate steps
+2026-10-22T19:08:33.3759833Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+2026-10-22T19:08:34.6939503Z Complete job name: verify-leases-and-tiers
+﻿2026-10-22T19:08:36.0611153Z ##[group]Run git fetch origin 'refs/waggle/claims/*:refs/waggle/claims/*'
+2026-10-22T19:08:36.0612014Z ^[[36;1mgit fetch origin 'refs/waggle/claims/*:refs/waggle/claims/*'^[[0m
+2026-10-22T19:08:36.8917758Z  * [new ref]         refs/waggle/claims/ticket-26 -> refs/waggle/claims/ticket-26
+2026-10-22T19:08:36.8961425Z ^[[36;1m# 1. Hardcoded tiers (RFC-0003 Section 3.3). Order matters: the hive^[[0m
+2026-10-22T19:08:36.8962677Z ^[[36;1m      echo "::notice file=$file::Tier 2 Hive record modified ($file). Full Gate required (ineligible for Light Gate)."^[[0m
+2026-10-22T19:08:36.8963513Z ^[[36;1m      echo "::warning file=$file::Tier 3 Control Plane modified ($file). Head Keeper approval required."^[[0m
+2026-10-22T19:08:36.8964186Z ^[[36;1m      echo "::notice file=$file::Tier 2 Steering Context modified ($file). Full Gate required (ineligible for Light Gate)."^[[0m
+2026-10-22T19:08:36.9123717Z ##[notice]Tier 2 Hive record modified (.waggle/hive/tasks/T-026.md). Full Gate required (ineligible for Light Gate).
+2026-10-22T19:08:37.8584367Z Acquiring 1.23.12 from https://github.com/actions/go-versions/releases/download/1.23.12-16792118003/go-1.23.12-linux-x64.tar.gz
+2026-10-22T19:08:52.9256422Z ##[warning]Restore cache failed: Dependencies file is not found in <runner-home>/work/waggle/waggle. Supported file pattern: go.sum
+﻿2026-10-22T19:08:53.6008264Z ##[group]Run # Not in the scaffold template until waggle ships a release binary (T-007, Q-T007-1).
+2026-10-22T19:08:53.6008674Z ^[[36;1m# Not in the scaffold template until waggle ships a release binary (T-007, Q-T007-1).^[[0m
+2026-10-22T19:08:53.6009490Z ^[[36;1m  echo "::error::base $BASE_SHA is not in the clone"^[[0m
+2026-10-22T19:08:53.6010255Z ^[[36;1m  echo "::notice::waggle gate not present on base; gate skipped"^[[0m
+2026-10-22T19:08:53.6011351Z ^[[36;1mif ! git cat-file -e "$BASE_SHA:cmd/waggle/gate_verify.go" 2>/dev/null; then^[[0m
+2026-10-22T19:08:53.6011614Z ^[[36;1m  echo "::notice::waggle gate verify not present on base"^[[0m
+2026-10-22T19:08:53.6012569Z ^[[36;1m"$RUNNER_TEMP/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA"^[[0m
+2026-10-22T19:09:00.0864106Z leases: ok
+2026-10-22T19:09:00.0865225Z tiers: ok
+2026-10-22T19:09:00.2061924Z Primary key was not generated. Please check the log messages above for more errors or information
