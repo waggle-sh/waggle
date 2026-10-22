@@ -11,5 +11,4 @@ bin/
 .claude/settings.local.json
 .claude/worktrees/
 .dashboard/
-.waggle/hive/handoff/queen.local.md
 .waggle/control/scan-names.local
