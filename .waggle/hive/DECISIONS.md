@@ -4032,3 +4032,60 @@
 **Keeper choice:** The D-206 cut of items 4a and 4b applies only when the build passes 190 before review. Fix and polish rounds after review count toward the 240 stop and do not move 4a or 4b. T-023 phase D2b gets one polish round before merge for opus N1 (printable also drops U+2028 and U+2029), N3 (the D-207 hint says not to run git worktree prune) and N4 (provision tells the Keeper to remove a plain directory by hand), confirmed by one guard (D-205). Decided by the Head Keeper via queen card on 2026-10-21; recorded by the queen.
 
 **Rationale:** Keeps the reviewed scope intact and fixes guidance phase F would show the Keeper.
+
+## D-211: Template keeps --no-cell with no first-dispatch card for v0.1
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-023, T-024
+- **Supersedes:** none
+
+**Question:** Should the queen template require a Keeper card before a hive's first dispatch, given every worker runs with --no-cell until T-024?
+
+**Options considered:**
+1. No change for v0.1
+2. Add a first-dispatch card
+
+**Hive recommendation:** No change for v0.1
+
+**Keeper choice:** No change for v0.1; revisit when T-024 ships the cell.
+
+**Rationale:** --no-cell is mandatory until T-024 and the refusal text already lists what is not enforced; a card per hive adds an ask without adding enforcement.
+
+## D-212: Rename the upgrade error prefix in a later product follow-up
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-012, T-021, T-023
+- **Supersedes:** none
+
+**Question:** Should the 'model policy for claude-code shims:' error prefix be renamed in code (fable N1, D-157), so the queen template's escalation rule 4 can drop its second sentence?
+
+**Options considered:**
+1. Yes, later follow-up
+2. No, keep the template note
+
+**Hive recommendation:** Yes, later follow-up
+
+**Keeper choice:** Yes: a small T-012 or T-021 product follow-up renames the prefix and removes the template sentence in the same commit; not part of phase F.
+
+**Rationale:** The template note goes stale once code changes; fixing the wording at the source is a few lines and keeps phase F small.
+
+## D-213: Phase F trial records dispatch behavior when the session closes
+
+- **Date:** 2026-10-21
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Should the phase F trial verify what a background waggle dispatch does when the Claude Code session closes mid-run?
+
+**Options considered:**
+1. Trial records it
+2. Not needed
+
+**Hive recommendation:** Trial records it
+
+**Keeper choice:** Yes: the trial closes a session during one run and saves what result.json shows in .waggle/hive/media/T-023/trial/; the template wording stays.
+
+**Rationale:** Nobody has confirmed which signal the host sends background shells on exit; about ten minutes of trial time settles it before cutover.
