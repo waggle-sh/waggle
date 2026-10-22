@@ -4286,3 +4286,23 @@
 **Keeper choice:** Merge, take recommendations. Q-T027-1: no role-template copy; the generated task line is the only statement. Q-T027-2: unit test on the settings JSON plus a check of the first dispatched builder commit; a trailer means a follow-up. Q-T027-3: a trailer is a warning. Q-T028-1: per-run scratch TMPDIR with a longest-match self-rewrite. Q-T028-2: remove the scratch dir only when empty, else a scratch_left warning. Q-T029-1: keep a reused branch, tell the worker the branch point, document fields, warn branch_behind_base. Q-T029-2: cost_usd stays null on timeout and interrupt, documented. Q-T030-1: an owner-only release verb that refuses until merged, --unmerged for tickets with no PR. Q-T030-2: the queen runs release without a card on a ticket whose PR she merged; --unmerged always on a card; until the records batch that updates the role template and handoff/queen.md, release only on a card. Dispatch order: T-027, T-030, then T-028 and T-029.
 
 **Rationale:** Briefs passed two guard rounds plus confirms (opus and fable) with all must-fixes folded; scan-hive clean. Each ticket stays Tier 3 with two guards at build time.
+
+## D-224: fable as the frontier alternate so a Tier 3 second guard can resolve
+
+- **Date:** 2026-10-22
+- **Kind:** policy
+- **Tickets:** T-027
+- **Supersedes:** none
+
+**Question:** The second T-027 guard was refused (exit 3): with only opus, sonnet and haiku mapped and the guard minimum at standard, a sonnet builder plus an opus first guard leaves no model for --second. How should the second guard get a third model?
+
+**Options considered:**
+1. Add alternates.frontier: fable to config.yaml
+2. Run this second guard once as a fable guard subagent
+3. Hold for a product ticket with a second-guard-only alternate
+
+**Hive recommendation:** Add alternates.frontier: fable to config.yaml
+
+**Keeper choice:** Add alternates.frontier: fable under runtimes.adapters.claude-code in .waggle/control/config.yaml through a control PR, then rerun the T-027 second guard through dispatch. Effect: an unstepped standard builder keeps an opus first guard and gets a fable second guard; after a builder step-up to frontier, the guard becomes fable and the second guard walks down to sonnet (D-179, bounded by D-180), where both refused before. Builder, forager, scout and queen models do not change.
+
+**Rationale:** The first proposal, alternates.standard: fable, failed review: pick() tries a level's alternate before moving up, so it would have made fable the first guard on every ticket and the T-027 second guard would still have refused. The frontier alternate keeps the first guard on opus and keeps every second guard inside waggle dispatch with a run record and a head_oid check. Reverting it is a one-line PR. Product follow-up: the ErrNoCrossModel hint names alternates.<level> at the guard level, which is the wrong level for this case. Decided by the Head Keeper via queen card on 2026-10-22; recorded by the queen.
