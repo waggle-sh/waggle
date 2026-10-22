@@ -4207,3 +4207,42 @@
 **Keeper choice:** Product PR first: a small internal/config test change accepts an empty remote or origin, gets one guard and merges; then #65 rebases.
 
 **Rationale:** Keeps product and hive changes in separate PRs while letting the hive config move to remote mode.
+
+## D-220: Cut over from subagent workers to waggle dispatch after the phase F trial
+
+- **Date:** 2026-10-22
+- **Kind:** strategy
+- **Tickets:** T-023, T-026
+- **Supersedes:** none
+
+**Question:** The T-023 phase F trial (tasks/T-023-trial.md, media/T-023/trial/report.md) passed the D-214 gate on the first run 0a with no rerun, proved the pid path with held2, exercised D-213, and built, guarded and merged T-026 (#68) through dispatch in remote mode with verify-leases-and-tiers seeing the claim. Do we cut over?
+
+**Options considered:**
+1. Approve cutover
+2. Records first, then cutover
+3. Hold cutover
+
+**Hive recommendation:** Approve cutover
+
+**Keeper choice:** Approve cutover: builders, foragers and guards run through waggle dispatch from now on; the queen's handoff moves to .waggle/control/handoffs/queen-<n>.md and queen.local.md is deleted, which turns off the transitional Stop hook check. The subagent shims stay for the queen and scout sessions as the rollback path.
+
+**Rationale:** Gate passed without a rerun, pid path proven, session close handled with a record, and the first remote-mode ticket merged green at about 0.85 USD. The eight follow-ups in the report (allowed Bash forms in the builder role, push tripwire blocking local-push tests, claim TTL with no release, reused-branch base_oid) do not block cutover and go to the follow-up control PR or new tickets.
+
+## D-221: Hive pin moved from 6a4886e to 790ade0 in phase F step 3
+
+- **Date:** 2026-10-22
+- **Kind:** technical
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run after T-023 phase F step 3 (#65)?
+
+**Options considered:**
+1. Stay on 6a4886eb16e0de1d005a4ba354e72ecd1dd63756
+2. Move to 790ade0b64b8cf5a6d6f6c1522c47cf5fdcd3548
+
+**Hive recommendation:** Move to 790ade0b64b8cf5a6d6f6c1522c47cf5fdcd3548
+
+**Keeper choice:** Move the pin from 6a4886eb16e0de1d005a4ba354e72ecd1dd63756 to 790ade0b64b8cf5a6d6f6c1522c47cf5fdcd3548; managed files re-rendered by waggle upgrade from the target build, gate workflow kept (D-143). Merged by the Head Keeper in #65; recorded in this records batch per D-215.
+
+**Rationale:** 790ade0 carries T-023 phases A to D2b and the phase F queen template, which the phase F trial ran on (D-220).

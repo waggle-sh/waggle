@@ -1,0 +1,5 @@
+	build	vcs=git
+	build	vcs.revision=790ade0b64b8cf5a6d6f6c1522c47cf5fdcd3548
+	build	vcs.time=2026-10-21T20:07:53Z
+	build	vcs.modified=false
+2.1.308 (Claude Code)
