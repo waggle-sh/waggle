@@ -6,7 +6,7 @@
 # section 4). While the legacy gitignored queen.local.md still exists (D-182),
 # this hook keeps its old check: refuse to end the queen's turn while it is
 # longer than 40 lines or older than the last commit on main. At cutover the
-# queen writes queen-1.md from it and deletes it, and this hook passes from
+# queen writes the next unused queen-<n>.md from it and deletes it, and this hook passes from
 # then on; a later control PR removes the hook. Exit 2 feeds the message back
 # to the model. The repo is CLAUDE_PROJECT_DIR, so a cd into a worktree does
 # not change which file is checked.
