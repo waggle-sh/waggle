@@ -4089,3 +4089,61 @@
 **Keeper choice:** Yes: the trial closes a session during one run and saves what result.json shows in .waggle/hive/media/T-023/trial/; the template wording stays.
 
 **Rationale:** Nobody has confirmed which signal the host sends background shells on exit; about ten minutes of trial time settles it before cutover.
+
+## D-214: Phase F trial proves the D-197 sweep with an outliving child
+
+- **Date:** 2026-10-22
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** With the real 10 s killGrace, Claude Code kills its own tool shell and child on SIGTERM, so the probe 2 shape (which listed survivors only with a forced 1 ns grace) likely ends with survivors_killed empty. How should the phase F trial prove the sweep before cutover?
+
+**Options considered:**
+1. Outliving-child shape
+2. Keep D-197 literal (needs a product change to shorten killGrace)
+3. Both shapes, either passes
+
+**Hive recommendation:** Outliving-child shape
+
+**Keeper choice:** Outliving-child shape: the trial adds a probe child that outlives the worker's normal exit so the sweep fires on the product path. Cutover gate: every listable leftover pid appears in survivors_killed and is dead in the after capture; any live pid blocks cutover. A SIGTERM self-cleanup by Claude Code is recorded as not evidence and not a block; whether the SIGKILL path was reached is recorded, not required.
+
+**Rationale:** Clarifies the D-197 trial gate only; the rest of D-197 stands. The literal D-197 shape cannot reach the sweep on the real timeout path without a product change; the outliving-child shape tests the same guarantee (no worker leftovers survive dispatch) through shipped code. Raised by the T-023 phase F step 3 fable guard (must-fix 1).
+
+## D-215: Phase F step 3 design defaults accepted
+
+- **Date:** 2026-10-22
+- **Kind:** scope
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** Accept the scout's and guards' defaults for the T-023 phase F step 3 hive PR (#65)?
+
+**Options considered:**
+1. Accept all
+2. Accept, but discuss one
+
+**Hive recommendation:** Accept all
+
+**Keeper choice:** Accept all: rules the upgrade erased from roles/queen.md and roles/scout.md live in WAGGLE.md section 4; queen.local.md and its Stop check stay until the cutover card, then retire; the trial probes run in a local-only scratch hive and run 1 is the first remote-mode run; the trial guard is opus by policy; the pin-move decide entry goes in the next records batch.
+
+**Rationale:** waggle upgrade rewrites role files from templates, so hive rules there do not survive; keeping the local handoff until cutover keeps the queen's session working through the trial.
+
+## D-216: D-210 becomes a standing hive rule
+
+- **Date:** 2026-10-22
+- **Kind:** policy
+- **Tickets:** T-023
+- **Supersedes:** none
+
+**Question:** D-210 ruled only on T-023 D2b. Should it be a standing hive rule stated in WAGGLE.md section 4?
+
+**Options considered:**
+1. Standing rule
+2. D2b only
+
+**Hive recommendation:** Standing rule
+
+**Keeper choice:** Standing rule: for every budgeted brief, a target cut applies only before review, and fix and polish rounds after review count toward the stop.
+
+**Rationale:** Matches how D-205 and D-206 are applied and keeps budgets predictable across tickets.
