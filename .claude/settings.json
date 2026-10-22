@@ -5,11 +5,6 @@
         "matcher": "startup|resume|clear|compact",
         "hooks": [{ "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh" }]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [{ "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/handoff-check.sh" }]
-      }
     ]
   }
 }

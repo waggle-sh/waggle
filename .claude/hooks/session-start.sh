@@ -1,18 +1,17 @@
 #!/bin/sh
 # SessionStart hook (hive): prime a fresh, resumed, cleared or compacted queen
 # session with the handoff and the live repo state. Stdout becomes context.
-# Handoff order (WAGGLE.md section 4): the legacy gitignored queen.local.md
-# while it exists (D-182, until the T-023 phase F cutover card deletes it),
-# else the newest .waggle/control/handoffs/queen-<n>.md (the role template's
-# Handoff section, gitignored), else the committed queen.md summary (a fresh
-# clone or a new machine). The repo is CLAUDE_PROJECT_DIR, so a cd into a worktree does
-# not change which handoff is read.
+# Handoff order (WAGGLE.md section 4): the newest
+# .waggle/control/handoffs/queen-<n>.md (the role template's Handoff section,
+# gitignored), else the committed queen.md summary (a fresh clone or a new
+# machine). The legacy queen.local.md handoff was retired at cutover (D-220).
+# The repo is CLAUDE_PROJECT_DIR, so a cd into a worktree does not change which
+# handoff is read.
 root=${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)} || exit 0
 [ -n "$root" ] || exit 0
 summary=.waggle/hive/handoff/queen.md
-f="$root/.waggle/hive/handoff/queen.local.md" max=-1
-[ -f "$f" ] || f=""
-[ -n "$f" ] || for h in "$root"/.waggle/control/handoffs/queen-*.md; do
+f="" max=-1
+for h in "$root"/.waggle/control/handoffs/queen-*.md; do
   [ -f "$h" ] || continue
   n=${h##*/queen-}; n=${n%.md}
   case $n in ''|*[!0-9]*) continue;; esac
