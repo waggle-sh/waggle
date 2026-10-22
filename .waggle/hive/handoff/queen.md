@@ -43,7 +43,7 @@ T-023 phases A to D2b are merged; phase D is complete (D0 `53941e6` #53, D0b `2e
 
 Phase D carry: now `tasks/T-023.md` section 10.6 (items 1 to 15, 22 and 23 are phase D, 16 to 21 phase D0; item 19 spans both, D0 setting a zero identity without refusing, phase D refusing an empty one before the claim). Not phase D code: the phase F trial must expect a failed remote-mode final claim sync to taint the worktree (`dispatch clean` recovers; reopus N6, hive-records-9 N2). Q-T023-26 (D-176): probe 2 ran in D1; with workers started by Setsid, D-197 moves the remaining proof to the first phase F macOS trial run, and a miss blocks cutover.
 
-Open notes from `reviews/hive-records-7.md`: N1 (D-157 routes fable N1, a Go error-prefix change, to the phase F template edit; "sonnet note 3" is ambiguous; clarify in the phase F brief), N2 (T-014 AC7 line still says screenshots), `reviews/T-023b-fable.md` line 7 still points to the `ab68fb6` section as current.
+Open notes from `reviews/hive-records-7.md`: N1 closed by #63 and D-212 (the prefix rename is a T-012 or T-021 follow-up), N2 (T-014 AC7 line still says screenshots), `reviews/T-023b-fable.md` line 7 still points to the `ab68fb6` section as current.
 
 Open notes from `reviews/hive-records-8.md`: N1 (D-168 records `Supersedes: none` though it moves D-159's phase C placement; accepted, its title names D-159), N5 (T-023 phase A stream leftovers: sonnet N4, N5, N10, fable recommendation 7; list under 10.2 or 10.3 before phase E), N7 (same as hive-records-7 N1), R-N2 (`GIT_EXEC_PATH` still honored by provision, fetch and claim calls; accepted).
 
@@ -55,6 +55,6 @@ Keeper status: `local.yaml` fixed (keeper_id `paulternate`). Repo-local git `use
 
 ## Next work, in order (own honey after T-023 phase D, D-147)
 
-1. T-023 phase F own honey switch on 2026-10-22, about two Keeper hours (section 10.4: Keeper queen-template commit, upgrade, config, trial, cutover card). The trial is the first live remote-mode run; it must list the tool shell and its background child in survivors_killed (D-197), add a `cmd >/dev/null 2>&1 &` command, and carry the D-199 sentence in its report. The first host-record listing uses `waggle dispatch clean --host-record`; `--accept` runs only after a Keeper card (D-198). Phase E after F (D-117).
+1. T-023 phase F own honey switch on 2026-10-22, about two Keeper hours (section 10.4: upgrade, config, trial, cutover card; the queen-template commit, step 2, merged at `790ade0`). The trial is the first live remote-mode run; it must list the tool shell and its background child in survivors_killed (D-197), add a `cmd >/dev/null 2>&1 &` command, and carry the D-199 sentence in its report. The first host-record listing uses `waggle dispatch clean --host-record`; `--accept` runs only after a Keeper card (D-198). Phase E after F (D-117).
 2. Next control PR: WAGGLE.md section 4 still says "each non-merge commit"; scan-hive prints path-name hits as is.
 3. Off the critical path: T-008 (ends the D-143 revert), T-018 C, T-025 B then C, T-021 phase C after T-023. T-024 (Cell runtime) phases A to E after all of T-023 (D-123).
