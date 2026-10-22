@@ -76,6 +76,7 @@ func TestForeignSameBranchRefused(t *testing.T) {
 	sh(t, dir, "branch", "t-023", base)
 	other := t.TempDir()
 	sh(t, other, "clone", "-q", dir, "c")
+	quietGit(t, filepath.Join(other, "c"))
 	target := filepath.Join(dir, ".waggle/worktrees/T-023-builder")
 	if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
 		t.Fatal(err)
@@ -137,9 +138,11 @@ func TestAcquireClaimRemoteNotes(t *testing.T) {
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
 	origin := t.TempDir()
 	sh(t, origin, "init", "-q", "--bare", "-b", "main")
+	quietGit(t, origin)
 	mk := func() string {
 		d := t.TempDir()
 		sh(t, d, "init", "-q", "-b", "main")
+		quietGit(t, d)
 		sh(t, d, "remote", "add", "origin", origin)
 		return d
 	}
