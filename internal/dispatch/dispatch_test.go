@@ -27,7 +27,7 @@ func shIn(t *testing.T, dir, stdin string, args ...string) string {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	cmd.Stdin = strings.NewReader(stdin)
-	cmd.Args = append(cmd.Args[:1], append([]string{"-c", "maintenance.auto=false"}, args...)...)
+	cmd.Args = append(cmd.Args[:1], append([]string{"-c", "maintenance.auto=false", "-c", "gc.auto=0"}, args...)...)
 	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1",
 		"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.com", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.com")
 	out, err := cmd.CombinedOutput()
@@ -35,6 +35,15 @@ func shIn(t *testing.T, dir, stdin string, args ...string) string {
 		t.Fatalf("git %v: %v: %s", args, err, out)
 	}
 	return strings.TrimSpace(string(out))
+}
+
+// quietGit keeps git auto maintenance off in the repo at dir itself, since a
+// local push runs receive-pack there without the client's -c settings.
+func quietGit(t *testing.T, dir string) {
+	t.Helper()
+	sh(t, dir, "config", "--local", "maintenance.auto", "false")
+	sh(t, dir, "config", "--local", "gc.auto", "0")
+	sh(t, dir, "config", "--local", "receive.autogc", "false")
 }
 
 func write(t *testing.T, dir, rel, content string) {
@@ -55,6 +64,7 @@ func newRepo(t *testing.T) (dir string, g *Git) {
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
 	dir = t.TempDir()
 	sh(t, dir, "init", "-q", "-b", "main")
+	quietGit(t, dir)
 	write(t, dir, ".waggle/hive/tasks/T-023.md", "# brief at base\n")
 	write(t, dir, ".waggle/control/roles/builder.md", "builder role\n")
 	write(t, dir, ".waggle/control/WAGGLE.md", "waggle md\n")
@@ -479,6 +489,7 @@ func TestResolveBase(t *testing.T) {
 	// With a remote, the default base is <remote>/main after a fetch.
 	bare := t.TempDir()
 	sh(t, bare, "init", "-q", "--bare", "-b", "main")
+	quietGit(t, bare)
 	sh(t, dir, "remote", "add", "origin", bare)
 	sh(t, dir, "push", "-q", "origin", "main")
 	sh(t, dir, "fetch", "-q", "origin")
@@ -489,6 +500,7 @@ func TestResolveBase(t *testing.T) {
 	other := t.TempDir()
 	sh(t, other, "clone", "-q", bare, "c")
 	c := filepath.Join(other, "c")
+	quietGit(t, c)
 	write(t, c, "remote.txt", "x")
 	sh(t, c, "add", "-A")
 	sh(t, c, "commit", "-q", "-m", "remote")
