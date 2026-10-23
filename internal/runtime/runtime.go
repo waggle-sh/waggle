@@ -26,6 +26,7 @@ type Invocation struct {
 	Selection   Selection   // Resolved model for Role; Prepare refuses a zero value
 	Commands    []string    // build, test, vet and format commands from WAGGLE.md section 3, allowed in Bash
 	GitIdentity GitIdentity // author and committer of the worker's commits; the zero value sets none
+	ScratchDir  string      // per-run TMPDIR whose pushes the tripwire lets through; empty for none
 }
 
 // GitIdentity is a worker's git author and committer. Prepare refuses a value
