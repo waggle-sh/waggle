@@ -108,7 +108,7 @@ func ReadInputs(ctx context.Context, g *Git, baseOID string, req Request) (in In
 	in.RolePrompt = get(layout.RolesDir+"/"+req.Role+".md", maxPromptFile, true)
 	in.WaggleMD = get(layout.WaggleMD, maxPromptFile, true)
 	in.Review = get(layout.ReviewsDir+"/"+req.Ticket+".md", maxBrief, false)
-	in.MustFix = runtime.CountMustFix(in.Review)
+	in.MustFix = countReviewMustFix(in.Review)
 	if err == nil {
 		var n int
 		n, err = roundMustFix(ctx, g, baseOID, req)
@@ -136,7 +136,7 @@ func roundMustFix(ctx context.Context, g *Git, baseOID string, req Request) (n i
 			files++
 			data, _, e := blobAt(ctx, g, baseOID, p, maxBrief)
 			if err = errors.Join(err, e); e == nil {
-				n += runtime.CountMustFix(data)
+				n += countReviewMustFix(data)
 			}
 		}
 	}
