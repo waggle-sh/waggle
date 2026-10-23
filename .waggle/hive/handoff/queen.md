@@ -42,10 +42,10 @@ Two layers. Product is Waggle itself (cmd/, internal/ including internal/scaffol
 - Dispatched workers: Bash takes one allowlisted command per call in the exact WAGGLE.md section 3 forms; state that in every brief until the builder role says it (trial report follow-up 2). Workers cannot run tests that push to a local origin (the push tripwire rewrites them); check those on the host or in product-ci. A rerun on an existing branch builds on the old branch point: rebase it before merge and check the patch-id against the reviewed head. Since T-027 (pin b038b41) builder commits carry no attribution trailer. `waggle dispatch release <ticket>` ends a finished run's claim early, only on a Keeper card (D-223); otherwise let it expire.
 - A guard report that calls verify-leases-and-tiers a blocker is wrong for a PR with no claim ref on the remote or with an update-branch merge commit; merge through `--admin`. For a dispatched ticket, a gate failure other than those two goes to the Keeper.
 - Never write in the main checkout or commit in the shared repo while a dispatch run is live (two host_state violations on 2026-10-23). Run `waggle dispatch clean` only on its own and after a card. Never put a `Verdict:` line in a queen-written note: dispatch's must-fix count reads any such line.
-- Confirming guards after a must-fix round: dispatch does not alternate models yet, and `--second` refuses when the builder and first guard bases differ (D-228); pass the model on the card until the product fix lands.
+- Confirming guards after a must-fix round: once the pin includes T-034 (D-251 to D-255), dispatch alternates the model from run records and `--second` takes the first guard record's base by default; until the pin moves, pass the model on the card. Name brief reviews `brief-T-<nnn>-<model>.md`, never `T-<nnn>-brief-*`, so dispatch's must-fix count skips them (D-257).
 - Hand off before context passes about 200k and ask the Keeper for a fresh session: write the next unused `.waggle/control/handoffs/queen-<n>.md` in the role template's format. Refer to the Keeper by role, never by name, in every committed file, card, PR body and handoff. Refresh this summary at phase merges and in records batches (D-182).
 
-## State at this summary (main at `146da09`)
+## State at this summary (main at `1475d74`)
 
 G1 (T-031, gate verify, #89) and G2 (T-032, claim and release verbs, protected paths, qualified default base, #93) are merged; the repositioning note (D-229) landed in #86 and D-230 in #85. T-033 (#98, guard bundle: guard writes no repo file, v1 verdict marker for the must-fix count, scaffold gate workflow matches the hive) merged on 2026-10-23 at 99 added non-test lines against target 290. Pin moves: 851f707 (D-246, #95) and 7bef53b (D-250, #100), each with opus and fable passes.
 
@@ -53,11 +53,11 @@ Second-guard data: fable found nothing blocking on T-031, T-032, T-033 or the tw
 
 Older carried notes (redaction list, D-143, D-151, T-025 phase C, T-014b fable F6, the scaffold `guard: sonnet` template, the records 7 to 16 open notes) stand as listed in the hive records 16 version of this file (`git show 6fd0d0f:.waggle/hive/handoff/queen.md`).
 
-DECISIONS.md: 250 entries. Next ID D-251.
+DECISIONS.md: 258 entries. Next ID D-259. T-034 (D-228 follow-up) merged in #103 on 2026-10-23, builder opus (stepped up by the D-257 brief-review count), fable and sonnet --second pass. D-256: scout and brief and control reviews stay subagents. D-258: G3, G4, G5 order stays.
 
 ## Next work, in order
 
-1. Product follow-ups for the scout: confirming-guard model alternation and `--second` base ancestry (D-228); ErrNoCrossModel hint names the wrong alternates level.
+1. Pin move to include T-034 (1475d74), on its own card.
 2. G3: named approver and Intent Packet trailers (`internal/forge/`, `cmd/waggle/`); Q-T032-3 squash-merge revisit and merged-check PR binding land there or in G4.
-3. Polish notes for a later ticket: T-032 (claim argument order, AC10 lacks U+2028, release branch length for `waggle/T-`, unknown exit-4 sentinel maps to environment, CLI usage errors report an empty task, cancellation surfaces as exit 3); T-031 (`--branch` usage paragraph placement, trailer split before the 256-byte check, `./` protected-path entry accepted, bad-branch warning only under leases).
+3. Polish notes for a later ticket: T-032 (claim argument order, AC10 lacks U+2028, release branch length for `waggle/T-`, unknown exit-4 sentinel maps to environment, CLI usage errors report an empty task, cancellation surfaces as exit 3); T-031 (`--branch` usage paragraph placement, trailer split before the 256-byte check, `./` protected-path entry accepted, bad-branch warning only under leases). T-034 and D-257: roundMustFix must skip brief reviews; fable N3 (topTier duplicated in guardModel), N4 (empty first guard model in the hint).
 4. Records: mark T-008 superseded by T-031 and G4 at the next T-008 brief edit; T-029 review seam line (`reviews/hive-records-20.md` N1); brief nits (T-029 Status line, T-029 2.4 holds on git 2.39 only, T-030 AC4 grammar).
