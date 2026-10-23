@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
@@ -96,6 +97,17 @@ var envAllowed = []string{"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", 
 // .git/config (including an include.path the Keeper adds) or from a worker
 // shell that resets GIT_CONFIG_* or GIT_CONFIG_PARAMETERS. The Keeper's global
 // and system git config do not apply (envFixed).
+//
+// One directory is exempt: the per-run scratch directory dispatch creates and
+// sets as the worker's TMPDIR (Invocation.ScratchDir), so a test can push to a
+// bare origin under t.TempDir(). tripwireEnv rewrites its prefix to itself,
+// which beats the shorter "/" because git applies the longest insteadOf. Two
+// bypasses remain, because git matches insteadOf on the URL string and not the
+// resolved path: a symlink the worker plants inside the scratch directory, and
+// any ".." path that does not begin with <scratch>/../ or file://<scratch>/../
+// itself (<scratch>/a/../../ once <scratch>/a exists, <scratch>/./../ or
+// <scratch>//../). Both reach any local repo the worker can name, the same
+// reach as the bare relative path above.
 var pushBlocked = []string{"https://", "ssh://", "git@", "http://", "git://", "git+ssh://", "ssh+git://", "file://", "/", "."}
 
 // envFixed isolates the worker: no CLAUDE.md or auto-memory from any scope,
@@ -103,22 +115,54 @@ var pushBlocked = []string{"https://", "ssh://", "git@", "http://", "git://", "g
 // no git prompts, no global or system git config, and a tripwire (tripwireEnv)
 // that rewrites every push URL it recognizes (see pushBlocked) to
 // file:///dev/null/, a dead target that makes no network or ssh attempt.
-var envFixed = append([]string{"CLAUDE_CODE_DISABLE_CLAUDE_MDS=1", "CLAUDE_CODE_DISABLE_AUTO_MEMORY=1",
-	"ENABLE_CLAUDEAI_MCP_SERVERS=false", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1",
-	"DISABLE_AUTO_COMPACT=1", "GIT_TERMINAL_PROMPT=0", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1", "GIT_ATTR_NOSYSTEM=1"}, tripwireEnv()...)
+// scratch holds the spellings of the exempt scratch directory, none for no exemption.
+func envFixed(scratch []string) []string {
+	return append([]string{"CLAUDE_CODE_DISABLE_CLAUDE_MDS=1", "CLAUDE_CODE_DISABLE_AUTO_MEMORY=1",
+		"ENABLE_CLAUDEAI_MCP_SERVERS=false", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1",
+		"DISABLE_AUTO_COMPACT=1", "GIT_TERMINAL_PROMPT=0", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1", "GIT_ATTR_NOSYSTEM=1"}, tripwireEnv(scratch)...)
+}
+
+// scratchPaths validates the scratch directory and returns its spellings: the
+// path itself, then its symlink-resolved form when that differs (macOS /var is
+// a link to /private/var). A relative, unclean or control-character path is
+// refused. An empty dir means no scratch directory and returns none.
+func scratchPaths(dir string) ([]string, error) {
+	if dir == "" {
+		return nil, nil
+	}
+	paths := []string{dir}
+	if r, err := filepath.EvalSymlinks(dir); err == nil && r != dir {
+		paths = append(paths, r)
+	}
+	for _, p := range paths {
+		if !filepath.IsAbs(p) || filepath.Clean(p) != p || p == "/" || strings.ContainsFunc(p, func(r rune) bool { return r < 0x20 }) {
+			return nil, fmt.Errorf("%w: scratch directory %q must be a clean absolute path without control characters", ErrAdapterConfig, p)
+		}
+	}
+	return paths, nil
+}
 
 // tripwireEnv is the single emission of the GIT_CONFIG_COUNT/KEY/VALUE entries:
 // the push rewrites, then the home ignore and attributes files (which
 // GIT_CONFIG_GLOBAL does not cover) pointed at /dev/null, then auto maintenance
 // and auto gc off so no detached git daemon outlives the worker's process group
-// and edits the common dir (worktree-prune) around the post-run checks.
-func tripwireEnv() []string {
+// and edits the common dir (worktree-prune) around the post-run checks, then,
+// for each scratch spelling, the self-rewrite that exempts it and the rewrite
+// of its top-level ".." form, which is longer than the exemption. The trailing
+// slashes are load-bearing: without them <scratch>-evil/ would match.
+func tripwireEnv(scratch []string) []string {
 	var keys [][2]string
 	for _, prefix := range pushBlocked {
 		keys = append(keys, [2]string{"url.file:///dev/null/.pushInsteadOf", prefix})
 	}
 	keys = append(keys, [2]string{"core.excludesFile", "/dev/null"}, [2]string{"core.attributesFile", "/dev/null"},
 		[2]string{"maintenance.auto", "false"}, [2]string{"gc.auto", "0"})
+	for _, p := range scratch {
+		for _, s := range []string{p, "file://" + p} {
+			keys = append(keys, [2]string{"url." + s + "/.pushInsteadOf", s + "/"},
+				[2]string{"url.file:///dev/null/.pushInsteadOf", s + "/../"})
+		}
+	}
 	env := []string{"GIT_CONFIG_COUNT=" + strconv.Itoa(len(keys))}
 	for i, kv := range keys {
 		n := strconv.Itoa(i)
@@ -152,7 +196,7 @@ func (c *ClaudeAdapter) Verify(ctx context.Context) error {
 	defer cancel()
 	var out capWriter
 	cmd := exec.CommandContext(ctx, c.cfg.Binary, "--help")
-	cmd.Env, cmd.Stdout, cmd.WaitDelay = workerEnv(ContextSettings{}, GitIdentity{}), &out, time.Second
+	cmd.Env, cmd.Stdout, cmd.WaitDelay = workerEnv(ContextSettings{}, GitIdentity{}, nil), &out, time.Second
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("%w: %s --help: %v", ErrUnverified, c.cfg.Binary, err)
 	}
@@ -234,6 +278,10 @@ func (c *ClaudeAdapter) Prepare(inv Invocation, s ContextSettings, stable, varia
 	if err := inv.GitIdentity.check(); err != nil {
 		return LaunchSpec{}, err
 	}
+	scratch, err := scratchPaths(inv.ScratchDir)
+	if err != nil {
+		return LaunchSpec{}, err
+	}
 	settings, err := workerSettings(inv.Role, inv.Commands)
 	if err != nil {
 		return LaunchSpec{}, err
@@ -242,7 +290,7 @@ func (c *ClaudeAdapter) Prepare(inv Invocation, s ContextSettings, stable, varia
 	if err != nil {
 		return LaunchSpec{}, err
 	}
-	return LaunchSpec{Argv: argv, Env: workerEnv(s, inv.GitIdentity), Stdin: variable}, nil
+	return LaunchSpec{Argv: argv, Env: workerEnv(s, inv.GitIdentity, scratch), Stdin: variable}, nil
 }
 
 // claudeArgs assembles the argv. Every value flag uses the --flag=value form
@@ -324,14 +372,19 @@ func BashCommands(role string, commands []string) ([]string, error) {
 
 // workerEnv builds the environment from envAllowed (only when set in the
 // parent), envFixed and the settings values. It never copies os.Environ().
-func workerEnv(s ContextSettings, id GitIdentity) []string {
+// With a scratch directory (scratch[0], see scratchPaths) TMPDIR is that
+// directory instead of the parent's value.
+func workerEnv(s ContextSettings, id GitIdentity, scratch []string) []string {
 	var env []string
 	for _, k := range envAllowed {
-		if v, ok := os.LookupEnv(k); ok {
+		if v, ok := os.LookupEnv(k); ok && !(k == "TMPDIR" && len(scratch) > 0) {
 			env = append(env, k+"="+v)
 		}
 	}
-	env = append(env, envFixed...)
+	if len(scratch) > 0 {
+		env = append(env, "TMPDIR="+scratch[0])
+	}
+	env = append(env, envFixed(scratch)...)
 	if strings.TrimSpace(id.Name) != "" { // check has made Name and Email both set or both blank
 		env = append(env, "GIT_AUTHOR_NAME="+id.Name, "GIT_AUTHOR_EMAIL="+id.Email,
 			"GIT_COMMITTER_NAME="+id.Name, "GIT_COMMITTER_EMAIL="+id.Email)
