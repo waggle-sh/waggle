@@ -58,11 +58,16 @@ a Keeper admin merge.
 Checks:
   verify      Run leases, tiers and decisions; report every failure and exit
               with the worst code.
-  leases      Every commit is a T-<id>: commit (no merges) whose paths stay
-              inside its claim directories, exact case, with no new symlink
-              or submodule.
-  tiers       No commit touches a Tier 3 path or, under a light claim, a
-              Tier 2 path; no two head paths differ only in case.
+  leases      Every commit is bound to a ticket (T-<id>: subject, Waggle-Ticket:
+              trailer or --branch) and its paths stay inside the claim
+              directories, exact case, with no new symlink or submodule. The
+              only merge accepted is an update from the base branch.
+  tiers       No commit touches a Tier 3 path (including gate.protected_paths
+              of the base config) or, under a light claim, a Tier 2 path; no
+              two head paths differ only in case.
+
+verify, leases and tiers also take --branch <name> (default GITHUB_HEAD_REF
+under GitHub Actions); waggle/T-<id> and t-<id> branches bind that ticket.
   decisions   Reject any change to %s that is not a pure append of
               well-formed entries.
 `, layout.Decisions)
