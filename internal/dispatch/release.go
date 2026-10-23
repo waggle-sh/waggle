@@ -104,10 +104,12 @@ func Release(ctx context.Context, r ReleaseRequest, out io.Writer) error {
 
 // branchMerged fetches the remote (host side, with the Keeper's git auth) and
 // reports whether the branch head is the second or a later parent of a merge
-// commit on main. Only that proves the head itself merged: a head whose tip is
-// just a first parent has no commits of its own in main. The head is the
-// remote's branch when it exists, else the local one; it is never read from a run
-// record. All git calls but the fetch run pinned.
+// commit on main's first-parent history. Only that proves the head itself
+// merged: a head whose tip is just a first parent has no commits of its own in
+// main, and a merge off that history (another branch updated from main) proves
+// nothing. The head is the remote's branch when it exists, else the local one; it
+// is never read from a run record. The fetch and ResolveBase's rev-parse of main
+// run on g, as Run resolves its base; the head and merge reads run pinned.
 func branchMerged(ctx context.Context, g, pg *Git, branch string) (bool, error) {
 	main, err := ResolveBase(ctx, g, g.Remote, "")
 	if err != nil {
@@ -127,7 +129,7 @@ func branchMerged(ctx context.Context, g, pg *Git, branch string) (bool, error) 
 	if head == "" {
 		return false, nil
 	}
-	out, err := pg.Run(ctx, "rev-list", "--parents", "--merges", head+".."+main)
+	out, err := pg.Run(ctx, "rev-list", "--first-parent", "--parents", "--merges", head+".."+main)
 	if err != nil {
 		return false, failf(ExitEnv, "%w", err)
 	}
