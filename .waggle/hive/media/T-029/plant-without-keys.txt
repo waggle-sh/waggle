@@ -1,0 +1,10 @@
++ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c ./internal/dispatch/ at f5135e8 (without maintenance.auto and gc.auto in tripwireEnv; compiled on the host, run only in the container)
++ docker run --rm --init --cpus 1 --memory 700m -e GOGC=50 golang:1.23-bookworm dispatch.test -test.count=1 -test.run '^TestRunPlantDuringAutoMaintenance$' -test.v
+=== RUN   TestRunPlantDuringAutoMaintenance
+=== RUN   TestRunPlantDuringAutoMaintenance/plain
+=== RUN   TestRunPlantDuringAutoMaintenance/symlinked
+--- PASS: TestRunPlantDuringAutoMaintenance (2.18s)
+    --- PASS: TestRunPlantDuringAutoMaintenance/plain (1.09s)
+    --- PASS: TestRunPlantDuringAutoMaintenance/symlinked (1.09s)
+PASS
+exit 0
