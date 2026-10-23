@@ -29,6 +29,52 @@ func parseVerdict(final []byte) string {
 	return string(m[len(m)-1][1])
 }
 
+const markerPrefix = "<!-- waggle-review"
+
+var (
+	markerLine = regexp.MustCompile(`^<!-- waggle-review v1 verdict=(pass|must-fix) head=(?:[0-9a-f]{40}|[0-9a-f]{64}) -->$`)
+	hexHead    = regexp.MustCompile(`^(?:[0-9a-f]{40}|[0-9a-f]{64})$`)
+)
+
+// reviewFile is the content of a run's review.md: the final message with every
+// column-0 line that opens like a round marker indented by one space, so the
+// guard cannot add a round, and, when a verdict was parsed and head is a valid
+// OID, one marker line and a blank line in front (T-033 2.2).
+func reviewFile(final []byte, verdict, head string) []byte {
+	var out []byte
+	if verdict != "" && hexHead.MatchString(head) {
+		out = []byte(markerPrefix + " v1 verdict=" + verdict + " head=" + head + " -->\n\n")
+	}
+	for _, line := range strings.SplitAfter(string(final), "\n") {
+		if strings.HasPrefix(line, markerPrefix) {
+			out = append(out, ' ')
+		}
+		out = append(out, line...)
+	}
+	return out
+}
+
+// countReviewMustFix counts the must-fix rounds of one review file. Text before
+// the first round marker is legacy and counts by runtime.CountMustFix; after
+// it only marker lines count, one per must-fix marker.
+func countReviewMustFix(data []byte) int {
+	var legacy []byte
+	n, seen := 0, false
+	for _, line := range strings.SplitAfter(string(data), "\n") {
+		m := markerLine.FindStringSubmatch(strings.TrimRight(line, " \r\n"))
+		switch {
+		case m != nil:
+			seen = true
+			if m[1] == "must-fix" {
+				n++
+			}
+		case !seen:
+			legacy = append(legacy, line...)
+		}
+	}
+	return n + runtime.CountMustFix(legacy)
+}
+
 // guardTaskLines replace the commit rules of TaskLines (T-023 10.2). bash is the
 // guard's runtime.BashCommands list, without git add or git commit.
 func guardTaskLines(req Request, baseOID string, lease comb.Lease, bash []string) []string {
@@ -41,7 +87,7 @@ func guardTaskLines(req Request, baseOID string, lease comb.Lease, bash []string
 		"Lease directories: " + strings.Join(lease.Directories, ", "),
 		"Gate: " + lease.Gate,
 		bashLine(bash),
-		"Rules: do not commit; delete any probe files before your final message; end with `Verdict: pass` or `Verdict: must-fix` as the last line of your final message.",
+		"Rules: do not commit; write no file in the repo; your final message is the review; delete any probe files before your final message; end with `Verdict: pass` or `Verdict: must-fix` as the last line of your final message.",
 	}
 }
 
