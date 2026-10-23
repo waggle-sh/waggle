@@ -4915,3 +4915,63 @@
 **Keeper choice:** Alternation for Tier 3 or unknown tier with the D-179 downward walk bounded by the guard minimum; Tier 0 to 2 plain guards resolve as today. Accepted: a standard-level model may confirm a stepped-up Tier 3 build outside --second, and may review a diff holding its own earlier commits, since the builder rule avoids only the latest builder run's model.
 
 **Rationale:** D-205 is written for Tier 3 two-guard reviews and D-100 keeps Tier 2 at one guard; the walk meets alternation on stepped-up builds that need two rounds. About 3 lines. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-256: The scout and brief and control reviews stay Claude Code subagents
+
+- **Date:** 2026-10-23
+- **Kind:** scope
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Should the scout and the brief and control reviews stay as Claude Code subagents, or move to waggle dispatch? No decision requires either (D-117, D-220).
+
+**Options considered:**
+1. Keep as is: scout and brief and control reviews stay subagents, as D-220 left them
+2. Run brief-branch reviews through waggle dispatch --role guard
+3. Brief a product ticket that adds a scout role to dispatch
+
+**Hive recommendation:** Keep as is: scout and brief and control reviews stay subagents, as D-220 left them
+
+**Keeper choice:** Keep as is. Own honey as defined (D-044, D-147, D-220) is met; removing every subagent from hive work is not a goal.
+
+**Rationale:** No cost, and hive-only briefs gain little from claims or run records. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-257: Brief reviews are named brief-T-<nnn>-<model>.md so dispatch's must-fix count skips them
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-034
+- **Supersedes:** none
+
+**Question:** Dispatch's roundMustFix counts must-fix verdicts in every reviews/T-<nnn><suffix>-*.md on base, which also matches brief reviews (T-034-brief-opus.md, T-034-brief-fable.md); three brief must-fix rounds stepped the T-034 builder up to opus and let --second walk down to sonnet. How is it fixed?
+
+**Options considered:**
+1. Rename brief reviews to a name the pattern cannot match (brief-T-<nnn>-<model>.md) from now on, rename the T-034 pair in the next records batch, and put the roundMustFix fix in the polish ticket
+2. Rename only, no product change
+3. Brief a small Tier 3 product fix ticket before G3
+
+**Hive recommendation:** Rename brief reviews to a name the pattern cannot match (brief-T-<nnn>-<model>.md) from now on, rename the T-034 pair in the next records batch, and put the roundMustFix fix in the polish ticket
+
+**Keeper choice:** Rename going forward and rename the T-034 pair; the product fix (roundMustFix skips brief reviews) joins the polish ticket.
+
+**Rationale:** No cost now; T-034's run stayed cross-model and both guards passed. Outside users with the same naming would hit the bug, so the product fix still lands. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-258: G3 stays before G4 and G5
+
+- **Date:** 2026-10-23
+- **Kind:** strategy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** G4 has no code dependency on G3; the only link is about 15 lines of gate workflow and Action YAML (review trigger, pull-requests: read, token input). Should G3 move after the public release (G5)?
+
+**Options considered:**
+1. G3, G4, G5 as planned
+2. G4, G3, G5 with G4 carrying the token input, permission and review trigger
+3. G4, G5, then G3
+
+**Hive recommendation:** G3, G4, G5 as planned
+
+**Keeper choice:** Keep G3, G4, G5. The public product launches with named approvers.
+
+**Rationale:** Moving G3 after launch saves no lines, adds 30 to 50 lines of rework and a post-launch workflow upgrade, and gains about 1 to 2 days; without G3 every protected-path change needs an admin merge, which pushes team users to make the gate non-required. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
