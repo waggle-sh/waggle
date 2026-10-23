@@ -1,6 +1,9 @@
 package comb
 
-import "strings"
+import (
+	"path/filepath"
+	"strings"
+)
 
 // Change is one path a commit touched, with git's octal modes for each side
 // ("000000" for the absent side of an add or delete).
@@ -38,6 +41,36 @@ func IsTierRule(rule string) bool { return rule == RuleTier3 || rule == RuleTier
 // exact case. Tier rules use RequiredMinTier, which is case-insensitive; the
 // Tier 2 rule applies only when l.Gate is "light".
 func CheckChanges(l Lease, changes []Change) []Violation {
+	return CheckChangesPolicy(l, changes, TierPolicy{})
+}
+
+// TierPolicy adds repo-defined Tier 3 prefixes (gate.protected_paths) to the
+// hardcoded list. It is raise-only: it never lowers a path's tier.
+type TierPolicy struct {
+	// ExtraTier3 holds prefixes matched like HardcodedTier3Prefixes: case
+	// insensitive, equal or string prefix.
+	ExtraTier3 []string
+}
+
+// RequiredMinTier is max(RequiredMinTier(relPath), Tier3ControlPlane when
+// relPath matches an extra prefix).
+func (p TierPolicy) RequiredMinTier(relPath string) RiskTier {
+	if p.listed(relPath) {
+		return Tier3ControlPlane
+	}
+	return RequiredMinTier(relPath)
+}
+
+func (p TierPolicy) listed(relPath string) bool {
+	if len(p.ExtraTier3) == 0 {
+		return false
+	}
+	lower := strings.ToLower(filepath.ToSlash(filepath.Clean(relPath)))
+	return matchesPrefix(lower, p.ExtraTier3)
+}
+
+// CheckChangesPolicy is CheckChanges with repo-defined Tier 3 prefixes.
+func CheckChangesPolicy(l Lease, changes []Change, p TierPolicy) []Violation {
 	var vs []Violation
 	add := func(rule, path, detail string) { vs = append(vs, Violation{rule, path, detail}) }
 	for _, c := range changes {
@@ -50,10 +83,12 @@ func CheckChanges(l Lease, changes []Change) []Violation {
 		if c.NewMode == "120000" || c.NewMode == "160000" {
 			add(RuleLinkMode, c.Path, "symlink or submodule mode "+c.NewMode+" is not allowed")
 		}
-		switch RequiredMinTier(c.Path) {
-		case Tier3ControlPlane:
+		switch tier := RequiredMinTier(c.Path); {
+		case tier == Tier3ControlPlane:
 			add(RuleTier3, c.Path, "Tier 3 path; needs Head Keeper commit and bypass")
-		case Tier2Logic:
+		case p.listed(c.Path):
+			add(RuleTier3, c.Path, "protected path (listed in .waggle/control/config.yaml); needs an admin bypass to merge")
+		case tier == Tier2Logic:
 			if l.Gate == "light" {
 				add(RuleTier2Light, c.Path, "Tier 2 path under a light claim")
 			}
