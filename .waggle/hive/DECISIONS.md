@@ -4975,3 +4975,22 @@
 **Keeper choice:** Keep G3, G4, G5. The public product launches with named approvers.
 
 **Rationale:** Moving G3 after launch saves no lines, adds 30 to 50 lines of rework and a post-launch workflow upgrade, and gains about 1 to 2 days; without G3 every protected-path change needs an admin merge, which pushes team users to make the gate non-required. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-259: Upgrade hive pin to 1475d74c6ee8ed9e50de8dffa6984edfd454ddbb
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-016, T-034
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Stay on 7bef53b400910d55bfdcf397134b227168fa0bde
+2. Move to 1475d74c6ee8ed9e50de8dffa6984edfd454ddbb
+
+**Hive recommendation:** Move to 1475d74c6ee8ed9e50de8dffa6984edfd454ddbb
+
+**Keeper choice:** Move the pin from 7bef53b400910d55bfdcf397134b227168fa0bde to 1475d74c6ee8ed9e50de8dffa6984edfd454ddbb (T-034, #103); waggle upgrade reports every managed file [same], so only the pin line changes.
+
+**Rationale:** 1475d74 is the known-good build chosen by the Head Keeper (D-041): it carries T-034, so our own dispatch runs alternate confirming-guard models and --second takes the first guard record's base. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
