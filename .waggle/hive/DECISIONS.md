@@ -4365,3 +4365,63 @@
 **Keeper choice:** Move the pin from 790ade0b64b8cf5a6d6f6c1522c47cf5fdcd3548 to b038b414c077292e061ad7e6d83f99c8b344d766; managed files re-rendered by waggle upgrade from the target build (all unchanged), gate workflow rewrite reverted (D-143).
 
 **Rationale:** b038b41 carries T-027 (Bash task line, attribution off, trailer warning), T-030 (dispatch release) and T-028 (scratch TMPDIR through the push tripwire); the release verb unblocks T-029 without waiting out T-028's claim TTL. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-228: T-029 merges on the opus confirming guard; D-205 alternation not met
+
+- **Date:** 2026-10-23
+- **Kind:** policy
+- **Tickets:** T-029
+- **Supersedes:** none
+
+**Question:** T-029's confirming guard ran on opus, the round 1 model, because dispatch does not alternate confirm models; the fable --second then refused because the builder (217e81e) and first guard (60a9d57) bases differ, and the builder's base lacks the round 2 Colima evidence. How should T-029 finish?
+
+**Options considered:**
+1. Merge on the opus confirm
+2. Re-baseline the builder and rerun both guards
+3. Run fable at the builder's base
+
+**Hive recommendation:** Merge on the opus confirm
+
+**Keeper choice:** Merge PR #80 on the opus confirming guard, with product-ci and verify-leases-and-tiers green and the Colima AC6 proof on main (records 19). D-205 alternation is not met for this ticket only. Product follow-up: dispatch should pick the other model for a confirming guard after a must-fix round, and --second should accept the first guard's base when the builder's base is an ancestor of it.
+
+**Rationale:** The fix rounds were a one-line gofmt change and a test recipe now proven in Colima; the opus guard read that evidence and passed. Re-baselining costs about $2.50 for no new information. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-229: Reposition Waggle as an agent-agnostic merge gate; dispatch ships second
+
+- **Date:** 2026-10-23
+- **Kind:** strategy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** The prior-art review (2026-10-23) found the RFC-0003 swarm vision largely covered by Gas Town, Beads, Bernstein and Claude Code agent teams, and rated the per-task, commit-by-commit lease check at merge as the defensible piece. Should Waggle reposition (repositioning note Q1, branch scout-repositioning)?
+
+**Options considered:**
+1. Gate first, dispatch second, cut list as in note section 4
+2. Gate only; dispatch stays internal
+3. Stay the course on RFC-0003
+
+**Hive recommendation:** Gate first, dispatch second, cut list as in note section 4
+
+**Keeper choice:** Gate first, dispatch second. Product one is Waggle Gate (lease record per task, commit-by-commit lease check, protected paths with a named human, Intent Packet trailers, append-only decisions log) as a required check under any orchestrator; product two is waggle dispatch as its reference client. Q2 to Q7 of the note follow on their own cards; the note lands in a hive PR.
+
+**Rationale:** Reuses the strongest built code and complements the incumbents instead of competing with them. Reversible until tickets are cut or the README is rewritten. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-230: Add gofmt -l . to the hive's verification commands
+
+- **Date:** 2026-10-23
+- **Kind:** policy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Three fix rounds on 2026-10-23 were gofmt-only (T-030 r1, T-029 r1). Should WAGGLE.md section 3 list `gofmt -l .` so workers catch formatting before review?
+
+**Options considered:**
+1. Add it, two guards under D-205
+2. Add it, one opus guard with a D-205 waiver
+3. Skip
+
+**Hive recommendation:** Add it, two guards under D-205
+
+**Keeper choice:** Add `gofmt -l .` to WAGGLE.md section 3 in a Tier 3 control PR reviewed by two guards on different models (D-205).
+
+**Rationale:** Moves a recurring review-round cost into the worker's own checks; the revert is one line. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
