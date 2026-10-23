@@ -223,12 +223,14 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		sel              runtime.Selection
 		cs               runtime.ContextSettings
 		backend          = d.Backend
+		scratch          string
 		claim            Claim
 		w                *Worktree
 		stable, variable []byte
 		spec             runtime.LaunchSpec
 		ck               = &checker{g: pg, remoteMode: g.Remote != "", common: common, guard: guard}
 	)
+	defer func() { _ = os.Remove(scratch) }() // empty only; a no-op once the record step removed it
 	err = seq(
 		func() (e error) { baseOID, e = ResolveBase(ctx, g, g.Remote, req.Base); return },
 		func() error { return offBranch(ctx, g, req, baseOID) },
@@ -260,6 +262,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			}
 			return
 		},
+		func() (e error) { scratch, e = newScratch(os.TempDir(), req.Ticket, req.Role); return },
 		func() (e error) {
 			cmds = waggleCommands(in.WaggleMD)
 			bash, e := runtime.BashCommands(req.Role, cmds)
@@ -272,7 +275,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			}
 			stable, variable = BuildPrompts(in, lines, cs)
 			spec, e = rt.Prepare(runtime.Invocation{Role: req.Role, TaskID: req.Ticket, WorktreeDir: wtPath,
-				Selection: sel, Commands: cmds, GitIdentity: id}, cs, stable, variable)
+				Selection: sel, Commands: cmds, GitIdentity: id, ScratchDir: scratch}, cs, stable, variable)
 			return
 		},
 		func() (e error) {
@@ -389,6 +392,9 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	if err := saveHostRecord(dir, ck.before, filepath.Base(runDir)); err != nil {
 		res.Warnings = append(res.Warnings, "host_record_failed: "+err.Error())
 	}
+	if warn := dropScratch(scratch); warn != "" {
+		res.Warnings = append(res.Warnings, warn)
+	}
 	err = res.Write()
 	if aerr := appendLedger(req.RepoDir, l.policy.Models.Adapter, s.SessionID, res); aerr != nil && err == nil {
 		res.Warnings = append(res.Warnings, "ledger_append_failed: "+aerr.Error())
@@ -399,6 +405,29 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	}
 	d.emit("recorded", "%s", filepath.Base(runDir))
 	return res, nil
+}
+
+// newScratch creates the run's own scratch directory under parent (mode 0700).
+// It becomes the worker's TMPDIR and the one directory the push tripwire lets
+// through (T-028); nothing about it comes from the worker or the repo.
+func newScratch(parent, ticket, role string) (string, error) {
+	dir, err := os.MkdirTemp(parent, "waggle-"+ticket+"-"+role+"-")
+	if err != nil {
+		return "", failf(ExitEnv, "scratch directory: %w", err)
+	}
+	return dir, nil
+}
+
+// dropScratch removes the scratch directory only when it is empty and returns
+// the scratch_left warning when it is not. It never removes anything inside it.
+func dropScratch(dir string) string {
+	if dir == "" {
+		return ""
+	}
+	if err := os.Remove(dir); err != nil && !os.IsNotExist(err) {
+		return "scratch_left: " + filepath.Base(dir)
+	}
+	return ""
 }
 
 // outcome maps the session and the checks to result.end and the exit code. A

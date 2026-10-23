@@ -52,7 +52,9 @@ var NotEnforced = []string{
 	"during the session, claim renewals run git with the Keeper's environment against agent-writable repo config; a config written and reverted between the hash and a renewal is not caught (the post-run config hash is the backstop)",
 	"push tripwire is best effort: it misses bare relative paths, scp forms without git@, upper-case schemes, <transport>::<address>, pushurl, " +
 		"a longer pushInsteadOf from git -c, a repo-local include.path (it re-admits the Keeper's global config, which no longer beats the tripwire " +
-		"otherwise), and any process (a go test run) that clears the GIT_CONFIG_* variables; the post-run ref check and the config hash are the backstop",
+		"otherwise), and any process (a go test run) that clears the GIT_CONFIG_* variables; the per-run scratch directory (the worker's TMPDIR) is exempt, " +
+		"so a symlink the worker plants inside it, or any .. path that does not begin with <scratch>/../ or file://<scratch>/../ itself (<scratch>/a/../../, " +
+		"<scratch>/./../, <scratch>//../), reaches any local repo the worker can name; the post-run ref check and the config hash are the backstop",
 	"repo-local core.excludesFile and core.attributesFile do not apply to workers (their global config is empty); auto maintenance is the same class as the tripwire: " +
 		"git -c, GIT_CONFIG_PARAMETERS or a reset GIT_CONFIG_COUNT re-enable it, and a worker can run git maintenance itself",
 	"git log, diff and show --output=<file> (allowed to a guard) can write files; a guard's changes are detected after the run only",
