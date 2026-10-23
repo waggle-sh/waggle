@@ -137,7 +137,7 @@ func TestGuardZeroChange(t *testing.T) {
 // at base (t-023b reads T-023b-*.md), so two guards' must-fix files step the
 // builder up and a file for another phase does not. The count is read at the
 // run's base, so two guards see the same count only on the same base: a --second
-// run after a committed review needs the builder's --base, which checkSecond
+// run after a committed review runs on the first guard's base, which checkSecond
 // enforces (TestSecondGuardRefusals).
 func TestMustFixCountPerPhase(t *testing.T) {
 	commit := func(f *fixture, name, body string) {
