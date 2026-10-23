@@ -4326,3 +4326,42 @@
 **Keeper choice:** Waive the D-185 cut for T-030 only: --unmerged stays in and the build goes to the opus guard, then the fable second guard. D-185 stands for every other build; post-review rounds count toward the 240 stop (D-210).
 
 **Rationale:** 4 lines over target and 56 under the stop; executing the cut costs a hive PR, a builder rerun and two more review rounds, about $1.50, and removes a verb option the Keeper ruled for in D-223. Process gap for a later records batch: applying a planned cut has no defined path, since the queen writes no code and a builder rerun reads instructions only from base. Decided by the Head Keeper via queen card on 2026-10-22; recorded by the queen.
+
+## D-226: Keep T-028 and T-029; the scout drafts a repositioning note; the second guard stays
+
+- **Date:** 2026-10-23
+- **Kind:** strategy
+- **Tickets:** T-028, T-029
+- **Supersedes:** none
+
+**Question:** A prior-art review found Gas Town, Beads and Bernstein cover most of the swarm vision, and that merge-time lease and tier enforcement under any orchestrator is the strongest piece. How should work continue, and should the Tier 3 second guard become optional?
+
+**Options considered:**
+1. Keep T-028 and T-029 and have the scout draft a pivot note
+2. Pause builds until the pivot is decided
+3. Stay the course
+
+**Hive recommendation:** Keep T-028 and T-029 and have the scout draft a pivot note
+
+**Keeper choice:** Dispatch T-028 then T-029. In parallel the scout drafts an RFC note on repositioning Waggle as an agent-agnostic merge gate plus a lease-scoped headless runner, with a cut list; the pivot itself comes back as a strategy card. The D-205 second guard stays as is and is revisited after T-028 and T-029.
+
+**Rationale:** T-028 and T-029 fix dispatch, which survives every positioning option. The repositioning is high impact and needs its own written case before a ruling. Two runs are too little data to change D-205. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-227: Upgrade hive pin to b038b414c077292e061ad7e6d83f99c8b344d766
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-027, T-028, T-030
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Stay on 790ade0b64b8cf5a6d6f6c1522c47cf5fdcd3548
+2. Move to b038b414c077292e061ad7e6d83f99c8b344d766
+
+**Hive recommendation:** Move to b038b414c077292e061ad7e6d83f99c8b344d766
+
+**Keeper choice:** Move the pin from 790ade0b64b8cf5a6d6f6c1522c47cf5fdcd3548 to b038b414c077292e061ad7e6d83f99c8b344d766; managed files re-rendered by waggle upgrade from the target build (all unchanged), gate workflow rewrite reverted (D-143).
+
+**Rationale:** b038b41 carries T-027 (Bash task line, attribution off, trailer warning), T-030 (dispatch release) and T-028 (scratch TMPDIR through the push tripwire); the release verb unblocks T-029 without waiting out T-028's claim TTL. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
