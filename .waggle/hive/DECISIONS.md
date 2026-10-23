@@ -4306,3 +4306,23 @@
 **Keeper choice:** Add alternates.frontier: fable under runtimes.adapters.claude-code in .waggle/control/config.yaml through a control PR, then rerun the T-027 second guard through dispatch. Effect: an unstepped standard builder keeps an opus first guard and gets a fable second guard; after a builder step-up to frontier, the guard becomes fable and the second guard walks down to sonnet (D-179, bounded by D-180), where both refused before. Builder, forager, scout and queen models do not change.
 
 **Rationale:** The first proposal, alternates.standard: fable, failed review: pick() tries a level's alternate before moving up, so it would have made fable the first guard on every ticket and the T-027 second guard would still have refused. The frontier alternate keeps the first guard on opus and keeps every second guard inside waggle dispatch with a run record and a head_oid check. Reverting it is a one-line PR. Product follow-up: the ErrNoCrossModel hint names alternates.<level> at the guard level, which is the wrong level for this case. Decided by the Head Keeper via queen card on 2026-10-22; recorded by the queen.
+
+## D-225: T-030 one-off waiver of the D-185 planned cut at 184 against a 180 target
+
+- **Date:** 2026-10-23
+- **Kind:** policy
+- **Tickets:** T-030
+- **Supersedes:** none
+
+**Question:** The T-030 build is 184 added non-test lines against target 180 and stop 240. D-185 splits it along the planned cut (--unmerged to a follow-up), which here means a hive PR with the cut instruction, a builder rerun and two more rounds for 4 lines, and drops a feature ruled for in D-223. How should T-030 proceed?
+
+**Options considered:**
+1. Waive the cut for T-030 and review now
+2. Apply the cut
+3. Hold
+
+**Hive recommendation:** Waive the cut for T-030 and review now
+
+**Keeper choice:** Waive the D-185 cut for T-030 only: --unmerged stays in and the build goes to the opus guard, then the fable second guard. D-185 stands for every other build; post-review rounds count toward the 240 stop (D-210).
+
+**Rationale:** 4 lines over target and 56 under the stop; executing the cut costs a hive PR, a builder rerun and two more review rounds, about $1.50, and removes a verb option the Keeper ruled for in D-223. Process gap for a later records batch: applying a planned cut has no defined path, since the queen writes no code and a builder rerun reads instructions only from base. Decided by the Head Keeper via queen card on 2026-10-22; recorded by the queen.
