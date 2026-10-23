@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -360,5 +361,48 @@ func TestWaggleCommandsAndOutcome(t *testing.T) {
 		if end, exit := outcome(c.s, c.vs, c.commits); end != c.end || exit != c.exit {
 			t.Fatalf("case %d: %s %d, want %s %d", i, end, exit, c.end, c.exit)
 		}
+	}
+}
+
+func TestCutOfNamesTheCut(t *testing.T) {
+	for want, s := range map[string]session{
+		"timeout":    {TimedOut: true, RunResult: runtime.RunResult{End: runtime.EndInterrupted}},
+		"max_budget": {Subtype: "error_max_budget_usd", RunResult: runtime.RunResult{End: runtime.EndError}},
+		"max_turns":  {RunResult: runtime.RunResult{End: runtime.EndMaxTurns}},
+		"max_tokens": {RunResult: runtime.RunResult{End: runtime.EndMaxTokens}},
+		"":           {RunResult: runtime.RunResult{End: runtime.EndInterrupted}},
+	} {
+		if got := cutOf(s); got != want {
+			t.Errorf("cutOf = %q, want %q", got, want)
+		}
+	}
+}
+
+func TestBranchPointLine(t *testing.T) {
+	lines := []string{"Ticket: T-1", "Base: aaa", "Gate: full"}
+	if got := withBranchPoint(lines, "aaa", "aaa"); !slices.Equal(got, lines) {
+		t.Fatalf("same point changed the lines: %q", got)
+	}
+	got := withBranchPoint(lines, "aaa", "bbb")
+	if len(got) != 4 || got[1] != "Base: aaa" || !strings.HasPrefix(got[2], "Branch point: bbb ") || len(lines) != 3 {
+		t.Fatalf("lines %q", got)
+	}
+}
+
+func TestOffBranchReturnsBranchPoint(t *testing.T) {
+	dir, g := newRepo(t)
+	ctx := context.Background()
+	req := mustValid(t, okReq(dir))
+	oldBase := sh(t, dir, "rev-parse", "HEAD")
+	if got, err := offBranch(ctx, g, req, oldBase); err != nil || got != oldBase {
+		t.Fatalf("new branch: %q %v", got, err)
+	}
+	sh(t, dir, "branch", req.Branch, oldBase)
+	write(t, dir, "README", "later\n")
+	sh(t, dir, "add", "-A")
+	sh(t, dir, "commit", "-q", "-m", "main moves")
+	newBase := sh(t, dir, "rev-parse", "HEAD")
+	if got, err := offBranch(ctx, g, req, newBase); err != nil || got != oldBase {
+		t.Fatalf("behind branch: %q %v, want %q", got, err, oldBase)
 	}
 }
