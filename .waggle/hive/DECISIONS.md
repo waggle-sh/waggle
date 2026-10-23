@@ -4718,3 +4718,22 @@
 **Keeper choice:** T-032 resolves offBranch's default name fully qualified, like ResolveBase's default, and AC12 covers it.
 
 **Rationale:** Closes the last unqualified base lookup the guards found for about two lines. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-246: Upgrade hive pin to 851f7071a93eacdd1d91a44e4e268b841eb4ac53
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-031, T-032
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Stay on b038b414c077292e061ad7e6d83f99c8b344d766
+2. Move to 851f7071a93eacdd1d91a44e4e268b841eb4ac53
+
+**Hive recommendation:** Move to 851f7071a93eacdd1d91a44e4e268b841eb4ac53
+
+**Keeper choice:** Move the pin from b038b414c077292e061ad7e6d83f99c8b344d766 to 851f7071a93eacdd1d91a44e4e268b841eb4ac53; managed files re-rendered by waggle upgrade from the target build (all unchanged), gate workflow rewrite reverted (D-143).
+
+**Rationale:** 851f707 carries T-031 (gate verify) and T-032 (claim and release verbs, protected paths at lease time and in the post-run check, qualified default base); G2 of the D-229 plan is merged and the hive should run it. After the pin every dispatch run exits 3 when the base config is invalid. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
