@@ -267,8 +267,45 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		ck               = &checker{g: pg, remoteMode: g.Remote != "", common: common, guard: guard}
 	)
 	defer func() { _ = os.Remove(scratch) }() // empty only; a no-op once the record step removed it
-	err = seq(
-		func() (e error) { baseOID, e = ResolveBase(ctx, g, g.Remote, req.Base); return },
+	runs := runsDir(req.RepoDir)
+	var guardWarns []string
+	// A guard resolves its model after guardTarget, from the run records of the
+	// head under review (T-034 2.1); a builder or forager keeps today's order.
+	model := []func() error{
+		func() (e error) {
+			if !guard {
+				sel, e = l.policy.Resolve(req.Role, task, nil)
+				return
+			}
+			sel, guardWarns, e = guardModel(runs, l.policy, *task, req.Branch, req.Head, req.Second)
+			return
+		},
+		func() error {
+			if req.Second {
+				return checkSecond(ctx, g, runs, req.Ticket, req.Branch, req.Head, baseOID, sel.Model)
+			}
+			return nil
+		},
+		func() (e error) { cs, e = l.context.Settings(req.Role, task, rt.Config().NudgeTokens); return },
+	}
+	before, after := model, []func() error(nil)
+	if guard {
+		before, after = nil, model
+	}
+	err = seq(slices.Concat([]func() error{
+		func() (e error) {
+			var first string // --second with no --base reviews on the first guard's base (D-254)
+			if req.Second && req.Base == "" {
+				if req.Base, first, e = secondBase(runs, req.Ticket, req.Branch); e != nil {
+					return
+				}
+			}
+			baseOID, e = ResolveBase(ctx, g, g.Remote, req.Base)
+			if first != "" && ExitCode(e) == ExitUsage {
+				e = failf(ExitEnv, "--second: first guard base %s from run record %s does not resolve", req.Base, first)
+			}
+			return
+		},
 		func() (e error) { // protected paths come from base only; they apply to every run, the claim step included
 			if protected, e = basePolicy(ctx, g, baseOID); e == nil && !guard {
 				e = refuseProtected(protected, req.Dirs)
@@ -278,14 +315,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		},
 		func() (e error) { point, e = offBranch(ctx, g, req, baseOID); return },
 		func() (e error) { in, e = ReadInputs(ctx, g, baseOID, req); task.GuardMustFix = in.MustFix; return },
-		func() (e error) { sel, e = l.policy.Resolve(req.Role, task, nil); return },
-		func() error {
-			if req.Second {
-				return checkSecond(req.RepoDir, req.Ticket, baseOID, sel.Model)
-			}
-			return nil
-		},
-		func() (e error) { cs, e = l.context.Settings(req.Role, task, rt.Config().NudgeTokens); return },
+	}, before, []func() error{
 		func() error {
 			if backend != nil {
 				return nil
@@ -305,6 +335,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			}
 			return
 		},
+	}, after, []func() error{
 		func() (e error) { scratch, e = newScratch(os.TempDir(), req.Ticket, req.Role); return },
 		func() (e error) {
 			cmds = waggleCommands(in.WaggleMD)
@@ -336,7 +367,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			ck.w, ck.lease, ck.claimOID, ck.head = w, want, claim.OID, req.Head
 			ck.before, e = takeSnap(ctx, pg, common, w.Admin)
 			return
-		})
+		}})...)
 	if w != nil {
 		defer w.Unlock()
 	}
@@ -352,7 +383,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		Worktree: w.Path, RunDir: runDir, KeeperID: l.keeper, ClaimOID: claim.OID, ClaimVerb: claim.Verb, ClaimNotes: claim.Notes,
 		Second: req.Second, Cell: d.Cell.Name(), RuntimeVersion: runtimeVersion(ctx, rt.Config().Binary), Model: sel.Model, Profile: cs.Profile.String(),
 		Floored: cs.Floored, StartedAt: now().UTC(), Final: "final.md", Transcript: "transcript.jsonl", StderrLog: "stderr.log"}
-	res.Warnings = slices.Concat(lockWarns, w.Warnings, claim.Warnings)
+	res.Warnings = slices.Concat(lockWarns, w.Warnings, claim.Warnings, guardWarns)
 	if point != w.CheckBase { // the branch moved between the two reads; Provision's value stays
 		res.Warnings = append(res.Warnings, "branch_moved: branch point was "+shortOID(point)+" when the prompts were built, "+shortOID(w.CheckBase)+" at checkout")
 	}

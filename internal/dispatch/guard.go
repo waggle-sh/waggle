@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -111,35 +114,148 @@ func guardTarget(ctx context.Context, cb ClaimBackend, g *Git, req Request) (lea
 	return lease, strings.TrimSpace(string(out)), claimOID, err
 }
 
-// checkSecond is D-188: a second guard runs only after a builder run and a
-// first guard run of this ticket, on the same base, and on a model that
-// neither of them used. The must-fix count moves between guard runs when the
-// queen commits a review, so the policy alone cannot promise that.
-func checkSecond(repo, ticket, baseOID, model string) error {
-	runs := filepath.Join(repo, filepath.FromSlash(layout.Worktrees), "runs")
+// runsDir is where dispatch writes its run records.
+func runsDir(repo string) string {
+	return filepath.Join(repo, filepath.FromSlash(layout.Worktrees), "runs")
+}
+
+// latestRun is the record with the highest <seq> among runs/<ticket>-<role>-<seq>/result.json
+// of this ticket whose Second is false and that keep accepts, with its directory
+// name. A symlink, an unreadable, oversize or malformed record is skipped.
+func latestRun(runs, ticket, role string, keep func(Result) bool) (r Result, name string, ok bool) {
 	ents, _ := os.ReadDir(runs)
-	latest := func(role string) (r Result, ok bool) {
-		best := 0
-		for _, e := range ents {
-			n, found := strings.CutPrefix(e.Name(), ticket+"-"+role+"-")
-			seq, err := strconv.Atoi(n)
-			b, rerr := readUpTo(filepath.Join(runs, e.Name(), "result.json"), maxBrief)
-			var c Result
-			if found && err == nil && seq > best && rerr == nil && json.Unmarshal(b, &c) == nil && !c.Second {
-				best, r, ok = seq, c, true
+	best := 0
+	for _, e := range ents {
+		n, found := strings.CutPrefix(e.Name(), ticket+"-"+role+"-")
+		seq, err := strconv.Atoi(n)
+		if !found || err != nil || strconv.Itoa(seq) != n || seq <= best || !e.IsDir() {
+			continue
+		}
+		b, rerr := readUpTo(filepath.Join(runs, e.Name(), "result.json"), maxBrief)
+		var c Result
+		if rerr == nil && json.Unmarshal(b, &c) == nil && c.Ticket == ticket && !c.Second && keep(c) {
+			best, r, name, ok = seq, c, e.Name(), true
+		}
+	}
+	return r, name, ok
+}
+
+// builderRun is the latest builder record on branch, whatever its end: a
+// failed run may still have pushed commits (T-034 2.1).
+func builderRun(runs, ticket, branch string) (Result, string, bool) {
+	return latestRun(runs, ticket, "builder", func(r Result) bool { return r.Branch == branch })
+}
+
+// guardRun is the latest plain guard record on branch with a verdict, whatever
+// its end, that keep accepts: a guard that parsed a verdict read the code.
+func guardRun(runs, ticket, branch string, keep func(Result) bool) (Result, string, bool) {
+	return latestRun(runs, ticket, "guard", func(r Result) bool { return r.Branch == branch && r.Verdict != "" && keep(r) })
+}
+
+// guardModel resolves a guard's model from the policy and the run records of
+// this ticket on branch, for a review of head (T-034 2.1, 2.2). Every guard
+// avoids the builder record's model. A Tier 3 or unknown-tier plain guard also
+// avoids the previous round's guard model (D-205), and repeats it with a
+// warning only when no other model is left. A second guard avoids this round's
+// first guard model and needs both records.
+func guardModel(runs string, p runtime.Policy, task runtime.TaskContext, branch, head string, second bool) (runtime.Selection, []string, error) {
+	b, bName, okB := builderRun(runs, task.TaskID, branch)
+	if okB {
+		task.AvoidModels, task.RecordedBuilder = []string{b.Model}, b.Model
+	}
+	if second {
+		f, _, okF := guardRun(runs, task.TaskID, branch, func(r Result) bool { return r.HeadOID == head })
+		if !okB || !okF {
+			return runtime.Selection{}, nil, secondMissing(task.TaskID, head)
+		}
+		task.AvoidModels = append(task.AvoidModels, f.Model)
+		sel, err := p.Resolve("guard", &task, nil)
+		return sel, nil, err
+	}
+	var warns []string
+	prev, _, okP := guardRun(runs, task.TaskID, branch, func(r Result) bool { return r.HeadOID != head })
+	alternate := task.Tier == nil || *task.Tier == comb.Tier3ControlPlane
+	var sel runtime.Selection
+	var err error
+	switch {
+	case alternate && okP:
+		alt := task
+		alt.AvoidModels = append(slices.Clone(task.AvoidModels), prev.Model)
+		if sel, err = p.Resolve("guard", &alt, nil); errors.Is(err, runtime.ErrNoCrossModel) {
+			if sel, err = p.Resolve("guard", &task, nil); err == nil {
+				warns = append(warns, fmt.Sprintf("confirm_model_repeated: %s also reviewed %s; no other guard model is available (D-205)", sel.Model, shortOID(prev.HeadOID)))
 			}
 		}
-		return r, ok
+	case alternate && task.GuardMustFix > 0:
+		warns = append(warns, fmt.Sprintf("confirm_model_unknown: no guard run record for %s before %s; the model did not alternate (D-205)", branch, shortOID(head)))
+		fallthrough
+	default:
+		sel, err = p.Resolve("guard", &task, nil)
 	}
-	b, okB := latest("builder")
-	g, okG := latest("guard")
+	if err == nil {
+		err = checkBuilderModel(sel.Model, b, bName, okB)
+	}
+	if err != nil {
+		return runtime.Selection{}, nil, err
+	}
+	return sel, warns, nil
+}
+
+// checkBuilderModel refuses a plain guard on the builder record's model. Resolve
+// avoids it already; this keeps the rule if that ever changes.
+func checkBuilderModel(model string, b Result, name string, ok bool) error {
+	if ok && model == b.Model {
+		return failf(ExitEnv, "guard would use %s, the model of builder run %s", model, name)
+	}
+	return nil
+}
+
+func secondMissing(ticket, head string) error {
+	return failf(ExitEnv, "--second needs a builder run and a first guard run of %s on head %s in %s/runs", ticket, shortOID(head), layout.Worktrees)
+}
+
+// secondBase is the base a --second run takes with no --base: the base_oid of
+// the latest plain guard record with a verdict on branch, any head (D-254).
+// Empty when there is none, and the default base applies.
+func secondBase(runs, ticket, branch string) (oid, name string, err error) {
+	g, name, ok := guardRun(runs, ticket, branch, func(Result) bool { return true })
 	switch {
-	case !okB || !okG:
-		return failf(ExitEnv, "--second needs a builder run and a first guard run of %s in %s/runs", ticket, layout.Worktrees)
-	case b.BaseOID != baseOID || g.BaseOID != baseOID:
-		return failf(ExitEnv, "--second: base %s differs from the recorded runs (builder %s, first guard %s); pass --base %s", baseOID, b.BaseOID, g.BaseOID, b.BaseOID)
-	case model == b.Model || model == g.Model:
-		return failf(ExitEnv, "--second would use %s, the model of the builder (%s) or the first guard (%s)", model, b.Model, g.Model)
+	case !ok:
+		return "", "", nil
+	case !hexHead.MatchString(g.BaseOID):
+		return "", "", failf(ExitEnv, "--second: run record %s has no valid base_oid", name)
+	}
+	return g.BaseOID, name, nil
+}
+
+// checkSecond is D-188 as T-034 amends it: a second guard runs only after a
+// builder run and a first guard run of this ticket on head, on the first
+// guard's base exactly (its brief, reviews and must-fix count), with the
+// builder's base equal to it or an ancestor of it, and on a model that neither
+// record used. No record value reaches git before its hex check.
+func checkSecond(ctx context.Context, g *Git, runs, ticket, branch, head, baseOID, model string) error {
+	b, bName, okB := builderRun(runs, ticket, branch)
+	f, fName, okF := guardRun(runs, ticket, branch, func(r Result) bool { return r.HeadOID == head })
+	if !okB || !okF {
+		return secondMissing(ticket, head)
+	}
+	for _, r := range []struct{ name, oid string }{{bName, b.BaseOID}, {fName, f.BaseOID}} {
+		if !hexHead.MatchString(r.oid) {
+			return failf(ExitEnv, "--second: run record %s has no valid base_oid", r.name)
+		}
+	}
+	if baseOID != f.BaseOID {
+		return failf(ExitEnv, "--second: base %s differs from the first guard's base %s; pass --base %s", baseOID, f.BaseOID, f.BaseOID)
+	}
+	_, err := g.Run(ctx, "merge-base", "--is-ancestor", b.BaseOID, f.BaseOID)
+	var ee *exec.ExitError
+	switch {
+	case errors.As(err, &ee) && ee.ExitCode() == 1:
+		return failf(ExitEnv, "--second: builder base %s is not an ancestor of the first guard's base %s; rerun the builder and both guards on one base", b.BaseOID, f.BaseOID)
+	case err != nil:
+		return failf(ExitEnv, "--second: cannot check builder base %s against %s: %v", b.BaseOID, f.BaseOID, err)
+	case model == b.Model || model == f.Model:
+		return failf(ExitEnv, "--second would use %s, the model of the builder (%s) or the first guard (%s)", model, b.Model, f.Model)
 	}
 	return nil
 }
