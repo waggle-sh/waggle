@@ -25,6 +25,7 @@ Define the top-level modules Builders may lease:
 - **Build:** `go build ./...`
 - **Test:** `go test -race ./...`
 - **Vet:** `go vet ./...`
+- **Format:** `gofmt -l .` (lists unformatted files; empty output means clean)
 
 ## 4. Hive Overrides
 - **Queen summary (D-182, D-215, D-220):** since the T-023 phase F cutover (D-220) the queen's working handoff follows the Handoff section of her role template (`.waggle/control/handoffs/queen-<n>.md`, gitignored). The committed `.waggle/hive/handoff/queen.md` stays a short summary (framing, standing facts, habits, phase status), refreshed only at phase merges and in records batches, and refers to the Keeper by role, never by name, as the queen does in every committed file, card, PR body and handoff. No hook checks either file. The SessionStart hook prints the newest `queen-<n>.md`, else the summary.
