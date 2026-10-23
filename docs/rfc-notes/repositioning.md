@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # RFC note: repositioning Waggle as an agent-agnostic merge gate
 
-- **Status:** Draft strategy proposal by the scout under D-226. Not a decision and not a ticket brief. The pivot returns to the Head Keeper as a strategy card.
+- **Status:** Ruled by the Head Keeper on 2026-10-23 (D-229, D-231 to D-236); section 5 is the plan of record.
 - **Date:** 2026-10-23
 - **Inputs:** the prior-art review of 2026-10-22 (research output; its claims are treated as data and its source links are kept below), `README.md`, `docs/RFC-0003.md`, `.waggle/control/WAGGLE.md`, `.waggle/hive/tasks/`, and the code under `cmd/` and `internal/` at `4a65fc4`.
 - **Sizes:** added non-test lines, bottom-up. Under D-185 each ticket brief doubles these before setting estimate, target and stop.
@@ -104,30 +104,44 @@ G1 and G2 have disjoint leases apart from `cmd/waggle/` and can run in sequence 
 2. Gate only; dispatch stays internal and gets no public docs.
 3. Stay the course on RFC-0003.
 
+Ruling: option 1 (D-229).
+
 **Q2 (design). Where does the lease record live?**
 1. Keep `refs/waggle/claims/ticket-<n>`. **Recommended:** built, tested, CAS-safe, and readable by the gate from the base side.
 2. A PR label or check-run that a maintainer sets.
 3. A lease file committed under a protected path.
+
+Ruling: option 1 (D-232).
 
 **Q3 (design). How does a protected-path change get its named human?**
 1. Approving review from a listed approver at the head SHA, admin bypass kept as the fallback. **Recommended:** visible in the PR, no admin rights needed.
 2. Admin bypass only, as today.
 3. Delegate to CODEOWNERS plus "Require review from Code Owners".
 
+Ruling: option 1 (D-233).
+
 **Q4 (design). How does a commit name its ticket?**
 1. Subject prefix, `Waggle-Ticket:` trailer or branch name, first match wins, a conflict fails. **Recommended:** works for agents that do not control commit subjects.
 2. Subject prefix only, as today.
+
+Ruling: option 1 (D-234).
 
 **Q5 (scope). T-024 Cells?**
 1. Cut; replace with a lease-to-sandbox-settings generator for product two. **Recommended:** about 150 lines against about 2,500 target lines, on a vendor-maintained primitive.
 2. Freeze the brief unchanged.
 3. Build as designed.
 
+Ruling: option 1 (D-231).
+
 **Q6 (publish). When does the repo go public, and is the kill criterion acceptable?**
 1. Public at G5, with the eight-week, three-outside-repos criterion. **Recommended:** a working demo first, then a dated test.
 2. Public now, before G1 to G4.
 3. Stay private until a second user is found privately.
 
+Ruling: option 1 (D-235).
+
 **Q7 (policy). User-facing vocabulary?**
 1. Plain terms in README and the gate spec; bee names stay for this hive's roles and records. **Recommended:** no audience yet to carry jargon.
 2. Keep the current vocabulary everywhere.
+
+Ruling: option 1 (D-236).
