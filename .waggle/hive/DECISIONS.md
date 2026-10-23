@@ -4425,3 +4425,179 @@
 **Keeper choice:** Add `gofmt -l .` to WAGGLE.md section 3 in a Tier 3 control PR reviewed by two guards on different models (D-205).
 
 **Rationale:** Moves a recurring review-round cost into the worker's own checks; the revert is one line. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-231: Cut T-024 Cells; replace with a lease-to-sandbox-settings generator
+
+- **Date:** 2026-10-23
+- **Kind:** scope
+- **Tickets:** T-024
+- **Supersedes:** none
+
+**Question:** Repositioning note Q5 (after D-229): what happens to T-024 Cells (about 2,500 target lines, not started)?
+
+**Options considered:**
+1. Cut; replace with a lease-to-sandbox-settings generator for dispatch
+2. Freeze the brief unchanged
+3. Build as designed
+
+**Hive recommendation:** Cut; replace with a lease-to-sandbox-settings generator for dispatch
+
+**Keeper choice:** T-024 is cut. Dispatch gets a lease-to-sandbox-settings generator (about 150 lines) on Claude Code's own sandbox instead; the T-024 brief stays in history.
+
+**Rationale:** Avoids rebuilding a vendor-maintained primitive. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-232: Waggle Gate reads leases from claim refs
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Repositioning note Q2 (after D-229): where does the gate read a task's lease from?
+
+**Options considered:**
+1. Keep refs/waggle/claims/ticket-<n>
+2. A PR label or check-run set by a maintainer
+3. A lease file under a protected path
+
+**Hive recommendation:** Keep refs/waggle/claims/ticket-<n>
+
+**Keeper choice:** Keep refs/waggle/claims/ticket-<n> as the lease record the gate reads from the base side.
+
+**Rationale:** Built, tested and CAS-safe; known costs are UI invisibility and no write access for outside contributors, carried as gate risks. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-233: Protected-path changes need an approving review from a listed approver
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Repositioning note Q3 (after D-229): how does a protected-path change get its named human?
+
+**Options considered:**
+1. Approving review from a listed approver at the head SHA, admin bypass as fallback
+2. Admin bypass only, as today
+3. CODEOWNERS with required code-owner review
+
+**Hive recommendation:** Approving review from a listed approver at the head SHA, admin bypass as fallback
+
+**Keeper choice:** An approving review from a listed approver at the PR head SHA passes a protected-path change; admin bypass stays as the fallback.
+
+**Rationale:** Visible in the PR and needs no admin rights. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-234: Commits bind to a ticket by subject prefix, trailer or branch name
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Repositioning note Q4 (after D-229): how does a commit name its ticket?
+
+**Options considered:**
+1. Subject prefix, Waggle-Ticket: trailer or branch name, first match wins, a conflict fails
+2. Subject prefix only, as today
+
+**Hive recommendation:** Subject prefix, Waggle-Ticket: trailer or branch name, first match wins, a conflict fails
+
+**Keeper choice:** Subject prefix, a Waggle-Ticket: trailer or the branch name binds a commit to its ticket; first match wins and a conflict between them fails the gate.
+
+**Rationale:** Works for agents that do not control commit subjects. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-235: Repo goes public at G5 with the eight-week kill criterion
+
+- **Date:** 2026-10-23
+- **Kind:** publish
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Repositioning note Q6 (after D-229): when does the repo go public, and is the kill criterion acceptable?
+
+**Options considered:**
+1. Public at G5, with the eight-week, three-outside-repos criterion
+2. Public now, before G1 to G4
+3. Stay private until a second user is found privately
+
+**Hive recommendation:** Public at G5, with the eight-week, three-outside-repos criterion
+
+**Keeper choice:** The repo goes public at G5, after a working demo repo where an agent PR is refused for a path outside its lease, and after redaction and the history rewrite on their own cards. Kill criterion: eight weeks after going public, fewer than three repos outside l19 running the gate as a required check and no outside issue or PR means community work stops and Waggle stays l19's internal tool. The flip itself comes back on its own card.
+
+**Rationale:** A working demo first, then a dated test. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-236: Plain terms in user-facing docs; bee names stay in the hive
+
+- **Date:** 2026-10-23
+- **Kind:** policy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Repositioning note Q7 (after D-229): what vocabulary do users see?
+
+**Options considered:**
+1. Plain terms in README and the gate spec; bee names stay for this hive's roles and records
+2. Keep the current vocabulary everywhere
+
+**Hive recommendation:** Plain terms in README and the gate spec; bee names stay for this hive's roles and records
+
+**Keeper choice:** README, the gate spec and recipes use plain terms; bee names (Keeper, Hive, Comb, Cell, Nectar, Quorum) stay in this hive's roles and records.
+
+**Rationale:** No audience yet to carry jargon. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-237: Gate binds waggle/T-<id> and t-<id> branch names
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-031
+- **Supersedes:** none
+
+**Question:** Q-T031-1: which branch names bind a commit to a ticket in the gate (D-234 branch source)?
+
+**Options considered:**
+1. waggle/T-<id> and t-<id>, each with an optional -suffix
+2. waggle/T-<id> exactly
+3. Any branch containing T-<id>
+
+**Hive recommendation:** waggle/T-<id> and t-<id>, each with an optional -suffix
+
+**Keeper choice:** waggle/T-<id> and dispatch's t-<id> bind, each optionally followed by -<anything>; other branch names bind nothing.
+
+**Rationale:** Dispatch already names branches t-<nnn>, so no new habit; any-branch matching binds by accident. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-238: gate.protected_paths is one comma-separated scalar
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-031
+- **Supersedes:** none
+
+**Question:** Q-T031-2: what shape does the gate.protected_paths config key take?
+
+**Options considered:**
+1. One comma-separated scalar
+2. Add block sequences to the YAML subset
+
+**Hive recommendation:** One comma-separated scalar
+
+**Keeper choice:** gate.protected_paths is a single comma-separated scalar; the YAML subset parser (D-006) is not widened.
+
+**Rationale:** Widening the parser that reads a Tier 3 file is new attack surface for a cosmetic gain. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-239: Gate fails closed on an invalid base config
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-031
+- **Supersedes:** none
+
+**Question:** Q-T031-3: what does the gate do when the base revision's .waggle/control/config.yaml is present but invalid?
+
+**Options considered:**
+1. Error, exit 3
+2. Warn and run with no repo entries
+
+**Hive recommendation:** Error, exit 3
+
+**Keeper choice:** A present but invalid, non-regular or oversized base config is a gate error, exit 3.
+
+**Rationale:** A broken config must never silently drop protection. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
