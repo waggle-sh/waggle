@@ -398,7 +398,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	_ = writeFile(runDir, "final.md", s.Final)
 	if guard { // the review is the final message; the queen commits it (D-057)
 		res.Verdict = parseVerdict(s.Final)
-		_ = writeFile(runDir, "review.md", s.Final)
+		_ = writeFile(runDir, "review.md", reviewFile(s.Final, res.Verdict, req.Head))
 	}
 	pctx := context.WithoutCancel(ctx) // the checks run even when ctx was cancelled
 	if g.Remote != "" {                // the final sync overwrites a tampered claim mirror, but never runs on changed host files
