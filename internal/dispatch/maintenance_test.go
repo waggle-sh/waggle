@@ -7,23 +7,56 @@ package dispatch
 
 import (
 	"context"
+	"crypto/sha1"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
-// TestRunPlantDuringAutoMaintenance is the proving test: the plant follows the
-// result line, and a second worker commit starts git's detached auto
-// maintenance while the entry has no gitdir file yet. Without maintenance.auto
-// in the worker's git config, that daemon (which left the worker's process
-// group) prunes the entry before the post-run check.
+// seedLoose17 writes 40 blob bodies whose git blob id starts with byte 0x17 into
+// a fresh directory and returns it. Loaded as loose objects they put 40 files
+// in objects/17/, above the auto gc threshold of ceil(6700/256) = 27.
+func seedLoose17(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	for n, found := 0, 0; found < 40; n++ {
+		body := fmt.Sprintf("seed-%d\n", n)
+		sum := sha1.Sum([]byte(fmt.Sprintf("blob %d\x00%s", len(body), body)))
+		if sum[0] != 0x17 {
+			continue
+		}
+		if err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("s%02d", found)), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		found++
+	}
+	return dir
+}
+
+// TestRunPlantDuringAutoMaintenance is the proving test: the fixture's config
+// forces auto gc and the worker seeds loose objects, so the second worker
+// commit starts git's detached auto gc while the plant has no gitdir file yet.
+// Only the worker's env (maintenance.auto and gc.auto in tripwireEnv) stops it;
+// without those keys the daemon, which left the worker's process group, prunes
+// the entry before the post-run check.
 func TestRunPlantDuringAutoMaintenance(t *testing.T) {
 	eachRepoSpelling(t, func(t *testing.T, link bool) {
 		f := newFixture(t, true, link)
+		// the fixture's own quiet config would hide a missing worker-side key
+		for _, kv := range [][2]string{{"maintenance.auto", "true"}, {"gc.auto", "6700"}, {"gc.autoDetach", "true"},
+			{"maintenance.autoDetach", "true"}, {"maintenance.gc.enabled", "true"}} {
+			sh(t, f.real, "config", "--local", kv[0], kv[1])
+		}
+		seeds := seedLoose17(t)
+		if id := sh(t, f.real, "hash-object", filepath.Join(seeds, "s00")); !strings.HasPrefix(id, "17") {
+			t.Fatalf("seed blob id %s does not start with 17 (SHA-256 repo?)", id)
+		}
 		planted := f.common() + "/worktrees/planted"
-		scen := okScenario + "mkdir '" + planted + "'\n" + commitFile("internal/x/c.go", "two") +
-			"sleep 1\nprintf '%s\\n' \"$PWD/.git\" > '" + planted + "/gitdir'\n"
+		scen := okScenario + "mkdir '" + planted + "'\n" + "git hash-object -w '" + seeds + "'/*\n" +
+			commitFile("internal/x/c.go", "two") +
+			"sleep 3\nprintf '%s\\n' \"$PWD/.git\" > '" + planted + "/gitdir'\n"
 		res, err := f.run(scen)
 		if err != nil || res.ExitCode != 1 || !hasViolation(res.Violations, ruleHost, "worktrees/planted") {
 			_, serr := os.Stat(planted)
