@@ -6,10 +6,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/waggle-sh/waggle/internal/comb"
+	"github.com/waggle-sh/waggle/internal/config"
+	"github.com/waggle-sh/waggle/internal/layout"
 )
 
 // Check names, in the order verify runs and reports them.
@@ -98,6 +101,7 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	base := fs.String("base", "", "PR base revision (required)")
 	head := fs.String("head", "", "PR head revision (required)")
 	repo := fs.String("repo", ".", "Git repository to inspect")
+	branch := fs.String("branch", "", "PR branch name (default: GITHUB_HEAD_REF under GitHub Actions)")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return gatePass
@@ -120,7 +124,15 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	gha := getenv("GITHUB_ACTIONS") == "true"
 
 	var rep gateReport
-	err := scanRange(g, *base, *head, check != checkLeases, &rep)
+	branchName := *branch
+	if branchName == "" && gha {
+		branchName = getenv("GITHUB_HEAD_REF")
+	}
+	branchID, ignored := branchTicket(branchName)
+	if ignored {
+		rep.warn(checkLeases, "branch name ignored")
+	}
+	err := scanRange(g, *base, *head, branchID, check != checkLeases, &rep)
 	code := gatePass
 	switch {
 	case errors.Is(err, errTooLarge) && check == checkTiers:
@@ -146,8 +158,9 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 
 // scanRange resolves base and head, takes their merge-base exactly as
 // gateDecisions does, checks every commit in between, and with tree set also
-// checks the head tree for case collisions.
-func scanRange(g gitRunner, base, head string, tree bool, rep *gateReport) error {
+// checks the head tree for case collisions. branchID is the ticket the PR
+// branch binds, or "". Repo-defined protected paths are read from base only.
+func scanRange(g gitRunner, base, head, branchID string, tree bool, rep *gateReport) error {
 	baseOID, err := g.resolve(base)
 	if err != nil {
 		return err
@@ -165,7 +178,12 @@ func scanRange(g gitRunner, base, head string, tree bool, rep *gateReport) error
 	if err != nil {
 		return fmt.Errorf("%w: %v", errGit, err)
 	}
-	s := commitScan{g: g, comb: cb, now: time.Now(), rep: rep, claims: map[string]claimLookup{}}
+	policy, err := baseTierPolicy(g, baseOID)
+	if err != nil {
+		return err
+	}
+	s := commitScan{g: g, comb: cb, now: time.Now(), rep: rep, claims: map[string]claimLookup{},
+		baseOID: baseOID, policy: policy, branch: branchID, bound: map[string]string{}}
 	if err := s.scan(mb, headOID); err != nil {
 		return err
 	}
@@ -173,4 +191,43 @@ func scanRange(g gitRunner, base, head string, tree bool, rep *gateReport) error
 		return caseCollisions(g, headOID, rep)
 	}
 	return nil
+}
+
+// baseTierPolicy reads gate.protected_paths from the config at the PR base,
+// never from the head tree or the worktree. A missing file means no entries;
+// a symlink, tree, submodule, oversized or invalid file is an error.
+func baseTierPolicy(g gitRunner, baseOID string) (comb.TierPolicy, error) {
+	out, err := g.run("ls-tree", "-z", "--full-tree", baseOID, "--", layout.Config)
+	if err != nil || len(out) == 0 {
+		return comb.TierPolicy{}, err
+	}
+	recs := strings.Split(strings.TrimSuffix(string(out), "\x00"), "\x00")
+	meta, _, _ := strings.Cut(recs[0], "\t")
+	f := strings.Fields(meta)
+	if len(f) != 3 || !oidPattern.MatchString(f[2]) {
+		return comb.TierPolicy{}, fmt.Errorf("%w ls-tree: unexpected output %q", errGit, recs[0])
+	}
+	if len(recs) != 1 || f[1] != "blob" || (f[0] != "100644" && f[0] != "100755") {
+		return comb.TierPolicy{}, fmt.Errorf("base: %s is mode %s type %s; it must be a regular file", layout.Config, f[0], f[1])
+	}
+	out, err = g.run("cat-file", "-s", f[2])
+	if err != nil {
+		return comb.TierPolicy{}, err
+	}
+	size, err := strconv.Atoi(strings.TrimSpace(string(out)))
+	if err != nil {
+		return comb.TierPolicy{}, fmt.Errorf("%w cat-file -s: unexpected output %q", errGit, out)
+	}
+	if size > config.MaxFileSize {
+		return comb.TierPolicy{}, fmt.Errorf("base: %s is %d bytes, over the %d byte cap", layout.Config, size, config.MaxFileSize)
+	}
+	data, err := g.run("cat-file", "blob", f[2])
+	if err != nil {
+		return comb.TierPolicy{}, err
+	}
+	cfg, err := config.Parse(data)
+	if err != nil {
+		return comb.TierPolicy{}, fmt.Errorf("base: %w", err)
+	}
+	return comb.TierPolicy{ExtraTier3: cfg.Gate.ProtectedPaths}, nil
 }
