@@ -277,6 +277,36 @@ func (g GitIdentity) check() error {
 // character, shell operator or rule syntax, and none of the denied programs.
 func workerSettings(role string, commands []string) ([]byte, error) {
 	allow := []string{"Read", "Glob", "Grep", "Edit(./**)", "Write(./**)"}
+	cmds, err := BashCommands(role, commands)
+	if err != nil {
+		return nil, err
+	}
+	for _, cmd := range cmds {
+		allow = append(allow, "Bash("+cmd+")", "Bash("+cmd+" *)")
+	}
+	type perms struct {
+		Allow       []string `json:"allow"`
+		Deny        []string `json:"deny"`
+		DefaultMode string   `json:"defaultMode"`
+	}
+	type attribution struct {
+		Commit     string `json:"commit"`
+		PR         string `json:"pr"`
+		SessionURL bool   `json:"sessionUrl"`
+	}
+	return json.Marshal(struct {
+		Permissions perms       `json:"permissions"`
+		Attribution attribution `json:"attribution"`
+	}{perms{allow, deniedRules, "dontAsk"}, attribution{}})
+}
+
+// BashCommands returns the Bash commands a worker of role may run: the hive
+// commands, then gitAllowed minus git add and git commit for a guard. Each
+// must be plain words: no wildcard, quote, control character, shell operator or
+// rule syntax, and none of the denied programs. workerSettings builds its allow
+// rules from this list and dispatch names the same list in the task prompt.
+func BashCommands(role string, commands []string) ([]string, error) {
+	var out []string
 	for _, cmd := range append(append([]string(nil), commands...), gitAllowed...) {
 		if role == roleGuard && (cmd == "git add" || cmd == "git commit") {
 			continue // a guard reviews and never commits
@@ -287,16 +317,9 @@ func workerSettings(role string, commands []string) ([]byte, error) {
 			deniedPrograms[f[0]] || (len(f) > 1 && f[0] == "git" && f[1] == "push") {
 			return nil, fmt.Errorf("%w: allowed command %q", ErrAdapterConfig, cmd)
 		}
-		allow = append(allow, "Bash("+cmd+")", "Bash("+cmd+" *)")
+		out = append(out, cmd)
 	}
-	type perms struct {
-		Allow       []string `json:"allow"`
-		Deny        []string `json:"deny"`
-		DefaultMode string   `json:"defaultMode"`
-	}
-	return json.Marshal(struct {
-		Permissions perms `json:"permissions"`
-	}{perms{allow, deniedRules, "dontAsk"}})
+	return out, nil
 }
 
 // workerEnv builds the environment from envAllowed (only when set in the
