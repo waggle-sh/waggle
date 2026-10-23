@@ -100,6 +100,17 @@ func TestReleaseClaimRefusals(t *testing.T) {
 			branchWith(f, "t-023b", "internal/x/b.go")
 			f.git("merge", "-q", "--no-ff", "-m", "merge t-023b", "t-023b")
 		}, nil, ExitClaim},
+		{"no-commit branch at a tip that a branch updated from main has as second parent", func(f *fixture) {
+			branchWith(f, "t-023b", "internal/x/b.go")
+			write(f.t, f.real, "internal/x/c.go", "main\n")
+			f.git("add", "internal/x/c.go")
+			f.git("commit", "-q", "-m", "advance main")
+			f.git("branch", "t-023", "main")
+			f.git("checkout", "-q", "t-023b")
+			f.git("merge", "-q", "--no-ff", "-m", "update t-023b from main", "main")
+			f.git("checkout", "-q", "main")
+			f.git("merge", "-q", "--no-ff", "-m", "merge t-023b", "t-023b")
+		}, nil, ExitClaim},
 		{"worktree exists", func(f *fixture) {
 			f.git("worktree", "add", "-q", "-b", "t-023", filepath.Join(f.real, wtDir, "T-023-builder"), "main")
 		}, unmerged, ExitClaim},
@@ -165,7 +176,10 @@ type fakeRelease struct {
 	err error
 }
 
-func (f fakeRelease) ClaimOID(context.Context, string) (string, error) { return "0123456789abcdef", nil }
+func (f fakeRelease) ClaimOID(context.Context, string) (string, error) {
+	return "0123456789abcdef", nil
+}
+
 func (f fakeRelease) ReleaseLease(context.Context, string, string) error { return f.err }
 
 // AC6: a lost compare-and-swap is exit 4, relay mode is exit 3.
