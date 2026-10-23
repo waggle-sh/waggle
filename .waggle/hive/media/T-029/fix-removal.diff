@@ -1,0 +1,5 @@
+158,159c158
+< 	keys = append(keys, [2]string{"core.excludesFile", "/dev/null"}, [2]string{"core.attributesFile", "/dev/null"},
+< 		[2]string{"maintenance.auto", "false"}, [2]string{"gc.auto", "0"})
+---
+> 	keys = append(keys, [2]string{"core.excludesFile", "/dev/null"}, [2]string{"core.attributesFile", "/dev/null"})
