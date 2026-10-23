@@ -66,29 +66,35 @@ jobs:
             esac
           done
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: Waggle gate
+      - name: Find gate source on base
+        id: src
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          # Not in the scaffold template until waggle ships a release binary (T-007, Q-T007-1).
-          # The checker is built from the base revision, never from the PR head.
           if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
             echo "::error::base $BASE_SHA is not in the clone"
             exit 1
           fi
-          if ! git cat-file -e "$BASE_SHA:cmd/waggle/gate.go" 2>/dev/null; then
+          if git cat-file -e "$BASE_SHA:cmd/waggle/gate.go" 2>/dev/null; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
             echo "::notice::waggle gate not present on base; gate skipped"
-            exit 0
           fi
+
+      - uses: actions/setup-go@v5
+        if: steps.src.outputs.present == 'true'
+        with:
+          go-version-file: go.mod
+
+      - name: Waggle gate
+        if: steps.src.outputs.present == 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # The checker is built from the base revision, never from the PR head.
+          # A release binary replaces this step later (G4).
           git worktree add --detach "$RUNNER_TEMP/gate-src" "$BASE_SHA"
           (cd "$RUNNER_TEMP/gate-src" && go build -o "$RUNNER_TEMP/waggle" ./cmd/waggle)
-          if ! git cat-file -e "$BASE_SHA:cmd/waggle/gate_verify.go" 2>/dev/null; then
-            echo "::notice::waggle gate verify not present on base"
-            exec "$RUNNER_TEMP/waggle" gate decisions --base "$BASE_SHA" --head "$HEAD_SHA"
-          fi
           "$RUNNER_TEMP/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA"
