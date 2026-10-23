@@ -28,6 +28,14 @@ type Usage struct {
 
 // Result is result.json (T-023 section 9.1) and what Run returns. The queen
 // reads it when the process exits. ExitCode is the shared table of section 4.
+//
+// BaseOID is the revision the brief, role prompt, WAGGLE.md and review files
+// were read from. CheckBaseOID is the branch's merge-base with it: the real
+// parent of the first new commit and the start of the checked range. It differs
+// from BaseOID for a reused branch that was not rebased (warning
+// branch_behind_base). CostUSD is the runtime's own figure; it is null when the
+// session ended without a result event (timeout, interrupt, crash), and
+// Waggle computes no price.
 type Result struct {
 	Schema         int              `json:"schema"`
 	Ticket         string           `json:"ticket"`

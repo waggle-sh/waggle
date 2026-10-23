@@ -95,11 +95,12 @@ func refuseDirs(dirs []string) error {
 
 // offBranch refuses a base on the existing branch (section 4): the check base
 // merge-base(branch, base) must be an ancestor of the default base, or the
-// earlier branch commits would fall outside the checked range.
-func offBranch(ctx context.Context, g *Git, req Request, baseOID string) error {
+// earlier branch commits would fall outside the checked range. It returns the
+// branch point, merge-base(branch, base), which is baseOID for a new branch.
+func offBranch(ctx context.Context, g *Git, req Request, baseOID string) (string, error) {
 	rev, ok := g.branchRev(ctx, req.Branch)
 	if !ok {
-		return nil
+		return baseOID, nil
 	}
 	def, name := baseOID, "main"
 	if g.Remote != "" {
@@ -111,14 +112,47 @@ func offBranch(ctx context.Context, g *Git, req Request, baseOID string) error {
 	}
 	mb, merr := g.Run(ctx, "merge-base", rev, baseOID)
 	if err = errors.Join(err, merr); err != nil {
-		return err
+		return "", err
 	}
-	_, err = g.Run(ctx, "merge-base", "--is-ancestor", strings.TrimSpace(string(mb)), def)
+	point := strings.TrimSpace(string(mb))
+	_, err = g.Run(ctx, "merge-base", "--is-ancestor", point, def)
 	var ee *exec.ExitError
 	if errors.As(err, &ee) && ee.ExitCode() == 1 {
-		return failf(ExitUsage, "base is on the branch; earlier branch commits would skip the check")
+		return "", failf(ExitUsage, "base is on the branch; earlier branch commits would skip the check")
 	}
-	return err
+	return point, err
+}
+
+// withBranchPoint adds the Branch point line after the Base line when the
+// branch forks somewhere other than the base. Both OIDs are ones dispatch
+// resolved itself.
+func withBranchPoint(lines []string, baseOID, point string) []string {
+	if point == baseOID {
+		return lines
+	}
+	i := slices.Index(lines, "Base: "+baseOID)
+	if i < 0 {
+		return lines
+	}
+	return slices.Insert(slices.Clone(lines), i+1, "Branch point: "+point+" (this branch was not rebased onto Base; Base is where the brief and role were read from)")
+}
+
+// cutOf names the limit or timeout that ended the session, empty when none did.
+func cutOf(s session) string {
+	switch {
+	case s.TimedOut:
+		return "timeout"
+	case s.Subtype == "error_max_budget_usd":
+		return "max_budget"
+	case s.End == runtime.EndMaxTurns || s.End == runtime.EndMaxTokens:
+		return s.End
+	}
+	return ""
+}
+
+// shortOID is the first 7 characters of an OID.
+func shortOID(oid string) string {
+	return oid[:min(len(oid), 7)]
 }
 
 // waggleCommands returns the commands of the WAGGLE.md section titled "Build
@@ -216,7 +250,8 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	ownRef, _ := comb.RefName(req.Ticket)
 	var (
 		baseOID, runDir  string
-		in               Inputs
+		point            string
+		in             Inputs
 		cmds             []string
 		want             = comb.Lease{TicketID: req.Ticket, Directories: req.Dirs, Gate: req.Gate}
 		task             = &runtime.TaskContext{TaskID: req.Ticket, Tier: req.Tier, SecondGuard: req.Second}
@@ -233,7 +268,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	defer func() { _ = os.Remove(scratch) }() // empty only; a no-op once the record step removed it
 	err = seq(
 		func() (e error) { baseOID, e = ResolveBase(ctx, g, g.Remote, req.Base); return },
-		func() error { return offBranch(ctx, g, req, baseOID) },
+		func() (e error) { point, e = offBranch(ctx, g, req, baseOID); return },
 		func() (e error) { in, e = ReadInputs(ctx, g, baseOID, req); task.GuardMustFix = in.MustFix; return },
 		func() (e error) { sel, e = l.policy.Resolve(req.Role, task, nil); return },
 		func() error {
@@ -273,6 +308,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			if guard {
 				lines = guardTaskLines(req, baseOID, want, bash)
 			}
+			lines = withBranchPoint(lines, baseOID, point)
 			stable, variable = BuildPrompts(in, lines, cs)
 			spec, e = rt.Prepare(runtime.Invocation{Role: req.Role, TaskID: req.Ticket, WorktreeDir: wtPath,
 				Selection: sel, Commands: cmds, GitIdentity: id, ScratchDir: scratch}, cs, stable, variable)
@@ -309,6 +345,12 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		Second: req.Second, Cell: d.Cell.Name(), RuntimeVersion: runtimeVersion(ctx, rt.Config().Binary), Model: sel.Model, Profile: cs.Profile.String(),
 		Floored: cs.Floored, StartedAt: now().UTC(), Final: "final.md", Transcript: "transcript.jsonl", StderrLog: "stderr.log"}
 	res.Warnings = slices.Concat(lockWarns, w.Warnings, claim.Warnings)
+	if point != w.CheckBase { // the branch moved between the two reads; Provision's value stays
+		res.Warnings = append(res.Warnings, "branch_moved: branch point was "+shortOID(point)+" when the prompts were built, "+shortOID(w.CheckBase)+" at checkout")
+	}
+	if w.CheckBase != baseOID {
+		res.Warnings = append(res.Warnings, "branch_behind_base: branch forks at "+shortOID(w.CheckBase)+", base is "+shortOID(baseOID)+"; rebase before merge")
+	}
 	if len(cmds) == 0 {
 		res.Warnings = append(res.Warnings, "no_waggle_commands: WAGGLE.md has no \"Build and Verification Commands\" bullets; the worker may run no build or test command")
 	}
@@ -340,7 +382,11 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	res.ResultSubtype, res.Compacted, res.CostUSD, res.Survivors, res.MustFix = s.Subtype, s.Compacted, s.CostUSD, s.Survivors, in.MustFix
 	u := s.Usage
 	res.Usage = Usage{Input: u.InputTokens, CacheWrite: u.CacheWriteTokens, CacheRead: u.CacheReadTokens, Output: u.OutputTokens}
-	d.emit("ended", "%s, %d tokens", s.End, u.TotalTokens)
+	end := cutOf(s)
+	if end == "" {
+		end = s.End
+	}
+	d.emit("ended", "%s, %d tokens", end, u.TotalTokens)
 	_ = writeFile(runDir, "final.md", s.Final)
 	if guard { // the review is the final message; the queen commits it (D-057)
 		res.Verdict = parseVerdict(s.Final)
@@ -436,15 +482,7 @@ func dropScratch(dir string) string {
 // dirty tree alone does not hide that it needs the Keeper.
 func outcome(s session, vs []comb.Violation, commits int) (string, int) {
 	serious := slices.ContainsFunc(vs, func(v comb.Violation) bool { return v.Rule != ruleDirty })
-	cut := ""
-	switch {
-	case s.TimedOut:
-		cut = "timeout"
-	case s.Subtype == "error_max_budget_usd":
-		cut = "max_budget"
-	case s.End == runtime.EndMaxTurns || s.End == runtime.EndMaxTokens:
-		cut = s.End
-	}
+	cut := cutOf(s)
 	switch {
 	case serious || (len(vs) > 0 && cut == "" && s.End == runtime.EndDone):
 		return "lease_violation", ExitFailed

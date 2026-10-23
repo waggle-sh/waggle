@@ -21,6 +21,9 @@ import (
 func TestRunPlantDuringAutoMaintenance(t *testing.T) {
 	eachRepoSpelling(t, func(t *testing.T, link bool) {
 		f := newFixture(t, true, link)
+		// the fixture's own quiet config would hide a missing worker-side key
+		sh(t, f.real, "config", "--local", "--unset", "maintenance.auto")
+		sh(t, f.real, "config", "--local", "--unset", "gc.auto")
 		planted := f.common() + "/worktrees/planted"
 		scen := okScenario + "mkdir '" + planted + "'\n" + commitFile("internal/x/c.go", "two") +
 			"sleep 1\nprintf '%s\\n' \"$PWD/.git\" > '" + planted + "/gitdir'\n"
