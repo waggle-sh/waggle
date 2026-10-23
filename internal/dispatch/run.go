@@ -251,7 +251,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	var (
 		baseOID, runDir  string
 		point            string
-		in             Inputs
+		in               Inputs
 		cmds             []string
 		want             = comb.Lease{TicketID: req.Ticket, Directories: req.Dirs, Gate: req.Gate}
 		task             = &runtime.TaskContext{TaskID: req.Ticket, Tier: req.Tier, SecondGuard: req.Second}
