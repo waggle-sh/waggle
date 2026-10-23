@@ -4797,3 +4797,23 @@
 **Keeper choice:** The hive workflow with the three differences in T-033 section 2.3, applied in the hive at the next pin move on a Head Keeper card.
 
 **Rationale:** Makes D-143's ruling safe for repos without waggle's source and ends the manual revert at every pin move. Byte for byte fails setup-go without go.mod and trips the init test. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-250: Upgrade hive pin to 7bef53b400910d55bfdcf397134b227168fa0bde and apply the T-033 renders
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-033
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run, and does the pin move apply the re-rendered gate workflow?
+
+**Options considered:**
+1. Stay on 851f7071a93eacdd1d91a44e4e268b841eb4ac53
+2. Move to 7bef53b400910d55bfdcf397134b227168fa0bde and apply every re-rendered managed file, ending the D-143 manual revert
+3. Move to 7bef53b400910d55bfdcf397134b227168fa0bde but keep reverting the gate workflow
+
+**Hive recommendation:** Move to 7bef53b400910d55bfdcf397134b227168fa0bde and apply every re-rendered managed file, ending the D-143 manual revert
+
+**Keeper choice:** Move the pin from 851f7071a93eacdd1d91a44e4e268b841eb4ac53 to 7bef53b400910d55bfdcf397134b227168fa0bde; apply the three re-rendered files (roles/guard.md, roster.json guard entry, .github/workflows/waggle-gate.yml), all others unchanged. The gate workflow differs from the previous hive copy by exactly the three D-249 differences, so D-143's interim manual revert ends and waggle upgrade now reports [same] for it.
+
+**Rationale:** 7bef53b carries T-033: dispatched guards write no repo file and return the review as the final message (D-247), review.md carries a v1 verdict marker for the must-fix count (D-248), and the scaffold gate template matches the hive workflow apart from the D-249 differences. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
