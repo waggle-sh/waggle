@@ -6,7 +6,7 @@
 version: 1
 
 waggle:
-  pin: 790ade0b64b8cf5a6d6f6c1522c47cf5fdcd3548 # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
+  pin: b038b414c077292e061ad7e6d83f99c8b344d766 # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
 
 hive:
   profile: cli
