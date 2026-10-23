@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -60,7 +61,20 @@ type Config struct {
 	Version int
 	Forge   ForgeConfig
 	Leases  LeasesConfig
+	Gate    GateConfig
 }
+
+// GateConfig is the gate: section.
+type GateConfig struct {
+	// ProtectedPaths are extra Tier 3 prefixes (T-031); raise-only.
+	ProtectedPaths []string
+}
+
+// Bounds on gate.protected_paths.
+const (
+	maxProtectedPaths    = 64
+	maxProtectedPathSize = 256
+)
 
 // ForgeConfig is the forge: section.
 type ForgeConfig struct {
@@ -168,10 +182,58 @@ func Parse(data []byte) (*Config, error) {
 		}
 	}
 
+	if g, ok := tree["gate"]; ok {
+		if !g.isMapping() {
+			return nil, invalid(g.line, "gate", "must be a mapping")
+		}
+		for _, k := range sortedKeys(g.children) {
+			n, p := g.children[k], "gate."+k
+			lines[p] = n.line
+			switch k {
+			case "protected_paths":
+				var s string
+				if s, err = stringValue(p, n); err == nil && strings.TrimSpace(s) != "" {
+					c.Gate.ProtectedPaths = strings.Split(s, ",")
+					for i, e := range c.Gate.ProtectedPaths {
+						c.Gate.ProtectedPaths[i] = strings.Trim(e, " ")
+					}
+				}
+			default:
+				err = invalid(n.line, p, "unknown key")
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	if err := validate(c, lines); err != nil {
 		return nil, err
 	}
 	return c, nil
+}
+
+// validProtectedPath reports why a gate.protected_paths entry is rejected, or "".
+func validProtectedPath(e string) string {
+	switch {
+	case e == "" || len(e) > maxProtectedPathSize:
+		return fmt.Sprintf("entries must be 1 to %d bytes", maxProtectedPathSize)
+	case e == "." || strings.HasPrefix(e, "/") || strings.Contains(e, `\`):
+		return "entries must be repo-relative paths with / separators"
+	case strings.ContainsAny(e, "*?["):
+		return "wildcards are not supported"
+	case strings.IndexFunc(e, func(r rune) bool { return r < 0x20 || r == 0x7f }) >= 0:
+		return "entries must not contain control characters"
+	}
+	for _, seg := range strings.Split(e, "/") {
+		if seg == ".." {
+			return "entries must not contain .. segments"
+		}
+	}
+	if path.Clean(strings.TrimSuffix(e, "/")) != strings.TrimSuffix(e, "/") {
+		return "entries must be clean paths"
+	}
+	return ""
 }
 
 // CombOptions maps a validated Config into comb.Options for repoDir. It sets
@@ -223,6 +285,14 @@ func validate(c *Config, lines map[string]int) error {
 	}
 	if m := c.Leases.MaxDirectoriesPerClaim; m < MinMaxDirectoriesPerClaim || m > MaxMaxDirectoriesPerClaim {
 		return invalid(lines["leases.max_directories_per_claim"], "leases.max_directories_per_claim", "must be an integer in %d..%d, got %d", MinMaxDirectoriesPerClaim, MaxMaxDirectoriesPerClaim, m)
+	}
+	if len(c.Gate.ProtectedPaths) > maxProtectedPaths {
+		return invalid(lines["gate.protected_paths"], "gate.protected_paths", "at most %d entries", maxProtectedPaths)
+	}
+	for _, e := range c.Gate.ProtectedPaths {
+		if why := validProtectedPath(e); why != "" {
+			return invalid(lines["gate.protected_paths"], "gate.protected_paths", "%s", why)
+		}
 	}
 	return nil
 }
