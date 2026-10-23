@@ -31,7 +31,8 @@ type Inputs struct {
 
 // ResolveBase returns the OID of the base commit. With remote set it fetches
 // the remote first (host side, the Keeper's git auth). An empty base means
-// <remote>/main, or main for a local-only hive. An explicit base that does not
+// refs/remotes/<remote>/main, or refs/heads/main for a local-only hive, fully
+// qualified so a tag of the same short name cannot pick the base. An explicit base that does not
 // resolve is ExitUsage; the default failing is ExitEnv.
 func ResolveBase(ctx context.Context, g *Git, remote, base string) (string, error) {
 	if remote != "" {
@@ -43,9 +44,9 @@ func ResolveBase(ctx context.Context, g *Git, remote, base string) (string, erro
 	switch {
 	case explicit:
 	case remote != "":
-		base, code = remote+"/main", ExitEnv
+		base, code = "refs/remotes/"+remote+"/main", ExitEnv
 	default:
-		base, code = "main", ExitEnv
+		base, code = "refs/heads/main", ExitEnv
 	}
 	out, err := g.Run(ctx, "rev-parse", "--verify", "--quiet", base+"^{commit}")
 	if err != nil {

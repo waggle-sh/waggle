@@ -149,6 +149,9 @@ var (
 	// ErrWaggleDir reports a lease directory that equals, is inside, or contains
 	// .waggle (any case, hive included). Returned errors also wrap ErrTier3Path.
 	ErrWaggleDir = errors.New("comb: worker leases never include .waggle/; hive files change only through waggle commands or the Head Keeper")
+	// ErrProtectedPath reports a lease directory that covers a path listed in
+	// gate.protected_paths. Returned errors also wrap ErrTier3Path.
+	ErrProtectedPath = errors.New("protected path listed in .waggle/control/config.yaml; leases never cover it")
 	// ErrGateTooLow reports a Light gate lease that touches a Tier 2 steering path.
 	ErrGateTooLow = errors.New("comb: light gate cannot lease a Tier 2 steering path")
 	// ErrLeaseOverlap reports that requested directories overlap another active lease.

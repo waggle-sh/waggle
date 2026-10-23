@@ -43,6 +43,7 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "       waggle dispatch clean <ticket> [--role builder|forager|guard] [--runs] [--repo <dir>]")
 		fmt.Fprintln(stderr, "       waggle dispatch clean --host-record [--accept <digest>] [--repo <dir>]")
 		fmt.Fprintln(stderr, "       waggle dispatch release <ticket> [--branch <name>] [--unmerged] [--repo <dir>]")
+		fmt.Fprintln(stderr, "       (waggle release is the same verb, with --owner and JSON output)")
 		fmt.Fprintln(stderr, "       [--branch <b>] [--base <rev>] [--tier 0-3] [--read <path>...] [--timeout 120m] [--no-push] [--keep-worktree] [--json] [--repo <dir>]")
 	}
 	var dirs, reads listFlag

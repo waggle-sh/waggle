@@ -69,6 +69,12 @@ func (p TierPolicy) listed(relPath string) bool {
 	return matchesPrefix(lower, p.ExtraTier3)
 }
 
+// CoversDir reports whether a normalized lease directory equals, sits inside or
+// contains an ExtraTier3 entry, the relation isTier3Dir uses for the hardcoded list.
+func (p TierPolicy) CoversDir(dir string) bool {
+	return touchesPrefixes(dir, p.ExtraTier3)
+}
+
 // CheckChangesPolicy is CheckChanges with repo-defined Tier 3 prefixes.
 func CheckChangesPolicy(l Lease, changes []Change, p TierPolicy) []Violation {
 	var vs []Violation
