@@ -31,6 +31,11 @@ var HardcodedTier3Prefixes = []string{
 	".github/workflows/",
 	".gitlab-ci.yml",
 	".devcontainer/",
+	"go.mod",
+	"go.sum",
+	"go.work",
+	"go.work.sum",
+	"vendor/",
 }
 
 // HiveCarveOut is the only part of .waggle/ classified below Tier 3. It matches
