@@ -9,14 +9,16 @@ on:
     types: [created]
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  contents: read
 
 jobs:
   relay-claim:
     if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/waggle claim')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,13 +31,15 @@ jobs:
   verify-leases-and-tiers:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Fetch Comb Claim Refs
-        run: git fetch origin 'refs/waggle/claims/*:refs/waggle/claims/*' || true
+        run: git fetch origin 'refs/waggle/claims/*:refs/waggle/claims/*'
 
       - name: Check Hardcoded Tiers & Per-Task Leases
         env:
@@ -62,12 +66,35 @@ jobs:
             esac
           done
 
-          # 2. Per-Task Lease Verification (RFC-0003 Change #7)
-          # Even when Light-gate tasks merge in a single integration lane, each commit
-          # prefixed `T-<id>:` is verified against its individual refs/waggle/claims/ticket-<id> lease.
-          COMMITS=$(git rev-list "$BASE_SHA..$HEAD_SHA")
-          for sha in $COMMITS; do
-            SUBJECT=$(git log -1 --format="%s" "$sha")
-            echo "Checking commit $sha: $SUBJECT"
-            # Once waggle binary builds in CI: waggle gate verify-commit "$sha"
-          done
+      - name: Find gate source on base
+        id: src
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            echo "::error::base $BASE_SHA is not in the clone"
+            exit 1
+          fi
+          if git cat-file -e "$BASE_SHA:cmd/waggle/gate.go" 2>/dev/null; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::waggle gate not present on base; gate skipped"
+          fi
+
+      - uses: actions/setup-go@v5
+        if: steps.src.outputs.present == 'true'
+        with:
+          go-version-file: go.mod
+
+      - name: Waggle gate
+        if: steps.src.outputs.present == 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # The checker is built from the base revision, never from the PR head.
+          # A release binary replaces this step later (G4).
+          git worktree add --detach "$RUNNER_TEMP/gate-src" "$BASE_SHA"
+          (cd "$RUNNER_TEMP/gate-src" && go build -o "$RUNNER_TEMP/waggle" ./cmd/waggle)
+          "$RUNNER_TEMP/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA"
