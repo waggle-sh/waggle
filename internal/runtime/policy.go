@@ -26,8 +26,8 @@ var (
 	// ErrGuardFloor reports a guard override under the guard floor on a Tier 2, Tier 3 or unknown-tier task.
 	ErrGuardFloor = errors.New("guard level below floor")
 	// ErrNoCrossModel reports that no model differs from the builder's (and, for a
-	// second guard, the first guard's): none at or above the guard's level, and
-	// for a second guard none below it either (D-179).
+	// second guard, the first guard's, and any TaskContext.AvoidModels): none at
+	// or above the guard's level, and where the D-179 walk applies none below it either.
 	ErrNoCrossModel = errors.New("no model differs from the builder's and the first guard's")
 	// ErrOverrideUnrecorded reports an override whose decision the lookup could not confirm.
 	ErrOverrideUnrecorded = errors.New("override has no recorded decision")
@@ -67,6 +67,15 @@ type TaskContext struct {
 	GuardMustFix int                 // must-fix verdicts on this task so far
 	SecondGuard  bool                // guard role only: also avoid the first guard's model (D-100)
 	Overrides    map[string]Override // by role id
+	// AvoidModels are models a guard must not use besides the policy's builder
+	// model: the builder run record's and, from dispatch's run records, the
+	// previous round's guard or, for a second guard, this round's first guard
+	// (T-034). For a second guard a non-empty list replaces the policy
+	// re-resolution of the first guard.
+	AvoidModels []string
+	// RecordedBuilder is the builder run record's model, also an entry of
+	// AvoidModels, or empty. It only words the second guard's hint.
+	RecordedBuilder string
 }
 
 // Selection is a resolved model choice for one role on one task. Only Resolve
@@ -112,7 +121,9 @@ func (p Policy) levelPath(l Level) string {
 
 // Resolve picks the model for role on task: roster minimum, recorded override
 // (decisionExists must confirm its decision ID; a nil lookup rejects every
-// override), builder step-up, guard floor, model lookup, cross-model rule.
+// override), builder step-up, guard floor, model lookup, cross-model rule. A
+// guard also avoids every TaskContext.AvoidModels entry; a second guard's
+// ErrNoCrossModel names the level whose alternate would resolve (T-034 2.3).
 func (p Policy) Resolve(role string, task *TaskContext, decisionExists func(id int) bool) (Selection, error) {
 	if task == nil {
 		task = &TaskContext{}
@@ -125,22 +136,30 @@ func (p Policy) Resolve(role string, task *TaskContext, decisionExists func(id i
 		return Selection{}, err
 	}
 	var avoid []string
+	var builderModel, first string
+	walk := false
 	if role == roleGuard {
-		var builderModel string
 		if level, builderModel, err = p.guardLevel(level, task, decisionExists); err != nil {
 			return Selection{}, err
 		}
 		avoid = []string{builderModel}
-		if task.SecondGuard { // the first guard is re-resolved from policy, never read from a run record
-			first, err := p.pick(role, level, task, builderModel)
-			if err != nil {
+		switch {
+		case task.SecondGuard && len(task.AvoidModels) > 0: // the first guard's model comes from its run record (D-253)
+			first = firstGuardModel(task)
+		case task.SecondGuard: // no record: the first guard is re-resolved from policy
+			if first, err = p.pick(role, level, task, builderModel); err != nil {
 				return Selection{}, err
 			}
 			avoid = append(avoid, first)
 		}
+		avoid = append(avoid, task.AvoidModels...)
+		// D-179 walks down for a second guard, and for a Tier 3 or unknown-tier
+		// plain guard that avoids more than the policy's builder model (D-255).
+		walk = task.SecondGuard || (topTier(task.Tier) && slices.ContainsFunc(avoid, func(m string) bool { return m != builderModel }))
 	}
 	model, err := p.pick(role, level, task, avoid...)
-	if err != nil && task.SecondGuard && role == roleGuard && errors.Is(err, ErrNoCrossModel) {
+	guardLevel := level
+	if err != nil && walk && errors.Is(err, ErrNoCrossModel) {
 		// D-179, bounded by D-180: nothing unused at or above the level, so take the
 		// highest unused model below it, going no lower than the roster guard minimum.
 		for l := level - 1; l >= max(LevelFast, p.Minimums[roleGuard]) && model == ""; l-- {
@@ -151,6 +170,12 @@ func (p Policy) Resolve(role string, task *TaskContext, decisionExists func(id i
 				}
 			}
 		}
+	}
+	if err != nil && role == roleGuard && task.SecondGuard && errors.Is(err, ErrNoCrossModel) {
+		if task.RecordedBuilder != "" {
+			builderModel = task.RecordedBuilder
+		}
+		err = p.secondHint(task, guardLevel, builderModel, first)
 	}
 	if err != nil {
 		return Selection{}, err
@@ -222,6 +247,52 @@ func (p Policy) pick(role string, level Level, task *TaskContext, avoid ...strin
 // known Tier 0 or Tier 1 task. Unknown (nil) and every other tier enforce the floor.
 func lowTier(tier *comb.RiskTier) bool {
 	return tier != nil && (*tier == comb.Tier0Trivial || *tier == comb.Tier1Isolated)
+}
+
+// topTier reports a Tier 3 or unknown (nil) task, the tiers whose plain guards
+// alternate models round to round (D-205, D-255).
+func topTier(tier *comb.RiskTier) bool {
+	return tier == nil || *tier == comb.Tier3ControlPlane
+}
+
+// firstGuardModel is the first guard's model in a second guard's AvoidModels:
+// the entry that is not the builder record's model, else the last entry.
+func firstGuardModel(task *TaskContext) string {
+	for _, m := range task.AvoidModels {
+		if m != task.RecordedBuilder {
+			return m
+		}
+	}
+	return task.AvoidModels[len(task.AvoidModels)-1]
+}
+
+// secondHint is the second guard's ErrNoCrossModel (T-034 2.3). pick tries a
+// level's alternate before the level above, so a new alternate below the level
+// where the first guard's model sits would become the first guard. The hint
+// names the first level with a free alternate from that level up, then below
+// the guard level down to the roster guard minimum, where the D-179 walk goes.
+func (p Policy) secondHint(task *TaskContext, level Level, builder, first string) error {
+	adapter := p.Models.Adapter
+	what := fmt.Sprintf("the first guard's model is not mapped at or above level %s; map a third model under runtimes.adapters.%s.levels", level, adapter)
+	var try []Level
+	for l := level; l <= LevelFrontier; l++ {
+		if first != "" && (try != nil || p.Models.Primary[l] == first || p.Models.Alternate[l] == first) {
+			try = append(try, l)
+		}
+	}
+	if try != nil {
+		what = fmt.Sprintf("every alternate that keeps the first guard on %s is taken; map a third model under runtimes.adapters.%s.levels", first, adapter)
+		for l := level - 1; l >= max(LevelFast, p.Minimums[roleGuard]); l-- {
+			try = append(try, l)
+		}
+	}
+	for _, l := range try {
+		if p.Models.Alternate[l] == "" {
+			what = fmt.Sprintf("map a third model at runtimes.adapters.%s.alternates.%s, which keeps the first guard on %s", adapter, l, first)
+			break
+		}
+	}
+	return fmt.Errorf("%w: role guard task %q level %s: builder %q, first guard %q (%s)", ErrNoCrossModel, task.TaskID, level, builder, first, what)
 }
 
 // CountMustFix counts the lines of a review file that equal "Verdict: must-fix"

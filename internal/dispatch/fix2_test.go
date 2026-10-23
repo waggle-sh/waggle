@@ -165,8 +165,8 @@ func (f *fixture) second(mut ...func(*Request, *Deps)) (Result, error) {
 }
 
 // D-188: --second exits 3 before launch when the builder or first guard record
-// is missing, when the base moved, or when the model repeats; result.json
-// carries must_fix.
+// is missing, when an explicit base differs from the first guard's, or when the
+// model repeats; result.json carries must_fix.
 func TestSecondGuardRefusals(t *testing.T) {
 	refused := func(t *testing.T, f *fixture, want string, mut ...func(*Request, *Deps)) {
 		t.Helper()
@@ -188,10 +188,14 @@ func TestSecondGuardRefusals(t *testing.T) {
 		refused(t, f, "builder run")
 	})
 	t.Run("base moved", func(t *testing.T) {
-		f, _ := secondFixture(t, true)
+		f, first := secondFixture(t, true)
 		write(t, f.real, "README", "moved\n")
 		f.git("commit", "-q", "-am", "move main")
-		refused(t, f, "differs from the recorded runs")
+		refused(t, f, "pass --base "+first.BaseOID, func(r *Request, _ *Deps) { r.Base = "main" })
+		res, err := f.second()
+		if err != nil || res.ExitCode != 0 || res.BaseOID != first.BaseOID {
+			t.Fatalf("no --base: exit %d base %s (first %s) err %v", res.ExitCode, res.BaseOID, first.BaseOID, err)
+		}
 	})
 	t.Run("model repeats", func(t *testing.T) {
 		f, _ := secondFixture(t, true)
@@ -210,18 +214,22 @@ func TestSecondGuardRefusals(t *testing.T) {
 		if err := os.WriteFile(p, b, 0o600); err != nil {
 			t.Fatal(err)
 		}
-		refused(t, f, "would use "+res.Model)
+		refused(t, f, `builder "`+res.Model+`"`)
 	})
 	// Opus P8: the queen commits the first guard's must-fix review and dispatches
 	// --second with the default base. The count grew, so the models would have
-	// walked down to the builder's; now it is exit 3, and the builder's base works.
+	// walked down to the builder's; the default base is now the first guard's
+	// (D-254), so it runs there with the first guard's count, as the pinned base does.
 	t.Run("review committed between the guards", func(t *testing.T) {
 		f, first := secondFixture(t, true)
 		write(t, f.real, ".waggle/hive/reviews/T-023-opus.md", "Verdict: must-fix\n")
 		f.git("add", "-A")
 		f.git("commit", "-q", "-m", "review")
-		refused(t, f, "differs from the recorded runs")
-		res, err := f.second(func(r *Request, _ *Deps) { r.Base = first.BaseOID })
+		res, err := f.second()
+		if err != nil || res.ExitCode != 0 || res.MustFix != first.MustFix {
+			t.Fatalf("default base: exit %d must_fix %d (first %d) err %v", res.ExitCode, res.MustFix, first.MustFix, err)
+		}
+		res, err = f.second(func(r *Request, _ *Deps) { r.Base = first.BaseOID })
 		if err != nil || res.ExitCode != 0 || res.MustFix != first.MustFix {
 			t.Fatalf("pinned base: exit %d must_fix %d (first %d) err %v", res.ExitCode, res.MustFix, first.MustFix, err)
 		}
