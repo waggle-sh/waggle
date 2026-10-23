@@ -59,6 +59,10 @@ type Options struct {
 	// any variable, including the scrubbed GIT_DIR family. It is explicit
 	// caller input; tests use it to isolate git config.
 	ExtraEnv []string
+	// Protected adds repo-defined Tier 3 prefixes (gate.protected_paths) that
+	// AcquireLease refuses to cover. It is raise-only and applies when a lease
+	// is written, never when stored claims are read.
+	Protected TierPolicy
 }
 
 // GitBackend is the single Comb codepath of RFC-0003 section 3.1. Each ticket
@@ -90,6 +94,7 @@ type GitBackend struct {
 	extraEnv []string
 	// headKeeper is Options.HeadKeeper; nil denies every ForceRelease.
 	headKeeper HeadKeeperAuthorizer
+	protected  TierPolicy
 
 	mu     sync.Mutex
 	oidLen int
@@ -118,6 +123,7 @@ func NewGitBackend(opts Options) (*GitBackend, error) {
 		gitBin:     opts.GitBinary,
 		extraEnv:   append([]string(nil), opts.ExtraEnv...),
 		headKeeper: opts.HeadKeeper,
+		protected:  opts.Protected,
 	}
 	switch opts.CombMode {
 	case "", CombModeDirect:
@@ -509,7 +515,9 @@ func isActive(l Lease, now time.Time) bool { return l.ExpiresAt.After(now) }
 //
 // Stored claims are re-validated with the current field and directory rules
 // when they are read, and the overlap check sees their normalized directories.
-// A rule change can therefore surface an existing claim as malformed.
+// A rule change can therefore surface an existing claim as malformed. The
+// exception is Options.Protected, which applies only here, when a lease is
+// written: a config change never turns a stored claim malformed.
 func (b *GitBackend) AcquireLease(ctx context.Context, lease Lease) error {
 	if b.relay {
 		return ErrRelayNotImplemented
@@ -589,6 +597,11 @@ func (b *GitBackend) prepareLease(lease Lease, now time.Time) (Lease, error) {
 	l, err := validateLeaseFields(lease, b.maxDirs)
 	if err != nil {
 		return Lease{}, err
+	}
+	for _, d := range l.Directories {
+		if b.protected.CoversDir(d) {
+			return Lease{}, fmt.Errorf("directory %q: %w: %w", d, ErrProtectedPath, ErrTier3Path)
+		}
 	}
 	switch l.Version {
 	case 0:

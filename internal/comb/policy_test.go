@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestTierPolicyIsRaiseOnly(t *testing.T) {
@@ -43,6 +44,64 @@ func TestCheckChangesPolicyMessages(t *testing.T) {
 	}
 	if got := CheckChanges(l, []Change{{Path: "deploy/x"}}); len(got) != 0 {
 		t.Errorf("CheckChanges with no policy: %+v", got)
+	}
+}
+
+func TestCoversDir(t *testing.T) {
+	p := TierPolicy{ExtraTier3: []string{"deploy", "Infra/terraform/"}}
+	for dir, want := range map[string]bool{
+		"deploy": true, "deploy/app": true, "deployment": true, "infra": true, "INFRA/terraform/mod": true,
+		"infra/other": false, "docs": false, "dep": false,
+	} {
+		if got := p.CoversDir(dir); got != want {
+			t.Errorf("CoversDir(%q) = %v; want %v", dir, got, want)
+		}
+	}
+	if (TierPolicy{}).CoversDir("deploy") {
+		t.Error("an empty policy covers a directory")
+	}
+}
+
+// Protected paths apply when a lease is written, never when stored claims are read.
+func TestAcquireLeaseProtected(t *testing.T) {
+	requireGit(t)
+	ctx := context.Background()
+	dir, clock := newRepo(t, false), newClock()
+	plain := newBackend(t, dir, "", clock)
+	if err := plain.AcquireLease(ctx, mkLease("T-001", "alice", "deploy/app")); err != nil {
+		t.Fatal(err)
+	}
+	b, err := NewGitBackend(Options{RepoDir: dir, Now: clock.Now, ExtraEnv: isolatedEnv, Protected: TierPolicy{ExtraTier3: []string{"deploy/app/secrets"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	covered := func(err error) bool { return errors.Is(err, ErrProtectedPath) && errors.Is(err, ErrTier3Path) }
+	if err := b.AcquireLease(ctx, mkLease("T-002", "alice", "docs", "deploy/app/secrets/x")); !covered(err) {
+		t.Errorf("first claim: %v", err)
+	}
+	if err := b.AcquireLease(ctx, mkLease("T-001", "alice", "deploy")); !covered(err) {
+		t.Errorf("renewal: %v", err)
+	}
+	clock.Advance(3 * time.Hour)
+	if err := b.AcquireLease(ctx, mkLease("T-001", "bob", "deploy/app")); !covered(err) {
+		t.Errorf("takeover: %v", err)
+	}
+	if refs := claimRefs(t, dir); refs != ClaimRefPrefix+"ticket-1" {
+		t.Fatalf("refs after refusals: %q", refs)
+	}
+	// The claim written before the policy still reads, lists and blocks.
+	clock.Advance(-3 * time.Hour)
+	if l, err := b.ReadClaim(ctx, "T-001"); err != nil || l.KeeperID != "alice" {
+		t.Errorf("ReadClaim: %+v %v", l, err)
+	}
+	if ls, err := b.ListActiveLeases(ctx); err != nil || len(ls) != 1 {
+		t.Errorf("ListActiveLeases: %+v %v", ls, err)
+	}
+	if err := b.AcquireLease(ctx, mkLease("T-003", "bob", "deploy/app/other")); !errors.Is(err, ErrLeaseOverlap) {
+		t.Errorf("overlap with the old claim: %v", err)
+	}
+	if err := b.AcquireLease(ctx, mkLease("T-003", "bob", "docs")); err != nil {
+		t.Errorf("uncovered claim: %v", err)
 	}
 }
 

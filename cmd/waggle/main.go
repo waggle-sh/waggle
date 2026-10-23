@@ -65,6 +65,12 @@ func main() {
 	case "dispatch":
 		os.Exit(runDispatch(os.Args[2:], os.Stdout, os.Stderr))
 
+	case "claim":
+		os.Exit(runClaim(os.Args[2:], os.Stdout, os.Stderr))
+
+	case "release":
+		os.Exit(runTaskRelease(os.Args[2:], os.Stdout, os.Stderr))
+
 	case "status":
 		os.Exit(runStatus(os.Args[2:], os.Stdout, os.Stderr))
 
@@ -92,6 +98,8 @@ Commands (v0.1 Bootstrap):
   decide    Append one decision entry to .waggle/hive/DECISIONS.md from a JSON file (--file)
   gate      Merge-gate checks CI runs against a pull request: verify, decisions, leases, tiers
   dispatch  Claim a ticket, run a worker in a worktree, check its changes against the claim (waggle dispatch <ticket> --help)
+  claim     Lease directories for a task: waggle claim <task> --dirs <a,b> --gate light|full [--json]
+  release   Give back your claim for a task once its branch has merged [--json]
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, waggled state, and per-ticket token use
   upgrade   Print the plan to re-render managed files from this build and move waggle.pin; --apply executes it

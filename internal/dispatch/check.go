@@ -162,7 +162,8 @@ func canonical(p string) bool {
 type checker struct {
 	g          *Git
 	w          *Worktree
-	lease      comb.Lease // the claim as dispatch acquired it, never re-read after the run
+	lease      comb.Lease      // the claim as dispatch acquired it, never re-read after the run
+	policy     comb.TierPolicy // gate.protected_paths read from the base revision; raise-only
 	common     string
 	remoteMode bool
 	head       string // refs/heads/<branch>, resolved once: this OID is checked, recorded and pushed
@@ -269,7 +270,7 @@ func (c *checker) run(ctx context.Context) (vs []comb.Violation, commits int) {
 		}
 		changes = append(changes, c.changes(ctx, oid, add)...)
 	}
-	return append(vs, comb.CheckChanges(c.lease, changes)...), commits
+	return append(vs, comb.CheckChangesPolicy(c.lease, changes, c.policy)...), commits
 }
 
 // countTrailers returns how many commits in rng have a message line starting

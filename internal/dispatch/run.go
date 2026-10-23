@@ -102,9 +102,9 @@ func offBranch(ctx context.Context, g *Git, req Request, baseOID string) (string
 	if !ok {
 		return baseOID, nil
 	}
-	def, name := baseOID, "main"
+	def, name := baseOID, "refs/heads/main"
 	if g.Remote != "" {
-		name = g.Remote + "/main"
+		name = "refs/remotes/" + g.Remote + "/main"
 	}
 	var err error
 	if req.Base != "" {
@@ -258,6 +258,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		sel              runtime.Selection
 		cs               runtime.ContextSettings
 		backend          = d.Backend
+		protected        comb.TierPolicy
 		scratch          string
 		claim            Claim
 		w                *Worktree
@@ -268,6 +269,13 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	defer func() { _ = os.Remove(scratch) }() // empty only; a no-op once the record step removed it
 	err = seq(
 		func() (e error) { baseOID, e = ResolveBase(ctx, g, g.Remote, req.Base); return },
+		func() (e error) { // protected paths come from base only; they apply to every run, the claim step included
+			if protected, e = basePolicy(ctx, g, baseOID); e == nil && !guard {
+				e = refuseProtected(protected, req.Dirs)
+			}
+			ck.policy = protected
+			return
+		},
 		func() (e error) { point, e = offBranch(ctx, g, req, baseOID); return },
 		func() (e error) { in, e = ReadInputs(ctx, g, baseOID, req); task.GuardMustFix = in.MustFix; return },
 		func() (e error) { sel, e = l.policy.Resolve(req.Role, task, nil); return },
@@ -284,7 +292,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			}
 			opts, e := l.cfg.CombOptions(req.RepoDir)
 			opts.GitBinary = d.GitBin
-			opts.ExtraEnv = combEnv
+			opts.ExtraEnv, opts.Protected = combEnv, protected
 			if e == nil {
 				backend, e = comb.NewGitBackend(opts)
 			}
