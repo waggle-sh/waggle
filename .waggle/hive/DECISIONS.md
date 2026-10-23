@@ -4737,3 +4737,63 @@
 **Keeper choice:** Move the pin from b038b414c077292e061ad7e6d83f99c8b344d766 to 851f7071a93eacdd1d91a44e4e268b841eb4ac53; managed files re-rendered by waggle upgrade from the target build (all unchanged), gate workflow rewrite reverted (D-143).
 
 **Rationale:** 851f707 carries T-031 (gate verify) and T-032 (claim and release verbs, protected paths at lease time and in the post-run check, qualified default base); G2 of the D-229 plan is merged and the hive should run it. After the pin every dispatch run exits 3 when the base config is invalid. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-247: A dispatched guard keeps evidence in its final message and writes no file in the repo
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-033
+- **Supersedes:** none
+
+**Question:** Q-T033-1: where does a dispatched guard put evidence it would have written under .waggle/hive/media/?
+
+**Options considered:**
+1. Inside the final message; the guard writes nothing in the repo and the queen copies what is worth keeping to media/
+2. A dispatch scratch directory outside the worktree, kept in the run record
+3. Widen the guard lease to .waggle/hive/reviews/ and .waggle/hive/media/
+
+**Hive recommendation:** Inside the final message; the guard writes nothing in the repo and the queen copies what is worth keeping to media/
+
+**Keeper choice:** Evidence goes in the guard's final message; the guard writes no file in the repo.
+
+**Rationale:** Costs only template text and ends the lease_violation exit 1 seen on the T-032 fable second guard; a read-only reviewer gets no write access to hive records. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-248: A guard round's verdict is a dispatch-written marker at the top of review.md
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-033
+- **Supersedes:** none
+
+**Question:** Q-T033-2: which line is a guard round's verdict for the builder step-up count?
+
+**Options considered:**
+1. A versioned marker dispatch writes at the top of review.md with the parsed verdict, quoted markers escaped; legacy text before the first marker keeps today's count
+2. One file per round, counting each file's last Verdict line
+3. The first Verdict line after each blank-line round separator
+
+**Hive recommendation:** A versioned marker dispatch writes at the top of review.md with the parsed verdict, quoted markers escaped; legacy text before the first marker keeps today's count
+
+**Keeper choice:** A versioned dispatch-written marker (v1) at the top of review.md; legacy files counted as today.
+
+**Rationale:** No new queen habit and no existing count moves; a quoted line cannot count. Blank-line separation fails because rounds contain blank lines. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-249: The scaffold gate workflow template ships the hive workflow with three stated differences
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-033
+- **Supersedes:** none
+
+**Question:** Q-T033-3: what does the scaffold gate workflow template ship?
+
+**Options considered:**
+1. The hive workflow with a base-source presence step gating setup-go and the gate step, no gate decisions fallback and a reworded comment; the hive takes the render at its next pin move
+2. The hive workflow byte for byte
+3. Only the permissions and claim fetch fix, keeping the D-143 revert until G4
+
+**Hive recommendation:** The hive workflow with a base-source presence step gating setup-go and the gate step, no gate decisions fallback and a reworded comment; the hive takes the render at its next pin move
+
+**Keeper choice:** The hive workflow with the three differences in T-033 section 2.3, applied in the hive at the next pin move on a Head Keeper card.
+
+**Rationale:** Makes D-143's ruling safe for repos without waggle's source and ends the manual revert at every pin move. Byte for byte fails setup-go without go.mod and trips the init test. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
