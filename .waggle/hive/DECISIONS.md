@@ -4601,3 +4601,120 @@
 **Keeper choice:** A present but invalid, non-regular or oversized base config is a gate error, exit 3.
 
 **Rationale:** A broken config must never silently drop protection. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-240: waggle claim takes --owner, falling back to keeper_id
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-032
+- **Supersedes:** none
+
+**Question:** Q-T032-1: who owns a claim written by waggle claim?
+
+**Options considered:**
+1. --owner flag, falling back to keeper_id in .waggle/local.yaml
+2. keeper_id only
+3. Detect from git config or the forge login
+
+**Hive recommendation:** --owner flag, falling back to keeper_id in .waggle/local.yaml
+
+**Keeper choice:** An --owner <id> flag with keeper_id as the fallback.
+
+**Rationale:** Orchestrators need a stable owner per run without a local file; the owner is a label, not authentication. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-241: waggle dispatch release stays as an alias until G4
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-032
+- **Supersedes:** none
+
+**Question:** Q-T032-2: what happens to waggle dispatch release?
+
+**Options considered:**
+1. Keep it as an alias through the same function, drop it in G4
+2. Remove it now
+3. Keep two implementations
+
+**Hive recommendation:** Keep it as an alias through the same function, drop it in G4
+
+**Keeper choice:** waggle dispatch release stays as an alias of waggle release through the same code with today's text output, and is dropped in G4.
+
+**Rationale:** Keeps the queen's routine and T-030's tests working with no duplicated code. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-242: release counts squash and rebase merges as unmerged
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-032
+- **Supersedes:** none
+
+**Question:** Q-T032-3: does release count a squash or rebase merge as merged?
+
+**Options considered:**
+1. No, as D-222; such users pass --unmerged; revisit with forge PR state in G3 or G4
+2. Accept a branch whose patches are all on main
+3. Read PR merged state through internal/forge now
+
+**Hive recommendation:** No, as D-222; such users pass --unmerged; revisit with forge PR state in G3 or G4
+
+**Keeper choice:** No: squash and rebase merges count as unmerged and need --unmerged; revisit with forge PR state in G3 or G4.
+
+**Rationale:** Patch matching has false positives on a delete path, and forge reads are G3's lease. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-243: Repo protected paths apply when a lease is written, not to stored claims
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-032
+- **Supersedes:** none
+
+**Question:** Q-T032-4: when the base config gains a protected path, what happens to claims that already cover it?
+
+**Options considered:**
+1. Nothing at read time; the rule applies when a lease is written, and the post-run check and gate catch commits
+2. Re-validate stored claims on every read
+
+**Hive recommendation:** Nothing at read time; the rule applies when a lease is written, and the post-run check and gate catch commits
+
+**Keeper choice:** The rule applies at claim, renewal and takeover only; stored claims are not re-validated on read.
+
+**Rationale:** Re-validation would mark live claims malformed, and the overlap check skips malformed claims, which loosens protection. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-244: release in a repo with no .waggle/worktrees/ takes no lock and creates nothing
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-032
+- **Supersedes:** none
+
+**Question:** Q-T032-5: what does release do in a repo with no .waggle/worktrees/?
+
+**Options considered:**
+1. Take no lock, check no worktree, create nothing
+2. Create the directory and take dispatch.lock as today
+
+**Hive recommendation:** Take no lock, check no worktree, create nothing
+
+**Keeper choice:** No lock, no worktree check, nothing created; any other state goes through lockRepo as today.
+
+**Rationale:** A gate-only repo has no dispatch runs to wait for; the claim compare-and-swap still refuses a racing loser. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-245: T-032 also qualifies offBranch's default base name
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-032
+- **Supersedes:** none
+
+**Question:** Fable guard N2 on the T-032 brief: should T-032 qualify the unqualified origin/main name in offBranch (run.go), which a pushed tag can shadow when the operator passes --base?
+
+**Options considered:**
+1. Fix it in T-032 by allowing the offBranch name assignment in the run.go lease rule
+2. Record it as residue for a later ticket
+
+**Hive recommendation:** Fix it in T-032 by allowing the offBranch name assignment in the run.go lease rule
+
+**Keeper choice:** T-032 resolves offBranch's default name fully qualified, like ResolveBase's default, and AC12 covers it.
+
+**Rationale:** Closes the last unqualified base lookup the guards found for about two lines. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
