@@ -4817,3 +4817,101 @@
 **Keeper choice:** Move the pin from 851f7071a93eacdd1d91a44e4e268b841eb4ac53 to 7bef53b400910d55bfdcf397134b227168fa0bde; apply the three re-rendered files (roles/guard.md, roster.json guard entry, .github/workflows/waggle-gate.yml), all others unchanged. The gate workflow differs from the previous hive copy by exactly the three D-249 differences, so D-143's interim manual revert ends and waggle upgrade now reports [same] for it.
 
 **Rationale:** 7bef53b carries T-033: dispatched guards write no repo file and return the review as the final message (D-247), review.md carries a v1 verdict marker for the must-fix count (D-248), and the scaffold gate template matches the hive workflow apart from the D-249 differences. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-251: A confirming guard learns the previous round's model from dispatch run records
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-034
+- **Supersedes:** none
+
+**Question:** Q-T034-1: where does dispatch learn the previous round's guard model?
+
+**Options considered:**
+1. Dispatch run records (result.json model, head_oid, verdict, second, branch), the records --second already trusts (D-188)
+2. Review files on base: model from the queen's file name, round order from marker heads by commit ancestry
+3. Add model= to the round marker (a v2 marker, D-248) and read markers on base
+
+**Hive recommendation:** Dispatch run records (result.json model, head_oid, verdict, second, branch), the records --second already trusts (D-188)
+
+**Keeper choice:** Dispatch run records: the previous round is the latest plain guard record with a verdict on this branch and another head.
+
+**Rationale:** About 25 lines, no new format, and it reads what dispatch itself wrote; records are host-local, so Q-T034-2 sets the missing-record rule. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-252: A plain guard with no guard record after a must-fix round runs as round 1 and warns
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-034
+- **Supersedes:** none
+
+**Question:** Q-T034-2: what does a plain guard do when the base shows an earlier must-fix round but no guard record exists?
+
+**Options considered:**
+1. Resolve as a round 1 first guard and add the confirm_model_unknown warning to result.json
+2. Refuse with exit 3 and a hint
+3. Resolve as round 1 with no warning
+
+**Hive recommendation:** Resolve as a round 1 first guard and add the confirm_model_unknown warning to result.json
+
+**Keeper choice:** Resolve as round 1 and add the confirm_model_unknown warning to result.json.
+
+**Rationale:** The cross-model rule (D-100) still holds and only D-205 model diversity is at stake; the queen sees the warning. Refusing has no flag to get past it, and silence hides a D-205 miss as in D-228. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-253: --second avoids the recorded model of this round's first guard on the same head
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-034
+- **Supersedes:** none
+
+**Question:** Q-T034-3: how does --second pick its model once plain confirming guards alternate?
+
+**Options considered:**
+1. Avoid the recorded model of this round's first guard (latest plain guard record with a verdict on the same head), refusing when there is none
+2. Keep policy re-resolution and add a --confirm flag the queen passes on one-confirmation rounds
+
+**Hive recommendation:** Avoid the recorded model of this round's first guard (latest plain guard record with a verdict on the same head), refusing when there is none
+
+**Keeper choice:** --second avoids the recorded model of this round's first guard on the exact head under review and refuses when there is no such record. This amends D-188's 'latest guard run' to a run on the same head.
+
+**Rationale:** Dispatch cannot tell one-confirmation rounds from two-confirmation rounds, so ordering by records works without a new flag, a cmd/waggle/ lease or a template change. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-254: --second defaults its base to the first guard record's base
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-034
+- **Supersedes:** none
+
+**Question:** Q-T034-4: what base does --second use when --base is not given?
+
+**Options considered:**
+1. The first guard record's base_oid, hex-checked, then resolved as an explicit base
+2. <remote>/main as today, with the refusal hint naming --base <first guard base>
+
+**Hive recommendation:** The first guard record's base_oid, hex-checked, then resolved as an explicit base
+
+**Keeper choice:** With no --base, --second uses the first guard record's base_oid, hex-checked; it accepts the builder's base when that is an ancestor of the first guard's base (D-228), and any other git error refuses.
+
+**Rationale:** Main usually moves between the two guards, so the current default costs a Keeper card on every Tier 3 review; about 10 lines in run.go. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-255: Confirming-guard alternation applies to Tier 3 and unknown tier, with the D-179 downward walk
+
+- **Date:** 2026-10-23
+- **Kind:** policy
+- **Tickets:** T-034
+- **Supersedes:** none
+
+**Question:** Q-T034-5: which guards alternate, and may a plain confirming guard walk below its level?
+
+**Options considered:**
+1. Tier 3 or unknown tier; Tier 3 plain confirming guards use the D-179 downward walk bounded by the guard minimum (D-180); Tier 0 to 2 resolve as today
+2. Alternation on every tier, with the same walk
+3. Tier 3 only, no walk for plain guards; repeat the model with confirm_model_repeated when nothing else is at or above the guard level
+
+**Hive recommendation:** Tier 3 or unknown tier; Tier 3 plain confirming guards use the D-179 downward walk bounded by the guard minimum (D-180); Tier 0 to 2 resolve as today
+
+**Keeper choice:** Alternation for Tier 3 or unknown tier with the D-179 downward walk bounded by the guard minimum; Tier 0 to 2 plain guards resolve as today. Accepted: a standard-level model may confirm a stepped-up Tier 3 build outside --second, and may review a diff holding its own earlier commits, since the builder rule avoids only the latest builder run's model.
+
+**Rationale:** D-205 is written for Tier 3 two-guard reviews and D-100 keeps Tier 2 at one guard; the walk meets alternation on stepped-up builds that need two rounds. About 3 lines. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
