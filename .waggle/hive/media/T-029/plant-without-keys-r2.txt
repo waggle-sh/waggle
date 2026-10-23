@@ -1,0 +1,15 @@
+# T-029 round 2 proving test, PR #80 head fb9501f, variant: without maintenance.auto and gc.auto in tripwireEnv
+# <stage> is a staging dir under the Keeper's home that holds git archive fb9501f (the without variant has fix-removal-r2.diff applied)
+$ (cd <stage>/without && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c -o <stage>/dispatch-without.test ./internal/dispatch/)
+$ docker --context colima-waggle run --rm --init --cpus 1 --memory 700m -e GOGC=50 -v <stage>/without:/src -v <stage>/dispatch-without.test:/dispatch.test:ro -w /src/internal/dispatch golang:1.23-bookworm sh -c 'git --version; /dispatch.test -test.count=1 -test.run "^TestRunPlantDuringAutoMaintenance$" -test.v'
+git version 2.39.5
+=== RUN   TestRunPlantDuringAutoMaintenance
+=== RUN   TestRunPlantDuringAutoMaintenance/plain
+    maintenance_test.go:63: exit 0 err <nil> violations [] (planted stat after run: stat /tmp/TestRunPlantDuringAutoMaintenanceplain842254124/001/repo/.git/worktrees/planted: no such file or directory)
+=== RUN   TestRunPlantDuringAutoMaintenance/symlinked
+    maintenance_test.go:63: exit 0 err <nil> violations [] (planted stat after run: stat /tmp/TestRunPlantDuringAutoMaintenancesymlinked3788797095/001/repo/.git/worktrees/planted: no such file or directory)
+--- FAIL: TestRunPlantDuringAutoMaintenance (6.22s)
+    --- FAIL: TestRunPlantDuringAutoMaintenance/plain (3.11s)
+    --- FAIL: TestRunPlantDuringAutoMaintenance/symlinked (3.10s)
+FAIL
+exit 1

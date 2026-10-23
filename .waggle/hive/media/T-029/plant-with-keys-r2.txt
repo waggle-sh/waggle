@@ -1,0 +1,13 @@
+# T-029 round 2 proving test, PR #80 head fb9501f, variant: with maintenance.auto and gc.auto in tripwireEnv
+# <stage> is a staging dir under the Keeper's home that holds git archive fb9501f (the without variant has fix-removal-r2.diff applied)
+$ (cd <stage>/with && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c -o <stage>/dispatch-with.test ./internal/dispatch/)
+$ docker --context colima-waggle run --rm --init --cpus 1 --memory 700m -e GOGC=50 -v <stage>/with:/src -v <stage>/dispatch-with.test:/dispatch.test:ro -w /src/internal/dispatch golang:1.23-bookworm sh -c 'git --version; /dispatch.test -test.count=1 -test.run "^TestRunPlantDuringAutoMaintenance$" -test.v'
+git version 2.39.5
+=== RUN   TestRunPlantDuringAutoMaintenance
+=== RUN   TestRunPlantDuringAutoMaintenance/plain
+=== RUN   TestRunPlantDuringAutoMaintenance/symlinked
+--- PASS: TestRunPlantDuringAutoMaintenance (6.21s)
+    --- PASS: TestRunPlantDuringAutoMaintenance/plain (3.09s)
+    --- PASS: TestRunPlantDuringAutoMaintenance/symlinked (3.11s)
+PASS
+exit 0
