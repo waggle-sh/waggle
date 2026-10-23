@@ -32,6 +32,9 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 	if len(args) > 0 && args[0] == "clean" {
 		return runClean(args[1:], stdout, stderr)
 	}
+	if len(args) > 0 && args[0] == "release" {
+		return runRelease(args[1:], stdout, stderr)
+	}
 	fs := flag.NewFlagSet("dispatch", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
@@ -39,6 +42,7 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "       waggle dispatch <ticket> --role guard --branch <branch> --no-cell [--second] [--base <rev>] [--tier 0-3] [--json]")
 		fmt.Fprintln(stderr, "       waggle dispatch clean <ticket> [--role builder|forager|guard] [--runs] [--repo <dir>]")
 		fmt.Fprintln(stderr, "       waggle dispatch clean --host-record [--accept <digest>] [--repo <dir>]")
+		fmt.Fprintln(stderr, "       waggle dispatch release <ticket> [--branch <name>] [--unmerged] [--repo <dir>]")
 		fmt.Fprintln(stderr, "       [--branch <b>] [--base <rev>] [--tier 0-3] [--read <path>...] [--timeout 120m] [--no-push] [--keep-worktree] [--json] [--repo <dir>]")
 	}
 	var dirs, reads listFlag
@@ -107,6 +111,37 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "%s %s ended %s (exit %d), record %s\n", res.Ticket, res.Role, res.End, res.ExitCode, res.RunDir)
 	return res.ExitCode
+}
+
+// runRelease implements `waggle dispatch release <ticket>`: it gives back the
+// caller's own claim once the ticket's branch has merged. Exit codes as for
+// dispatch: 3 environment or a held lock, 4 refused.
+func runRelease(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("dispatch release", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	branch, repo := fs.String("branch", "", "branch, default t-<nnn>"), fs.String("repo", ".", "repository")
+	unmerged := fs.Bool("unmerged", false, "release without the merged check (a ticket that makes no PR)")
+	ticket := ""
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		ticket, args = args[0], args[1:]
+	}
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return dispatch.ExitUsage
+	}
+	if ticket == "" && fs.NArg() == 1 {
+		ticket = fs.Arg(0)
+	} else if ticket == "" || fs.NArg() > 0 {
+		fmt.Fprintln(stderr, "Usage: waggle dispatch release <ticket> [--branch <name>] [--unmerged] [--repo <dir>]")
+		return dispatch.ExitUsage
+	}
+	err := dispatch.Release(context.Background(), dispatch.ReleaseRequest{RepoDir: *repo, Ticket: ticket, Branch: *branch, Unmerged: *unmerged}, stdout)
+	if err != nil {
+		fmt.Fprintf(stderr, "waggle dispatch: %v\n", err)
+	}
+	return dispatch.ExitCode(err)
 }
 
 // runClean implements `waggle dispatch clean <ticket>` (T-023 10.7.3 items 5
