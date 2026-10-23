@@ -256,11 +256,12 @@ func TestSecondGuard(t *testing.T) {
 }
 
 // D-180: this hive's shape (opus/sonnet/haiku, builder and guard minimum
-// standard, no alternates), unstepped: the second guard never falls to haiku.
+// standard, no alternates), unstepped: the second guard never falls to haiku,
+// and the hint names frontier, where the first guard's opus sits (T-034 2.3).
 func TestSecondGuardHiveShapeRefuses(t *testing.T) {
 	p := testPolicy()
 	_, err := p.Resolve("guard", &TaskContext{TaskID: "T-1", SecondGuard: true}, nil)
-	wantErr(t, err, ErrNoCrossModel, "alternates.standard")
+	wantErr(t, err, ErrNoCrossModel, "alternates.frontier")
 }
 
 // The D-179 walk: builder stepped to frontier, first guard on alternates.frontier,
@@ -308,6 +309,6 @@ func TestSecondGuardWalk(t *testing.T) {
 	t.Run("floor", func(t *testing.T) {
 		p := walkPolicy("opus", "haiku", "")
 		_, err := p.Resolve("guard", second, nil)
-		wantErr(t, err, ErrNoCrossModel, "alternates.frontier")
+		wantErr(t, err, ErrNoCrossModel, "alternates.standard")
 	})
 }
