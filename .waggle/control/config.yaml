@@ -48,3 +48,6 @@ cell:
 leases:
   default_ttl_minutes: 120
   max_directories_per_claim: 5
+# gate/ holds the T-036 composite Action (D-270, D-272), listed after phase A merged (T-036 2.11 item 2).
+gate:
+  protected_paths: gate/
