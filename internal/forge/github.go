@@ -192,9 +192,3 @@ func (g *github) autoMerge(ctx context.Context, path string, req MergeRequest) e
 func (g *github) CIShim() (Shim, bool) {
 	return Shim{Path: layout.GateWorkflow, Template: "waggle-gate.yml.tmpl"}, true
 }
-
-// Probe is not built yet; the GitHub capability probes arrive with waggle
-// doctor.
-func (g *github) Probe(ctx context.Context, opt ProbeOptions) (Report, error) {
-	return Report{}, fmt.Errorf("forge: probe %s/%s: GitHub probes are not built yet: %w", g.owner, g.repo, ErrUnsupported)
-}
