@@ -5149,3 +5149,22 @@
 **Keeper choice:** No: an approval counts only when submitted after the PR's last base change (BaseRefChangedEvent.createdAt, read in the same GraphQL query), so a retarget needs a fresh approval.
 
 **Rationale:** Closes the retarget hole where an approval of a small diff against one base passes a larger diff against main. About 10 lines. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-268: The queen runs the ticket pipeline without routine cards
+
+- **Date:** 2026-10-24
+- **Kind:** policy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** After D-260 the Head Keeper said: 'You have control. Stop asking me every single time for things like that' (asked about merging a guarded brief PR and dispatching its builder). Which steps still need a card?
+
+**Options considered:**
+1. The queen runs routine pipeline steps herself and keeps cards only for real decisions
+2. Keep D-260 as it stands
+
+**Hive recommendation:** The queen runs routine pipeline steps herself and keeps cards only for real decisions
+
+**Keeper choice:** Widens D-260. Without a card the queen: starts scout briefs for the next work item in the agreed order; runs brief guards and fix rounds; merges a brief PR once its guards pass; dispatches the builder at the brief's Lease and Gate lines; runs guards and confirming rounds; merges a product PR when every guard passed at the current head and product-ci is green (the gate's expected no-claim or no-ticket failures excepted); merges records batches. Still on a card: open-question rulings and D-204 design cards, any nonzero dispatch exit or unexpected gate failure, a build crossing its stop, any change under .waggle/control/ or .github/workflows/ including pin moves, and anything that publishes, deletes, touches credentials or sets strategy or policy.
+
+**Rationale:** T-034 and T-035 showed most cards were confirmations of the queen's own recommendation. Guards, gates and records are unchanged; only the Keeper's click on routine steps is removed. Revocable by a later decision. Decided by the Head Keeper in the queen session on 2026-10-23; recorded by the queen.
