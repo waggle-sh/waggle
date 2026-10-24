@@ -5363,3 +5363,102 @@
 **Keeper choice:** Fix before G5 in a small Tier 3 ticket briefed after T-038; the T-037 docs describe today's behavior until it merges and are rewritten from the merged code if it lands first.
 
 **Rationale:** The lease check is the headline feature, so the launch should not ship with a known way to borrow another task's lease; adds about a day and $10 to $15. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-279: Copilot cloud agent commits bind through a repository instruction
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-037
+- **Supersedes:** none
+
+**Question:** Q-T037-1: how do Copilot cloud agent commits bind to a task?
+
+**Options considered:**
+1. A binding rule in the repository instructions Copilot reads, stated as depending on Copilot following it; unbound commits fail closed; the demo tests it
+2. Hold the recipe for a product binding source the agent does not write
+3. Ship without a Copilot recipe
+
+**Hive recommendation:** A binding rule in the repository instructions Copilot reads, stated as depending on Copilot following it; unbound commits fail closed; the demo tests it
+
+**Keeper choice:** Option (a): a binding rule in the repository instructions; the docs say binding depends on Copilot following it and unbound commits fail closed; the demo card tests it. A repository instruction is configuration, not a change to the agent's behavior, for the D-235 technical kill test.
+
+**Rationale:** Honest, no code, and the demo answers it before the flip. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-280: The hive glossary moves to a CONTRIBUTING section
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-037
+- **Supersedes:** none
+
+**Question:** Q-T037-2: where does the hive glossary go?
+
+**Options considered:**
+1. A new CONTRIBUTING section with the retired-names table, CONTRIBUTING added to CODEOWNERS
+2. A hive file linked from CONTRIBUTING
+3. Drop it
+
+**Hive recommendation:** A new CONTRIBUTING section with the retired-names table, CONTRIBUTING added to CODEOWNERS
+
+**Keeper choice:** A new CONTRIBUTING section with the retired-names table, and /CONTRIBUTING.md added to CODEOWNERS; supersedes D-065's two README sections, D-073's naming rule stays.
+
+**Rationale:** Contributors reading records need it and it stays in the T-037 lease. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-281: Docs quote hive words in gate output literally; a small ticket rewords them before the flip
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-037
+- **Supersedes:** none
+
+**Question:** Q-T037-3: gate output, help text and templates name hive roles
+
+**Options considered:**
+1. Quote literally with a plain gloss and cut a small Tier 3 rename ticket before the flip
+2. Quote as is, change nothing
+3. Block T-037 on the rename
+
+**Hive recommendation:** Quote literally with a plain gloss and cut a small Tier 3 rename ticket before the flip
+
+**Keeper choice:** Quote them literally in code spans with a plain gloss; the queen cuts a small Tier 3 ticket (about 25 lines) to reword gate output, help text and the step name before the flip; the Head Keeper subject prefix and keeper_id stay literal until that ticket decides.
+
+**Rationale:** Docs ship matching the code and the public product loses the jargon before launch. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-282: T-037 docs rounds get two guards on different models
+
+- **Date:** 2026-10-24
+- **Kind:** policy
+- **Tickets:** T-037
+- **Supersedes:** none
+
+**Question:** Q-T037-4: review depth for a Tier 2 docs ticket
+
+**Options considered:**
+1. Two guards on different models
+2. One guard
+
+**Hive recommendation:** Two guards on different models
+
+**Keeper choice:** Two guards on different models for every T-037 round.
+
+**Rationale:** The docs are the public statement of a security product's guarantees. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-283: Gas Town gets a requirements and status section, not a recipe
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-037
+- **Supersedes:** none
+
+**Question:** Q-T037-5: what do the docs say about Gas Town?
+
+**Options considered:**
+1. A requirements and status section in docs/recipes/README.md only, marked untested
+2. A full recipe citing the Gas Town pull request
+3. Drop Gas Town
+
+**Hive recommendation:** A requirements and status section in docs/recipes/README.md only, marked untested
+
+**Keeper choice:** Option (b): a requirements and status section only; the default direct merge skips the gate and the merge-queue path is untested. G5 ships two full recipes.
+
+**Rationale:** The public facts do not support a step-by-step recipe; (a) can follow once a run or a merge_group trigger backs it. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
