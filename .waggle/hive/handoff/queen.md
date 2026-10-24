@@ -45,7 +45,7 @@ Two layers. Product is Waggle itself (cmd/, internal/ including internal/scaffol
 - Confirming guards after a must-fix round: since pin 1475d74 (D-259) dispatch alternates (D-251 to D-255) the model from run records and `--second` takes the first guard record's base by default; with an opus builder, confirming guards alternate fable and sonnet. Name brief reviews `brief-T-<nnn>-<model>.md`, never `T-<nnn>-brief-*`, so dispatch's must-fix count skips them (D-257).
 - Hand off before context passes about 200k and ask the Keeper for a fresh session: write the next unused `.waggle/control/handoffs/queen-<n>.md` in the role template's format. Refer to the Keeper by role, never by name, in every committed file, card, PR body and handoff. Refresh this summary at phase merges and in records batches (D-182).
 
-## State at this summary (main at `1475d74`)
+## State at this summary (main at `97127fc`)
 
 G1 (T-031, gate verify, #89) and G2 (T-032, claim and release verbs, protected paths, qualified default base, #93) are merged; the repositioning note (D-229) landed in #86 and D-230 in #85. T-033 (#98, guard bundle: guard writes no repo file, v1 verdict marker for the must-fix count, scaffold gate workflow matches the hive) merged on 2026-10-23 at 99 added non-test lines against target 290. Pin moves: 851f707 (D-246, #95) and 7bef53b (D-250, #100), each with opus and fable passes.
 
@@ -53,11 +53,11 @@ Second-guard data: fable found nothing blocking on T-031, T-032, T-033 or the tw
 
 Older carried notes (redaction list, D-143, D-151, T-025 phase C, T-014b fable F6, the scaffold `guard: sonnet` template, the records 7 to 16 open notes) stand as listed in the hive records 16 version of this file (`git show 6fd0d0f:.waggle/hive/handoff/queen.md`).
 
-DECISIONS.md: 258 entries. Next ID D-259. T-034 (D-228 follow-up) merged in #103 on 2026-10-23, builder opus (stepped up by the D-257 brief-review count), fable and sonnet --second pass. D-256: scout and brief and control reviews stay subagents. D-258: G3, G4, G5 order stays.
+DECISIONS.md: 268 entries. Next ID D-269. T-034 merged #103, pin 1475d74 (D-259, #105). T-035 (G3, named approver and trailer warnings, D-261 to D-267) merged #107 on 2026-10-23: builder sonnet, opus and fable --second pass, about 609 added non-test lines against target 720. D-260 and D-268: the queen runs the ticket pipeline without routine cards; rulings, design cards, nonzero exits, a crossed stop, control and workflow changes (pin moves included), publish, delete, credentials, strategy and policy still go to the Keeper. The auto-mode classifier blocks a product merge without a fresh Keeper card ("Merge Without Review"), so a clean merge still gets a one-line card until the Keeper adds an allow rule.
 
 ## Next work, in order
 
-1. G3 brief (scout): named approver and Intent Packet trailers; keep G3, G4, G5 (D-258).
-2. G3: named approver and Intent Packet trailers (`internal/forge/`, `cmd/waggle/`); Q-T032-3 squash-merge revisit and merged-check PR binding land there or in G4.
+1. Pin move to include T-035 (97127fc), on a card: the gate workflow gets the T-035 render (edited and pull_request_review triggers, pull-requests: read, token) as a Head Keeper commit; then verify on the first PR that a review-triggered run updates the required check at the head SHA (T-035 2.7). From T-035 merge on, put Waggle-Ticket, Waggle-Risk-Tier and Waggle-Verdict trailers in hive PR bodies (D-263, D-264).
+2. G4: distribution (release binaries, composite Action carrying the T-035 trigger, permission and token, waggle init --gate-only, relay stub removal, T-018 phase C doctor checks); then G5 (D-235, D-258).
 3. Polish notes for a later ticket: T-032 (claim argument order, AC10 lacks U+2028, release branch length for `waggle/T-`, unknown exit-4 sentinel maps to environment, CLI usage errors report an empty task, cancellation surfaces as exit 3); T-031 (`--branch` usage paragraph placement, trailer split before the 256-byte check, `./` protected-path entry accepted, bad-branch warning only under leases). T-034 and D-257: roundMustFix must skip brief reviews; fable N3 (topTier duplicated in guardModel), N4 (empty first guard model in the hint).
 4. Records: mark T-008 superseded by T-031 and G4 at the next T-008 brief edit; T-029 review seam line (`reviews/hive-records-20.md` N1); brief nits (T-029 Status line, T-029 2.4 holds on git 2.39 only, T-030 AC4 grammar).
