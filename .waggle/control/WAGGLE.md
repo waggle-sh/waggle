@@ -20,6 +20,7 @@ Define the top-level modules Builders may lease:
 - `internal/runtime/`: `AgentRuntime` adapters and token cap monitors
 - `internal/scaffold/`: `waggle init` embedded templates
 - `internal/usage/`: Token and cost ledger reader behind `waggle status` (T-022)
+- `gate/`: Composite GitHub Action that builds and runs the gate from its own pinned tree (T-036, D-270, D-272)
 
 ## 3. Build and Verification Commands
 - **Build:** `go build ./...`
