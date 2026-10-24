@@ -155,7 +155,7 @@ func (p Policy) Resolve(role string, task *TaskContext, decisionExists func(id i
 		avoid = append(avoid, task.AvoidModels...)
 		// D-179 walks down for a second guard, and for a Tier 3 or unknown-tier
 		// plain guard that avoids more than the policy's builder model (D-255).
-		walk = task.SecondGuard || (topTier(task.Tier) && slices.ContainsFunc(avoid, func(m string) bool { return m != builderModel }))
+		walk = task.SecondGuard || (TopTier(task.Tier) && slices.ContainsFunc(avoid, func(m string) bool { return m != builderModel }))
 	}
 	model, err := p.pick(role, level, task, avoid...)
 	guardLevel := level
@@ -249,9 +249,9 @@ func lowTier(tier *comb.RiskTier) bool {
 	return tier != nil && (*tier == comb.Tier0Trivial || *tier == comb.Tier1Isolated)
 }
 
-// topTier reports a Tier 3 or unknown (nil) task, the tiers whose plain guards
+// TopTier reports a Tier 3 or unknown (nil) task, the tiers whose plain guards
 // alternate models round to round (D-205, D-255).
-func topTier(tier *comb.RiskTier) bool {
+func TopTier(tier *comb.RiskTier) bool {
 	return tier == nil || *tier == comb.Tier3ControlPlane
 }
 
