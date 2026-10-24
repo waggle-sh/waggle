@@ -40,8 +40,12 @@ type ClaimTaskResult struct {
 // protected paths from the base revision and writes the claim through
 // AcquireClaim. Failures are *Error: ExitUsage for a bad request, ExitClaim for
 // a refused claim, ExitEnv for git or config trouble. Nothing is written when it
-// fails.
+// fails. A cancelled ctx turns an ExitEnv failure into ExitFailed (interrupted).
 func ClaimTask(ctx context.Context, r ClaimTaskRequest) (res ClaimTaskResult, err error) {
+	defer func() { err = interruptedEnv(ctx, err) }()
+	if id, perr := comb.ParseTicketID(r.Ticket); perr == nil {
+		res.Task = id
+	}
 	req, err := Request{RepoDir: r.RepoDir, Ticket: r.Ticket, Role: "builder", Dirs: r.Dirs, Gate: r.Gate, Base: r.Base}.Validate()
 	if err != nil {
 		return res, err
@@ -165,8 +169,21 @@ func ErrorCode(err error) string {
 			return c.code
 		}
 	}
-	if exit == ExitFailed {
+	switch exit {
+	case ExitFailed:
 		return "interrupted"
+	case ExitClaim:
+		return "refused"
 	}
 	return "environment"
+}
+
+// interruptedEnv maps an ExitEnv error to ExitFailed once ctx is done: a
+// cancelled git call reports as a killed process, not as context.Canceled.
+// Usage and refusal errors keep their codes.
+func interruptedEnv(ctx context.Context, err error) error {
+	if err != nil && ctx.Err() != nil && ExitCode(err) == ExitEnv {
+		return failf(ExitFailed, "interrupted: %w", err)
+	}
+	return err
 }
