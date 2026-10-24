@@ -164,9 +164,16 @@ func guardModel(runs string, p runtime.Policy, task runtime.TaskContext, branch,
 		task.AvoidModels, task.RecordedBuilder = []string{b.Model}, b.Model
 	}
 	if second {
-		f, _, okF := guardRun(runs, task.TaskID, branch, func(r Result) bool { return r.HeadOID == head })
+		f, fName, okF := guardRun(runs, task.TaskID, branch, func(r Result) bool { return r.HeadOID == head })
 		if !okB || !okF {
 			return runtime.Selection{}, nil, secondMissing(task.TaskID, head)
+		}
+		for _, rec := range []struct {
+			name, model string
+		}{{bName, b.Model}, {fName, f.Model}} {
+			if rec.model == "" {
+				return runtime.Selection{}, nil, failf(ExitEnv, "--second: run record %s has no model", rec.name)
+			}
 		}
 		task.AvoidModels = append(task.AvoidModels, f.Model)
 		sel, err := p.Resolve("guard", &task, nil)
@@ -174,7 +181,7 @@ func guardModel(runs string, p runtime.Policy, task runtime.TaskContext, branch,
 	}
 	var warns []string
 	prev, _, okP := guardRun(runs, task.TaskID, branch, func(r Result) bool { return r.HeadOID != head })
-	alternate := task.Tier == nil || *task.Tier == comb.Tier3ControlPlane
+	alternate := runtime.TopTier(task.Tier)
 	var sel runtime.Selection
 	var err error
 	switch {

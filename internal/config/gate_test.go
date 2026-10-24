@@ -28,6 +28,7 @@ func TestGateProtectedPaths(t *testing.T) {
 		"empty entry":      `"a,,b"`,
 		"trailing comma":   `"a,"`,
 		"dot":              `"."`,
+		"dot slash":        `"./"`,
 		"leading slash":    `"/etc"`,
 		"backslash":        `"a\\b"`,
 		"dotdot":           `"a/../b"`,
