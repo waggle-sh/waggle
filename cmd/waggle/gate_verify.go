@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -123,16 +124,26 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	g := gitRunner{ctx, *repo}
 	gha := getenv("GITHUB_ACTIONS") == "true"
 
-	var rep gateReport
+	rep := &gateReport{}
+	var ev *prEvent
+	var evReason string
+	if gha {
+		ev, evReason = readPREvent(getenv)
+	}
 	branchName := *branch
 	if branchName == "" && gha {
 		branchName = getenv("GITHUB_HEAD_REF")
+		if branchName == "" && ev != nil {
+			branchName = ev.headRef
+		}
 	}
 	branchID, ignored := branchTicket(branchName)
 	if ignored {
 		rep.warn(checkLeases, "branch name ignored")
 	}
-	err := scanRange(g, *base, *head, branchID, check != checkLeases, &rep)
+	in := scanInput{branchID: branchID, tree: check != checkLeases}
+	pre := slices.Clone(rep.findings)
+	out, err := scanRange(g, *base, *head, in, rep)
 	code := gatePass
 	switch {
 	case errors.Is(err, errTooLarge) && check == checkTiers:
@@ -142,6 +153,9 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	case err != nil:
 		fmt.Fprintf(stderr, "%s: error: %s\n", check, annotData.Replace(err.Error()))
 		code = gateError
+	case err == nil:
+		pr := prRun{g: g, check: check, in: in, gha: gha, getenv: getenv, ev: ev, evReason: evReason, pre: pre}
+		rep = pr.finish(rep, out)
 	}
 	if code == gatePass {
 		for _, c := range []string{checkLeases, checkTiers} {
@@ -156,78 +170,104 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	return code
 }
 
+// scanInput is what one scanRange pass is asked to do.
+type scanInput struct {
+	branchID string // ticket the PR branch binds, or ""
+	tree     bool   // also check the head tree for case collisions
+	filter   bool   // drop tier3 and outside_lease findings on approvable paths
+}
+
+// scanOutcome is what a pass learned beyond its findings.
+type scanOutcome struct {
+	baseOID, headOID string
+	approvers        []string      // gate.approvers of the base config
+	hit              bool          // a tier3 finding on an approvable path
+	bound            []string      // distinct tickets the commits bind, sorted
+	maxTier          comb.RiskTier // highest tier the changed paths require
+}
+
 // scanRange resolves base and head, takes their merge-base exactly as
-// gateDecisions does, checks every commit in between, and with tree set also
-// checks the head tree for case collisions. branchID is the ticket the PR
-// branch binds, or "". Repo-defined protected paths are read from base only.
-func scanRange(g gitRunner, base, head, branchID string, tree bool, rep *gateReport) error {
+// gateDecisions does, checks every commit in between, and with in.tree set also
+// checks the head tree for case collisions. Repo-defined protected paths and
+// approvers are read from base only.
+func scanRange(g gitRunner, base, head string, in scanInput, rep *gateReport) (scanOutcome, error) {
 	baseOID, err := g.resolve(base)
 	if err != nil {
-		return err
+		return scanOutcome{}, err
 	}
 	headOID, err := g.resolve(head)
 	if err != nil {
-		return err
+		return scanOutcome{}, err
 	}
 	out, err := g.run("merge-base", baseOID, headOID)
 	mb := strings.TrimSpace(string(out))
 	if err != nil || !oidPattern.MatchString(mb) {
-		return fmt.Errorf("%w: no merge-base; is the clone shallow? use fetch-depth: 0 (%v)", errGit, err)
+		return scanOutcome{}, fmt.Errorf("%w: no merge-base; is the clone shallow? use fetch-depth: 0 (%v)", errGit, err)
 	}
 	cb, err := comb.NewGitBackend(comb.Options{RepoDir: g.repo})
 	if err != nil {
-		return fmt.Errorf("%w: %v", errGit, err)
+		return scanOutcome{}, fmt.Errorf("%w: %v", errGit, err)
 	}
-	policy, err := baseTierPolicy(g, baseOID)
+	policy, approvers, err := baseTierPolicy(g, baseOID)
 	if err != nil {
-		return err
+		return scanOutcome{}, err
 	}
 	s := commitScan{g: g, comb: cb, now: time.Now(), rep: rep, claims: map[string]claimLookup{},
-		baseOID: baseOID, policy: policy, branch: branchID, bound: map[string]string{}}
+		baseOID: baseOID, policy: policy, branch: in.branchID, bound: map[string]string{},
+		approvable: approvablePath(policy), filter: in.filter}
+	res := scanOutcome{baseOID: baseOID, headOID: headOID, approvers: approvers}
 	if err := s.scan(mb, headOID); err != nil {
-		return err
+		return res, err
 	}
-	if tree {
-		return caseCollisions(g, headOID, rep)
+	res.hit, res.maxTier = s.hit, s.maxTier
+	for _, id := range s.bound {
+		if !slices.Contains(res.bound, id) {
+			res.bound = append(res.bound, id)
+		}
 	}
-	return nil
+	slices.Sort(res.bound)
+	if in.tree {
+		return res, caseCollisions(g, headOID, rep)
+	}
+	return res, nil
 }
 
-// baseTierPolicy reads gate.protected_paths from the config at the PR base,
-// never from the head tree or the worktree. A missing file means no entries;
+// baseTierPolicy reads gate.protected_paths and gate.approvers from the config
+// at the PR base, never from the head tree or the worktree. A missing file
+// means no entries;
 // a symlink, tree, submodule, oversized or invalid file is an error.
-func baseTierPolicy(g gitRunner, baseOID string) (comb.TierPolicy, error) {
+func baseTierPolicy(g gitRunner, baseOID string) (comb.TierPolicy, []string, error) {
 	out, err := g.run("ls-tree", "-z", "--full-tree", baseOID, "--", layout.Config)
 	if err != nil || len(out) == 0 {
-		return comb.TierPolicy{}, err
+		return comb.TierPolicy{}, nil, err
 	}
 	recs := strings.Split(strings.TrimSuffix(string(out), "\x00"), "\x00")
 	meta, _, _ := strings.Cut(recs[0], "\t")
 	f := strings.Fields(meta)
 	if len(f) != 3 || !oidPattern.MatchString(f[2]) {
-		return comb.TierPolicy{}, fmt.Errorf("%w ls-tree: unexpected output %q", errGit, recs[0])
+		return comb.TierPolicy{}, nil, fmt.Errorf("%w ls-tree: unexpected output %q", errGit, recs[0])
 	}
 	if len(recs) != 1 || f[1] != "blob" || (f[0] != "100644" && f[0] != "100755") {
-		return comb.TierPolicy{}, fmt.Errorf("base: %s is mode %s type %s; it must be a regular file", layout.Config, f[0], f[1])
+		return comb.TierPolicy{}, nil, fmt.Errorf("base: %s is mode %s type %s; it must be a regular file", layout.Config, f[0], f[1])
 	}
 	out, err = g.run("cat-file", "-s", f[2])
 	if err != nil {
-		return comb.TierPolicy{}, err
+		return comb.TierPolicy{}, nil, err
 	}
 	size, err := strconv.Atoi(strings.TrimSpace(string(out)))
 	if err != nil {
-		return comb.TierPolicy{}, fmt.Errorf("%w cat-file -s: unexpected output %q", errGit, out)
+		return comb.TierPolicy{}, nil, fmt.Errorf("%w cat-file -s: unexpected output %q", errGit, out)
 	}
 	if size > config.MaxFileSize {
-		return comb.TierPolicy{}, fmt.Errorf("base: %s is %d bytes, over the %d byte cap", layout.Config, size, config.MaxFileSize)
+		return comb.TierPolicy{}, nil, fmt.Errorf("base: %s is %d bytes, over the %d byte cap", layout.Config, size, config.MaxFileSize)
 	}
 	data, err := g.run("cat-file", "blob", f[2])
 	if err != nil {
-		return comb.TierPolicy{}, err
+		return comb.TierPolicy{}, nil, err
 	}
 	cfg, err := config.Parse(data)
 	if err != nil {
-		return comb.TierPolicy{}, fmt.Errorf("base: %w", err)
+		return comb.TierPolicy{}, nil, fmt.Errorf("base: %w", err)
 	}
-	return comb.TierPolicy{ExtraTier3: cfg.Gate.ProtectedPaths}, nil
+	return comb.TierPolicy{ExtraTier3: cfg.Gate.ProtectedPaths}, cfg.Gate.Approvers, nil
 }
