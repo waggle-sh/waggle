@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT-0
+# Waggle gate configuration: the merge gate in CI reads this file, and a full hive adds more keys later.
+# Edit protected_paths and approvers below; every other change is made through waggle upgrade.
+version: 1
+
+waggle:
+  pin: {{PIN}} # the Waggle build this repo runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
+
+forge:
+  provider: github
+  remote: origin # claims are pushed to this remote and the gate fetches them from it
+
+gate:
+  # Comma separated repo-relative paths that only the Head Keeper or a listed approver may change.
+  protected_paths: ""
+  # Comma separated GitHub logins, without @, who may approve changes to protected paths.
+  approvers: ""

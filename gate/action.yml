@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: MIT-0
+name: Waggle gate
+description: Build waggle from this Action's own pinned tree and run waggle gate verify on a pull request.
+
+inputs:
+  base-sha:
+    description: Base commit of the pull request.
+    default: ${{ github.event.pull_request.base.sha }}
+  head-sha:
+    description: Head commit of the pull request.
+    default: ${{ github.event.pull_request.head.sha }}
+  token:
+    description: Token the gate uses to read pull request reviews.
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+      with:
+        go-version: "1.23"
+        cache: false
+
+    - name: Build the gate from the Action tree
+      shell: bash
+      env:
+        CGO_ENABLED: "0"
+        GOTOOLCHAIN: local
+        GOPROXY: "off"
+        GOFLAGS: -mod=readonly
+        GOWORK: "off"
+      run: |
+        set -euo pipefail
+        cd "$GITHUB_ACTION_PATH/.."
+        go build -o "$RUNNER_TEMP/waggle-gate/waggle" ./cmd/waggle
+
+    - name: Fetch claim refs
+      shell: bash
+      run: |
+        set -euo pipefail
+        git fetch --prune origin '+refs/waggle/claims/*:refs/waggle/claims/*'
+
+    - name: Run the gate
+      shell: bash
+      env:
+        BASE_SHA: ${{ inputs.base-sha }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        GITHUB_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+        "$RUNNER_TEMP/waggle-gate/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA"
