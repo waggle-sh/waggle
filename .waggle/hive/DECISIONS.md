@@ -4994,3 +4994,158 @@
 **Keeper choice:** Move the pin from 7bef53b400910d55bfdcf397134b227168fa0bde to 1475d74c6ee8ed9e50de8dffa6984edfd454ddbb (T-034, #103); waggle upgrade reports every managed file [same], so only the pin line changes.
 
 **Rationale:** 1475d74 is the known-good build chosen by the Head Keeper (D-041): it carries T-034, so our own dispatch runs alternate confirming-guard models and --second takes the first guard record's base. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-260: Routine Tier 3 steps run without a card: guards after an approved build, records batches with only renames or appended reviews
+
+- **Date:** 2026-10-23
+- **Kind:** policy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Which routine steps in a ticket may the queen take without a Keeper card?
+
+**Options considered:**
+1. Guards start without a card after the Keeper approves the build; a records batch whose scan exit 2 comes only from renames or appended reviews merges without a card; every other card stays
+2. The same, plus a Tier 3 merge without a card when both guards pass, the head matches and CI is green
+3. Keep every card
+
+**Hive recommendation:** Guards start without a card after the Keeper approves the build; a records batch whose scan exit 2 comes only from renames or appended reviews merges without a card; every other card stays
+
+**Keeper choice:** Adopt the standing rule. The queen starts a ticket's guards (first and --second) without a card after the Keeper approved its build, and merges a records batch with --admin when scan-hive's exit 2 comes only from renamed hive files or reviews appended to existing files. Brief rulings, build starts, every must-fix, every nonzero exit, every Tier 3 merge and every pin move still go to the Keeper on a card.
+
+**Rationale:** T-034 needed about 13 cards; about 3 to 4 per ticket were routine and added Keeper wait time with no decision in them. Revocable by a later decision. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-261: A listed approver passes only repo-listed protected paths outside the hardcoded Tier 3 prefixes
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-035
+- **Supersedes:** none
+
+**Question:** Q-T035-1: which paths can a listed approver pass?
+
+**Options considered:**
+1. Only repo-listed gate.protected_paths outside the hardcoded Tier 3 prefixes
+2. Also the hardcoded dependency paths (go.mod, go.sum, go.work*, vendor/)
+3. Every Tier 3 path
+
+**Hive recommendation:** Only repo-listed gate.protected_paths outside the hardcoded Tier 3 prefixes
+
+**Keeper choice:** Only repo-listed gate.protected_paths outside the hardcoded Tier 3 prefixes; every hardcoded Tier 3 path (.waggle/ including .waggle/hive/, .github/workflows/, .gitlab-ci.yml, .devcontainer/, go.mod, go.sum, go.work*, vendor/) stays Head Keeper commit plus admin bypass even when listed, so a listing only raises the bar.
+
+**Rationale:** Matches T-031's split, keeps files that can rewrite the gate behind the bypass, smallest surface; widening later is additive. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-262: A listed approver's open change request blocks an approval
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-035
+- **Supersedes:** none
+
+**Question:** Q-T035-2: does a change request from another listed approver block an approval?
+
+**Options considered:**
+1. Yes: any listed approver whose counted state is CHANGES_REQUESTED blocks until they approve or the request is dismissed
+2. No: one listed approval at head is enough
+
+**Hive recommendation:** Yes: any listed approver whose counted state is CHANGES_REQUESTED blocks until they approve or the request is dismissed
+
+**Keeper choice:** Yes: any listed approver whose counted state is CHANGES_REQUESTED blocks, at any commit, until they approve or the request is dismissed.
+
+**Rationale:** Matches GitHub branch protection; one approver cannot overrule another by racing a click. About 3 lines. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-263: Intent Packet trailer checks are warnings only
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-035
+- **Supersedes:** none
+
+**Question:** Q-T035-3: how strong is the trailer check?
+
+**Options considered:**
+1. Warnings only, no config key
+2. Warnings by default plus an opt-in gate.require_trailers
+3. A hard failure for every repo
+
+**Hive recommendation:** Warnings only, no config key
+
+**Keeper choice:** Warnings only, no config key. Trailer warnings appear on every PR with a context from the T-035 merge on, hive PRs included, until PR bodies carry the trailers.
+
+**Rationale:** Trailer values are author-controlled and prove nothing, and the repositioning risk list warns against day-one strictness; an opt-in can come later. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-264: Intent Packet trailer keys are Waggle-Ticket, Waggle-Risk-Tier and Waggle-Verdict
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-035
+- **Supersedes:** none
+
+**Question:** Q-T035-4: what are the trailer keys?
+
+**Options considered:**
+1. Waggle-Ticket, Waggle-Risk-Tier, Waggle-Verdict
+2. Unprefixed Ticket, Risk-Tier, Verdict
+
+**Hive recommendation:** Waggle-Ticket, Waggle-Risk-Tier, Waggle-Verdict
+
+**Keeper choice:** Waggle-Ticket, Waggle-Risk-Tier and Waggle-Verdict.
+
+**Rationale:** Matches D-234's Waggle-Ticket commit trailer and avoids clashes with other tools; hard to reverse after G5. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-265: release merged-state and merged-check PR binding stay out of G3
+
+- **Date:** 2026-10-23
+- **Kind:** scope
+- **Tickets:** T-035
+- **Supersedes:** none
+
+**Question:** Q-T035-5: does G3 also read PR merged state for waggle release (Q-T032-3, D-242) and bind the merged check to a PR (fable N4 on the T-032 brief)?
+
+**Options considered:**
+1. No; both stay open for G4 or a later polish ticket
+2. Yes, adding internal/dispatch/ to the lease and a PR lookup by branch
+
+**Hive recommendation:** No; both stay open for G4 or a later polish ticket
+
+**Keeper choice:** No; both stay open for G4 or a later polish ticket, and release keeps needing --unmerged after a squash or rebase merge.
+
+**Rationale:** release runs with a gh login, not the CI token, so it needs its own auth design; it would add a fifth leased directory and about 40 doubled lines. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-266: Approvers are named by GitHub login with ASCII case folding
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-035
+- **Supersedes:** none
+
+**Question:** Q-T035-6: how does the config name an approver?
+
+**Options considered:**
+1. GitHub login, compared with ASCII case folding
+2. Numeric GitHub user ID
+
+**Hive recommendation:** GitHub login, compared with ASCII case folding
+
+**Keeper choice:** GitHub login, compared with ASCII case folding; a renamed and re-registered login is a recorded note.
+
+**Rationale:** Readable in review and matches what users see; changing format after G5 would break configs. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
+
+## D-267: An approval counts only when submitted after the PR's last base change
+
+- **Date:** 2026-10-23
+- **Kind:** technical
+- **Tickets:** T-035
+- **Supersedes:** none
+
+**Question:** Q-T035-7: does an approval survive a change of the PR's base branch?
+
+**Options considered:**
+1. No: an approval counts only when submitted after the last BaseRefChangedEvent
+2. Yes: the edited rerun recomputes findings and the old approval still counts
+
+**Hive recommendation:** No: an approval counts only when submitted after the last BaseRefChangedEvent
+
+**Keeper choice:** No: an approval counts only when submitted after the PR's last base change (BaseRefChangedEvent.createdAt, read in the same GraphQL query), so a retarget needs a fresh approval.
+
+**Rationale:** Closes the retarget hole where an approval of a small diff against one base passes a larger diff against main. About 10 lines. Decided by the Head Keeper via queen card on 2026-10-23; recorded by the queen.
