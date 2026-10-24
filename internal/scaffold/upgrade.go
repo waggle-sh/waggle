@@ -357,7 +357,12 @@ func Upgrade(opts UpgradeOptions) error {
 		return fmt.Errorf("target %s is lower than the hive pin %s; pass --allow-downgrade to move backwards: %w", newPin, oldPin, ErrRefused)
 	}
 
-	plan, err := planUpgrade(opts, g, root, oldPin, newPin, tfs, files, out)
+	ref, refByTag, refOK := gateRef(read)
+	if !refOK {
+		return fmt.Errorf("%s: %w", noRefReason, ErrRefused)
+	}
+
+	plan, err := planUpgrade(opts, g, root, oldPin, newPin, ref, refByTag, tfs, files, out)
 	if err != nil {
 		return err
 	}
@@ -383,8 +388,9 @@ func Upgrade(opts UpgradeOptions) error {
 
 // planUpgrade computes and prints the plan in the order of T-016 section 3.3.
 // It writes nothing inside root.
-func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, tfs fs.FS, files []templateFile, out io.Writer) (*upgradePlan, error) {
+func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin, ref string, refByTag bool, tfs fs.FS, files []templateFile, out io.Writer) (*upgradePlan, error) {
 	plan := &upgradePlan{root: root}
+	gateOnly := isGateOnly(root)
 	cfgContent, _, err := readOptional(plan.abs(layout.Config))
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", layout.Config, err)
@@ -401,9 +407,14 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 		}
 	}
 
+	if gateOnly {
+		line(out, "note", "gate-only repo: only waggle.pin and the gate workflow are upgraded")
+	}
+
 	// 2. Managed files this build ships, rendered with the hive's seeded values.
 	// Values come from the hive's own config; placeholders escapes them for JSON.
 	values := []string{
+		"{{GATE_REF}}", ref,
 		"{{PROFILE}}", scalar(cfgLines, "hive", "profile"),
 		"{{DELIVERY}}", scalar(cfgLines, "hive", "delivery"),
 		"{{FORGE}}", scalar(cfgLines, "forge", "provider"),
@@ -414,6 +425,9 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 	ships := map[string]bool{}
 	var configTmpl, rosterWant string
 	for _, f := range files {
+		if gateOnly && f.dst != layout.GateWorkflow {
+			continue
+		}
 		ships[f.dst] = true
 		raw, err := fs.ReadFile(tfs, f.src)
 		if err != nil {
@@ -450,6 +464,28 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 				}
 			}
 		}
+	}
+
+	if refByTag {
+		fmt.Fprintf(out, tagRefWarning, newPin)
+	}
+
+	// A gate-only repo has the workflow and a small config: nothing else is
+	// removed, noted, blocked or regenerated.
+	if gateOnly {
+		raw, err := fs.ReadFile(tfs, "templates/gate-config.yaml.tmpl")
+		if err != nil {
+			return nil, fmt.Errorf("reading template gate-config.yaml.tmpl: %w", err)
+		}
+		line(out, "skip", "%s (seeded)", layout.Config)
+		have := topKeys(cfgContent)
+		for _, k := range topKeys(string(raw)) {
+			if !slices.Contains(have, k) {
+				line(out, "note", "%s lacks top-level key %q from this build's template; add it by hand (seeded file)", layout.Config, k)
+			}
+		}
+		line(out, "keep", "refs/waggle/* and %s/**", layout.HiveDir)
+		return plan, nil
 	}
 
 	// 3. Managed files in the hive that this build no longer ships.
@@ -539,6 +575,17 @@ func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin string, 
 	// 7. Never touched.
 	line(out, "keep", "refs/waggle/* and %s/**", layout.HiveDir)
 	return plan, nil
+}
+
+// isGateOnly reports a gate-only footprint: neither the roster nor the roles
+// directory exists (D-273).
+func isGateOnly(root string) bool {
+	for _, rel := range []string{layout.Roster, layout.RolesDir} {
+		if _, err := os.Lstat(filepath.Join(root, filepath.FromSlash(rel))); !errors.Is(err, fs.ErrNotExist) {
+			return false
+		}
+	}
+	return true
 }
 
 // resolvePolicy loads the model policy from the hive's config and the roster
