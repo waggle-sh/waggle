@@ -5187,3 +5187,159 @@
 **Keeper choice:** Move the pin from 1475d74c6ee8ed9e50de8dffa6984edfd454ddbb to 97127fc04e4d8eb803d4bd7e5c59e218cccc6e6f (T-035, #107) and apply the re-rendered .github/workflows/waggle-gate.yml (edited and pull_request_review triggers, pull-requests: read, token in the gate step) as a Head Keeper commit; every other managed file is [same].
 
 **Rationale:** 97127fc is the known-good build chosen by the Head Keeper (D-041) and turns on the G3 approver path for this hive once gate.approvers is listed. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-270: The gate Action builds cmd/waggle from its own pinned tree
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-036
+- **Supersedes:** none
+
+**Question:** Q-T036-1: what runs the gate in CI in a repo without the gate source?
+
+**Options considered:**
+1. The Action builds cmd/waggle from its own tree at the pinned SHA; no binary is downloaded in CI
+2. The Action downloads the release binary and checks it against SHA256SUMS
+
+**Hive recommendation:** The Action builds cmd/waggle from its own tree at the pinned SHA; no binary is downloaded in CI
+
+**Keeper choice:** The Action builds cmd/waggle from its own tree at the pinned SHA; no binary is downloaded in CI.
+
+**Rationale:** A SHA pin then covers everything that runs; committed checksums would be a hash cycle, and SHA256SUMS in the same release does not protect against a swapped asset. Costs about 30 to 60 seconds per gate run. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-271: This hive's workflow keeps the base-source gate build and uses the Action otherwise
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-036
+- **Supersedes:** none
+
+**Question:** Q-T036-2: what does this hive's own workflow run after the re-render?
+
+**Options considered:**
+1. The template keeps the base-source build when the base holds cmd/waggle/gate.go and runs the Action otherwise
+2. The Action only
+
+**Hive recommendation:** The template keeps the base-source build when the base holds cmd/waggle/gate.go and runs the Action otherwise
+
+**Keeper choice:** The template keeps the base-source build when the base holds cmd/waggle/gate.go and runs the Action otherwise; every pin move rewrites the gate workflow as a Head Keeper commit.
+
+**Rationale:** Gate changes keep reaching the hive at merge (T-035 pattern) for about 8 template lines. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-272: The gate Action lives at gate/ in this repo
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-036
+- **Supersedes:** none
+
+**Question:** Q-T036-3: where does the Action live?
+
+**Options considered:**
+1. gate/ in this repo (uses: waggle-sh/waggle/gate@<sha>)
+2. A separate public repo with action.yml at its root
+
+**Hive recommendation:** gate/ in this repo (uses: waggle-sh/waggle/gate@<sha>)
+
+**Keeper choice:** gate/ in this repo, uses: waggle-sh/waggle/gate@<sha>; a thin Marketplace wrapper may be added at G5.
+
+**Rationale:** One tag and one SHA for code and Action while the repo is private; hard to reverse after G5. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-273: upgrade detects a gate-only repo by footprint
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-036
+- **Supersedes:** none
+
+**Question:** Q-T036-4: how does upgrade know a repo is gate-only?
+
+**Options considered:**
+1. The footprint: no roster.json and no roles/
+2. A config key such as waggle.footprint: gate
+3. A marker comment in the seeded config
+
+**Hive recommendation:** The footprint: no roster.json and no roles/
+
+**Keeper choice:** The footprint: no roster.json and no roles/.
+
+**Rationale:** No schema change and no D-239 version skew; a hand-stripped hive only skips files. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-274: Template and Action pin actions/checkout v4.4.0 and actions/setup-go v5.6.0 by commit SHA
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-036
+- **Supersedes:** none
+
+**Question:** Q-T036-5: how are GitHub-owned actions pinned in the template and the Action?
+
+**Options considered:**
+1. By full commit SHA with a version comment, current majors
+2. By full commit SHA, latest majors
+3. By major tag as today
+
+**Hive recommendation:** By full commit SHA with a version comment, current majors
+
+**Keeper choice:** By full commit SHA with a version comment on the current majors: actions/checkout 11d5960a326750d5838078e36cf38b85af677262 (v4.4.0) and actions/setup-go 40f1582b2485089dde7abd97c1529aa768e1baff (v5.6.0), looked up by the queen from the tags on 2026-10-24; bumped manually at upgrades.
+
+**Rationale:** A security product pins what it ships; staying on current majors changes only the reference form, not behavior. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-275: Releases ship SHA256SUMS now and GitHub artifact attestations at G5
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-036
+- **Supersedes:** none
+
+**Question:** Q-T036-6: release signing
+
+**Options considered:**
+1. SHA256SUMS now; GitHub artifact attestations added at G5
+2. SHA256SUMS only
+3. Keyless cosign signatures now
+
+**Hive recommendation:** SHA256SUMS now; GitHub artifact attestations added at G5
+
+**Keeper choice:** SHA256SUMS now; GitHub artifact attestations (build provenance) added to the release workflow at G5 when the repo is public.
+
+**Rationale:** No key to manage, and CI does not depend on it under D-270. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-276: Workflow self-edit hole is mitigated by code-owner review in the recipes and a pull_request_target spike before G5
+
+- **Date:** 2026-10-24
+- **Kind:** policy
+- **Tickets:** T-036
+- **Supersedes:** none
+
+**Question:** Q-T036-7: a PR that edits the gate workflow runs its own copy
+
+**Options considered:**
+1. Record it in G4; G5 recipes require code-owner review on .github/workflows/**; a spike before G5 checks pull_request_target
+2. Move the gate to pull_request_target inside G4
+3. A note only
+
+**Hive recommendation:** Record it in G4; G5 recipes require code-owner review on .github/workflows/**; a spike before G5 checks pull_request_target
+
+**Keeper choice:** Record it in G4; the G5 recipes require code-owner review on .github/workflows/** (or an organization ruleset requiring the workflow); a short spike before G5 checks whether the gate can run under pull_request_target without losing the review trigger.
+
+**Rationale:** Keeps T-035's pull_request_target ban until its own threat model; launch carries a stated mitigation. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-277: Pinned SHAs survive the D-235 history rewrite by ordering the G5 cards
+
+- **Date:** 2026-10-24
+- **Kind:** policy
+- **Tickets:** T-036
+- **Supersedes:** none
+
+**Question:** Q-T036-8: how do pinned SHAs survive the D-235 history rewrite?
+
+**Options considered:**
+1. Order the G5 cards: no outside repo pins a SHA before the rewrite; the first PR after it is a hive pin move; then the first tag and the demo repo
+2. Do the history rewrite before phase A merges
+
+**Hive recommendation:** Order the G5 cards: no outside repo pins a SHA before the rewrite; the first PR after it is a hive pin move; then the first tag and the demo repo
+
+**Keeper choice:** Order the G5 cards: no repo outside this one pins a SHA before the rewrite (the demo repo is set up after it); right after the rewrite, before any other PR merges, the hive's first PR is a pin move to a post-rewrite commit with the re-rendered workflow; then the first tag and the demo repo pins. Pre-rewrite SHAs in hive records stay as historical text.
+
+**Rationale:** Keeps the rewrite after redaction as D-235 set it; nothing relies on GitHub serving pre-rewrite commits by SHA. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
