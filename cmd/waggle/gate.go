@@ -68,6 +68,10 @@ Checks:
 
 verify, leases and tiers also take --branch <name> (default GITHUB_HEAD_REF
 under GitHub Actions); waggle/T-<id> and t-<id> branches bind that ticket.
+Under GitHub Actions on a pull request event, a listed gate.approvers account
+approving the exact head passes a gate.protected_paths change, and verify
+warns when the PR body lacks matching Waggle-Ticket, Waggle-Risk-Tier and
+Waggle-Verdict trailers.
   decisions   Reject any change to %s that is not a pure append of
               well-formed entries.
 `, layout.Decisions)
