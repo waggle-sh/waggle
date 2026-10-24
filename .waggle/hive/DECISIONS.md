@@ -5168,3 +5168,22 @@
 **Keeper choice:** Widens D-260. Without a card the queen: starts scout briefs for the next work item in the agreed order; runs brief guards and fix rounds; merges a brief PR once its guards pass; dispatches the builder at the brief's Lease and Gate lines; runs guards and confirming rounds; merges a product PR when every guard passed at the current head and product-ci is green (the gate's expected no-claim or no-ticket failures excepted); merges records batches. Still on a card: open-question rulings and D-204 design cards, any nonzero dispatch exit or unexpected gate failure, a build crossing its stop, any change under .waggle/control/ or .github/workflows/ including pin moves, and anything that publishes, deletes, touches credentials or sets strategy or policy.
 
 **Rationale:** T-034 and T-035 showed most cards were confirmations of the queen's own recommendation. Guards, gates and records are unchanged; only the Keeper's click on routine steps is removed. Revocable by a later decision. Decided by the Head Keeper in the queen session on 2026-10-23; recorded by the queen.
+
+## D-269: Upgrade hive pin to 97127fc04e4d8eb803d4bd7e5c59e218cccc6e6f and apply the T-035 gate workflow render
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-016, T-035
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Move to 97127fc04e4d8eb803d4bd7e5c59e218cccc6e6f
+2. Stay on 1475d74c6ee8ed9e50de8dffa6984edfd454ddbb
+
+**Hive recommendation:** Move to 97127fc04e4d8eb803d4bd7e5c59e218cccc6e6f
+
+**Keeper choice:** Move the pin from 1475d74c6ee8ed9e50de8dffa6984edfd454ddbb to 97127fc04e4d8eb803d4bd7e5c59e218cccc6e6f (T-035, #107) and apply the re-rendered .github/workflows/waggle-gate.yml (edited and pull_request_review triggers, pull-requests: read, token in the gate step) as a Head Keeper commit; every other managed file is [same].
+
+**Rationale:** 97127fc is the known-good build chosen by the Head Keeper (D-041) and turns on the G3 approver path for this hive once gate.approvers is listed. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
