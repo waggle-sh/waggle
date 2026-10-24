@@ -1,6 +1,8 @@
 // Package forge puts the code host behind a hive (GitHub, or none) behind one
-// small interface so that Waggle's core stays plain git. Claims, leases, gate
-// logic, decisions, WORKPLAN and Cells never import this package.
+// small interface so that Waggle's core stays plain git. Core packages (comb,
+// decisions, dispatch's claim and lease code) never import this package. The
+// gate command in cmd/waggle reads pull request reviews through ReviewReader
+// for the approver check; the lease and tier decisions stay plain git.
 //
 // Forge calls never run inside a Cell. Cells hold zero credentials, so only
 // the host CLI and waggled construct a Forge.

@@ -47,7 +47,7 @@ func TestGateProtectedPaths(t *testing.T) {
 		}
 	}
 	for _, src := range []string{
-		"version: 1\ngate:\n  approvers: x\n",
+		"version: 1\ngate:\n  owners: x\n",
 		"version: 1\ngate: x\n",
 		"version: 1\ngate:\n  protected_paths:\n    nested: x\n",
 	} {

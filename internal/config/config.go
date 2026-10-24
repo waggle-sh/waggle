@@ -68,13 +68,19 @@ type Config struct {
 type GateConfig struct {
 	// ProtectedPaths are extra Tier 3 prefixes (T-031); raise-only.
 	ProtectedPaths []string
+	// Approvers are GitHub logins whose approval at the head passes a change to
+	// a protected path (T-035). Compared with ASCII case folding.
+	Approvers []string
 }
 
-// Bounds on gate.protected_paths.
+// Bounds on gate.protected_paths and gate.approvers.
 const (
 	maxProtectedPaths    = 64
 	maxProtectedPathSize = 256
+	maxApprovers         = 32
 )
+
+var approverPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9-]{0,38}$`)
 
 // ForgeConfig is the forge: section.
 type ForgeConfig struct {
@@ -198,6 +204,14 @@ func Parse(data []byte) (*Config, error) {
 						c.Gate.ProtectedPaths[i] = strings.Trim(e, " ")
 					}
 				}
+			case "approvers":
+				var s string
+				if s, err = stringValue(p, n); err == nil && strings.TrimSpace(s) != "" {
+					c.Gate.Approvers = strings.Split(s, ",")
+					for i, e := range c.Gate.Approvers {
+						c.Gate.Approvers[i] = strings.Trim(e, " ")
+					}
+				}
 			default:
 				err = invalid(n.line, p, "unknown key")
 			}
@@ -292,6 +306,14 @@ func validate(c *Config, lines map[string]int) error {
 	for _, e := range c.Gate.ProtectedPaths {
 		if why := validProtectedPath(e); why != "" {
 			return invalid(lines["gate.protected_paths"], "gate.protected_paths", "%s", why)
+		}
+	}
+	if len(c.Gate.Approvers) > maxApprovers {
+		return invalid(lines["gate.approvers"], "gate.approvers", "at most %d entries", maxApprovers)
+	}
+	for _, e := range c.Gate.Approvers {
+		if !approverPattern.MatchString(e) {
+			return invalid(lines["gate.approvers"], "gate.approvers", "entries must be GitHub logins of 1 to 39 letters, digits or hyphens, not starting with a hyphen, without @")
 		}
 	}
 	return nil
