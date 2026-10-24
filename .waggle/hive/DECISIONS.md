@@ -5462,3 +5462,62 @@
 **Keeper choice:** Option (b): a requirements and status section only; the default direct merge skips the gate and the merge-queue path is untested. G5 ships two full recipes.
 
 **Rationale:** The public facts do not support a step-by-step recipe; (a) can follow once a run or a merge_group trigger backs it. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-284: roundMustFix skips only brief review names
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-038
+- **Supersedes:** none
+
+**Question:** Q-T038-1: which review names does roundMustFix skip?
+
+**Options considered:**
+1. Only brief reviews (tail matches ^brief[0-9]*(-
+2. \.md$))
+3. Only files with the waggle-review v1 marker
+4. Only <prefix><model>[-confirm<n>].md names
+
+**Hive recommendation:** Only brief reviews (tail matches ^brief[0-9]*(-
+
+**Keeper choice:** Only brief reviews: a name whose part after T-<nnn><suffix>- matches ^brief[0-9]*(-|\.md$); every other name keeps counting.
+
+**Rationale:** Fixes D-257 in about 4 lines with fail-safe counting. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-285: A cancel maps to exit 1 in ClaimTask and ReleaseTask only
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-038
+- **Supersedes:** none
+
+**Question:** Q-T038-2: where does a cancel map to exit 1?
+
+**Options considered:**
+1. ClaimTask and ReleaseTask only
+2. Also Run's pre-session steps
+
+**Hive recommendation:** ClaimTask and ReleaseTask only
+
+**Keeper choice:** ClaimTask and ReleaseTask only (waggle claim, waggle release); dispatch keeps exit 3 on a pre-session cancel.
+
+**Rationale:** Stays out of run.go and D-193 territory. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-286: T-038 phase B deletes dispatch.Release and legacyOwner
+
+- **Date:** 2026-10-24
+- **Kind:** technical
+- **Tickets:** T-038
+- **Supersedes:** none
+
+**Question:** Q-T038-3: does this ticket delete dispatch.Release?
+
+**Options considered:**
+1. Yes, in phase B (item B6)
+2. No, leave it for a later ticket
+
+**Hive recommendation:** Yes, in phase B (item B6)
+
+**Keeper choice:** Yes: phase B item B6 deletes Release and legacyOwner, keeps ReleaseLine; phase B leases internal/dispatch/release.go and release_test.go and waits for phase A.
+
+**Rationale:** Takes the hand-off T-036 made (tasks/T-036.md:12, :121). Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
