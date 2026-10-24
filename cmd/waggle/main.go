@@ -97,6 +97,9 @@ func main() {
 	case "upgrade":
 		os.Exit(runUpgrade(os.Args[2:], os.Stdout, os.Stderr))
 
+	case "doctor":
+		os.Exit(runDoctor(os.Args[2:], os.Stdout, os.Stderr, os.Getenv))
+
 	case "version":
 		printVersion(os.Stdout)
 
@@ -123,5 +126,6 @@ Commands (v0.1 Bootstrap):
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, waggled state, and per-ticket token use
   upgrade   Print the plan to re-render managed files from this build and move waggle.pin; --apply executes it
+  doctor    Check that claim refs can be pushed and the gate is a required check [--no-write]
   version   Print version`)
 }
