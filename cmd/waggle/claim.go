@@ -211,8 +211,8 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
-// runTaskRelease implements `waggle release <task>`: the same release as
-// waggle dispatch release, with --owner and JSON output.
+// runTaskRelease implements `waggle release <task>`: it gives back your claim
+// once the ticket's branch has merged, with --owner and JSON output.
 func runTaskRelease(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("release", flag.ContinueOnError)
 	fs.SetOutput(stderr)

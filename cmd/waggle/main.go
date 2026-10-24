@@ -3,13 +3,21 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/waggle-sh/waggle/internal/layout"
 	"github.com/waggle-sh/waggle/internal/scaffold"
 )
 
-const version = "0.1.0-bootstrap"
+// version is set by the release build: -ldflags "-X main.version=<tag without v>".
+// It feeds the version command only, never waggle.pin.
+var version = "0.1.0-dev"
+
+// printVersion writes the version line to w.
+func printVersion(w io.Writer) {
+	fmt.Fprintf(w, "waggle v%s\n", version)
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -27,6 +35,7 @@ func main() {
 		combMode := initCmd.String("comb-mode", "direct", "Comb ref mode: 'direct' or 'relay'")
 		rt := initCmd.String("runtime", "claude-code", "Local Keeper agent runtime ('claude-code' or 'none')")
 		force := initCmd.Bool("force", false, "Rewrite managed Waggle files (seeded files are never overwritten)")
+		gateOnly := initCmd.Bool("gate-only", false, "Write only the gate workflow, a small config and DECISIONS.md")
 		_ = initCmd.Parse(os.Args[2:])
 
 		cwd, err := os.Getwd()
@@ -43,8 +52,19 @@ func main() {
 			CombMode:  *combMode,
 			Runtime:   *rt,
 			Force:     *force,
+			GateOnly:  *gateOnly,
 		}
 
+		if opts.GateOnly {
+			fmt.Println("Initializing Waggle gate (gate-only)...")
+			if err := scaffold.InitRepo(opts); err != nil {
+				fmt.Fprintf(os.Stderr, "waggle init failed: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Gate initialized. Next: commit %s, %s and %s, then require the check verify-leases-and-tiers on your default branch.\n",
+				layout.GateWorkflow, layout.Config, layout.Decisions)
+			break
+		}
 		fmt.Printf("Initializing Waggle Hive (profile=%s, delivery=%s, comb=%s, runtime=%s)...\n",
 			opts.Profile, opts.Delivery, opts.CombMode, opts.Runtime)
 		if err := scaffold.InitRepo(opts); err != nil {
@@ -78,7 +98,7 @@ func main() {
 		os.Exit(runUpgrade(os.Args[2:], os.Stdout, os.Stderr))
 
 	case "version":
-		fmt.Printf("waggle v%s\n", version)
+		printVersion(os.Stdout)
 
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown subcommand %q\n\n", os.Args[1])
@@ -94,7 +114,7 @@ Usage:
   waggle <command> [flags]
 
 Commands (v0.1 Bootstrap):
-  init      Scaffold .waggle/control/, .waggle/hive/, the gate workflow, and local runtime shims
+  init      Scaffold .waggle/control/, .waggle/hive/, the gate workflow, and local runtime shims (--gate-only: the gate workflow, a small config and DECISIONS.md)
   decide    Append one decision entry to .waggle/hive/DECISIONS.md from a JSON file (--file)
   gate      Merge-gate checks CI runs against a pull request: verify, decisions, leases, tiers
   dispatch  Claim a ticket, run a worker in a worktree, check its changes against the claim (waggle dispatch <ticket> --help)
