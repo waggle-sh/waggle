@@ -7,29 +7,11 @@ on:
     types: [opened, synchronize, reopened, labeled, edited]
   pull_request_review:
     types: [submitted, dismissed]
-  issue_comment:
-    types: [created]
 
 permissions:
   contents: read
 
 jobs:
-  relay-claim:
-    if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/waggle claim')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Process Public OSS Relay Claim
-        run: |
-          echo "Relay claim by ${{ github.event.comment.user.login }} on #${{ github.event.issue.number }}"
-          # Invokes: waggle comb relay-claim --issue "${{ github.event.issue.number }}" --keeper "${{ github.event.comment.user.login }}"
-
   verify-leases-and-tiers:
     if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
     runs-on: ubuntu-latest
@@ -40,37 +22,12 @@ jobs:
       group: waggle-gate-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
       - name: Fetch Comb Claim Refs
         run: git fetch origin 'refs/waggle/claims/*:refs/waggle/claims/*'
-
-      - name: Check Hardcoded Tiers & Per-Task Leases
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          CHANGED_FILES=$(git diff --name-only --no-renames "$BASE_SHA" "$HEAD_SHA")
-          echo "Modified files in PR:"
-          echo "$CHANGED_FILES"
-
-          # 1. Hardcoded tiers (RFC-0003 Section 3.3). Order matters: the hive
-          # carve-out is matched before the rest of .waggle/.
-          for file in $CHANGED_FILES; do
-            case "$file" in
-              .waggle/hive|.waggle/hive/*)
-                echo "::notice file=$file::Tier 2 Hive record modified ($file). Full Gate required (ineligible for Light Gate)."
-                ;;
-              .waggle|.waggle/*|.github/workflows/*|.gitlab-ci.yml|.devcontainer/*)
-                echo "::warning file=$file::Tier 3 Control Plane modified ($file). Head Keeper approval required."
-                ;;
-              CLAUDE.md|AGENTS.md)
-                echo "::notice file=$file::Tier 2 Steering Context modified ($file). Full Gate required (ineligible for Light Gate)."
-                ;;
-            esac
-          done
 
       - name: Find gate source on base
         id: src
@@ -85,10 +42,10 @@ jobs:
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::waggle gate not present on base; gate skipped"
+            echo "::notice::waggle gate source not on base; running the pinned gate Action"
           fi
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         if: steps.src.outputs.present == 'true'
         with:
           go-version-file: go.mod
@@ -101,7 +58,15 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           # The checker is built from the base revision, never from the PR head.
-          # A release binary replaces this step later (G4).
+          # Repos without the gate source on base run the pinned gate Action instead.
           git worktree add --detach "$RUNNER_TEMP/gate-src" "$BASE_SHA"
           (cd "$RUNNER_TEMP/gate-src" && go build -o "$RUNNER_TEMP/waggle" ./cmd/waggle)
           "$RUNNER_TEMP/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA"
+
+      - name: Waggle gate (Action)
+        if: steps.src.outputs.present == 'false'
+        uses: waggle-sh/waggle/gate@{{GATE_REF}} # waggle.pin {{PIN}}
+        with:
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          token: ${{ github.token }}

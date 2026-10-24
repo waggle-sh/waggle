@@ -178,35 +178,38 @@ func TestDispatchCleanCLI(t *testing.T) {
 	}
 }
 
-// T-030: the release subcommand's exit codes and usage line. It never goes through Run.
+// T-036 (2.8): waggle dispatch release was removed; every form exits 2 with the removal hint.
 func TestDispatchReleaseCLI(t *testing.T) {
 	repo := dispatchRepo(t)
 	cases := []struct {
 		name string
 		args []string
-		exit int
 	}{
-		{"no claim", []string{"release", "23", "--repo", repo}, 0},
-		{"no claim, ticket after the flags", []string{"release", "--repo", repo, "--unmerged", "23"}, 0},
-		{"usage: no ticket", []string{"release", "--repo", repo}, 2},
-		{"usage: two tickets", []string{"release", "23", "24", "--repo", repo}, 2},
-		{"usage: bad ticket", []string{"release", "x", "--repo", repo}, 2},
-		{"usage: other ticket's branch", []string{"release", "23", "--branch", "t-024", "--repo", repo}, 2},
-		{"usage: unknown flag", []string{"release", "23", "--force", "--repo", repo}, 2},
-		{"environment: not a repo", []string{"release", "23", "--repo", t.TempDir()}, 3},
+		{"no claim", []string{"release", "23", "--repo", repo}},
+		{"no claim, ticket after the flags", []string{"release", "--repo", repo, "--unmerged", "23"}},
+		{"no ticket", []string{"release", "--repo", repo}},
+		{"two tickets", []string{"release", "23", "24", "--repo", repo}},
+		{"bare", []string{"release"}},
+		{"not a repo", []string{"release", "23", "--repo", t.TempDir()}},
 	}
 	for _, c := range cases {
 		var out, errb bytes.Buffer
-		if got := runDispatch(c.args, &out, &errb); got != c.exit {
-			t.Fatalf("%s: exit %d, want %d\nstdout: %s\nstderr: %s", c.name, got, c.exit, out.String(), errb.String())
+		if got := runDispatch(c.args, &out, &errb); got != 2 {
+			t.Fatalf("%s: exit %d, want 2\nstdout: %s\nstderr: %s", c.name, got, out.String(), errb.String())
+		}
+		if !strings.Contains(errb.String(), "waggle dispatch release was removed; use waggle release <task>\n") {
+			t.Fatalf("%s: no removal hint: %s", c.name, errb.String())
+		}
+		if strings.Contains(errb.String(), "dispatch release <ticket>") {
+			t.Fatalf("%s: usage still lists release: %s", c.name, errb.String())
 		}
 		if all := out.String() + errb.String(); strings.ContainsAny(all, string([]rune{0x2013, 0x2014})) {
 			t.Fatalf("%s: output has an en or em dash: %s", c.name, all)
 		}
 	}
 	var out, errb bytes.Buffer
-	if runDispatch([]string{"--help"}, &out, &errb); !strings.Contains(errb.String(), "waggle dispatch release <ticket> [--branch <name>] [--unmerged] [--repo <dir>]") {
-		t.Fatalf("usage does not list release: %s", errb.String())
+	if runDispatch([]string{"--help"}, &out, &errb); strings.Contains(errb.String(), "dispatch release") {
+		t.Fatalf("usage lists release: %s", errb.String())
 	}
 }
 

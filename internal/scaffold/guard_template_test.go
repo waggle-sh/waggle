@@ -6,7 +6,7 @@ import (
 )
 
 // T-033: the guard writes no file in the repo, and the gate workflow keeps
-// read-only permissions outside the relay job.
+// read-only permissions.
 func TestGuardTemplateWritesNothing(t *testing.T) {
 	dir := t.TempDir()
 	o, _ := opts(dir, "claude-code")
@@ -40,12 +40,9 @@ func TestGateTemplateBaseBuilt(t *testing.T) {
 	if !strings.HasPrefix(gate[strings.Index(gate, "\npermissions:"):], "\npermissions:\n  contents: read\n\njobs:") {
 		t.Error("workflow-level permissions are not contents: read only")
 	}
-	relay := strings.Index(gate, "  relay-claim:")
 	verify := strings.Index(gate, "  verify-leases-and-tiers:")
-	for _, w := range []string{"contents: write", "pull-requests: write", "issues: write"} {
-		if n := strings.Count(gate, w); n != 1 || strings.Index(gate, w) < relay || strings.Index(gate, w) > verify {
-			t.Errorf("%q must appear once, under relay-claim", w)
-		}
+	if strings.Contains(gate, ": write") {
+		t.Error("workflow holds a write permission")
 	}
 	if !strings.Contains(gate[verify:], "    permissions:\n      contents: read\n") {
 		t.Error("verify job lacks job-level contents: read")
