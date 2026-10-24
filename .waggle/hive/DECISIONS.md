@@ -5343,3 +5343,23 @@
 **Keeper choice:** Order the G5 cards: no repo outside this one pins a SHA before the rewrite (the demo repo is set up after it); right after the rewrite, before any other PR merges, the hive's first PR is a pin move to a post-rewrite commit with the re-rendered workflow; then the first tag and the demo repo pins. Pre-rewrite SHAs in hive records stay as historical text.
 
 **Rationale:** Keeps the rewrite after redaction as D-235 set it; nothing relies on GitHub serving pre-rewrite commits by SHA. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-278: Close the author-chosen ticket binding gap before G5
+
+- **Date:** 2026-10-24
+- **Kind:** strategy
+- **Tickets:** T-037
+- **Supersedes:** none
+
+**Question:** The gate checks the claim of whichever ticket a commit names (cmd/waggle/gate_commits.go:259-334) and nothing ties the commit to the branch or agent holding that claim, so a commit can ride another task's live claim (fable on the T-037 brief). Does the product close it before the G5 launch?
+
+**Options considered:**
+1. Fix before G5: a small Tier 3 ticket after T-038 (for example the PR head branch must match the claim's recorded branch, or one ticket per PR)
+2. Document as a known limit
+3. Document now, fix after launch
+
+**Hive recommendation:** Fix before G5: a small Tier 3 ticket after T-038 (for example the PR head branch must match the claim's recorded branch, or one ticket per PR)
+
+**Keeper choice:** Fix before G5 in a small Tier 3 ticket briefed after T-038; the T-037 docs describe today's behavior until it merges and are rewritten from the merged code if it lands first.
+
+**Rationale:** The lease check is the headline feature, so the launch should not ship with a known way to borrow another task's lease; adds about a day and $10 to $15. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
