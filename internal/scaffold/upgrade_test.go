@@ -135,12 +135,13 @@ func TestUpgradeRoundTripRemovesDroppedRole(t *testing.T) {
 	o, _ := upgradeOpts(dir, "claude-code", commitBuild(pinB), false)
 	out := upgrade(t, o)
 	wantLines(t, out, "[pin]     "+pinA+" -> "+pinB, "[remove]  "+oldRole, "[remove]  "+oldShim,
-		"[rewrite] "+layout.Roster, "[same]    "+layout.Devcontainer, "[same]    "+layout.GateWorkflow,
+		"[rewrite] "+layout.Roster, "[same]    "+layout.Devcontainer, "[rewrite] "+layout.GateWorkflow,
 		"[shims]   regenerate", "Dry run: nothing changed", upgradeLastLine)
 	for _, r := range roleNames {
 		wantLines(t, out, "[same]    "+layout.RolesDir+"/"+r+".md")
 	}
-	if strings.Count(out, "[rewrite]") != 1 || strings.Contains(out, "[create]") {
+	// T-036 2.4: the gate workflow names the pin's commit, so it is rewritten with the roster.
+	if strings.Count(out, "[rewrite]") != 2 || strings.Contains(out, "[create]") {
 		t.Errorf("unexpected rewrite or create:\n%s", out)
 	}
 	if after := project(t, dir); !reflect.DeepEqual(before, after) {
@@ -170,8 +171,8 @@ func TestUpgradeRoundTripRemovesDroppedRole(t *testing.T) {
 	if got := names(t, dir, filepath.Dir(layout.ShimPrefix), filepath.Base(layout.ShimPrefix)); !reflect.DeepEqual(got, roleNames) {
 		t.Errorf("shims = %v; want %v", got, roleNames)
 	}
-	if st := git(t, dir, "status", "--porcelain=v1"); st != "M "+layout.Config+"\n D "+oldRole+"\n M "+layout.Roster {
-		t.Errorf("status after apply = %q; want only the pin edit, the role removal and the roster without it", st)
+	if st := git(t, dir, "status", "--porcelain=v1"); st != "M "+layout.GateWorkflow+"\n M "+layout.Config+"\n D "+oldRole+"\n M "+layout.Roster {
+		t.Errorf("status after apply = %q; want the workflow, the pin edit, the role removal and the roster without it", st)
 	}
 
 	commitAll(t, dir, "upgrade")
