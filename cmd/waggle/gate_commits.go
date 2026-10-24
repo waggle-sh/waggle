@@ -110,6 +110,11 @@ type commitScan struct {
 	policy  comb.TierPolicy // repo-defined Tier 3 paths, read from baseOID
 	branch  string          // ticket the PR branch binds, or ""
 	bound   map[string]string
+
+	approvable func(string) bool // paths a listed approver can pass; nil means none
+	filter     bool              // drop tier3 and outside_lease findings on approvable paths
+	hit        bool              // a tier3 finding on an approvable path was seen
+	maxTier    comb.RiskTier     // highest tier the changed paths require
 }
 
 // listCommits returns mb..head oldest first. One commit past the limit is
@@ -210,7 +215,16 @@ func (s *commitScan) scan(mb, head string) error {
 		if err != nil {
 			return err
 		}
+		for _, ch := range changes {
+			s.maxTier = max(s.maxTier, s.policy.RequiredMinTier(ch.Path))
+		}
 		for _, v := range comb.CheckChangesPolicy(cl.lease, changes, s.policy) {
+			if s.approvable != nil && s.approvable(v.Path) && (v.Rule == comb.RuleTier3 || v.Rule == comb.RuleOutsideLease) {
+				s.hit = s.hit || v.Rule == comb.RuleTier3
+				if s.filter {
+					continue
+				}
+			}
 			switch {
 			case comb.IsTierRule(v.Rule):
 				s.rep.fail(checkTiers, v.Path, v.Detail)
