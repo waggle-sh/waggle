@@ -397,11 +397,8 @@ func TestRenderedTemplatesClean(t *testing.T) {
 	if lines := strings.SplitN(gate, "\n", 3); lines[1] != "# waggle:managed: installed by waggle init; removed by waggle uninstall. Do not edit by hand." {
 		t.Errorf("gate second line = %q", lines[1])
 	}
-	hive := strings.Index(gate, ".waggle/hive|.waggle/hive/*)")
-	ctl := strings.Index(gate, ".waggle|.waggle/*|.github/workflows/*|.gitlab-ci.yml|.devcontainer/*)")
-	steer := strings.Index(gate, "CLAUDE.md|AGENTS.md)")
-	if !(hive >= 0 && hive < ctl && ctl < steer) || !strings.Contains(gate, "--no-renames") {
-		t.Error("gate case order or --no-renames wrong")
+	if strings.Contains(gate, "for file in") || strings.Contains(gate, "::notice file=") {
+		t.Error("gate still has the shell tier step")
 	}
 	if strings.Contains(gate, "gate decisions") {
 		t.Error("gate has a decisions step")

@@ -36,6 +36,7 @@ type InitOptions struct {
 	CombMode  string // "direct" (push refs) or "relay" (OSS issue_comment Action)
 	Runtime   string // Keeper's local runtime preference (default: "claude-code")
 	Force     bool   // rewrite managed files; seeded files are never overwritten
+	GateOnly  bool   // write only the gate workflow, a small config and DECISIONS.md
 
 	// BuildInfo supplies the build stamp used for waggle.pin. Nil means debug.ReadBuildInfo.
 	BuildInfo func() (*debug.BuildInfo, bool)
@@ -124,6 +125,42 @@ func resolvePin(read func() (*debug.BuildInfo, bool)) (pin string, ok bool) {
 	return Unpinned, false
 }
 
+// gateRef returns the ref the gate Action is pinned to: a clean vcs.revision
+// first, else a release tag (byTag true, the weaker pin). ok is false when the
+// build has neither.
+func gateRef(read func() (*debug.BuildInfo, bool)) (ref string, byTag, ok bool) {
+	pin, pinned := resolvePin(read)
+	if !pinned {
+		return "", false, false
+	}
+	if commitHash.MatchString(pin) {
+		return pin, false, true
+	}
+	bi, _ := read()
+	var rev, modified string
+	for _, s := range bi.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			rev = s.Value
+		case "vcs.modified":
+			modified = s.Value
+		}
+	}
+	if commitHash.MatchString(rev) && modified == "false" {
+		return rev, false, true
+	}
+	if releaseTag.MatchString(pin) {
+		return pin, true, true
+	}
+	return "", false, false
+}
+
+// tagRefWarning is printed when the gate Action is pinned by tag, not by commit.
+const tagRefWarning = "  [warn]   gate Action pinned by tag %s, not by commit; replace it with the tag's commit SHA\n"
+
+// noRefReason says why a build cannot pin the gate Action.
+const noRefReason = "this build has no commit or release tag to pin the gate Action to"
+
 // placeholders returns the replacer of kv pairs for template destination dst,
 // JSON-escaping values for a .json destination so none can leave its string.
 func placeholders(dst string, kv []string) *strings.Replacer {
@@ -193,6 +230,9 @@ func importTarget(root, rt string) (rel, body string) {
 // files are edited only between Waggle markers. Marker problems and a legacy
 // layout are detected before anything is written.
 func InitRepo(opts InitOptions) error {
+	if opts.GateOnly {
+		return initGateOnly(opts)
+	}
 	if opts.Profile != "cli" {
 		return fmt.Errorf("unsupported profile %q in v0.1 (only 'cli' is supported; others arrive in v0.2)", opts.Profile)
 	}
@@ -217,6 +257,16 @@ func InitRepo(opts InitOptions) error {
 	for _, legacy := range []string{layout.Root + "/config.yaml", layout.Root + "/roles"} {
 		if exists(root, legacy) {
 			return fmt.Errorf("found %s: %w", legacy, ErrLegacyLayout)
+		}
+	}
+
+	if opts.Runtime == "claude-code" {
+		cfg, found, err := readOptional(filepath.Join(root, filepath.FromSlash(layout.Config)))
+		if err != nil {
+			return fmt.Errorf("reading %s: %w", layout.Config, err)
+		}
+		if found && !slices.Contains(topKeys(cfg), "runtimes") {
+			return fmt.Errorf("%s has no runtimes: block (a gate-only config); add the runtimes: block a full init writes, or rerun with --runtime none", layout.Config)
 		}
 	}
 
@@ -250,6 +300,7 @@ func InitRepo(opts InitOptions) error {
 	if !pinned {
 		fmt.Fprintln(out, "  [warn]   built from a modified or unstamped tree; set waggle.pin by hand")
 	}
+	ref, refByTag, refOK := gateRef(read)
 	values := []string{
 		"{{PROFILE}}", opts.Profile,
 		"{{DELIVERY}}", opts.Delivery,
@@ -257,34 +308,20 @@ func InitRepo(opts InitOptions) error {
 		"{{COMB_MODE}}", opts.CombMode,
 		"{{RUNTIME}}", opts.Runtime,
 		"{{PIN}}", pin,
+		"{{GATE_REF}}", ref,
 	}
 
 	for _, f := range files {
-		dstPath := filepath.Join(root, filepath.FromSlash(f.dst))
-		present := exists(root, f.dst)
-		switch {
-		case present && f.seeded:
-			fmt.Fprintf(out, "  [skip]   %s (seeded)\n", f.dst)
-			continue
-		case present && !opts.Force:
-			fmt.Fprintf(out, "  [skip]   %s (already exists)\n", f.dst)
+		if f.dst == layout.GateWorkflow && !refOK {
+			fmt.Fprintf(out, "  [warn]   %s not written: %s\n", f.dst, noRefReason)
 			continue
 		}
-		raw, err := fs.ReadFile(tfs, f.src)
-		if err != nil {
-			return fmt.Errorf("reading embedded template %s: %w", f.src, err)
+		if err := renderFile(out, root, tfs, f, values, opts.Force); err != nil {
+			return err
 		}
-		if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
-			return fmt.Errorf("creating directory for %s: %w", f.dst, err)
-		}
-		if err := os.WriteFile(dstPath, []byte(placeholders(f.dst, values).Replace(string(raw))), 0o644); err != nil {
-			return fmt.Errorf("writing %s: %w", f.dst, err)
-		}
-		verb := "create"
-		if present {
-			verb = "update"
-		}
-		fmt.Fprintf(out, "  [%s] %s\n", verb, f.dst)
+	}
+	if refByTag {
+		fmt.Fprintf(out, tagRefWarning, pin)
 	}
 
 	for _, d := range []string{layout.TasksDir, layout.ReviewsDir, layout.MediaDir} {
@@ -316,6 +353,90 @@ func InitRepo(opts InitOptions) error {
 		if err := adapter.Materialize(root); err != nil {
 			return fmt.Errorf("materializing claude-code shims: %w", err)
 		}
+	}
+	return nil
+}
+
+// renderFile writes one template file unless it is present: a seeded file is
+// never overwritten and a managed one only with force.
+func renderFile(out io.Writer, root string, tfs fs.FS, f templateFile, values []string, force bool) error {
+	dstPath := filepath.Join(root, filepath.FromSlash(f.dst))
+	present := exists(root, f.dst)
+	switch {
+	case present && f.seeded:
+		fmt.Fprintf(out, "  [skip]   %s (seeded)\n", f.dst)
+		return nil
+	case present && !force:
+		fmt.Fprintf(out, "  [skip]   %s (already exists)\n", f.dst)
+		return nil
+	}
+	raw, err := fs.ReadFile(tfs, f.src)
+	if err != nil {
+		return fmt.Errorf("reading embedded template %s: %w", f.src, err)
+	}
+	if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
+		return fmt.Errorf("creating directory for %s: %w", f.dst, err)
+	}
+	if err := os.WriteFile(dstPath, []byte(placeholders(f.dst, values).Replace(string(raw))), 0o644); err != nil {
+		return fmt.Errorf("writing %s: %w", f.dst, err)
+	}
+	verb := "create"
+	if present {
+		verb = "update"
+	}
+	fmt.Fprintf(out, "  [%s] %s\n", verb, f.dst)
+	return nil
+}
+
+// gateOnlyFiles is the whole footprint of `waggle init --gate-only`. It is
+// separate from templateFiles so a full init and upgrade keep their file set.
+var gateOnlyFiles = []templateFile{
+	{"templates/waggle-gate.yml.tmpl", layout.GateWorkflow, false},
+	{"templates/gate-config.yaml.tmpl", layout.Config, true},
+	{"templates/gate-decisions.md.tmpl", layout.Decisions, true},
+}
+
+// initGateOnly writes the gate workflow, a small config and DECISIONS.md and
+// nothing else. Every refusal comes before the first write.
+func initGateOnly(opts InitOptions) error {
+	if opts.Forge != "github" {
+		return fmt.Errorf("--gate-only needs --forge=github, got %q: the gate runs in GitHub Actions", opts.Forge)
+	}
+	out := opts.Out
+	if out == nil {
+		out = os.Stdout
+	}
+	root := opts.TargetDir
+	for _, legacy := range []string{layout.Root + "/config.yaml", layout.Root + "/roles"} {
+		if exists(root, legacy) {
+			return fmt.Errorf("found %s: %w", legacy, ErrLegacyLayout)
+		}
+	}
+	var rels []string
+	for _, f := range gateOnlyFiles {
+		rels = append(rels, f.dst)
+	}
+	if err := checkSymlinks(root, rels); err != nil {
+		return err
+	}
+	read := opts.BuildInfo
+	if read == nil {
+		read = debug.ReadBuildInfo
+	}
+	pin, _ := resolvePin(read)
+	ref, refByTag, refOK := gateRef(read)
+	if !refOK {
+		return fmt.Errorf("%s; nothing was written", noRefReason)
+	}
+	values := []string{"{{PIN}}", pin, "{{GATE_REF}}", ref}
+	tfs := templates(opts.Templates)
+	for _, f := range gateOnlyFiles {
+		if err := renderFile(out, root, tfs, f, values, opts.Force && f.dst == layout.GateWorkflow); err != nil {
+			return err
+		}
+	}
+	if refByTag {
+		fmt.Fprintf(out, tagRefWarning, pin)
 	}
 	return nil
 }
