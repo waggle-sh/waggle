@@ -87,8 +87,10 @@ func ReleaseLine(res ReleaseTaskResult) string {
 // nothing. The delete goes through ReleaseLease, so the owner check and the
 // remote compare-and-swap stay the Comb's. A claim that is not there is not an
 // error. Refusals are ExitClaim, a held lock or git trouble is ExitEnv. The
-// result is filled as far as it got, also on error.
+// result is filled as far as it got, also on error. A cancelled ctx turns an
+// ExitEnv failure into ExitFailed (interrupted).
 func ReleaseTask(ctx context.Context, r ReleaseRequest) (res ReleaseTaskResult, err error) {
+	defer func() { err = interruptedEnv(ctx, err) }()
 	id, err := comb.ParseTicketID(r.Ticket)
 	if err != nil {
 		return res, failf(ExitUsage, "%w", err)
@@ -191,7 +193,7 @@ func checkReleaseBranch(branch, ticket string) error {
 	if !ok {
 		return checkBranch(branch, ticket)
 	}
-	if checkBranch("t-"+rest, ticket) != nil {
+	if checkBranch("t-"+rest, ticket) != nil || len(branch) > 100 {
 		return fmt.Errorf("branch %q must be waggle/%s with an optional suffix of [A-Za-z0-9._-], at most 100 characters", branch, ticket)
 	}
 	return nil
