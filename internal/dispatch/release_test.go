@@ -53,7 +53,13 @@ func doRelease(f *fixture, mut ...func(*ReleaseRequest)) (string, error) {
 		m(&r)
 	}
 	var out bytes.Buffer
-	err := Release(context.Background(), r, &out)
+	res, err := ReleaseTask(context.Background(), r)
+	for _, w := range res.Warnings {
+		out.WriteString("warning: " + w + "\n")
+	}
+	if err == nil {
+		out.WriteString(ReleaseLine(res) + "\n")
+	}
 	return out.String(), err
 }
 
