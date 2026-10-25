@@ -70,11 +70,10 @@ func trailerTickets(raw string) (ids []string, bad string) {
 	if raw == "" {
 		return nil, ""
 	}
-	vals := strings.Split(raw, ",")
-	if len(raw) > maxTrailerField || len(vals) > maxTrailerValues {
+	if len(raw) > maxTrailerField || strings.Count(raw, ",")+1 > maxTrailerValues {
 		return nil, "Waggle-Ticket trailer too long"
 	}
-	for _, v := range vals {
+	for _, v := range strings.Split(raw, ",") {
 		v = strings.Trim(v, " \t")
 		if len(v) > maxTrailerValue {
 			return nil, "Waggle-Ticket trailer too long"
