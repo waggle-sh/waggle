@@ -5677,3 +5677,158 @@
 **Keeper choice:** (a): optional branches field at lease version 2, so older binaries read new claims unchanged.
 
 **Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-039 brief guards (round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-295: T-040 scope wider than D-281's wording
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-040
+- **Supersedes:** none
+
+**Question:** Does T-040 cover only gate output, help text and the step name (D-281), or every bee word a gate-only user reaches?
+
+**Options considered:**
+1. Every string a gate-only user reaches (36 strings, 17 files)
+2. Only D-281's list (about 25 lines)
+
+**Hive recommendation:** Every string a gate-only user reaches (36 strings, 17 files)
+
+**Keeper choice:** Every string a gate-only user reaches: D-281's gate output, help text and step name, plus claim and release errors, the waggle status header, the upgrade and uninstall last lines, the printDecision output and the printUsage tagline (D-236).
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-040 brief guards (round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-296: T-040 Q1: keep the Head Keeper: subject prefix literal
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-040
+- **Supersedes:** none
+
+**Question:** Q-T040-1: the Head Keeper: commit subject prefix (gate_commits.go:264)
+
+**Options considered:**
+1. (a) Keep it literal; row 2's message glosses it as a maintainer commit
+2. (b) Accept a Maintainer: alias beside it
+3. (c) Rename it outright
+
+**Hive recommendation:** (a) Keep it literal; row 2's message glosses it as a maintainer commit
+
+**Keeper choice:** (a): keep the prefix literal; the gate message glosses it as a maintainer commit.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-040 brief guards (round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-297: T-040 Q2: keep keeper_id
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-040
+- **Supersedes:** none
+
+**Question:** Q-T040-2: keeper_id in local.yaml, the claim JSON and the force-release JSON
+
+**Options considered:**
+1. (a) Keep all three; prose says owner
+2. (b) Accept owner_id beside keeper_id in local.yaml
+3. (c) Rename the JSON fields
+
+**Hive recommendation:** (a) Keep all three; prose says owner
+
+**Keeper choice:** (a): keep the key and both JSON fields; prose says owner and names keeper_id only as the key.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-040 brief guards (round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-298: T-040 Q3: keep the comb: error prefix
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-040
+- **Supersedes:** none
+
+**Question:** Q-T040-3: the comb: prefix on 31 sentinel errors
+
+**Options considered:**
+1. (a) Keep: a package prefix, not a role name
+2. (b) Change it to claim:
+
+**Hive recommendation:** (a) Keep: a package prefix, not a role name
+
+**Keeper choice:** (a): keep the comb: prefix.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-040 brief guards (round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-299: T-040 Q4: keep the DECISIONS.md headings
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-040
+- **Supersedes:** none
+
+**Question:** Q-T040-4: the Hive recommendation and Keeper choice headings waggle decide writes
+
+**Options considered:**
+1. (a) Keep for G5
+2. (b) Parser accepts both, writer switches after a pin cycle
+3. (c) Switch both at once
+
+**Hive recommendation:** (a) Keep for G5
+
+**Keeper choice:** (a): keep both headings for G5; they are a parse format.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-040 brief guards (round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-300: T-040 Q5: keep the Waggle Gatekeeper workflow name
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-040
+- **Supersedes:** none
+
+**Question:** Q-T040-5: the workflow name Waggle Gatekeeper
+
+**Options considered:**
+1. (a) Keep
+2. (b) Rename, for example Waggle Gate
+
+**Hive recommendation:** (a) Keep
+
+**Keeper choice:** (a): keep the workflow name.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-040 brief guards (round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-301: T-040 Q6: keep accepting --comb-mode relay
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-040
+- **Supersedes:** none
+
+**Question:** Q-T040-6: --comb-mode relay after T-036
+
+**Options considered:**
+1. (a) Keep accepting it; help says it is not implemented
+2. (b) Refuse relay in init and the config
+
+**Hive recommendation:** (a) Keep accepting it; help says it is not implemented
+
+**Keeper choice:** (a): keep accepting relay; the help text says it is not implemented. Refusing it is a possible later ticket.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-040 brief guards (round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-302: T-040 Q7: claim and release -h list their flags
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-040
+- **Supersedes:** none
+
+**Question:** Q-T040-7: waggle claim -h and waggle release -h print no flag help
+
+**Options considered:**
+1. (a) Add fs.PrintDefaults() to both usage closures in this ticket
+2. (b) Keep the ticket text only and file the flag help as a follow-up
+
+**Hive recommendation:** (a) Add fs.PrintDefaults() to both usage closures in this ticket
+
+**Keeper choice:** (a): add one fs.PrintDefaults() line to each of the two fs.Usage closures in cmd/waggle/claim.go (2 lines, named in the lease rule); both commands start listing their flags.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-040 brief guards (round 2 opus must-fix, round 3 fable pass); recorded by the queen.
