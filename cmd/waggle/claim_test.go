@@ -174,6 +174,44 @@ func TestReleaseCLI(t *testing.T) {
 	}
 }
 
+// AC11 and AC12: the task may come before, between or after flags; usage errors carry it.
+func TestTaskArgPosition(t *testing.T) {
+	repo := dispatchRepo(t)
+	for i, args := range [][]string{
+		{"--json", "T-32", "--dirs", "internal/x", "--gate", "full", "--owner", "alice", "--repo", repo},
+		{"--dirs", "internal/x", "T-32", "--gate", "full", "--owner", "alice", "--repo", repo},
+		{"--dirs", "internal/x", "--gate", "full", "--owner", "alice", "--repo", repo, "T-32"},
+	} {
+		var out, errb bytes.Buffer
+		if exit := runClaim(append([]string{"--json"}, args...), &out, &errb); exit != 0 || !strings.Contains(out.String(), `"task":"T-032"`) {
+			t.Fatalf("claim %d: exit %d stdout %q stderr %q", i, exit, out.String(), errb.String())
+		}
+	}
+	if res, exit := runJSON(t, releaseCLI, "--unmerged", "23", "--repo", repo); exit != 0 || res.Command != "release" {
+		t.Fatalf("release: exit %d %+v", exit, res)
+	}
+	var out, errb bytes.Buffer
+	if exit := runClaim([]string{"--dirs", "a", "T-32", "-h"}, &out, &errb); exit != 0 || !strings.Contains(errb.String(), "Usage: waggle claim") {
+		t.Fatalf("help: exit %d stderr %q", exit, errb.String())
+	}
+	out.Reset()
+	if exit := runClaim([]string{"--dirs", "docs", "T-34", "--gate", "full", "T-35", "--repo", repo}, &out, &errb); exit != 2 || out.Len() != 0 {
+		t.Fatalf("two tasks: exit %d stdout %q", exit, out.String())
+	}
+	if exit := runClaim([]string{"T-34", "--json", "--dirs", "a", "--bogus"}, &out, &errb); exit != 2 || out.Len() != 0 {
+		t.Fatalf("unknown flag after task: exit %d stdout %q", exit, out.String())
+	}
+	if res, exit := runJSON(t, claimCLI, "T-34", "--dirs", "a,,b", "--gate", "full", "--repo", repo); exit != 2 || res.Error.Code != "usage" || res.Task != "T-034" {
+		t.Fatalf("dirs: exit %d %+v", exit, res)
+	}
+	if res, exit := runJSON(t, claimCLI, "--dirs", "docs", "--gate", "full", "--repo", repo); exit != 2 || res.Task != "" {
+		t.Fatalf("no task: exit %d %+v", exit, res)
+	}
+	if res, exit := runJSON(t, releaseCLI, "--json", "--repo", repo, "23", "24"); exit != 2 || res.Error.Code != "usage" || res.Task != "T-023" {
+		t.Fatalf("two release tasks: exit %d %+v", exit, res)
+	}
+}
+
 // AC10: values at the validator's limits and hostile error text stay on one line.
 func TestTaskOutputHostileText(t *testing.T) {
 	repo := dispatchRepo(t)
