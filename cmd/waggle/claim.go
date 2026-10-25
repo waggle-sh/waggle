@@ -13,6 +13,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/waggle-sh/waggle/internal/comb"
 	"github.com/waggle-sh/waggle/internal/dispatch"
 )
 
@@ -144,7 +145,14 @@ func parseTaskArgs(fs *flag.FlagSet, args []string) (task string, extra int, cod
 		return "", 0, dispatch.ExitUsage, false
 	}
 	if task == "" && fs.NArg() > 0 {
-		return fs.Arg(0), fs.NArg() - 1, 0, true
+		// flag stops at the first non-flag: take it as the task, parse the rest again.
+		task, args = fs.Arg(0), fs.Args()[1:]
+		if err := fs.Parse(args); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				return "", 0, 0, false
+			}
+			return "", 0, dispatch.ExitUsage, false
+		}
 	}
 	return task, fs.NArg(), 0, true
 }
@@ -173,13 +181,14 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 	if *dirs != "" {
 		list = strings.Split(*dirs, ",")
 	}
+	id, _ := comb.ParseTicketID(task)
 	switch {
 	case task == "" || extra > 0:
-		return o.fail("", usageError("usage: waggle claim <task> --dirs <a,b> --gate light|full"))
+		return o.fail(id, usageError("usage: waggle claim <task> --dirs <a,b> --gate light|full"))
 	case len(list) == 0 || slices.Contains(list, ""):
-		return o.fail("", usageError("--dirs is required: a comma-separated list with no empty entry"))
+		return o.fail(id, usageError("--dirs is required: a comma-separated list with no empty entry"))
 	case ttlSet && *ttl == 0:
-		return o.fail("", usageError("ttl 0s: must be a whole number of minutes, at least 1"))
+		return o.fail(id, usageError("ttl 0s: must be a whole number of minutes, at least 1"))
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), stopSignals...)
 	defer stop()
@@ -228,7 +237,8 @@ func runTaskRelease(args []string, stdout, stderr io.Writer) int {
 	}
 	o := taskOut{"release", *asJSON, stdout, stderr}
 	if task == "" || extra > 0 {
-		return o.fail("", usageError("usage: waggle release <task>"))
+		id, _ := comb.ParseTicketID(task)
+		return o.fail(id, usageError("usage: waggle release <task>"))
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), stopSignals...)
 	defer stop()

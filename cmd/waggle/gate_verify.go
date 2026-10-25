@@ -139,7 +139,11 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	}
 	branchID, ignored := branchTicket(branchName)
 	if ignored {
-		rep.warn(checkLeases, "branch name ignored")
+		if check == checkTiers {
+			rep.warn(checkTiers, "branch name ignored")
+		} else {
+			rep.warn(checkLeases, "branch name ignored")
+		}
 	}
 	in := scanInput{branchID: branchID, tree: check != checkLeases}
 	pre := slices.Clone(rep.findings)
