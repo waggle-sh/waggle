@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -24,8 +23,6 @@ type ReleaseRequest struct {
 	Unmerged                bool         // release without the merged check: the ticket makes no PR
 	Owner                   string       // default keeper_id from .waggle/local.yaml
 	Backend                 ClaimBackend // nil: built from config
-
-	legacyOwner bool // Release: a missing keeper_id is ExitEnv, as it always was
 }
 
 // ReleaseTaskResult is what ReleaseTask did.
@@ -52,20 +49,6 @@ type taggedError struct {
 
 func (e taggedError) Error() string { return e.msg }
 func (e taggedError) Unwrap() error { return e.tag }
-
-// Release is ReleaseTask with the text output of waggle dispatch release.
-func Release(ctx context.Context, r ReleaseRequest, out io.Writer) error {
-	r.legacyOwner = true
-	res, err := ReleaseTask(ctx, r)
-	for _, w := range res.Warnings {
-		fmt.Fprintln(out, "warning: "+w)
-	}
-	if err != nil {
-		return err
-	}
-	fmt.Fprintln(out, ReleaseLine(res))
-	return nil
-}
 
 // ReleaseLine is the one line the text output prints for a successful release.
 func ReleaseLine(res ReleaseTaskResult) string {
@@ -127,9 +110,6 @@ func ReleaseTask(ctx context.Context, r ReleaseRequest) (res ReleaseTaskResult, 
 	owner := r.Owner
 	if owner == "" {
 		if owner, err = config.LoadKeeperID(repo); err != nil {
-			if r.legacyOwner {
-				return res, failf(ExitEnv, "%w", err)
-			}
 			return res, failf(ExitUsage, "%w; or pass --owner <id>", err)
 		}
 	}

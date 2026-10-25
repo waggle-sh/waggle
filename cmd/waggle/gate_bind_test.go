@@ -144,6 +144,50 @@ func TestBindIgnoresBadBranch(t *testing.T) {
 	}
 }
 
+// AC15: the warning is filed under the check that ran.
+func TestBadBranchWarningPerCheck(t *testing.T) {
+	r := leaseRepo(t)
+	r.claim(31, "full", active, "docs")
+	r.write("docs/a.md", []byte("a\n"))
+	r.commit("add docs")
+	const b = "t-031-a\x01b"
+	if _, out := r.runWith(nil, "tiers", "--branch", b); !strings.Contains(out, "tiers: warning: branch name ignored") {
+		t.Errorf("tiers:\n%s", out)
+	}
+	for _, check := range []string{"leases", "verify"} {
+		_, out := r.runWith(nil, check, "--branch", b)
+		if !strings.Contains(out, "leases: warning: branch name ignored") || strings.Contains(out, "tiers: warning") {
+			t.Errorf("%s:\n%s", check, out)
+		}
+	}
+}
+
+// AC14: the field length is checked before the split, with the same results.
+func TestTrailerTicketsBounds(t *testing.T) {
+	cases := []struct {
+		name, raw string
+		ids       int
+		bad       string
+	}{
+		{"empty", "", 0, ""},
+		{"one", "T-031", 1, ""},
+		{"eight", "1,2,3,4,5,6,7,8", 8, ""},
+		{"nine", "1,2,3,4,5,6,7,8,9", 0, "Waggle-Ticket trailer too long"},
+		{"16 bytes", "0000000000000031", 0, "malformed Waggle-Ticket trailer"},
+		{"17 bytes", "00000000000000031", 0, "Waggle-Ticket trailer too long"},
+		{"256 bytes", "31," + strings.Repeat(" ", 251) + "31", 1, ""},
+		{"257 bytes", "31," + strings.Repeat(" ", 252) + "31", 0, "Waggle-Ticket trailer too long"},
+		{"300 spaces", "31," + strings.Repeat(" ", 300) + "31", 0, "Waggle-Ticket trailer too long"},
+		{"malformed", "T-031,x", 0, "malformed Waggle-Ticket trailer"},
+	}
+	for _, tc := range cases {
+		ids, bad := trailerTickets(tc.raw)
+		if len(ids) != tc.ids || bad != tc.bad {
+			t.Errorf("%s: %v %q", tc.name, ids, bad)
+		}
+	}
+}
+
 func TestProtectedPaths(t *testing.T) {
 	const cfg = "version: 1\ngate:\n  protected_paths: \"deploy/,Infra/\"\n"
 	const msg = "protected path (listed in .waggle/control/config.yaml); needs an admin bypass to merge"
