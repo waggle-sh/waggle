@@ -5947,3 +5947,22 @@
 **Keeper choice:** Fold them into the D-235 rewrite: commits b42ce8f, 841ada0, e443aa7 and 569f062 (merged in #129) are added to the redaction list, and the rewrite and the GitHub Support purge cover them. No force push before then. Going forward, the queen copies the repo's commit identity into every scratch clone and gates on scan-hive's exit code, never its printed output.
 
 **Rationale:** The repo stays private until the D-235 rewrite, which already plans a redaction and a Support purge of cached commits; a force push now would break open branches and still leave the old commits reachable by SHA. Cause: a records batch made in a scratch clone used the global git identity, and the scan's exit 1 was hidden by a pipe. Decided by the Head Keeper via queen card on 2026-10-25; recorded by the queen.
+
+## D-309: T-037 Q6: T-037 waits for T-042
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-037, T-042
+- **Supersedes:** none
+
+**Question:** Q-T037-6: does T-037 wait for the D-291 sunset (T-042)?
+
+**Options considered:**
+1. (a) Do not wait; describe the fallback and reopen six spots after T-042
+2. (b) T-042 merges before T-037 dispatches
+
+**Hive recommendation:** (b) T-042 merges before T-037 dispatches
+
+**Keeper choice:** (b): T-042 merges before T-037 dispatches; order T-039, T-040, the hive pin move and claim renewals, T-042, T-037. The docs describe only the fail-closed result and quote the renew hint, written once. (a) stays a fallback only on a later queen card if the pin move or renewals slip.
+
+**Rationale:** Matches D-306. Refresh reviewed by opus and fable refresh guards (both must-fix), two fix rounds, fable confirming must-fix, opus confirming pass. Decided by the Head Keeper via queen card on 2026-10-25; recorded by the queen.
