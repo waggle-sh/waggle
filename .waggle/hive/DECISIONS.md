@@ -5521,3 +5521,62 @@
 **Keeper choice:** Yes: phase B item B6 deletes Release and legacyOwner, keeps ReleaseLine; phase B leases internal/dispatch/release.go and release_test.go and waits for phase A.
 
 **Rationale:** Takes the hand-off T-036 made (tasks/T-036.md:12, :121). Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-287: Marketing and docs lead with Waggle Gate
+
+- **Date:** 2026-10-25
+- **Kind:** strategy
+- **Tickets:** T-037
+- **Supersedes:** none
+
+**Question:** What should the marketing material and docs site lead with?
+
+**Options considered:**
+1. Gate first, hive roles as a secondary page on how Waggle builds itself
+2. Hive story first
+3. Both, equal weight
+
+**Hive recommendation:** Gate first, hive roles as a secondary page on how Waggle builds itself
+
+**Keeper choice:** Gate first: the hero is Waggle Gate and what it checks at merge (D-229); the bee roles appear only on a secondary page about how Waggle builds itself, and product copy keeps plain terms (D-236).
+
+**Rationale:** Matches the plan of record in docs/rfc-notes/repositioning.md and the README T-037 writes, so no rework. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-288: Waggle brand work happens in the l19 design studio
+
+- **Date:** 2026-10-25
+- **Kind:** strategy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Where should the Waggle brand work happen (logo, palette, type, diagram style)?
+
+**Options considered:**
+1. The l19 design studio repo
+2. This repo, in a scout brief
+
+**Hive recommendation:** The l19 design studio repo
+
+**Keeper choice:** Brand direction, the diagram system, the hero gate diagram, the hive workflow diagram and a short brand guide are made in the l19 design studio repo, outside this hive, and come back here as assets for the docs site.
+
+**Rationale:** The studio owns brand across l19 products and already rules out the generic AI look. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-289: Docs site lives in this repo, briefed after T-037
+
+- **Date:** 2026-10-25
+- **Kind:** strategy
+- **Tickets:** T-037
+- **Supersedes:** none
+
+**Question:** Where should the docs site live?
+
+**Options considered:**
+1. In this repo under docs/, briefed after T-037 merges
+2. A separate site repo
+3. Decide later
+
+**Hive recommendation:** In this repo under docs/, briefed after T-037 merges
+
+**Keeper choice:** The docs site source lives in this repo, built from the markdown T-037 writes, and deploys to Vercel on the free subdomain; the scout writes its brief after T-037 merges. A custom domain is a separate card because it costs money.
+
+**Rationale:** One source for docs and code, so the docs do not drift. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
