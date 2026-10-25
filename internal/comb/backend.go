@@ -118,6 +118,9 @@ type Lease struct {
 	Directories []string  `json:"directories"`
 	ClaimedAt   time.Time `json:"claimed_at"`
 	ExpiresAt   time.Time `json:"expires_at"`
+	// Branches are the pull request branches the gate accepts for this claim
+	// (see ValidateBranches); empty means the claim names none.
+	Branches []string `json:"branches,omitempty"`
 }
 
 // Backend defines the single Comb interface used for both solo local repos and remotes.
@@ -469,8 +472,75 @@ func validateLeaseFields(l Lease, maxDirs int) (Lease, error) {
 			}
 		}
 	}
+	if err := ValidateBranches(l.Branches); err != nil {
+		return Lease{}, err
+	}
 	l.Directories = dirs
 	return l, nil
+}
+
+var (
+	forkOwnerPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9-]{0,38}$`)
+	forkRepoPattern  = regexp.MustCompile(`^[A-Za-z0-9._-]{1,100}$`)
+)
+
+// ValidateBranches checks a claim's pull request branch list: at most 4 distinct
+// entries, each a short branch name or an <owner>/<repo>:<branch> fork branch.
+// Errors name an entry by position and rule, never by its bytes, because a
+// stored claim's error reaches gate output.
+func ValidateBranches(list []string) error {
+	if len(list) > 4 {
+		return fmt.Errorf("branches: at most 4: %w", ErrInvalidLease)
+	}
+	seen := map[string]bool{}
+	for i, e := range list {
+		if seen[e] {
+			return fmt.Errorf("branches entry %d: duplicate: %w", i+1, ErrInvalidLease)
+		}
+		seen[e] = true
+		if len(e) > 255 {
+			return fmt.Errorf("branches entry %d: over 255 bytes: %w", i+1, ErrInvalidLease)
+		}
+		name := e
+		if repo, branch, ok := strings.Cut(e, ":"); ok {
+			if !validForkRepo(repo) {
+				return fmt.Errorf("branches entry %d: not a valid fork repository: %w", i+1, ErrInvalidLease)
+			}
+			name = branch
+		}
+		if !validBranchName(name) {
+			return fmt.Errorf("branches entry %d: not a valid branch name: %w", i+1, ErrInvalidLease)
+		}
+	}
+	return nil
+}
+
+func validForkRepo(s string) bool {
+	owner, repo, ok := strings.Cut(s, "/")
+	return ok && forkOwnerPattern.MatchString(owner) && forkRepoPattern.MatchString(repo) &&
+		repo != "." && repo != ".."
+}
+
+// validBranchName reports whether s is a short branch name git accepts, limited
+// to printable ASCII.
+func validBranchName(s string) bool {
+	if s == "" || s == "@" || strings.HasPrefix(s, "refs/") ||
+		strings.ContainsAny(s[:1], "-/.") || strings.ContainsAny(s[len(s)-1:], "/.") ||
+		strings.HasSuffix(s, ".lock") || strings.Contains(s, "..") ||
+		strings.Contains(s, "@{") || strings.Contains(s, "//") {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c < 0x21 || c > 0x7e || strings.IndexByte("~^:?*[\\", c) >= 0 {
+			return false
+		}
+	}
+	for _, part := range strings.Split(s, "/") {
+		if strings.HasPrefix(part, ".") || strings.HasSuffix(part, ".lock") {
+			return false
+		}
+	}
+	return true
 }
 
 // MalformedClaim describes one claim ref that could not be decoded.

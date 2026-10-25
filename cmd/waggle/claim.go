@@ -44,6 +44,17 @@ type claimBodyJSON struct {
 	ExpiresAt   string   `json:"expires_at"`
 	Ref         string   `json:"ref"`
 	OID         string   `json:"oid"`
+	Branches    []string `json:"branches"`
+}
+
+// repeatFlag collects every use of a repeatable string flag.
+type repeatFlag []string
+
+func (r *repeatFlag) String() string { return strings.Join(*r, ",") }
+
+func (r *repeatFlag) Set(v string) error {
+	*r = append(*r, v)
+	return nil
 }
 
 type claimOKJSON struct {
@@ -164,12 +175,14 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("claim", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
-		fmt.Fprintln(stderr, "Usage: waggle claim <task> --dirs <a,b> --gate light|full [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]")
+		fmt.Fprintln(stderr, "Usage: waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]... [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]")
 	}
 	dirs, gate := fs.String("dirs", "", "comma-separated directories to lease"), fs.String("gate", "", "light or full")
 	ttl, owner := fs.Duration("ttl", 0, "claim lifetime in whole minutes; default leases.default_ttl_minutes"), fs.String("owner", "", "claim owner; default keeper_id in .waggle/local.yaml")
 	base, repo := fs.String("base", "", "revision whose config lists protected paths; default main on the remote"), fs.String("repo", ".", "repository")
 	asJSON := fs.Bool("json", false, "print one JSON object")
+	var branches repeatFlag
+	fs.Var(&branches, "branch", "PR branch this claim accepts; repeatable, up to 4")
 	task, extra, code, ok := parseTaskArgs(fs, args)
 	if !ok {
 		return code
@@ -184,7 +197,7 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 	id, _ := comb.ParseTicketID(task)
 	switch {
 	case task == "" || extra > 0:
-		return o.fail(id, usageError("usage: waggle claim <task> --dirs <a,b> --gate light|full"))
+		return o.fail(id, usageError("usage: waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]..."))
 	case len(list) == 0 || slices.Contains(list, ""):
 		return o.fail(id, usageError("--dirs is required: a comma-separated list with no empty entry"))
 	case ttlSet && *ttl == 0:
@@ -192,7 +205,7 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), stopSignals...)
 	defer stop()
-	res, err := dispatch.ClaimTask(ctx, dispatch.ClaimTaskRequest{RepoDir: *repo, Ticket: task, Dirs: list, Gate: *gate, TTL: *ttl, Owner: *owner, Base: *base})
+	res, err := dispatch.ClaimTask(ctx, dispatch.ClaimTaskRequest{RepoDir: *repo, Ticket: task, Dirs: list, Gate: *gate, Branches: branches, TTL: *ttl, Owner: *owner, Base: *base})
 	if err != nil {
 		return o.fail(res.Task, err)
 	}
@@ -200,7 +213,7 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 	o.warn(res.Warnings)
 	if *asJSON {
 		o.json(claimOKJSON{jsonVersion, "claim", true, res.Task, res.Outcome,
-			claimBodyJSON{l.TicketID, l.KeeperID, l.Gate, nonNil(l.Directories), rfc3339(l.ClaimedAt), rfc3339(l.ExpiresAt), res.Ref, res.OID},
+			claimBodyJSON{l.TicketID, l.KeeperID, l.Gate, nonNil(l.Directories), rfc3339(l.ClaimedAt), rfc3339(l.ExpiresAt), res.Ref, res.OID, nonNil(l.Branches)},
 			nonNil(res.Notes), nonNil(res.Warnings)})
 		return 0
 	}
