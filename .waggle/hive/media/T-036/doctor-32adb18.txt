@@ -1,0 +1,14 @@
+waggle doctor on waggle-sh/waggle, built from main 32adb18 (vcs.modified=false), 2026-10-24, exit 0. Run by the queen on the Head Keeper's card (T-036 2.11). A first attempt with a GITHUB_TOKEN that cannot see this private repo exited 3 with: waggle doctor failed: forge: probe waggle-sh/waggle: reading the default branch: GitHub answered 404
+
+Testing pushes to origin with two temporary refs under refs/waggle/probe/ (deleted afterwards).
+Waggle setup check: github waggle-sh/waggle (remote origin)
+Auth: gh CLI
+Claims: refs/waggle/claims/* on origin
+Merge strategy: up_to_date
+Enforcement: enforced
+
+  ok        claim-refs      Pushes to refs/waggle/* on origin work.
+  ok        required-gate   A rule on main requires the verify-leases-and-tiers check.
+  ok        up-to-date      Pull requests into main must be up to date before they merge.
+
+Everything Waggle relies on is enforced on this repo.
