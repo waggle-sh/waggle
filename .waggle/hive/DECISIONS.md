@@ -5832,3 +5832,98 @@
 **Keeper choice:** (a): add one fs.PrintDefaults() line to each of the two fs.Usage closures in cmd/waggle/claim.go (2 lines, named in the lease rule); both commands start listing their flags.
 
 **Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-040 brief guards (round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-303: T-042 Q1: delete the no-list fallback outright
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-042
+- **Supersedes:** none
+
+**Question:** Q-T042-1: delete the fallback or keep it unreachable?
+
+**Options considered:**
+1. (a) Delete ticketBranchName and the fallback branch
+2. (b) Keep it unreachable
+
+**Hive recommendation:** (a) Delete ticketBranchName and the fallback branch
+
+**Keeper choice:** (a): delete ticketBranchName and the fallback branch of checkHead outright; branchTicket stays because binding uses it.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-042 brief guards (round 1 opus must-fix and fable pass, round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-304: T-042 Q2: outside users learn through T-037 docs and G5 release notes
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-042
+- **Supersedes:** none
+
+**Question:** Q-T042-2: who tells outside gate-only users?
+
+**Options considered:**
+1. (a) T-037's docs describe only fail-closed behavior and quote the renew hint; G5 release notes carry one line
+2. (b) This ticket changes docs too
+
+**Hive recommendation:** (a) T-037's docs describe only fail-closed behavior and quote the renew hint; G5 release notes carry one line
+
+**Keeper choice:** (a): T-037's docs describe only the fail-closed result and quote the renew hint, L10 names pre-T-039 source builds and other claim writers, and G5's release notes carry one line on re-claiming with --branch.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-042 brief guards (round 1 opus must-fix and fable pass, round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-305: T-042 Q3: no warning period for outside repos
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-042
+- **Supersedes:** none
+
+**Question:** Q-T042-3: a warning period on outside repos?
+
+**Options considered:**
+1. (a) None; the flip lands at each repo's own gate pin move
+2. (b) A config grace switch
+
+**Hive recommendation:** (a) None; the flip lands at each repo's own gate pin move
+
+**Keeper choice:** (a): no warning period; the change reaches each repo when it moves its own gate pin.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-042 brief guards (round 1 opus must-fix and fable pass, round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-306: T-042 Q4: order T-039, T-040, pin move and renewals, T-042, T-037
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-042
+- **Supersedes:** none
+
+**Question:** Q-T042-4: order against T-037
+
+**Options considered:**
+1. (a) T-042 merges before T-037's docs are written
+2. (b) T-037 first, then a docs touch-up
+
+**Hive recommendation:** (a) T-042 merges before T-037's docs are written
+
+**Keeper choice:** (a): T-039, then T-040, then the hive pin move and the renewal or release of every claim ref, then T-042, then T-037. Q-T037-6 is ruled on T-037's own card.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-042 brief guards (round 1 opus must-fix and fable pass, round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-307: T-042 Q5: passing the 16-line target is a stop-and-report to the queen
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-042
+- **Supersedes:** none
+
+**Question:** Q-T042-5: T-042 has no planned cut; what happens past the target?
+
+**Options considered:**
+1. (a) Stop and report to the queen, who checks the diff against the lease rule; only the 22-line stop goes to the Head Keeper
+2. (b) Continue to the stop
+
+**Hive recommendation:** (a) Stop and report to the queen, who checks the diff against the lease rule; only the 22-line stop goes to the Head Keeper
+
+**Keeper choice:** (a): T-042 has no planned cut; passing the 16-line target is a stop-and-report to the queen; crossing the 22-line stop goes to the Head Keeper.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-042 brief guards (round 1 opus must-fix and fable pass, round 2 opus must-fix, round 3 fable pass); recorded by the queen.
