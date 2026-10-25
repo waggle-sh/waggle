@@ -113,3 +113,93 @@ None.
 - **R3-N3.** Round 1 N12 (name the `.waggle/hive/` carve-out, `backend.go:41-43`) is still open. Not blocking: item 3's "fail whatever the claim says" is true for hive paths too, since `.waggle/` can never be leased.
 
 Verdict: pass
+
+# Brief review: T-037 refresh round (58e8c32, parent 32adb18), opus
+
+Verdict: must-fix
+
+Risk-Tier: 2
+
+**Intent summary.** The refresh rebases the merged T-037 brief (G5 prose: README, `docs/gate.md`, recipes, CONTRIBUTING glossary, docs SPDX) on main `32adb18`. It resolves every round 3 `<<G4: ...>>` placeholder from merged code (section 2), re-cites `gate_commits.go` and `gate_verify.go` after T-038 A and B, makes T-037 wait for T-039 and T-040, writes T-039's claim `--branch` behavior and T-040's final strings into the docs plan, re-fetches section 4 rows C6, G4, G5, G6, T2 and T3, raises the budget to 643 bottom-up, and adds Q-T037-6 on the D-291 sunset. One file changes (`.waggle/hive/tasks/T-037.md`, +93 -89). Blast radius is the docs plan only; nothing in code, control or CI moves.
+
+What I checked and found sound:
+
+- **G4 values against main.** `gate/action.yml:5-14` (inputs and defaults), `:24-35` (build with `GOPROXY: "off"`), `:37-41` (`git fetch --prune origin '+refs/waggle/claims/*:refs/waggle/claims/*'`), `:43-51` (no `--branch`): all exact. Template `waggle-gate.yml.tmpl` `:5-9`, `:11-20`, `:25-27`, `:29-30`, `:32-46`, `:48-64`, `:66-72`: all exact. `init.go:391-397`, `:402-404`, `:426-429`, text `:162`, warning `:159`; the `[warn]` print is at `:438-440`, not `:437-439` (off by one, note). `main.go:58-65` strings exact. `gate-config.yaml.tmpl:9-17` exact. `doctor.go:25-28`, `:32-34`, `:56-59`, `:76-81`; `probe.go:36-41`; `probe_github.go:66-73`, `:153-170`, `:172-189`: all exact. No `release.yml` at `32adb18`, so "build from source at a pinned, pushed commit" is the only install path named, which matches main.
+- **gate_commits.go and gate_verify.go re-cites.** `:16-23`, `:33`, `:51`, `:69`, `:171-172`, `:192-193`, `:197-207`, `:242-251`, `:258-309`, `:263-266`, `:277-296`, `:312-335`, `:326-330`, `:338-360`; `gate_verify.go:125-146`, `:211`, `:243-277`: all land on the stated code. `backend.go:29-39` holds the nine hardcoded prefixes the README check 3 lists; `changecheck.go:79-100` matches its rows.
+- **T-039 and T-040 behavior quoted.** README checks 1 and 2, "Writing a claim", claim-map rows 79 to 81, L1, L3, L4 and L10 match T-039 2.1 to 2.5 and D-291 to D-294 as ruled. The T-040 rows the header names (1 to 3, 10, 30) are the strings the docs quote, and section 5's kept-literal list matches T-040 section 11 and its "Reached but kept" line. Order T-039, then T-040, then T-037 holds: T-040's own Depends on waits for T-039 (both lease `cmd/waggle/`, `internal/comb/`, `internal/dispatch/`), and T-037 leases nothing either touches.
+- **Section 4 rows.** I fetched all six cited pages on 2026-10-24. C6: the sentence and the `Bash(git push *)` table row are verbatim on the permissions page. G4: all three instruction types listed for Copilot cloud agent, verbatim. G5: both rules and the up-to-date checkbox as a setting of the status checks rule, as stated. G6: "customers on GitHub Team and GitHub Enterprise plans", no Free or visibility split; partial status and fallback wording are honest. T2: all four quotes present (the second is a sentence fragment, which the row presents as one). T3: PR #2609 merged 2026-03-12 with the two quoted bullets, no merge-queue mention; v1.0.0 release notes say "Native GitHub merge queue integration via merge_strategy=pr". The T3 fallback wording says no more than that.
+- **Budget.** 105 + 240 + 82 + 130 + 82 + 4 = 643; doubled 1,286, rounded 1,290; target 1.3 times 1,677, 1,680; stop 1.8 times 2,322, 2,320. Matches D-185 (double, split along the planned cut past the target, only the stop to the Head Keeper) and D-210 (post-review rounds toward the stop only). The planned cut (worked examples and the local hook section) removes no precondition or limit, so cutting it cannot make the docs oversell.
+- **No overselling of support.** Merge queues are named unsupported and untested (L12), the T3 fallback says so, and install names only a source build at a pinned commit; release assets are conditional on a merged `release.yml`.
+
+## Must-fix
+
+### M1. Q-T037-6 is put to the Head Keeper on a false premise and contradicts T-042's open questions
+
+**Evidence.** Section 13, Q-T037-6: "No ticket for that follow-up exists yet." The T-042 brief (commit `7a02279`, parent `32adb18`, not merged) is that follow-up. Its Q-T042-4 recommends (a) "Merge T-042 before T-037's L1 is written", and its Q-T042-2 (a) says "T-037's docs describe only the fail-closed behavior: L1 ... drops T-039 2.5's fallback bullet, and the troubleshooting text quotes the renew hint and says to re-run the check". Q-T037-6 recommends the opposite (do not wait, describe the fallback). Ruled at their recommendations, the two cards contradict each other, and the T-037 builder would be told both to write and not to write the fallback.
+
+The main reason Q-T037-6 gives for (a), that waiting "puts that chain in front of G5's prose", is weak. D-291 already puts the sunset (pin move, renewal of every hive claim, T-042) before the G5 flip, so that chain is in front of G5 either way. And per Q-T042-2, the first public release carries T-039 and T-042 together, so under (a) the fallback text describes behavior that no public user ever runs. It is guaranteed to be rewritten before the flip, at the cost of another two-guard docs round (D-282).
+
+**Fix.** Rewrite Q-T037-6 with T-042 in view, and make its recommendation agree with Q-T042-4. I recommend this text: "(b) T-037 dispatches after T-042 merges. Expected order: T-039, T-040, the pin move and claim renewals (T-042 section 9), T-042, T-037. Fallback, only on a queen card: if the pin move or the renewals slip past T-040's merge, T-037 dispatches under (a) and the queen notes the touch-up on the card." Then carry the ruling through the brief:
+
+- the header Depends on adds T-042 and the fallback;
+- under (b), L1, claim-map row 80, L4 ("or fallback") and L10 ("puts it back on the fallback") state the fail-closed result instead, quoting the T-039 renew hint `<id>: claim names no branch; renew it with waggle claim --branch` and saying to re-run the check, per Q-T042-2 (a);
+- section 12 item 5 ("T-037's own claim passes on `t-037` through the D-291 fallback") and item 10 get updated. Under (b), T-037's claim must carry a branch list written by a T-039 build, since the pin will have moved;
+- section 6's "The D-291 sunset itself (Q-T037-6)" names T-042.
+
+If the queen prefers to keep (a), Q-T037-6 still has to name T-042, state that it conflicts with Q-T042-2 (a) and Q-T042-4 (a), and send both cards to the Head Keeper together.
+
+### M2. L12 says `waggle doctor` reports `merge-queue` as unknown, but the code does that only under a config value a gate-only install does not set
+
+**Evidence.** L12: "`waggle doctor` reports `merge-queue` as unknown (section 2)". `probe_github.go:66-73` adds the `merge-queue` finding only when `opt.MergeStrategy == "native_queue"`. The finding is not `Required`, so it never changes the exit code (`doctor.go:76-81`). The default is `up_to_date` (`internal/config/config.go:31`, `:127`), and `gate-config.yaml.tmpl` seeds no `forge.merge_strategy`. On a default gate-only repo, doctor prints no merge-queue line at all. A reader who trusts L12 would read a clean doctor run as "no merge queue in play", which the code never checks.
+
+There is a second gap. `forge.merge_strategy: native_queue` is a valid config value (`config.go:292-295`), and the brief's `docs/gate.md` plan has a "config reference" section. Listing that value there without a caveat reads as merge-queue support, and setting it makes doctor skip the required `up-to-date` finding. Both breach the section 7 bar: a statement the cited code does not do, and overselling merge-queue support.
+
+**Fix.** Reword L12's last clause to: "`waggle doctor` does not detect a merge queue; only with `forge.merge_strategy: native_queue` set does it skip the up-to-date check and print an informational `merge-queue` finding marked unknown, and that setting does not make the gate run in a merge queue (`internal/forge/probe_github.go:66-73`)." Section 2's doctor bullet already conditions it correctly; add one builder rule to 3.2: the config reference either omits `forge.merge_strategy` or documents `native_queue` with that same sentence. Add both to AC9's L12 check.
+
+## Notes (not must-fix)
+
+1. `init.go` tag warning is printed at `:438-440`, not `:437-439`. The builder re-reads at the dispatch base anyway.
+2. T-042 cites `tasks/T-037.md:98` (L1) and `:218` (section 12 item 5). At `58e8c32` they are `:99` and `:220`. T-042's finalize round should fix these, and T-039's brief carries the same stale cites.
+3. The C6 row's section name ("what a Bash rule doesn't match") matches the page's anchor text `#bash-rule-limits`. The builder should link the anchor, not the prose name, so AC5 can check it.
+4. T2's second quote is a fragment of a longer sentence ("It instructs polecats, after their final build/pre-verify passes, to push ..."). It is fine as quoted, but the recipe should not present it as a full sentence.
+5. Row G1 is still marked verified from the first fetch and was not re-fetched in this round. It is a low-risk quote, but the queen may want it re-fetched with the others before dispatch, since the page was renamed to Copilot cloud agent.
+6. `changecheck.go:96` (listed-path finding) says "needs an admin bypass to merge", which is untrue when a listed approver approves. T-040 does not reword it, and the docs that quote it need the plain gloss "or a listed approver's approval at the head commit". The builder should not quote it bare.
+7. Under (b) in M1, the expected order puts the pin move after T-040. That lets one Head Keeper pin commit also carry T-040 row 30 (T-040 section 10 item 2), which saves a second pin card.
+
+## Recommended ruling for Q-T037-6
+
+(b), with a queen-card fallback to (a): T-037 dispatches after T-042 merges, in the order T-039, T-040, pin move and renewals, T-042, T-037. This agrees with T-042's Q-T042-2 (a) and Q-T042-4 (a). It costs about a day, mostly queen and Head Keeper work that D-291 requires before the flip anyway. It saves a guaranteed second two-guard docs round, and it keeps out of the public docs a fallback that no public release ever runs.
+
+<!-- SPDX-License-Identifier: MIT-0 -->
+# Brief guard review: T-037 refresh fix round 2 (dad99b3, parent 3ce85e1), opus, confirming
+
+Verdict: pass
+
+- **Reviewed:** `.waggle/hive/tasks/T-037.md` at `dad99b3` (one file, 8 insertions, 8 deletions against `3ce85e1`). Checked against `cmd/waggle/gate_commits.go` at `8978c62` (T-039) and `32adb18` (main), `gate_approve.go:88-104` at `32adb18`, `tasks/T-042.md` at `67d04fd`, and the prior confirming review `brief-T-037-fable-r4.md`. Read-only: `git show`, `git diff`, `git log` and file reads only.
+- **Risk-Tier:** 2 (a hive record; the docs ticket stays two guards per round under D-282).
+
+## Intent summary
+
+The round answers fable r4 M1 (under Q-T037-6 (a) the README claim section, L4 and L10 stated only the fail-closed result) with one scoping sentence at the end of Q-T037-6 (a), widens the (a) reopen list from four spots to six in both Q-T037-6 (a) and section 12 item 10, and folds in fable r4 notes N2 (T-042 cite to `67d04fd`), N9 (pitch commentary), N10 (L10 names other claim writers), N11 (one dry-run build name) and N12 (the T-040-stall fallback names its option). Blast radius: the brief text only. No code, control or CI file moves.
+
+## Must-fix
+
+None.
+
+## Confirmations
+
+1. **M1 closed.** The scoping sentence appears once (line 233, end of Q-T037-6 (a)), names the three spots fable r4 listed (README "Writing a claim" fail sentence, L4's last clause, L10's fail clause), points them at T-039 2.4 item 3 (b) and 2.5, and ends "Under (b) none of this applies." Its warning text `claim for <id> names no branch; accepted on ticket branch name` matches `gate_commits.go:357` at `8978c62` byte for byte after the ID (`"claim for "+id+" names no branch; accepted on ticket branch name"`), and the fail text matches `:360`. The behavior it states (accepted on the ticket's own same-repo branch names, any other head fails) matches `checkHead` at `:355-361`. For L4, the expired path at `:330-334` warns and then calls `checkHead`, so the fallback applies to an expired no-list claim too, as the sentence implies.
+2. **Six-spot list consistent.** Q-T037-6 (a): fallback in L1, the claim-map row, L4, L10 and the README claim section, plus "the one hedge clause" in README check 1 and the pitch. Section 12 item 10: "the fallback sentences in L1, the claim-map row, L4, L10 and the README claim section, and the hedge clause in README check 1 and the pitch". Same members in both; the count of six treats the shared hedge clause as one spot, the same convention the round 1 "four" used (three fallback spots plus the hedge). The Status line says six as well.
+3. **Pitch approver exception accurate.** At `32adb18`, `gate_commits.go:221` is `if s.approvable != nil && s.approvable(v.Path) && (v.Rule == comb.RuleTier3 || v.Rule == comb.RuleOutsideLease)`, dropping the finding when `s.filter` is set (the approved rescan). `approvablePath` (`gate_approve.go:90-104`) is true only for a path at Tier 3 by policy and under no hardcoded prefix, so "a repo-listed path" is the right scope, and check 3 (line 59) already states the listed-approver rule at the exact head commit. The no-branch failure has no path, so the exception does not reach the branch half of the pitch; the text does not claim it does.
+4. **L10.** The added clause "as does any tool that writes a claim ref without `branches` (git plumbing, a future relay; Q-T042-2 (a))" sits inside the existing older-CLI sentence and inherits its fail clause, which the M1 scoping sentence covers under (a). Correct.
+5. **Dry-run build naming.** Item 1 now defines "the dry-run build: the moved-pin build of item 5, or under Q-T037-6 (a) a build of main carrying T-039 (either records `t-037`, D-292)"; item 5 refers to "the dry-run build". Under (a) the fallback is taken precisely when the pin move slips, so naming a main build carrying T-039 there is right; both builds record `t-037` (`request.go:118-119` default per fable r4 N5).
+6. **T-040-stall fallback.** "alone, under the Q-T037-6 option the card states: (b) if T-042 has merged by then (it does not depend on T-040), otherwise (a) with its section 12 item 10 touch-up". T-042's Depends on at `67d04fd` (lines 16-21) lists T-039, the pin move and the claim renewals, and no T-040, so the parenthetical holds.
+7. **No regression.** The diff touches only the Status line, Depends on, the pitch paragraph, L10, section 12 items 1, 5 and 10, and Q-T037-6. No em or en dash in the file at `dad99b3` (grep for U+2013 and U+2014 empty). The Head Keeper is named by role. Budget lines are unchanged and the new text is brief instruction, not doc lines.
+
+## Notes (not must-fix)
+
+- **N1. Q-T037-6 (a) list punctuation.** "the docs describe the T-039 fallback in `docs/gate.md` (L1, the claim-map row, L4, L10) and the README claim section, README check 1 and the pitch carry the one hedge clause (3.1)" can be misparsed as the README claim section carrying the hedge. A semicolon after "the README claim section" would fix it. The scoping sentence that follows removes any practical doubt, so this is cosmetic.
+- **N2. Item 5 is now near-tautological.** "the item 1 dry run uses the dry-run build" says nothing item 1 does not; "uses this build" or dropping the clause would read cleaner.
+- **N3. The T-040-stall (b) branch is rarely reachable under the ruled order.** Q-T042-4 (a) (D-303 to D-307, per the caller) puts T-040 before the pin move, so with T-040 stalled T-042 would normally not have merged unless the queen's card also moves the pin ahead of T-040. The text is conditional and correct; the queen card should say which it is, which the sentence already requires.
+- **N4. The fallback gloss omits the ignored-branch guard.** `:356` also requires `branchTicket(h.name)` not ignored. "its ticket's own same-repo branch names" is a fair plain-terms reading and the builder writes from T-039 2.4 item 3 (b), which carries the detail.
+- **N5. The pitch cite is at main.** `gate_commits.go:221` is the `32adb18` line; at `8978c62` the same check is `:223`. Within the brief's re-read-at-dispatch-base allowance.
