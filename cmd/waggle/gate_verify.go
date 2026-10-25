@@ -145,7 +145,15 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 			rep.warn(checkLeases, "branch name ignored")
 		}
 	}
-	in := scanInput{branchID: branchID, tree: check != checkLeases}
+	prh := prHead{name: branchName, gha: gha}
+	switch {
+	case ev != nil:
+		prh.repo = ev.headRepo
+		prh.sameRepo = ev.headRepo != "" && strings.EqualFold(ev.headRepo, ev.baseRepo)
+	default:
+		prh.sameRepo = !gha || *branch != ""
+	}
+	in := scanInput{branchID: branchID, head: prh, tree: check != checkLeases}
 	pre := slices.Clone(rep.findings)
 	out, err := scanRange(g, *base, *head, in, rep)
 	code := gatePass
@@ -174,9 +182,20 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	return code
 }
 
+// prHead is the PR head a claim's branch list is matched against. name is the
+// raw branch name, "" when unknown. sameRepo is false for a fork and for any
+// head under Actions whose repository the gate could not confirm.
+type prHead struct {
+	name     string
+	repo     string // head repository, owner/name; "" when unknown
+	sameRepo bool
+	gha      bool
+}
+
 // scanInput is what one scanRange pass is asked to do.
 type scanInput struct {
 	branchID string // ticket the PR branch binds, or ""
+	head     prHead // the PR head the claims are checked against
 	tree     bool   // also check the head tree for case collisions
 	filter   bool   // drop tier3 and outside_lease findings on approvable paths
 }
@@ -217,7 +236,7 @@ func scanRange(g gitRunner, base, head string, in scanInput, rep *gateReport) (s
 		return scanOutcome{}, err
 	}
 	s := commitScan{g: g, comb: cb, now: time.Now(), rep: rep, claims: map[string]claimLookup{},
-		baseOID: baseOID, policy: policy, branch: in.branchID, bound: map[string]string{},
+		baseOID: baseOID, policy: policy, branch: in.branchID, head: in.head, bound: map[string]string{},
 		approvable: approvablePath(policy), filter: in.filter}
 	res := scanOutcome{baseOID: baseOID, headOID: headOID, approvers: approvers}
 	if err := s.scan(mb, headOID); err != nil {

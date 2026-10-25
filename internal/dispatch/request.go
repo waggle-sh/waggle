@@ -64,6 +64,9 @@ type Request struct {
 	ReadPaths []string // read-only context, repo-relative, read from base
 	Second    bool     // guard only: also avoid the first guard's model (D-100)
 	Head      string   // set by Run for a guard: the OID under review, where its worktree is detached
+
+	// ClaimBranches is the branch list a claim records when the caller names one.
+	ClaimBranches []string
 }
 
 const maxReadPaths = 50

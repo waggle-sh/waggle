@@ -19,6 +19,7 @@ type ClaimTaskRequest struct {
 	RepoDir, GitBin, Ticket string
 	Dirs                    []string
 	Gate                    string        // light or full
+	Branches                []string      // PR branches the claim accepts; empty: t-<nnn> on a fresh claim, the stored list on a renewal
 	TTL                     time.Duration // 0: leases.default_ttl_minutes; else whole minutes in the config bounds
 	Owner                   string        // default keeper_id from .waggle/local.yaml
 	Base                    string        // revision whose config lists the protected paths; default as ResolveBase
@@ -46,11 +47,14 @@ func ClaimTask(ctx context.Context, r ClaimTaskRequest) (res ClaimTaskResult, er
 	if id, perr := comb.ParseTicketID(r.Ticket); perr == nil {
 		res.Task = id
 	}
-	req, err := Request{RepoDir: r.RepoDir, Ticket: r.Ticket, Role: "builder", Dirs: r.Dirs, Gate: r.Gate, Base: r.Base}.Validate()
+	req, err := Request{RepoDir: r.RepoDir, Ticket: r.Ticket, Role: "builder", Dirs: r.Dirs, Gate: r.Gate, Base: r.Base, ClaimBranches: r.Branches}.Validate()
 	if err != nil {
 		return res, err
 	}
 	res.Task = req.Ticket
+	if err = comb.ValidateBranches(r.Branches); err != nil {
+		return res, failf(ExitUsage, "%w", err)
+	}
 	if err = refuseHardcoded(req.Dirs); err != nil {
 		return res, err
 	}

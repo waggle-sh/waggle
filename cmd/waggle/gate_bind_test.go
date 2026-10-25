@@ -46,19 +46,25 @@ func TestBindSources(t *testing.T) {
 		{"flag", "add docs", []string{"--branch", "t-031"}, nil},
 		{"flag suffix", "add docs", []string{"--branch", "t-031-fix"}, nil},
 		{"flag waggle", "add docs", []string{"--branch", "waggle/T-031"}, nil},
-		{"env", "add docs", nil, map[string]string{"GITHUB_ACTIONS": "true", "GITHUB_HEAD_REF": "t-031"}},
+		// T-039 2.3: no event under Actions is a fork head, so the row reads a
+		// same-repo event (set below) whose head ref is t-031.
+		{"env", "add docs", nil, nil},
 	}
 	for _, tc := range cases {
 		r := leaseRepo(t)
 		r.claim(31, "full", active, "docs")
 		r.write("docs/a.md", []byte("a\n"))
 		r.commit(tc.msg)
-		if code, out := r.runWith(tc.env, "verify", tc.extra...); code != 0 {
+		env := tc.env
+		if tc.name == "env" {
+			env = prEnv(writeEvent(t, otherHead, "t-031", ""))
+		}
+		if code, out := r.runWith(env, "verify", tc.extra...); code != 0 {
 			t.Errorf("%s inside: exit %d\n%s", tc.name, code, out)
 		}
 		r.write("src/a.go", []byte("package src\n"))
 		r.commit(tc.msg)
-		if code, out := r.runWith(tc.env, "verify", tc.extra...); code != 1 || !strings.Contains(out, "T-031: path is outside") {
+		if code, out := r.runWith(env, "verify", tc.extra...); code != 1 || !strings.Contains(out, "T-031: path is outside") {
 			t.Errorf("%s outside: exit %d\n%s", tc.name, code, out)
 		}
 	}
