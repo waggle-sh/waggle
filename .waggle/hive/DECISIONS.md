@@ -5580,3 +5580,23 @@
 **Keeper choice:** The docs site source lives in this repo, built from the markdown T-037 writes, and deploys to Vercel on the free subdomain; the scout writes its brief after T-037 merges. A custom domain is a separate card because it costs money.
 
 **Rationale:** One source for docs and code, so the docs do not drift. Decided by the Head Keeper via queen card on 2026-10-24; recorded by the queen.
+
+## D-290: Waggle brand direction: Lease
+
+- **Date:** 2026-10-25
+- **Kind:** strategy
+- **Tickets:** none
+- **Supersedes:** none
+
+**Question:** Which brand direction does Waggle take (mark, wordmark, color, type)?
+
+**Options considered:**
+1. Lease: the [w] mark, no brand hue
+2. Hive box: stacked hive-box mark, pale blue surfaces
+3. Pair: the gg monogram, propolis brown ink
+
+**Hive recommendation:** Lease: the [w] mark, no brand hue
+
+**Keeper choice:** Lease. Mark [w]: the brackets are the lease, the w is the waggle run. Wordmark "waggle" in Martian Mono 500; Public Sans for text. No brand hue: color appears only for gate verdicts, in GitHub Primer's check colors (pass #1A7F37, must-fix #CF222E, waiting #9A6700 on light; #3FB950, #F85149, #D29922 on dark). The external firm bee logo brief is shelved.
+
+**Rationale:** The only direction where the brand and the product's behavior match: color appears only when the gate rules, and the mark is a picture of a lease. Studio proposal in products/waggle/direction-2026-10-24.md of the l19 design studio repo (D-288). Picked by the Head Keeper in the studio session and confirmed on a queen card on 2026-10-24; recorded by the queen.
