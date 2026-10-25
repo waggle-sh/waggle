@@ -232,7 +232,7 @@ func validProtectedPath(e string) string {
 	switch {
 	case e == "" || len(e) > maxProtectedPathSize:
 		return fmt.Sprintf("entries must be 1 to %d bytes", maxProtectedPathSize)
-	case e == "." || strings.HasPrefix(e, "/") || strings.Contains(e, `\`):
+	case e == "." || e == "./" || strings.HasPrefix(e, "/") || strings.Contains(e, `\`):
 		return "entries must be repo-relative paths with / separators"
 	case strings.ContainsAny(e, "*?["):
 		return "wildcards are not supported"

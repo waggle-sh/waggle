@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -120,6 +121,10 @@ func ReadInputs(ctx context.Context, g *Git, baseOID string, req Request) (in In
 	return in, err
 }
 
+// briefReview matches the part of a review name after the phase prefix that
+// marks a brief review (T-<nnn>-brief-<model>.md, D-257). It is not a build round.
+var briefReview = regexp.MustCompile(`^brief[0-9]*(-|\.md$)`)
+
 // roundMustFix counts the must-fix verdicts of this phase's review files at
 // base: reviews/T-<nnn><suffix>-*.md, where the suffix is the branch's own
 // (t-023d reads T-023d-*.md), so each guard's file counts (D-177). It is
@@ -132,7 +137,7 @@ func roundMustFix(ctx context.Context, g *Git, baseOID string, req Request) (n i
 	}
 	files := 0
 	for _, p := range strings.Split(string(out), "\x00") {
-		if b := path.Base(p); strings.HasPrefix(b, prefix) && strings.HasSuffix(b, ".md") && files < maxReviews {
+		if b := path.Base(p); strings.HasPrefix(b, prefix) && strings.HasSuffix(b, ".md") && !briefReview.MatchString(b[len(prefix):]) && files < maxReviews {
 			files++
 			data, _, e := blobAt(ctx, g, baseOID, p, maxBrief)
 			if err = errors.Join(err, e); e == nil {
