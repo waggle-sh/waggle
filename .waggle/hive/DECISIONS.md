@@ -5927,3 +5927,23 @@
 **Keeper choice:** (a): T-042 has no planned cut; passing the 16-line target is a stop-and-report to the queen; crossing the 22-line stop goes to the Head Keeper.
 
 **Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-042 brief guards (round 1 opus must-fix and fable pass, round 2 opus must-fix, round 3 fable pass); recorded by the queen.
+
+## D-308: Four T-042 brief commits join the D-235 redaction list
+
+- **Date:** 2026-10-25
+- **Kind:** policy
+- **Tickets:** T-042
+- **Supersedes:** none
+
+**Question:** Four commits merged in #129 carry a personal git identity in author, committer and one sign-off line. How are they handled?
+
+**Options considered:**
+1. Fold them into the D-235 history rewrite and redaction; no force push now
+2. Rewrite main now with a force push
+3. Leave them
+
+**Hive recommendation:** Fold them into the D-235 history rewrite and redaction; no force push now
+
+**Keeper choice:** Fold them into the D-235 rewrite: commits b42ce8f, 841ada0, e443aa7 and 569f062 (merged in #129) are added to the redaction list, and the rewrite and the GitHub Support purge cover them. No force push before then. Going forward, the queen copies the repo's commit identity into every scratch clone and gates on scan-hive's exit code, never its printed output.
+
+**Rationale:** The repo stays private until the D-235 rewrite, which already plans a redaction and a Support purge of cached commits; a force push now would break open branches and still leave the old commits reachable by SHA. Cause: a records batch made in a scratch clone used the global git identity, and the scan's exit 1 was hidden by a pipe. Decided by the Head Keeper via queen card on 2026-10-25; recorded by the queen.
