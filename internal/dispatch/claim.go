@@ -39,7 +39,11 @@ func AcquireClaim(ctx context.Context, cb ClaimBackend, g *Git, req Request, kee
 	if req.Role == "guard" {
 		return Claim{}, failf(ExitUsage, "guard does not claim; it reads the builder's claim")
 	}
-	want := comb.Lease{TicketID: req.Ticket, KeeperID: keeperID, Role: req.Role, Gate: req.Gate, Directories: req.Dirs}
+	branches := req.ClaimBranches
+	if len(branches) == 0 {
+		branches = []string{req.Branch}
+	}
+	want := comb.Lease{TicketID: req.Ticket, KeeperID: keeperID, Role: req.Role, Gate: req.Gate, Directories: req.Dirs, Branches: branches}
 	c := Claim{Lease: want, Verb: "claim"}
 	// ClaimOID fetches in remote mode, so the notes and the malformed-ref exit
 	// below describe the remote claim, not a stale local mirror.
@@ -56,9 +60,13 @@ func AcquireClaim(ctx context.Context, cb ClaimBackend, g *Git, req Request, kee
 		c.Notes = append(c.Notes, fmt.Sprintf("taking over %s from %s (expired %s)", req.Ticket, old.KeeperID, old.ExpiresAt.UTC().Format(time.RFC3339)))
 	case old.KeeperID == keeperID:
 		c.Verb = "renew"
-		if old.Role != want.Role || old.Gate != want.Gate || !slices.Equal(old.Directories, want.Directories) {
-			c.Notes = append(c.Notes, fmt.Sprintf("renewal changes the claim: %s %s %v -> %s %s %v",
-				old.Role, old.Gate, old.Directories, want.Role, want.Gate, want.Directories))
+		if len(req.ClaimBranches) == 0 && len(old.Branches) > 0 {
+			want.Branches = old.Branches
+		}
+		if old.Role != want.Role || old.Gate != want.Gate || !slices.Equal(old.Directories, want.Directories) ||
+			!slices.Equal(old.Branches, want.Branches) {
+			c.Notes = append(c.Notes, fmt.Sprintf("renewal changes the claim: %s %s %v %v -> %s %s %v %v",
+				old.Role, old.Gate, old.Directories, old.Branches, want.Role, want.Gate, want.Directories, want.Branches))
 		}
 	}
 	if err := cb.AcquireLease(ctx, want); err != nil {

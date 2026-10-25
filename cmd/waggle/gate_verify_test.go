@@ -41,6 +41,18 @@ func (r gateRepo) claim(n int, gate, expires string, dirs ...string) {
 	r.git("update-ref", fmt.Sprintf("refs/waggle/claims/ticket-%d", n), oid)
 }
 
+// claimOn is claim with a branch list, as waggle claim --branch writes it.
+func (r gateRepo) claimOn(n int, branches []string, gate, expires string, dirs ...string) {
+	r.t.Helper()
+	lease := fmt.Sprintf(`{"version":2,"ticket_id":"T-%03d","keeper_id":"keeper","role":"forager",`+
+		`"gate":%q,"directories":["%s"],"claimed_at":"2020-01-01T00:00:00Z","expires_at":%q,"branches":["%s"]}`,
+		n, gate, strings.Join(dirs, `","`), expires, strings.Join(branches, `","`))
+	blob := r.gitIn(lease, "hash-object", "-w", "--stdin")
+	tree := r.gitIn("100644 blob "+blob+"\tlease.json\n", "mktree")
+	oid := r.git("commit-tree", tree, "-m", "claim")
+	r.git("update-ref", fmt.Sprintf("refs/waggle/claims/ticket-%d", n), oid)
+}
+
 const active = "2999-01-01T00:00:00Z"
 
 // index stages path in the index only, so case variants and hostile names
