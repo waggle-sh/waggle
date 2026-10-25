@@ -5600,3 +5600,80 @@
 **Keeper choice:** Lease. Mark [w]: the brackets are the lease, the w is the waggle run. Wordmark "waggle" in Martian Mono 500; Public Sans for text. No brand hue: color appears only for gate verdicts, in GitHub Primer's check colors (pass #1A7F37, must-fix #CF222E, waiting #9A6700 on light; #3FB950, #F85149, #D29922 on dark). The external firm bee logo brief is shelved.
 
 **Rationale:** The only direction where the brand and the product's behavior match: color appears only when the gate rules, and the mark is a picture of a lease. Studio proposal in products/waggle/direction-2026-10-24.md of the l19 design studio repo (D-288). Picked by the Head Keeper in the studio session and confirmed on a queen card on 2026-10-24; recorded by the queen.
+
+## D-291: T-039 Q1: a claim with no branch list falls back to ticket branch names
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-039
+- **Supersedes:** none
+
+**Question:** Q-T039-1: what does the gate do with a claim that names no branch?
+
+**Options considered:**
+1. (a) Fail closed with a renew hint
+2. (b) Fall back to the ticket's own branch names, same-repo heads only, with a warning, and a sunset before G5
+3. (c) Warn only
+
+**Hive recommendation:** (b) Fall back to the ticket's own branch names, same-repo heads only, with a warning, and a sunset before G5
+
+**Keeper choice:** (b): fall back to the ticket's own branch names (waggle/T-<id>, t-<id>, t-<id><suffix>, canonical digits only), same-repo heads only, with a warning; any other head fails. A follow-up flips it to (a) after the hive pin move and the renewal of every live hive claim, before the G5 flip.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-039 brief guards (round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-292: T-039 Q2: --branch on waggle claim is optional
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-039
+- **Supersedes:** none
+
+**Question:** Q-T039-2: is --branch optional or required on waggle claim?
+
+**Options considered:**
+1. (a) Optional; a fresh claim records t-<nnn>, a renewal keeps the stored list
+2. (b) Required
+
+**Hive recommendation:** (a) Optional; a fresh claim records t-<nnn>, a renewal keeps the stored list
+
+**Keeper choice:** (a): optional; with none a fresh claim records t-<nnn>, and a renewal keeps the stored list.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-039 brief guards (round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-293: T-039 Q3: fork PRs match only owner/repo:branch entries
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-039
+- **Supersedes:** none
+
+**Question:** Q-T039-3: can a fork PR match a claim?
+
+**Options considered:**
+1. (a) Only through <owner>/<repo>:<branch> entries matched against head.repo.full_name
+2. (b) Never
+
+**Hive recommendation:** (a) Only through <owner>/<repo>:<branch> entries matched against head.repo.full_name
+
+**Keeper choice:** (a): only through entries of the form <owner>/<repo>:<branch>, matched against the event's head.repo.full_name. (b) remains the planned cut at the target.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-039 brief guards (round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-294: T-039 Q4: branches ship as an optional field at lease version 2
+
+- **Date:** 2026-10-25
+- **Kind:** technical
+- **Tickets:** T-039
+- **Supersedes:** none
+
+**Question:** Q-T039-4: does the field ship at lease version 2 or 3?
+
+**Options considered:**
+1. (a) Optional branches at version 2
+2. (b) Version 3
+
+**Hive recommendation:** (a) Optional branches at version 2
+
+**Keeper choice:** (a): optional branches field at lease version 2, so older binaries read new claims unchanged.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-24 after the T-039 brief guards (round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
