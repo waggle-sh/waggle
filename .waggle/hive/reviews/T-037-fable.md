@@ -34,3 +34,34 @@ Risk-Tier: 2
 - AC11 and the PR-body parts of AC3 and AC7 (trailers, the section 2 value list, the listed AC3 hits, follow-ups) are not checkable from this worktree; the queen confirms them on the PR.
 
 Verdict: must-fix
+<!-- waggle-review v1 verdict=pass head=8f9745c506c60ad822ea24f3d9ca8d09d56ccf6d -->
+
+Risk-Tier: 2
+
+**Intent Summary:** Fix round 1 of T-037 (PR #144, branch `t-037`) adds one commit, `8f9745c`, on top of `52450ef`, touching only `README.md`, `docs/gate.md` and `CONTRIBUTING.md` (numstat 6/3, 4/4, 2/2). It corrects the `init --gate-only` refusal sentence in the gate spec so it describes the clean-commit-stamp-or-release-tag check rather than a nonexistent "pushed" check, replaces the README's invented claim and release shorthand with the two literal usage lines from `cmd/waggle/claim.go`, adds code sources to limits L6, L7 and L11, narrows README check 1 to "every commit that names its task whenever the PR's head branch is known", adds the missing blank line before the README Documentation heading, and trims the CONTRIBUTING Lane entry and naming rule. No Go, template, workflow or control file changes. Blast radius is the public docs only; the hive gate output is unaffected.
+
+**Verification against the brief's fix-round items**
+
+| Item | File and spot | Result |
+| :--- | :--- | :--- |
+| Must-fix 1 | `docs/gate.md:100` | Exact replacement text. `resolvePin` and `gateRef` at `internal/scaffold/init.go:105-156` accept a release tag or a 40-hex `vcs.revision` with `vcs.modified` false; `:162` holds the quoted `noRefReason` string verbatim; `:426-429` refuses only when `gateRef` returns not ok. Nothing checks a push. Following paragraph untouched. |
+| Must-fix 2 | `README.md:41-46` | Both lines match `cmd/waggle/claim.go:178` and `:243` byte for byte, `Usage: ` prefix included. Fence stays untagged. The added sentence and blank lines are as specified; the bullets below are unchanged. |
+| Note 1 | `docs/gate.md:79-80, 84` | L6 and L7 lines and the L11 last sentence match the brief's text. `cmd/waggle/gate.go:51-56` holds the usage text with the override sentence; `gate_trailers.go:23-27` is the `trailerWarnings` doc comment stating it only warns; `probe_github.go:99-115` (ruleset) and `:138-143` (classic) match the required check by context string equality only. |
+| Note 2 | `README.md:61` | Blank line added between the Status paragraph and `## Documentation`. |
+| Note 3 | `CONTRIBUTING.md:70` | Lane entry ends with `Not used.`; the unsupported reason sentence is gone. |
+| Note 4 | `CONTRIBUTING.md:37` | `(Hive, Comb, roles)`; nothing else on the line changed. |
+| Note 5 | `README.md:12` | Wording matches the brief and `gate_commits.go:343-358`: `checkHead` fails on an empty branch list only after the `h.name == ""` return, so only on a known head. |
+
+**Other checks**
+
+- `git diff --name-only 52450ef 8f9745c` lists exactly the three allowed files; the full diff shows only the edits above, with no reflow or renumbering.
+- U+2013 and U+2014 Grep over the three files: 0 hits.
+- AC3 pattern over README, `docs/gate.md` and `docs/recipes/`: every hit is inside a code span quoting a path (`internal/comb/...`, `.waggle/hive/...`), a config key (`keeper_id`) or kept program text (`Head Keeper: `, `Waggle Gatekeeper`). No new hit from this round.
+- `go build ./...`, `go vet ./...` and `gofmt -l .` produce no output; `go test -race ./...` passes in every package, including `internal/dispatch`, `internal/comb` and `internal/forge`, so the push tripwire did not fire on this host.
+- The "Not this round" release-archive line stays out of `docs/gate.md`, and the one new commit's subject starts `T-037:`.
+
+**Blocking Issues (Must-Fix Only):** none.
+
+**Notes (not blocking):** none. The PR-body items (AC3 hit list, AC7 value list, AC11 trailers, section 12 follow-ups) remain the queen's, as the brief states.
+
+Verdict: pass
