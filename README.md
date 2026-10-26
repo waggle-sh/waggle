@@ -1,63 +1,69 @@
-# Waggle
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Waggle Gate
 
-**Waggle** is an open-source, git-native coordination, execution, and review framework for AI agent swarms. It scales from **1 solo Keeper** on a laptop to **500+ distributed Keepers** donating local compute and tokens.
+Waggle Gate is a GitHub merge check for repos where AI agents write code. On a repo where it is a required check and PRs are required, it fails a PR whose commits change paths outside the claim of the task each commit names, or whose task's claim does not name the PR's branch.
 
-## Quickstart (v0.1 Bootstrap)
+You give each task a claim: the directories it may change and the branches its PR may come from. The gate reads the claims from git and compares them with the PR's commits.
 
-```bash
-# Build the waggle CLI
-go build -o bin/waggle ./cmd/waggle
+## What it checks
 
-# Initialize a Waggle Hive in the current repository
-./bin/waggle init --profile=cli --delivery=installed --comb-mode=direct
+Each check links the [gate spec](docs/gate.md) section that cites the code behind it.
 
-# Check Comb status
-./bin/waggle status
+1. **Each commit names its task, and the task's claim names this PR's branch.** A commit names its task by a `T-<id>: ` subject, a `Waggle-Ticket:` trailer, or a `waggle/T-<id>` or `t-<id>` branch; a commit naming none, or two different tasks, fails. The task is chosen by the commit's author, so the claim's branch list is what ties it to the PR: a commit fails unless its task's claim lists the PR's head branch, and a claim that names no branch fails every commit that names its task whenever the PR's head branch is known ([binding](docs/gate.md#2-binding-a-commit-to-a-task), [branch check](docs/gate.md#3-the-claims-branch-check)).
+2. **Each commit stays inside its task's lease.** The lease is the directory list in the task's claim. Every commit is checked, not only the final diff, with exact case and no new symlink or submodule; only a merge from the base branch is accepted ([lease check](docs/gate.md#4-the-per-commit-lease-check)). The gate does not check who wrote a claim or when, so a person or the orchestrator writes it, with its branch list, before the work, never from the agent's credentials.
+3. **Protected paths.** Control paths (`.github/workflows/`, `.gitlab-ci.yml`, `.devcontainer/`, `.waggle/`, `go.mod`, `go.sum`, `go.work`, `go.work.sum` and `vendor/`) fail whatever the claim says and pass only by an admin bypass, even with an approval. Paths your repo lists in `gate.protected_paths` fail too, unless a listed approver approved the PR at its exact head commit, or an admin bypasses ([protected paths](docs/gate.md#5-risk-tiers-and-protected-paths), [approvers](docs/gate.md#6-approvers)).
+4. **Intent Packet trailers.** `Waggle-Ticket`, `Waggle-Risk-Tier` and `Waggle-Verdict` in the last paragraph of the PR description are compared with the commits and changed paths, as warnings only. They never fail the gate ([trailers](docs/gate.md#7-trailers)).
+5. **Decisions log.** `.waggle/hive/DECISIONS.md` accepts only appended, well-formed entries, judged on the PR's net change. Because `.waggle/` can never be leased, every append also needs an admin merge ([decisions log](docs/gate.md#8-the-decisions-log)).
+
+## What it does not do
+
+It does not schedule or run agents, and it is not a sandbox. The limits below are described in the [gate spec](docs/gate.md#10-limits-and-known-bypasses).
+
+- It binds only on PRs that must pass `verify-leases-and-tiers` as a required check on a branch that requires PRs. A merge that skips PRs skips the gate.
+- Anyone who can push to a branch a claim names can add commits under that claim.
+- Whoever can push claim refs can write a lease and its branch list, an agent included if it has your git credentials.
+- A PR that edits the gate workflow runs its own copy. Code-owner review on `.github/workflows/**` mitigates this; it does not fix it.
+- An admin bypass merges without the gate.
+- Any app with write access can post a status named like the required check, unless the rule binds the check to an integration.
+
+## Install
+
+1. Build `waggle` from a clean clone of a pushed commit, checked out at `<commit-sha>`: `go build -o <path outside the clone>/waggle ./cmd/waggle`. Run `init` and `upgrade` from that build. Tagged releases carry `waggle_<version>_<os>_<arch>` archives and a `SHA256SUMS` file; check a download against its `SHA256SUMS` line.
+2. In your repo, run `waggle init --gate-only`. It writes `.github/workflows/waggle-gate.yml`, `.waggle/control/config.yaml` and `.waggle/hive/DECISIONS.md`, and refuses a forge other than GitHub.
+3. Commit those files. The install PR changes the workflow and `.waggle/`, so it fails its own gate and needs an admin merge.
+4. Require the check `verify-leases-and-tiers`, and PRs, on your default branch.
+5. Run `waggle doctor`. It checks that this clone can push claim refs and that a rule requires the check with up-to-date branches. It does not check that PRs are required, code-owner review, or which app may post the check.
+
+The full workflow is in the [gate spec](docs/gate.md#13-the-calling-workflow). A pin is written `<commit-sha>`; for a release tag, read the commit with `git rev-parse vX.Y.Z^{commit}`.
+
+## Writing a claim
+
+```
+Usage: waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]... [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]
+Usage: waggle release <task> [--branch <name>] [--unmerged] [--owner <id>] [--repo <dir>] [--json]
 ```
 
-## Roles
+These are the usage lines `waggle claim -h` and `waggle release -h` print (`cmd/waggle/claim.go:178, 243`).
 
-- **Keeper.** A human who runs Waggle on their own machine, donating compute and tokens. A Keeper talks only to the queen and answers decision cards.
-- **Head Keeper.** The Keeper with final authority over a hive: approves every Tier 3 change, can force-release a stuck claim, and does the admin merge that repairs a corrupt decision log. Identified in v0.1 by an allow-list in a Tier 3 file; formerly called Master Keeper or Controller.
-- **queen.** The entry session and the only agent a Keeper talks to. It asks decision cards and relays answers to `waggled`; it never waits on workers or writes code or specs.
-- **scout.** Planning role: breaks goals into task briefs under 400 lines, sets each task's lease and gate, and owns the roadmap, specs, and these README sections, but never writes feature code. Scouts search ahead and dance directions to the hive.
-- **forager.** Triage role: reproduces bugs, writes failing tests, maps the lease a ticket needs, and estimates size; it never writes implementation code and is safe to run unattended. Foragers bring material back from outside.
-- **builder.** Implementation role: reads only its brief and leased files, works inside a Cell, runs tests and a self-review, then reports done, and never touches paths outside its lease. Builder bees make comb.
-- **guard.** Review role: checks every acceptance criterion, saves evidence, and returns a verdict (`pass` or `must-fix`), a Risk Tier, and an Intent Packet. Runs on a different model at or above the builder's capability level and never fixes what it finds.
-- **waggled.** The host daemon, a deterministic Go loop with no model. It starts Cells, routes worker messages over `.waggle/control/run.sock`, writes the decision log, enforces token caps, and renders derived views.
+- `--owner` is required in a repo that has only the gate installed. Its help reads `claim owner, usually your GitHub login; required without .waggle/local.yaml, else defaults to its keeper_id`; the file Waggle reads is `.waggle/control/local.yaml`.
+- `--branch` names a PR branch the claim accepts; repeat it, up to 4. With none, a new claim records `t-<nnn>`. Given flags replace the stored list, and a same-owner renewal without flags keeps it. A re-claim after the claim expired starts a new list, so repeat every `--branch`.
+- A claim write does not trigger the workflow: after the list changes, re-run the failed check.
+- A claim with no branch fails with `<id>: claim names no branch; renew it with waggle claim --branch`. Renew it with `--branch` and re-run the check.
+- A `light` claim fails on Tier 2 paths (`CLAUDE.md`, `AGENTS.md`, `.waggle/hive/`); use `full` for those ([gate spec](docs/gate.md#5-risk-tiers-and-protected-paths)). Claims must stay until the PR merges. After a squash or rebase merge, run `waggle release T-<id> --unmerged`.
 
-Records written before the role rename use older names for the scout, forager, and builder roles; the retired-names table in [CONTRIBUTING.md](CONTRIBUTING.md) maps them.
+## Recipes
 
-Planned for v0.2 and not yet specified. RFC-0003 groups them under UX, visuals, hygiene, and deliberation.
+How to run the gate under the agent you already use, in [docs/recipes](docs/recipes/README.md): [Claude Code agent teams](docs/recipes/claude-code-agent-teams.md), [GitHub Copilot cloud agent](docs/recipes/copilot-cloud-agent.md), and the requirements for Gas Town.
 
-- **weaver.** Planned (v0.2).
-- **nurse.** Planned (v0.2).
-- **studio.** Planned (v0.2).
-- **assembly.** Planned (v0.2).
+## Status
 
-## Terms
-
-Any brief that adds a role or term updates these two sections in the same PR.
-
-- **Hive.** A repository with Waggle installed. Waggle keeps its files in `.waggle/` (control plane in `.waggle/control/`, plans and records in `.waggle/hive/`), plus the gate workflow and one marked import line.
-- **Comb.** The hive's shared coordination state, stored as git refs under `refs/waggle/`. The same code path serves one Keeper on a local repo and hundreds on a shared remote.
-- **Cell.** The sandbox a worker runs in: its own git worktree and dev container, the repo read-only except leased directories, no host credentials, network egress blocked.
-- **Swarm.** All the agents working in one hive at a time, across every Keeper. An informal word, not a setting.
-- **Claim.** A Keeper's hold on one ticket, stored as the ref `refs/waggle/claims/ticket-<n>`. Renewals and takeovers add commits to the claim; releasing it deletes the ref.
-- **Lease.** The directories a claim may change, checked when claimed and again, authoritatively, at merge. A lease can never include `.waggle/` or any Tier 3 path.
-- **Gate.** The review a task passes before it merges. A **Light gate** covers small, isolated Tier 0 or 1 work and may ride a lane; a **Full gate** is its own guard review, required for Tier 2 and above and for anything over about 150 lines or touching schemas, auth, shared modules, dependencies, or steering files.
-- **Risk Tier.** How much review a change needs, set by what it touches: Tier 0 comments and typos, Tier 1 small isolated changes with tests, Tier 2 normal logic and every steering file, Tier 3 control plane, CI, sandbox, and dependencies (Full gate plus Head Keeper approval). Hardcoded floors can be raised by config, never lowered.
-- **Intent Packet.** The guard's short account of what changed, why, and the blast radius. It goes in the merge commit message with trailers for ticket, risk tier, and verdict.
-- **Decision card.** A structured question the queen puts to a Keeper: at most four options, recommendation first, cost and reversibility stated. Approved answers go into the hive's `DECISIONS.md`.
-- **Lane.** An integration branch (`int-<release>-<n>`) where several Light-gate tasks share one guard pass. Leases are still checked commit by commit.
-- **Nectar.** Planned (v0.2): reputation a Keeper earns from merged commits that survive 30 days on `main` without a revert.
-- **Quorum.** Planned (v0.2): hive voting weighted by the square root of Nectar, with a Head Keeper veto.
-- **Capability level.** `frontier`, `standard`, or `fast`. Roles declare a minimum level, never a model name, and hive config maps levels to concrete models.
-- **Own honey.** Building Waggle with Waggle: the Waggle repo is itself a hive that runs a pinned, known-good Waggle build.
+Pre-1.0. The [gate spec](docs/gate.md) describes what the code does today, and the recipes have not been run end to end with each tool.
 
 ## Documentation
-- [RFC-0003: Waggle Architecture & v0.1 Bootstrap Specification](docs/RFC-0003.md)
-- [Contributing: product and hive](CONTRIBUTING.md)
+
+- [Gate spec](docs/gate.md)
+- [Recipes](docs/recipes/README.md)
+- [Contributing: product layer, repo records and the glossary](CONTRIBUTING.md)
 
 ## License
-Waggle, the `waggle` CLI and the `waggled` daemon, is licensed under the Apache License 2.0 (`LICENSE`, `NOTICE`). The templates `waggle init` writes into your repository (everything from `internal/scaffold/templates/`: your `.waggle/` files and `.github/workflows/waggle-gate.yml`) are licensed under MIT-0 (`LICENSES/MIT-0.txt`): use, change and relicense them with no attribution. Copyright 2026 Level 19 Enterprises, LLC. Contributions are accepted under the Developer Certificate of Origin (see `CONTRIBUTING.md`).
+Waggle, the `waggle` CLI, is licensed under the Apache License 2.0 (`LICENSE`, `NOTICE`). The templates `waggle init` writes into your repository (everything from `internal/scaffold/templates/`: your `.waggle/` files and `.github/workflows/waggle-gate.yml`) are licensed under MIT-0 (`LICENSES/MIT-0.txt`): use, change and relicense them with no attribution. Copyright 2026 Level 19 Enterprises, LLC. Contributions are accepted under the Developer Certificate of Origin (see `CONTRIBUTING.md`).
