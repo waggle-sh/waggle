@@ -64,3 +64,59 @@ Risk-Tier: 3
 - **N2 (stale lock wording).** Precondition 2 (`:18`) requires `dispatch.lock` to be absent. Step 1 (`:130`) accepts a stale lock when no process runs. Make precondition 2 say "absent, or stale with no `waggle dispatch` process".
 - **N3 (line ranges).** `TestClaimForkHeads` ends at `branches_test.go:162`, not `:158` (`:93`). `TestTicketBranchName`'s comment at `:185-186` goes with it.
 - **N4 (AC4 ticket).** AC4 (`:102`) says "the same claim" as AC3 (T-040), but the `TestApproverPasses` setup uses `apprRepo`, which writes `claimOn(31, ["x"])`. The failure there reads `T-031: claim names no branch; ...`, and the builder has to overwrite ticket-31's ref with the no-list `claim` after `apprRepo`. Name the T-031 message, or say that the row uses `ticketRepo` with an approval. The finalize round can fix this.
+
+Risk-Tier: 3
+
+**Intent Summary:** Round 4 (the finalize round) of the T-042 brief, at `27b77d7` on `t-042-final`, changes only `.waggle/hive/tasks/T-042.md` (33 lines added, 33 removed). It moves every "at 8978c62" cite to merged main `c685745`, records preconditions 1 to 3 as done (D-320 moved the pin to `0d102ca`, and every claim ref was released), settles AC6 on its full form, and recomputes section 8 to 0 added non-test lines while keeping the D-307 target of 16 and stop of 22. Nothing outside the brief changes. The ticket's own blast radius is unchanged from earlier rounds: one decision case in `checkHead` turns into a gate failure for every hive PR whose claim has no branch list.
+
+**Blocking Issues (Must-Fix Only):** none.
+
+**What I checked, against `c685745` (scratch worktree, now removed):**
+
+- **Cites in `cmd/waggle/gate_commits.go`:** all exact.
+  - `:330-333` is the expired-claim warning; `:334` is the `checkHead` call.
+  - `:340-342` is the `checkHead` doc and `:343-373` the function.
+  - `:345-354` is the unknown-head case and `:355-362` the no-list case.
+  - `:356` calls `branchTicket`, `:357` is the warning, `:360` the renew hint, `:363-372` the listed case.
+  - `ticketBranchName` is at `:375-386`, with its comment and the blank line after it through `:387`.
+  - `branchTicket`'s only other caller is `gate_verify.go:140`.
+  - No non-test doc comment mentions the fallback (grep for `fallback` and `Q-T039-1` hits only `branches_test.go`).
+- **Test cites:** all exact.
+  - `branches_test.go`: `:15`, `:16`, `:164-183`, `:185-197`, `:200-217`.
+  - `gate_bind_test.go`: `:46-48`, `:51`, `:55`, `:59-62`, `:103`, `:112`.
+  - `gate_approve_test.go`: `:64`, `:150`, `:219-228`, `:240`, `:334-360`.
+  - `gate_verify_test.go`: `:31-42`, `:44-54`.
+  - `dispatch_test.go:41`, plus the `//go:build unix` tags on `dispatch_test.go` and `claim_branches_test.go`.
+- **Section 6 against the real deletion:** I deleted `:356-359` and `:375-387` (numstat 0 added, 17 deleted) and the 14 lines of `TestTicketBranchName`. `go build ./...` and `go vet ./cmd/waggle/` are clean. `go test ./cmd/waggle/` fails exactly section 6's list and nothing else:
+  - `TestClaimWithoutBranchList`: the four first-loop rows at `:170`.
+  - `TestBindSources`: "flag", "flag suffix", "flag waggle" and "env" inside, at `:63`.
+  - `TestBindConflicts`: "all agree", at `:121`.
+  - `TestBranchDefaultFromEvent`: the two `t-031` rows, at `:346` and `:349`.
+- **AC3 to AC6 are buildable with the brief's tools only.** With the deletion applied, I wrote throwaway tests in the scratch worktree:
+  - AC3 expired row: exit 1 with `noListMsg` plus `claim for T-040 expired at ...; accepted`.
+  - AC4: `apprRepo`, then `r.claim(31, "full", active, "docs")` overwrites the ref, then the `TestApproverPasses` event. It fails with the T-031 renew hint while `approved by alice` still prints.
+  - AC5: the Actions row fails with `pull request branch unknown` and no `names no branch`; the local row exits 0 with exactly one `no pull request branch` warning.
+  - AC6, the full form: `gateRepo{t, repo}` over `dispatchRepo` with plumbing using `keeper_id` alice. `gate(nil, "leases", ..., "--branch", "t-023")` fails with the T-023 renew hint. `runClaim` with `--owner alice --json` and no `--branch` exits 0 and reads back `"branches":["t-023"]`. The gate then passes with `leases: ok`. No push is involved.
+- **The lease rule and AC7** match the deletion exactly: only `gate_commits.go` changes outside tests, and no unexported function is left without a caller.
+- **Section 9 cites:** all exact.
+  - `status.go:109`, `:138-153`, and the header format at `:164`; `main.go:15-20`.
+  - `init.go:103-126`; `run.go:232-237` and `:409`.
+  - `git.go:286-289`; `backend.go:123`.
+  - `claim.go:42-46`, `:63-65`, `:68`; `task.go:50`; `request.go:118-119`; `release.go:148-161`.
+  - The `--owner`, `--branch` and `--unmerged` flags exist.
+  - `config.yaml` pins `0d102ca`. The rendered workflow builds `./cmd/waggle` from the base when `$BASE_SHA:cmd/waggle/gate.go` exists, so the Layer claim about the hive effect at merge holds.
+- **Form:** no em or en dash among the added lines, and the human is referred to by role only.
+
+**Notes (none blocking):**
+
+1. **Section 8** (`T-042.md:110-112`): keeping target 16 and stop 22 next to an estimate of 0 is not a problem.
+   - The numbers are a ruling (D-307). Changing them would need a new card for no gain.
+   - The brief says plainly that they now bound scope, not effort.
+   - AC7 (`:105`) adds the sharper check: 0 added non-test lines expected, with a reason in the PR body for any added line.
+   - The one cost: the target trigger is now slack. A build could add up to 16 non-test lines without a stop-and-report, so AC7 and the guards' lease-rule check are the real limit.
+2. **AC4 does not tell the old code from the new** (`T-042.md:102`). Head `x` is not a ticket branch name, so this row already fails with the same message under the (b) fallback at `c685745`. It pins the approver filter and the no-path filing, which is its stated purpose. AC3's first-loop flip is what proves the fallback is gone.
+3. **AC6's renewal note** (`T-042.md:104`): in `--json` output, `encoding/json` escapes `->` as `>`. A builder who asserts that literal note string against `--json` stdout will see a failure. The brief makes the note parenthetical and asserts only `"branches":["t-023"]`, so nothing is wrong as written.
+4. **Read-only checkout:** the main checkout reports branch `main`, while the session snapshot showed `t-042-final`. My commands touched only refs and my own worktree, so the switch happened outside this review.
+5. **Scratch cleanup:** I removed my scratch worktree. Another detached scratch worktree at `c685745` was already there. It is not mine, and I left it alone.
+
+Verdict: pass
