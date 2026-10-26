@@ -353,10 +353,6 @@ func (s *commitScan) checkHead(id string, l comb.Lease) {
 		return
 	}
 	if len(l.Branches) == 0 {
-		if _, ignored := branchTicket(h.name); !ignored && h.sameRepo && ticketBranchName(h.name, id) {
-			s.rep.warn(checkLeases, "claim for "+id+" names no branch; accepted on ticket branch name")
-			return
-		}
 		s.rep.fail(checkLeases, "", id+": claim names no branch; renew it with waggle claim --branch")
 		return
 	}
@@ -370,19 +366,6 @@ func (s *commitScan) checkHead(id string, l comb.Lease) {
 		}
 	}
 	s.rep.fail(checkLeases, "", id+": claim does not name this pull request's branch")
-}
-
-// ticketBranchName reports whether name is the ticket's own branch name:
-// t-<d> or waggle/T-<d>, each alone or followed by a non-digit and anything,
-// where <d> is the digits of the canonical id (040 for T-040).
-func ticketBranchName(name, id string) bool {
-	d := strings.TrimPrefix(id, "T-")
-	for _, p := range []string{"t-", "waggle/T-"} {
-		if rest, ok := strings.CutPrefix(name, p+d); ok && (rest == "" || rest[0] < '0' || rest[0] > '9') {
-			return true
-		}
-	}
-	return false
 }
 
 // caseCollisions fails head tree paths that are equal under case folding but
