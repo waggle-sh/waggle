@@ -1,12 +1,12 @@
-<!-- SPDX-License-Identifier: MIT-0 -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 # Contributing to Waggle
 
-This file is for people building Waggle itself. If you use Waggle in your own repo, the README's Roles and Terms sections are what you need; nothing here applies to your hive.
+This file is for people building Waggle itself. If you use Waggle in your own repo, the [README](README.md) and the [gate spec](docs/gate.md) are what you need; nothing here applies to your repo.
 
 ## 1. Two layers in this repo
 
-- **Product:** Waggle itself. `cmd/`, `internal/` (including `internal/scaffold/templates/`, which is what every other hive receives), `go.mod`, `LICENSE`, `README.md`, `docs/`, and the product CI workflow. This is what ships.
-- **Hive** (layer sense): our own installation of Waggle, used to build the product (own honey, defined in the README). `.waggle/`, `.github/workflows/waggle-gate.yml`, and the marked import block in `CLAUDE.md`. Nothing in the hive ships.
+- **Product:** Waggle itself. `cmd/`, `internal/` (including `internal/scaffold/templates/`, which is what every other hive receives), `go.mod`, `LICENSE`, `README.md`, `docs/` (the gate spec `docs/gate.md`, the recipes in `docs/recipes/`, the design history `docs/RFC-0003.md`), and the product CI workflow. This is what ships.
+- **Hive** (layer sense): our own installation of Waggle, used to build the product (own honey, defined in section 4). `.waggle/`, `.github/workflows/waggle-gate.yml`, and the marked import block in `CLAUDE.md`. Nothing in the hive ships.
 
 ## 2. Rules
 
@@ -14,30 +14,63 @@ This file is for people building Waggle itself. If you use Waggle in your own re
 - Template changes reach our hive only through `waggle upgrade`, run from the target build, which becomes the new pin when the hive PR merges. Do not hand-edit hive copies of templates (D-042, D-063).
 - Worker leases never include `.waggle/`; hive files change only through waggle commands or the Head Keeper. Waggle enforces this for every hive (D-043).
 - A change that touches both layers is split: a product ticket first, then a hive upgrade.
-- `DECISIONS.md` records how our hive decided. Anything users rely on also lands in the RFC or product docs (D-045).
+- `DECISIONS.md` records how our hive decided. Anything users rely on also lands in the product docs (D-045).
 
 ## 3. Conventions only this repo uses
 
 These are not part of Waggle's schema.
 
 - Every brief carries a `Layer: product | hive` line.
-- CODEOWNERS protects `internal/scaffold/templates/` (D-034) and `README.md` (D-065), both via T-015.
+- CODEOWNERS protects `internal/scaffold/templates/` (D-034) and `README.md` (D-065), both via T-015; read `.github/CODEOWNERS` for what it covers now.
 - `CONTRIBUTING.md` is not Tier 2 (D-058).
 
-## 4. Words
+## 4. Words in this repo's records
 
-The README's Roles and Terms sections define every Waggle role and term. Keeping them current:
+Our hive's records (briefs, decisions, reviews) use bee words. The README, the gate spec and the recipes use plain terms (D-236): task, claim, lease, protected path, approver, reviewer, maintainer, merge gate, required check. Keeping this section current:
 
-- Any brief that introduces a role or term updates the README Roles or Terms section in the same PR. The guard checks this: a new capitalized or code-formatted term in a brief with no README entry is a must-fix.
-- Each entry is one or two plain sentences. No decision IDs in the README; sources stay in the brief that adds the entry.
-- The scout owns both sections. Changes take a Full gate, and in this repo CODEOWNERS requires Head Keeper review (T-015, D-065).
-- Retired names stay listed here with a pointer to the current term, so old commits, decisions, and review records stay readable.
-- Product design that users rely on also lands in the RFC or product docs (D-045); `DECISIONS.md` records how our hive decided, not how Waggle works.
-- Future, not now: if the Terms list passes about 60 entries, it may split into `docs/GLOSSARY.md`, linked from the README (D-065).
+- Any brief that introduces a role or term updates this section in the same PR. The guard checks this: a new capitalized or code-formatted term in a brief with no entry here is a must-fix.
+- Each entry is one or two plain sentences. No decision IDs in an entry; sources stay in the brief that adds it.
+- The scout owns this section. Changes take a Full gate.
+- Retired names stay listed in section 5 with a pointer to the current term, so old commits, decisions, and review records stay readable.
+- Product design that users rely on also lands in the product docs (D-045); `DECISIONS.md` records how our hive decided, not how Waggle works.
 
 Naming rule (D-073): bee terms are used only for concepts Waggle invents (Hive, Comb, Cell, roles). Things users already know keep their standard industry words (forge, PR, CI, commit, ref), and so do precise mechanisms (Gate, Lease, Claim, Risk Tier, Intent Packet).
 
 No em dashes or en dashes in code, docs, or commits.
+
+### Roles
+
+- **Keeper.** A human who runs Waggle on their own machine, donating compute and tokens. A Keeper talks only to the queen and answers decision cards.
+- **Head Keeper.** The Keeper with final authority over a hive: approves every Tier 3 change, can force-release a stuck claim, and does the admin merge that repairs a corrupt decision log. Identified in v0.1 by an allow-list in a Tier 3 file; formerly called Master Keeper or Controller.
+- **queen.** The entry session and the only agent a Keeper talks to. It asks decision cards and never waits on workers or writes code or specs.
+- **scout.** Planning role: breaks goals into task briefs under 400 lines, sets each task's lease and gate, and owns the roadmap, specs, and this section, but never writes feature code.
+- **forager.** Triage role: reproduces bugs, writes failing tests, maps the lease a ticket needs, and estimates size; it never writes implementation code.
+- **builder.** Implementation role: reads only its brief and leased files, runs tests and a self-review, then reports done, and never touches paths outside its lease.
+- **guard.** Review role: checks every acceptance criterion, saves evidence, and returns a verdict (`pass` or `must-fix`), a Risk Tier, and an Intent Packet. Runs on a different model at or above the builder's capability level and never fixes what it finds.
+
+### Terms
+
+- **Hive.** A repository with Waggle installed. Waggle keeps its files in `.waggle/` (control plane in `.waggle/control/`, plans and records in `.waggle/hive/`), plus the gate workflow and one marked import line.
+- **Comb.** The hive's shared coordination state, stored as git refs under `refs/waggle/`.
+- **Swarm.** All the agents working in one hive at a time. An informal word, not a setting.
+- **Claim.** A hold on one ticket, stored as the ref `refs/waggle/claims/ticket-<n>`. It records the owner, expiry, gate level, leased directories and the PR branches it accepts (a list, up to 4). Renewals and takeovers add commits to the claim; releasing it deletes the ref.
+- **Lease.** The directories a claim may change, checked when claimed and again, authoritatively, at merge. A lease can never include `.waggle/` or any Tier 3 path.
+- **Gate.** The review a task passes before it merges. A **Light gate** covers small, isolated Tier 0 or 1 work; a **Full gate** is its own guard review, required for Tier 2 and above and for anything over about 150 lines or touching schemas, auth, shared modules, dependencies, or steering files.
+- **Risk Tier.** How much review a change needs, set by what it touches: Tier 0 comments and typos, Tier 1 small isolated changes with tests, Tier 2 normal logic and every steering file, Tier 3 control plane, CI, sandbox, and dependencies (Full gate plus Head Keeper approval). Hardcoded floors can be raised by config, never lowered.
+- **Intent Packet.** The guard's short account of what changed, why, and the blast radius. Its trailers for ticket, risk tier and verdict are read from the PR description, not the merge commit (`cmd/waggle/gate_trailers.go:27`).
+- **Decision card.** A structured question the queen puts to a Keeper: at most four options, recommendation first, cost and reversibility stated. Approved answers go into the hive's `DECISIONS.md`.
+- **Capability level.** `frontier`, `standard`, or `fast`. Roles declare a minimum level, never a model name, and hive config maps levels to concrete models.
+- **Own honey.** Building Waggle with Waggle: the Waggle repo is itself a hive that runs a pinned, known-good Waggle build.
+
+### Cut or frozen
+
+- **Nectar.** Cut: reputation from merged commits.
+- **Quorum.** Cut: hive voting weighted by Nectar.
+- **weaver, nurse, studio, assembly.** Cut: the unspecified v0.2 roles.
+- **Lane.** Frozen: an integration branch (`int-<release>-<n>`) where several Light-gate tasks share one guard pass. The per-commit check already makes lanes safe, so no one needs them yet.
+- **relay.** The stub job of the old gate workflow, removed from the template.
+- **Cell.** Cut: the worker sandbox with its own dev container. Sandboxing is left to the agent tool; the design history is in `docs/RFC-0003.md`.
+- **waggled.** Frozen: the host daemon. The gate needs no daemon and none ships.
 
 ## 5. Retired names
 
@@ -57,4 +90,4 @@ In records written before T-020, read architect as Scout, scout as Forager, and 
 - Every commit carries a `Signed-off-by: Name <email>` trailer matching the commit author, certifying the Developer Certificate of Origin 1.1 (`https://developercertificate.org/`). Use `git commit -s`; for merges, `git merge --signoff`; to fix a branch, `git rebase --signoff <base>`.
 - Sign-off certifies that you have the right to submit the change under the file's license. It is a personal statement by a person. The trailer for work a worker commits under your identity is yours.
 - Commits carry no AI attribution trailers.
-- New files start with the SPDX header for their path; CI rejects a missing or wrong one.
+- New files start with the SPDX header for their path. Reviewers require it; an automatic check is planned and does not run yet.
