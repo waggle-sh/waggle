@@ -97,6 +97,16 @@ func TestVerifyTransition(t *testing.T) {
 	}
 }
 
+// T-040 row 4: a corrupt base names an admin merge, with no bee word.
+func TestVerifyTransitionCorruptBaseText(t *testing.T) {
+	es := gateEntries(t, 3)
+	log2, log3 := Render(es[:2]), Render(es[:3])
+	_, err := VerifyTransition(log2[:len(log2)-1], true, log3, true)
+	if err == nil || !errors.Is(err, ErrCorrupt) || !strings.Contains(err.Error(), "repair needs an admin merge") || strings.Contains(err.Error(), "Head Keeper") {
+		t.Errorf("got %v", err)
+	}
+}
+
 func seq(lo, hi int) []int {
 	var ns []int
 	for i := lo; i <= hi; i++ {
