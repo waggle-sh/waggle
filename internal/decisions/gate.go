@@ -16,7 +16,7 @@ const MaxLogBytes = maxFileBytes
 // Every failure wraps ErrNotAppendOnly or ErrCorrupt and names the side (base
 // or head) and, where known, the entry ID or line number. A corrupt base fails
 // every change: the gate never accepts a transition whose starting point
-// already fails integrity, so a repair needs a Head Keeper admin merge.
+// already fails integrity, so a repair needs an admin merge.
 // The byte rule itself (old is an exact prefix of next, and the rest is the
 // rendering of the new entries) is VerifyAppendOnly's; this function adds the
 // existence cases, the unchanged case, and the diagnostics.
@@ -31,7 +31,7 @@ func VerifyTransition(old []byte, oldExists bool, next []byte, nextExists bool) 
 	}
 	oldEntries, err := Parse(old)
 	if err != nil {
-		return nil, fmt.Errorf("base DECISIONS.md fails integrity; repair needs a Head Keeper admin merge: %w", err)
+		return nil, fmt.Errorf("base DECISIONS.md fails integrity; repair needs an admin merge: %w", err)
 	}
 	nextEntries, err := Parse(next)
 	if err != nil {

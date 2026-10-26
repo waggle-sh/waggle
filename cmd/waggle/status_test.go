@@ -119,8 +119,8 @@ func twoLeases(t *testing.T, dir string) {
 		Directories: []string{"docs"}, ExpiresAt: fixedNow.Add(-time.Hour)})
 }
 
-const freshGolden = `Hive: hive  pin v1.0.0  comb direct (local)
-waggled: stopped (no .waggle/control/run.sock)
+const freshGolden = `Repo: hive  pin v1.0.0  claim refs direct (local)
+daemon: stopped (no .waggle/control/run.sock)
 
 Claims (0 active):
 
@@ -200,7 +200,7 @@ func TestStatusSocketPresent(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, out, _ := runStatusT(t, "--repo", dir)
-	if code != 0 || !strings.Contains(out, "waggled: running (socket present)\n") {
+	if code != 0 || !strings.Contains(out, "daemon: running (socket present)\n") {
 		t.Errorf("code %d, stdout %q", code, out)
 	}
 }
@@ -227,7 +227,7 @@ func TestStatusRefused(t *testing.T) {
 	dir := t.TempDir()
 	git(t, dir, "init", "-q")
 	chdir(t, dir)
-	wantHive := "not a hive: .waggle/control/config.yaml not found; run waggle init"
+	wantHive := "not a Waggle repo: .waggle/control/config.yaml not found; run waggle init"
 	if code, _, errb := runStatusT(t); code != 1 || !strings.Contains(errb, wantHive) {
 		t.Errorf("no .waggle: code %d, stderr %q", code, errb)
 	}
@@ -262,8 +262,8 @@ func TestRenderStatusPure(t *testing.T) {
 		{Ref: "refs/waggle/claims/ticket-7", Reason: "tree has no lease.json"},
 		{Ref: "refs/waggle/claims/ticket-9", Reason: "invalid object id"},
 	}}
-	want := `Hive: waggle  pin 3f9c1e2...  comb direct (origin)
-waggled: running (socket present)
+	want := `Repo: waggle  pin 3f9c1e2...  claim refs direct (origin)
+daemon: running (socket present)
 
 Claims (2 active):
   T-002  r1  ann   light  a/ b/c/      expires in 2h0m

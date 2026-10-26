@@ -195,7 +195,7 @@ func TestVerifyNonTicketCommits(t *testing.T) {
 	r := leaseRepo(t)
 	r.write("docs/a.md", []byte("a\n"))
 	r.commit("Head Keeper: tweak")
-	r.expect(t, 1, "merge with a Head Keeper bypass")
+	r.expect(t, 1, "merge with an admin bypass")
 
 	r = leaseRepo(t)
 	r.write("docs/a.md", []byte("a\n"))

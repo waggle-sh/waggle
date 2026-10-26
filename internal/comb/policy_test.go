@@ -39,7 +39,7 @@ func TestCheckChangesPolicyMessages(t *testing.T) {
 	if len(vs) != 2 || vs[0].Rule != RuleTier3 || !strings.Contains(vs[0].Detail, "protected path (listed in .waggle/control/config.yaml); needs an admin bypass to merge") {
 		t.Fatalf("repo hit: %+v", vs)
 	}
-	if vs[1].Detail != "Tier 3 path; needs Head Keeper commit and bypass" {
+	if vs[1].Detail != "Tier 3 path; only an admin bypass merges it, approval does not" {
 		t.Errorf("hardcoded hit changed its text: %+v", vs[1])
 	}
 	if got := CheckChanges(l, []Change{{Path: "deploy/x"}}); len(got) != 0 {

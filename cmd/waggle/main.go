@@ -32,8 +32,8 @@ func main() {
 		profile := initCmd.String("profile", "cli", "Project profile (v0.1: 'cli')")
 		delivery := initCmd.String("delivery", "installed", "Delivery model: 'installed' or 'hosted'")
 		forge := initCmd.String("forge", "github", "Forge adapter (v0.1: 'github')")
-		combMode := initCmd.String("comb-mode", "direct", "Comb ref mode: 'direct' or 'relay'")
-		rt := initCmd.String("runtime", "claude-code", "Local Keeper agent runtime ('claude-code' or 'none')")
+		combMode := initCmd.String("comb-mode", "direct", "Claim ref mode: 'direct' ('relay' is accepted but not implemented)")
+		rt := initCmd.String("runtime", "claude-code", "Local agent runtime ('claude-code' or 'none')")
 		force := initCmd.Bool("force", false, "Rewrite managed Waggle files (seeded files are never overwritten)")
 		gateOnly := initCmd.Bool("gate-only", false, "Write only the gate workflow, a small config and DECISIONS.md")
 		_ = initCmd.Parse(os.Args[2:])
@@ -111,7 +111,7 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Println(`waggle - Distributed AI Swarm Coordination on Git
+	fmt.Println(`waggle - task claims and a merge gate for AI coding agents on Git
 
 Usage:
   waggle <command> [flags]
@@ -124,7 +124,7 @@ Commands (v0.1 Bootstrap):
   claim     Lease directories for a task: waggle claim <task> --dirs <a,b> --gate light|full [--json]
   release   Give back your claim for a task once its branch has merged [--json]
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
-  status    Active claims, waggled state, and per-ticket token use
+  status    Active claims, daemon state and per-ticket token use
   upgrade   Print the plan to re-render managed files from this build and move waggle.pin; --apply executes it
   doctor    Check that claim refs can be pushed and the gate is a required check [--no-write]
   version   Print version`)
