@@ -406,7 +406,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		if guard {
 			return nil
 		}
-		err := backend.AcquireLease(ctx, comb.Lease{TicketID: req.Ticket, KeeperID: l.keeper, Role: req.Role, Gate: req.Gate, Directories: req.Dirs})
+		err := backend.AcquireLease(ctx, comb.Lease{TicketID: req.Ticket, KeeperID: l.keeper, Role: req.Role, Gate: req.Gate, Directories: req.Dirs, Branches: claim.Lease.Branches})
 		if oid, e := pg.Run(ctx, "rev-parse", "--verify", "--quiet", ownRef); err == nil && e == nil {
 			ck.claimOID = strings.TrimSpace(string(oid)) // the renewal's own write; the check wants this ref at the end
 		}

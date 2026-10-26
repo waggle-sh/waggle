@@ -61,7 +61,7 @@ func apprRepo(t *testing.T, config string, more func(r gateRepo)) gateRepo {
 	}
 	r.commit("init")
 	r.git("checkout", "-q", "-b", "branch")
-	r.claim(31, "full", active, "docs")
+	r.claimOn(31, []string{"x"}, "full", active, "docs")
 	r.write("deploy/x", []byte("x\n"))
 	r.write("docs/a.md", []byte("a\n"))
 	r.commit("T-031: change")
@@ -77,7 +77,9 @@ func (r gateRepo) head() string { return r.git("rev-parse", "branch") }
 func writeEvent(t *testing.T, sha, ref, body string) string {
 	t.Helper()
 	b, err := json.Marshal(map[string]any{"pull_request": map[string]any{
-		"number": 7, "body": body, "head": map[string]string{"sha": sha, "ref": ref}}})
+		"number": 7, "body": body,
+		"head": map[string]any{"sha": sha, "ref": ref, "repo": map[string]string{"full_name": "o/r"}},
+		"base": map[string]any{"repo": map[string]string{"full_name": "o/r"}}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,7 +171,7 @@ func TestApproverFailsClosed(t *testing.T) {
 		r := apprRepo(t, apprConfig, nil)
 		head := r.head()
 		useFake(t, &fakeReviews{rv: forge.PRReviews{Reviews: []forge.Review{approval(1, "alice", "APPROVED", otherHead)}}})
-		base, bout := r.runWith(map[string]string{"GITHUB_ACTIONS": "true"}, "verify")
+		base, bout := r.runWith(map[string]string{"GITHUB_ACTIONS": "true"}, "verify", "--branch", "x") // T-039 2.4: no head fails closed
 		code, out := r.runWith(prEnv(writeEvent(t, head, "x", apprBody)), "verify")
 		if code != 1 || base != 1 || errLines(out) != errLines(bout) || errLines(out) == "" ||
 			!strings.Contains(out, "no approving review from a listed approver at "+head[:12]) {
@@ -219,7 +221,8 @@ func TestApproverFailsClosed(t *testing.T) {
 		head := r.head()
 		useFake(t, &fakeReviews{rv: forge.PRReviews{Reviews: []forge.Review{approval(1, "alice", "APPROVED", head)}}})
 		code, out := r.runWith(prEnv(writeEvent(t, head, "x", apprBody)), "verify", "--branch", "a\x01b")
-		if code != 0 || !strings.Contains(out, "branch name ignored") {
+		// T-039 2.3: the ignored name is a known head that matches no claim entry.
+		if code != 1 || !strings.Contains(out, "branch name ignored") || !strings.Contains(out, "T-031: claim does not name") {
 			t.Errorf("exit %d\n%s", code, out)
 		}
 	})
@@ -277,7 +280,12 @@ func TestApproverDegrades(t *testing.T) {
 		env := prEnv(writeEvent(t, head, "x", apprBody))
 		tc.mutate(env, f)
 		code, out := r.runWith(env, "verify")
-		if code != 1 || errLines(out) != errLines(bout) || strings.Count(out, "approver check skipped") != 1 ||
+		// T-039 2.4: a read event gives a head, so the baseline's unknown-head line goes.
+		want := errLines(bout)
+		if !map[string]bool{"push": true, "no path": true, "unreadable": true, "over cap": true, "malformed": true, "number 0": true}[tc.name] {
+			want = strings.ReplaceAll(want, "::error::leases: T-031: pull request branch unknown\n", "")
+		}
+		if code != 1 || errLines(out) != want || strings.Count(out, "approver check skipped") != 1 ||
 			!strings.Contains(out, "approver check skipped: "+tc.phrase) {
 			t.Errorf("%s: exit %d\n%s", tc.name, code, out)
 		}
@@ -301,8 +309,8 @@ func TestApproverInertWithoutApprovers(t *testing.T) {
 	// (i) an empty list against no list at all.
 	a := apprRepo(t, "version: 1\ngate:\n  protected_paths: deploy/\n  approvers: \"\"\n", nil)
 	b := apprRepo(t, "version: 1\ngate:\n  protected_paths: deploy/\n", nil)
-	ca, oa := a.runWith(ghaOnly, "verify")
-	cb, ob := b.runWith(ghaOnly, "verify")
+	ca, oa := a.runWith(ghaOnly, "verify", "--branch", "x") // T-039 2.4: no head fails closed
+	cb, ob := b.runWith(ghaOnly, "verify", "--branch", "x")
 	if ca != 1 || ca != cb || oa != ob {
 		t.Errorf("empty list differs from no list:\n%s\n---\n%s", oa, ob)
 	}
@@ -395,13 +403,13 @@ func TestTrailerWarnings(t *testing.T) {
 
 func TestTrailerCheckKeepsExit(t *testing.T) {
 	r := leaseRepo(t)
-	r.claim(31, "full", active, "docs")
+	r.claimOn(31, []string{"x"}, "full", active, "docs")
 	r.write("docs/a.md", []byte("a\n"))
 	r.commit("T-031: docs")
 	head := r.git("rev-parse", "branch")
 	useFake(t, &fakeReviews{})
 	gha := map[string]string{"GITHUB_ACTIONS": "true"}
-	bc, bout := r.runWith(gha, "verify")
+	bc, bout := r.runWith(gha, "verify", "--branch", "x") // T-039 2.4: no head fails closed
 	code, out := r.runWith(prEnv(writeEvent(t, head, "x", "no trailers\r\n::error::x")), "verify")
 	if code != bc || bc != 0 || strings.Count(out, "Intent Packet:") != 1 || strings.Contains(out, "\n::error::x") ||
 		!strings.Contains(out, "::warning::leases: Intent Packet: no Waggle-Ticket") || strings.Contains(bout, "Intent Packet") {
