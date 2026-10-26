@@ -176,9 +176,10 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, "Usage: waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]... [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]")
+		fs.PrintDefaults()
 	}
 	dirs, gate := fs.String("dirs", "", "comma-separated directories to lease"), fs.String("gate", "", "light or full")
-	ttl, owner := fs.Duration("ttl", 0, "claim lifetime in whole minutes; default leases.default_ttl_minutes"), fs.String("owner", "", "claim owner; default keeper_id in .waggle/local.yaml")
+	ttl, owner := fs.Duration("ttl", 0, "claim lifetime in whole minutes; default leases.default_ttl_minutes"), fs.String("owner", "", "claim owner, usually your GitHub login; required without .waggle/local.yaml, else defaults to its keeper_id")
 	base, repo := fs.String("base", "", "revision whose config lists protected paths; default main on the remote"), fs.String("repo", ".", "repository")
 	asJSON := fs.Bool("json", false, "print one JSON object")
 	var branches repeatFlag
@@ -240,9 +241,10 @@ func runTaskRelease(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, "Usage: waggle release <task> [--branch <name>] [--unmerged] [--owner <id>] [--repo <dir>] [--json]")
+		fs.PrintDefaults()
 	}
 	branch, repo := fs.String("branch", "", "branch, t-<nnn> or waggle/T-<nnn> with an optional suffix"), fs.String("repo", ".", "repository")
-	unmerged, owner := fs.Bool("unmerged", false, "release without the merged check (a task that makes no PR)"), fs.String("owner", "", "claim owner; default keeper_id in .waggle/local.yaml")
+	unmerged, owner := fs.Bool("unmerged", false, "release without the merged check (a task that makes no PR)"), fs.String("owner", "", "claim owner, usually your GitHub login; required without .waggle/local.yaml, else defaults to its keeper_id")
 	asJSON := fs.Bool("json", false, "print one JSON object")
 	task, extra, code, ok := parseTaskArgs(fs, args)
 	if !ok {

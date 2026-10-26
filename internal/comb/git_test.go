@@ -964,7 +964,7 @@ func TestForgedInvalidClaimsMalformed(t *testing.T) {
 	for _, c := range mce.Claims {
 		reasons[c.Ref] = c.Reason
 	}
-	wantField := map[int]string{1: "directory", 2: "keeper id", 3: "role", 4: "directory", 5: "version"}
+	wantField := map[int]string{1: "directory", 2: "owner", 3: "role", 4: "directory", 5: "version"}
 	for n, field := range wantField {
 		if r := reasons[ticketRef(n)]; !strings.Contains(r, field) {
 			t.Errorf("ticket-%d reason %q does not name %q", n, r, field)

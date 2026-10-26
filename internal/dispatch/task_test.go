@@ -369,6 +369,18 @@ func TestReleaseTask(t *testing.T) {
 	}
 }
 
+// T-040 row 5: the unmerged refusal says when --unmerged applies.
+func TestReleaseTaskUnmergedText(t *testing.T) {
+	f := newFixture(t, false, false)
+	releaseClaim(t, f, "alice")
+	branchWith(f, "t-023", "internal/x/b.go")
+	_, err := releaseTask(f)
+	want := "the claim stays until it is; if the task merged by squash or rebase, or makes no PR, release it with --unmerged"
+	if err == nil || !strings.Contains(err.Error(), want) {
+		t.Fatalf("got %v, want text %q", err, want)
+	}
+}
+
 func TestReleaseTaskNoWorktreesDir(t *testing.T) {
 	f := newFixture(t, false, false)
 	releaseClaim(t, f, "alice")

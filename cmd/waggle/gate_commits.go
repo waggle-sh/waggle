@@ -263,7 +263,7 @@ func (s *commitScan) classify(c gateCommit) (claimLookup, error) {
 		subj = subj[:maxSubjectEcho]
 	}
 	if strings.HasPrefix(c.subject, "Head Keeper: ") {
-		s.rep.fail(checkLeases, "", fmt.Sprintf("commit %.12s %q: Head Keeper commit: merge with a Head Keeper bypass", c.oid, subj))
+		s.rep.fail(checkLeases, "", fmt.Sprintf("commit %.12s %q: maintainer commit (subject starts \"Head Keeper: \"): merge with an admin bypass", c.oid, subj))
 		return claimLookup{}, nil
 	}
 	var subjectID string

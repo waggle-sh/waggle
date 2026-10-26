@@ -92,7 +92,7 @@ func AcquireClaim(ctx context.Context, cb ClaimBackend, g *Git, req Request, kee
 func claimError(err error) error {
 	switch {
 	case errors.Is(err, comb.ErrMalformedClaim):
-		return failf(ExitClaim, "%w; a Head Keeper force-release clears it (T-005)", err)
+		return failf(ExitClaim, "%w; a maintainer must delete the malformed claim ref by hand, on the remote if the repo has one", err)
 	case errors.Is(err, comb.ErrAlreadyClaimed), errors.Is(err, comb.ErrLeaseOverlap),
 		errors.Is(err, comb.ErrTier3Path), errors.Is(err, comb.ErrGateTooLow), errors.Is(err, comb.ErrInvalidLease):
 		return failf(ExitClaim, "%w", err)

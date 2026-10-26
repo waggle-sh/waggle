@@ -92,7 +92,7 @@ func TestRunDecideUsage(t *testing.T) {
 			t.Errorf("%s: code %d, stderr %q", name, code, errb)
 		}
 	}
-	if code, _, errb := decide("", "-h"); code != 0 || !strings.Contains(errb, "Cells never run this command") {
+	if code, _, errb := decide("", "-h"); code != 0 || !strings.Contains(errb, "Agents never run this") {
 		t.Errorf("help: code %d, stderr %q", code, errb)
 	}
 	if _, err := os.Stat(logPath(repo)); !errors.Is(err, os.ErrNotExist) {
@@ -103,7 +103,7 @@ func TestRunDecideUsage(t *testing.T) {
 func TestRunDecideFailures(t *testing.T) {
 	repo, input := decideRepo(t)
 	noHive := t.TempDir()
-	if code, _, errb := decide("", "--file", input, "--repo", noHive); code != 1 || !strings.Contains(errb, "not a waggle hive") {
+	if code, _, errb := decide("", "--file", input, "--repo", noHive); code != 1 || !strings.Contains(errb, "not a Waggle repo") {
 		t.Errorf("no .waggle/: code %d, stderr %q", code, errb)
 	}
 	bad := strings.Replace(decideInput, `"technical"`, `"wish"`, 1)
