@@ -33,3 +33,39 @@ Risk-Tier: 3
 **Blocking Issues (Must-Fix Only):** none.
 
 Verdict: pass
+<!-- waggle-review v1 verdict=pass head=b4886b067854b6bea9b830827f69b8403b375eed -->
+
+Everything passes. The worktree is clean and I wrote no probe files.
+
+Risk-Tier: 3
+
+**Intent Summary:** Fix round 1 on `t-040` adds one commit (`b4886b0`) on top of the full build at `5c27ffb`. It touches only four `*_test.go` files inside the lease (`internal/comb`, `internal/decisions`, `internal/dispatch`, `internal/scaffold`), 42 lines added and 1 changed, and no non-test file. It closes the opus guard's must-fix by adding the missing AC4 and AC5 tests and takes the optional note on AC8. Blast radius is test coverage only. The product strings, exit codes, sentinels, gate rules and templates reviewed in the first round are untouched by this commit.
+
+**What the commit does, checked against the fix-round brief:**
+
+- **Must-fix 1, row 4:** `TestVerifyTransitionCorruptBaseText` in `internal/decisions/gate_test.go` feeds the same one-byte-truncated base that the existing `corrupt base` case uses, asserts `errors.Is(err, ErrCorrupt)`, the substring `repair needs an admin merge`, and no `Head Keeper`. The old text (`repair needs a Head Keeper admin merge`) does not contain the new substring, so a revert fails the test.
+- **Must-fix 1, rows 7 and 8:** `TestSentinelPlainTerms` in `internal/comb/plain_terms_test.go` compares `ErrWaggleDir.Error()` and `ErrNotOwner.Error()` by whole-string equality against the row 7 and row 8 texts, as the brief required (not `errors.Is`). Both match `backend.go:154` and `:167`.
+- **Must-fix 2, row 5:** `TestReleaseTaskUnmergedText` in `internal/dispatch/task_test.go` reuses the `unmerged` setup from `TestReleaseTask` (`newFixture`, `releaseClaim`, `branchWith` on `t-023`) and asserts the exact row 5 tail from `release.go:158`. Local repo only, no push. The old tail (`or release it with --unmerged on a Keeper card`) fails it.
+- **Optional note, row 30:** `TestGateTemplatesPlainTerms` now requires the line after `- name: Fetch claim refs` to be exactly `run: git fetch origin 'refs/waggle/claims/*:refs/waggle/claims/*'`, matching `waggle-gate.yml.tmpl:29-30`.
+- **No existing assertion changed** other than the tightened AC8 line, which the brief invited. No `t.Skip`, no em or en dash, no bee name in added test names or comments.
+
+**Verification run on `b4886b0`:**
+
+```
+go build ./...        (clean)
+go vet ./...          (clean)
+gofmt -l .            (empty)
+go test -race ./...   all packages ok (dispatch 220s, cmd/waggle 53s, comb 29s)
+go test -race ./... -run 'TestSentinelPlainTerms|TestVerifyTransitionCorruptBaseText|TestReleaseTaskUnmergedText|TestGateTemplatesPlainTerms' -v
+  all four PASS
+```
+
+No remote-mode fixture failed in this run, so the push tripwire did not trigger here.
+
+**Done criteria:** one new commit on `t-040` on top of `5c27ffb`, subject `T-040: tests for rows 4, 5, 7, 8 and the exact claim-fetch step line`, signed off; all four checks pass; each new test fails on a revert of its row text by inspection of the old strings in section 3.
+
+**Blocking Issues (Must-Fix Only):** none.
+
+**Notes (not blocking):** this round changes no code that sends signals, deletes state, or touches leases or claims, and adds no non-test lines, so under D-205 one confirming guard suffices.
+
+Verdict: pass
