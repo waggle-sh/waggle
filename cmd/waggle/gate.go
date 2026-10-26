@@ -36,7 +36,7 @@ var errGit = errors.New("git")
 var oidPattern = regexp.MustCompile(`^[0-9a-f]{40}([0-9a-f]{24})?$`)
 
 // runGate implements `waggle gate <check> [flags]`. It never calls os.Exit,
-// and there is no override flag: an override is a Keeper admin merge, never a
+// and there is no override flag: an override is an admin merge, never a
 // flag an agent can pass.
 func runGate(args []string, stdout, stderr io.Writer, getenv func(string) string) int {
 	if len(args) > 0 {
@@ -53,7 +53,7 @@ func runGate(args []string, stdout, stderr io.Writer, getenv func(string) string
 Merge-gate checks CI runs against a pull request. Each compares
 merge-base(base, head) to head. Exit codes: 0 pass or unchanged, 1 check
 failed, 2 usage, 3 git or I/O error. No override flag exists; an override is
-a Keeper admin merge.
+an admin merge that bypasses the required check.
 
 Checks:
   verify      Run leases, tiers and decisions; report every failure and exit

@@ -37,7 +37,7 @@ type UpgradeOptions struct {
 	Templates fs.FS
 }
 
-const upgradeLastLine = "Review with git status, then open a hive PR. This changes " + layout.ControlDir + "/ (Tier 3) and needs Head Keeper approval."
+const upgradeLastLine = "Review with git status, then open a PR. This changes " + layout.ControlDir + "/ (Tier 3), so only an admin bypass merges it."
 
 var (
 	releaseTag = regexp.MustCompile(`^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?$`)
@@ -181,6 +181,7 @@ type upgradePlan struct {
 	blocks      []pendingEdit // marked blocks in project files
 	shimRemoves []string      // generated shims whose role file goes
 	materialize bool          // regenerate this Keeper's shims
+	gateOnly    bool          // the repo has a gate-only footprint
 
 	policy runtime.Policy // resolved at plan time from the hive config and the rendered roster
 }
@@ -354,7 +355,7 @@ func Upgrade(opts UpgradeOptions) error {
 		return fmt.Errorf("this build is %s (modified or unstamped tree); build waggle from a clean, stamped checkout of the target commit: %w", Unpinned, ErrRefused)
 	}
 	if releaseTag.MatchString(oldPin) && releaseTag.MatchString(newPin) && compareTags(newPin, oldPin) < 0 && !opts.AllowDowngrade {
-		return fmt.Errorf("target %s is lower than the hive pin %s; pass --allow-downgrade to move backwards: %w", newPin, oldPin, ErrRefused)
+		return fmt.Errorf("target %s is lower than the current pin %s; pass --allow-downgrade to move backwards: %w", newPin, oldPin, ErrRefused)
 	}
 
 	ref, refByTag, refOK := gateRef(read)
@@ -366,7 +367,7 @@ func Upgrade(opts UpgradeOptions) error {
 	if err != nil {
 		return err
 	}
-	if err := printDecision(out, oldPin, newPin); err != nil {
+	if err := printDecision(out, oldPin, newPin, plan.gateOnly); err != nil {
 		return err
 	}
 	if !opts.Apply {
@@ -391,6 +392,7 @@ func Upgrade(opts UpgradeOptions) error {
 func planUpgrade(opts UpgradeOptions, g gitRunner, root, oldPin, newPin, ref string, refByTag bool, tfs fs.FS, files []templateFile, out io.Writer) (*upgradePlan, error) {
 	plan := &upgradePlan{root: root}
 	gateOnly := isGateOnly(root)
+	plan.gateOnly = gateOnly
 	cfgContent, _, err := readOptional(plan.abs(layout.Config))
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", layout.Config, err)
@@ -690,8 +692,10 @@ type decisionInput struct {
 
 // printDecision prints the ready waggle decide input for the pin move.
 // upgrade never writes DECISIONS.md itself (D-092).
-func printDecision(out io.Writer, oldPin, newPin string) error {
-	b, err := json.MarshalIndent(decisionInput{
+// A gate-only repo gets text with no reference to this project's own tickets
+// or decisions; a full hive keeps its text.
+func printDecision(out io.Writer, oldPin, newPin string, gateOnly bool) error {
+	in := decisionInput{
 		Kind:           "technical",
 		Title:          "Upgrade hive pin to " + newPin,
 		Question:       "Which Waggle build does this hive run?",
@@ -701,13 +705,22 @@ func printDecision(out io.Writer, oldPin, newPin string) error {
 		Rationale:      newPin + " is the known-good build chosen by the Head Keeper (D-041).",
 		Tickets:        []string{"T-016"},
 		Supersedes:     []string{},
-	}, "", "  ")
+	}
+	runLine := "Run: waggle decide --file upgrade-decision.json (same hive PR, Head Keeper or queen after an explicit Keeper answer, T-006 section 8)."
+	if gateOnly {
+		in.Title = "Upgrade the Waggle pin to " + newPin
+		in.Question = "Which Waggle build does this repo's gate run?"
+		in.Rationale = newPin + " is the build the maintainers chose for this repo."
+		in.Tickets = []string{}
+		runLine = "Run: waggle decide --file upgrade-decision.json and commit the entry in the same PR."
+	}
+	b, err := json.MarshalIndent(in, "", "  ")
 	if err != nil {
 		return err
 	}
 	fmt.Fprintln(out, "--- waggle decide input (save as upgrade-decision.json) ---")
 	fmt.Fprintln(out, string(b))
 	fmt.Fprintln(out, "--- end ---")
-	fmt.Fprintln(out, "Run: waggle decide --file upgrade-decision.json (same hive PR, Head Keeper or queen after an explicit Keeper answer, T-006 section 8).")
+	fmt.Fprintln(out, runLine)
 	return nil
 }

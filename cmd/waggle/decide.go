@@ -24,12 +24,12 @@ func runDecide(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "Append one decision entry from a JSON object to %s.\n", layout.Decisions)
 		fmt.Fprintln(stderr, "Entries are never edited or deleted; record a new one that supersedes an old one.")
 		fmt.Fprintln(stderr, "The ID and date are always assigned; there is no flag to set them.")
-		fmt.Fprintln(stderr, "Who runs it (v0.1): the Keeper, or the queen only after an explicit Keeper answer in")
-		fmt.Fprintln(stderr, "the same session. Cells never run this command. The command cannot verify approval.")
+		fmt.Fprintln(stderr, "Who runs it: a maintainer, after the decision is made. Agents never run this")
+		fmt.Fprintln(stderr, "command on their own. The command cannot verify approval.")
 		fs.PrintDefaults()
 	}
 	file := fs.String("file", "", "JSON input path, or - for stdin (required)")
-	repo := fs.String("repo", ".", "Hive root; must contain a .waggle/ directory")
+	repo := fs.String("repo", ".", "Repository root; must contain a .waggle/ directory")
 	dryRun := fs.Bool("dry-run", false, "Validate, assign the next ID, print the entry, write nothing")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -48,7 +48,7 @@ func runDecide(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if fi, err := os.Stat(filepath.Join(*repo, layout.Root)); err != nil || !fi.IsDir() {
-		fmt.Fprintf(stderr, "waggle decide: %s is not a waggle hive (no %s directory)\n", *repo, layout.Root)
+		fmt.Fprintf(stderr, "waggle decide: %s is not a Waggle repo (no %s directory)\n", *repo, layout.Root)
 		return 1
 	}
 
