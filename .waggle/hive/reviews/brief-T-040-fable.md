@@ -37,3 +37,35 @@ N4. **Opus round 2 notes are folded in.** N1: row 29's reach now says no command
 N5. **A reached-but-kept candidate the brief could list.** `waggle claim` stores `Role: "builder"` on every claim (`internal/dispatch/task.go:49`), and the `waggle status` claim table prints `l.Role` (`status.go:177-178`), so a gate-only user who has made a claim reads `builder` in the table. Section 2 already excludes "the rest of the `waggle status` body", and the value is claim data, not a literal in the status body, so the builder cannot change it under this brief. Adding it to the section 3 "Reached but kept" paragraph (next to `keeper_id`) would stop the builder's sweep from reporting it as a new find and tell the T-037 docs touch-up about it. The claim JSON body has no role field (`claim.go:37-46`), so the table is the only reach. Wording, not must-fix.
 
 N6. **Minor.** Section 6 opens with "Grepped at `5540658`" and says only the break anchors were re-checked at `300fe7a`; the pin anchors also match at `300fe7a`, so the sentence could say both were. The brief has no em or en dash (scanned all 163 lines). The fix-round rule in the Risk Tier line (two confirming guards for rounds touching the named gate, claim and template files) is stricter than D-205 and fine.
+
+# Brief guard: T-040 round 4 (fable, confirming)
+
+Risk-Tier: 3
+
+Intent Summary: commit a1c9443 on `t-040c-brief` edits only `.waggle/hive/tasks/T-040.md` (12 insertions, 11 deletions) to cut the T-040 lease from six directories to five after `waggle dispatch` refused the claim under `DefaultMaxDirectoriesPerClaim = 5`. It drops `internal/forge/` from the Lease line, adds `internal/forge/` to the lease rule's must-fix list, marks row 29 (`internal/forge/remote.go:21`) as out of scope and moves it to a new follow-up (section 10 item 4), and adjusts the goal, AC2, the hive-effect row range, the counts paragraph, the budget and the planned cut to match. Blast radius: the brief only; no code, no `.waggle/control/`, no git state beyond the one commit. Tier 3 by path (`.waggle/hive/**` is hardcoded Tier 3), low by content.
+
+Blocking Issues (Must-Fix Only): none.
+
+Checks
+
+(1) Lease line, `.waggle/hive/tasks/T-040.md:9`: exactly five entries, `cmd/waggle/`, `internal/comb/`, `internal/dispatch/`, `internal/decisions/`, `internal/scaffold/`. Each passes `normalizeDir` (`internal/comb/backend.go:341-372`): relative, only `[A-Za-z0-9._/-]`, trailing slash stripped by `filepath.Clean`, not root, not `..`, not `.git`, none equals or contains `.waggle/` or the configured `protected_paths: gate/` (`.waggle/control/config.yaml:53`), and no pair overlaps on a segment boundary. Five distinct entries is at the limit, not over it (`backend.go:285`, `len(out) > maxDirs`). All five directories exist in the worktree. `waggle dispatch` takes them as repeatable `--dir` (`cmd/waggle/dispatch.go:56`).
+
+(2) Section 3 rows against the lease (lines 39-74): rows 1, 7, 8, 9 in `internal/comb/`; rows 2, 3, 10 to 17, 26 to 28, 33 to 36 in `cmd/waggle/`; row 4 in `internal/decisions/`; rows 5, 6 in `internal/dispatch/`; rows 18 to 25, 30 to 32 in `internal/scaffold/`. Row 29 is the only `internal/forge/` row and is marked out of scope. Every in-scope row lives inside the five leased directories.
+
+(3) No remaining requirement under `internal/forge/`. Status (line 4) records the round 4 cut; Layer (line 5) now says rows 5 to 28 and 33 to 36 (was 5 to 29); Lease justification (line 10) and Lease rule (line 11) exclude forge and list `internal/forge/ (row 29's remote.go included)` as must-fix; Goal item 1 (line 23) and AC2 (line 128) carve out row 29; the counts paragraph (line 76) says 35 strings in 16 files, 14 Go and two templates, which matches the in-scope rows (14 distinct Go files, 2 templates); the budget (line 143) lists rows 1 to 20, 26 to 28, 33 to 36; the planned cut (line 147) no longer moves row 29; follow-up 4 (line 154) carries it. Remaining forge mentions are correct as written: line 13 (`internal/forge/none_test.go` as a remote-mode fixture that may fail inside the run, which is about existing tests, not the lease) and line 31 (`internal/forge/none.go:151` as hive-only, unchanged). Verification (line 121) and AC11 (line 138) are scoped to changed files and need no edit.
+
+(4) Round 4 text is internally consistent and its new claims check out: the quoted refusal `6 directories exceeds limit 5: comb: invalid lease` matches `backend.go:286` (`"%d directories exceeds limit %d: %w"`) wrapping `ErrInvalidLease` (`backend.go:149`); "exit 4" matches `claimError` mapping `ErrInvalidLease` to `ExitClaim` (`internal/dispatch/claim.go:96-98`) and `ExitClaim = 4` (`internal/dispatch/request.go:23`). The three places that cite the ruling (lines 10, 154 and the Status line) agree on the date and on "decision ID recorded at merge".
+
+(5) Added lines: no em or en dash, no personal name, no email, no home path (grep over the `+` lines of the diff and over the whole file at the commit, both empty).
+
+Notes (not must-fix)
+
+N1. Budget arithmetic, line 143: the bottom-up row count is now 27 single lines plus about 6 comment lines, so the raw figure is about 33 to 35 rather than 36. The line says so itself ("round 4 drops row 29's one line; not material, so the figures stay"), and keeping estimate 118, target 153, stop 212 is conservative, so no change needed.
+
+N2. Row 29's "new" column (line 67) now holds a bold status sentence followed by "Planned text:". AC2 and goal item 1 both exclude the row, so a builder cannot read it as an instruction, but the table is the one place a reader could trip; acceptable as a record.
+
+N3. Line 117 still says "No test pins ... row 29", which stays true and is harmless.
+
+Read: `git show a1c9443` (full diff and stat); the full `.waggle/hive/tasks/T-040.md` at a1c9443 (164 lines); `internal/comb/backend.go:146-190, 262-290, 341-385`; `internal/dispatch/claim.go:85-105`; `internal/dispatch/request.go:20-24`; `cmd/waggle/dispatch.go:38, 56`; `.waggle/control/config.yaml:5-11, 53`; tails of `.waggle/hive/reviews/brief-T-040-opus.md` and `brief-T-040-fable.md` on main; directory existence for the five leased paths.
+
+Verdict: pass
