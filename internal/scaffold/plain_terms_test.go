@@ -96,7 +96,7 @@ func TestGateTemplatesPlainTerms(t *testing.T) {
 	dir := newRepo(t)
 	mustInit(t, gateOpts(dir, commitBuild(pinA)))
 	wf := get(t, dir, gateWorkflowRel)
-	if !strings.Contains(wf, "      - name: Fetch claim refs\n        run: ") || strings.Contains(wf, "Comb") {
+	if !strings.Contains(wf, "      - name: Fetch claim refs\n        run: git fetch origin 'refs/waggle/claims/*:refs/waggle/claims/*'\n") || strings.Contains(wf, "Comb") {
 		t.Errorf("workflow step name:\n%s", wf)
 	}
 	cfg := get(t, dir, layout.Config)
