@@ -6143,3 +6143,24 @@
 **Keeper choice:** (a): Vercel Authentication at All Deployments plus git.deploymentEnabled main false, on the level19 team's existing Pro plan (checked active 2026-10-25), $0 more; no plan or seat change and no Password Protection. Falls back to (c) if the team cannot deploy a waggle-sh private repository; the queen re-confirms the plan at the finalize round.
 
 **Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-319: T-040 lease cut to five directories, row 29 to a follow-up
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-040
+- **Supersedes:** none
+
+**Question:** T-040 dispatch was refused (exit 4: 6 directories exceeds limit 5). How does T-040 proceed?
+
+**Options considered:**
+1. Drop internal/forge/ from the lease; row 29 moves to a follow-up
+2. Raise the claim limit to 6 in config.yaml
+3. Split T-040 into two phases
+4. Hold T-040
+
+**Hive recommendation:** Drop internal/forge/ from the lease; row 29 moves to a follow-up
+
+**Keeper choice:** Drop internal/forge/: T-040 leases cmd/waggle/, internal/comb/, internal/dispatch/, internal/decisions/ and internal/scaffold/; row 29 (internal/forge/remote.go:21, a string no command prints today) moves to its own follow-up ticket (T-040 section 10 item 4). The claim limit stays 5.
+
+**Rationale:** The brief's planned cut already moved row 29 out at the target, and raising a hive-wide limit for one ticket loosens a policy. Brief round 4 by the scout, fable confirming guard pass. Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
