@@ -1,0 +1,223 @@
+# SPDX-License-Identifier: MIT-0
+# Release build for the waggle repo (T-036 2.10 and 2.11 item 3, D-274, D-275).
+# Head Keeper control file. Not scaffolded into other hives.
+#
+# A pushed vX.Y.Z tag builds waggle from a clean checkout of that tag, refuses
+# any binary whose VCS stamp is dirty or names another commit, and opens a
+# DRAFT release with the archives and SHA256SUMS. The Head Keeper publishes
+# the draft by hand. Every output lives under $RUNNER_TEMP, never inside the
+# checkout: an untracked file there would stamp vcs.modified=true.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      sums-sha256: ${{ steps.sums.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Check the tag
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s\n' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error::tag $TAG is not vMAJOR.MINOR.PATCH[-PRERELEASE]"
+            exit 1
+          fi
+          # The API is the authority on the tag object: a checkout can rewrite
+          # an annotated tag as a lightweight one locally.
+          ref_type="$(gh api "repos/$REPO/git/ref/tags/$TAG" --jq '.object.type')"
+          if [ "$ref_type" != "tag" ]; then
+            echo "::error::tag $TAG is not annotated (ref points at a $ref_type)"
+            exit 1
+          fi
+          tag_obj="$(gh api "repos/$REPO/git/ref/tags/$TAG" --jq '.object.sha')"
+          target_type="$(gh api "repos/$REPO/git/tags/$tag_obj" --jq '.object.type')"
+          target_sha="$(gh api "repos/$REPO/git/tags/$tag_obj" --jq '.object.sha')"
+          if [ "$target_type" != "commit" ]; then
+            echo "::error::tag $TAG points at a $target_type, not a commit"
+            exit 1
+          fi
+          head_sha="$(git rev-parse HEAD)"
+          if [ "$head_sha" != "$target_sha" ]; then
+            echo "::error::checkout HEAD $head_sha is not the tag commit $target_sha"
+            exit 1
+          fi
+          if ! git rev-parse --verify --quiet refs/remotes/origin/main >/dev/null; then
+            echo "::error::origin/main is not in the clone"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$head_sha" refs/remotes/origin/main; then
+            echo "::error::tag commit $head_sha is not an ancestor of origin/main"
+            exit 1
+          fi
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::checkout is not clean before the build"
+            git status --porcelain
+            exit 1
+          fi
+          echo "TAG_SHA=$head_sha" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Build, stamp check and archive
+        env:
+          TAG: ${{ github.ref_name }}
+          CGO_ENABLED: "0"
+          GOTOOLCHAIN: local
+          GOPROXY: "off"
+          GOFLAGS: -mod=readonly -buildvcs=true
+          GOWORK: "off"
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          out="$RUNNER_TEMP/waggle-release"
+          bin="$out/bin"
+          stage="$out/stage"
+          dist="$out/dist"
+          mkdir -p "$bin" "$stage" "$dist"
+          epoch="$(git log -1 --format=%ct "$TAG_SHA")"
+
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            goos="${target%/*}"
+            goarch="${target#*/}"
+            exe="waggle"
+            if [ "$goos" = "windows" ]; then exe="waggle.exe"; fi
+            name="waggle_${version}_${goos}_${goarch}"
+            binary="$bin/$name/$exe"
+
+            GOOS="$goos" GOARCH="$goarch" go build -trimpath \
+              -ldflags "-s -w -X main.version=$version" \
+              -o "$binary" ./cmd/waggle
+
+            info="$(go version -m "$binary")"
+            stamp() { printf '%s\n' "$info" | awk -v k="$1" '$1 == "build" && index($2, k "=") == 1 { print substr($2, length(k) + 2) }'; }
+            if [ "$(stamp vcs)" != "git" ]; then
+              echo "::error::$name has no git VCS stamp"; exit 1
+            fi
+            if [ "$(stamp vcs.modified)" != "false" ]; then
+              echo "::error::$name is stamped vcs.modified=$(stamp vcs.modified)"; exit 1
+            fi
+            if [ "$(stamp vcs.revision)" != "$TAG_SHA" ]; then
+              echo "::error::$name is stamped vcs.revision=$(stamp vcs.revision), want $TAG_SHA"; exit 1
+            fi
+            if [ "$(stamp GOOS)" != "$goos" ] || [ "$(stamp GOARCH)" != "$goarch" ]; then
+              echo "::error::$name is stamped for $(stamp GOOS)/$(stamp GOARCH)"; exit 1
+            fi
+
+            if [ "$target" = "linux/amd64" ]; then
+              got="$("$binary" version)"
+              if [ "$got" != "waggle v$version" ]; then
+                echo "::error::version prints '$got', want 'waggle v$version'"; exit 1
+              fi
+            fi
+
+            dir="$stage/$name"
+            mkdir -p "$dir"
+            cp "$binary" LICENSE NOTICE "$dir/"
+            touch -d "@$epoch" "$dir" "$dir"/*
+            if [ "$goos" = "windows" ]; then
+              (cd "$stage" && find "$name" -print | LC_ALL=C sort | zip -X -q "$dist/$name.zip" -@)
+            else
+              tar -C "$stage" --sort=name --owner=0 --group=0 --numeric-owner \
+                --mtime="@$epoch" -cf - "$name" | gzip -n -9 > "$dist/$name.tar.gz"
+            fi
+          done
+
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::the build changed the checkout"
+            git status --porcelain
+            exit 1
+          fi
+
+      - name: Checksums
+        id: sums
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/waggle-release/dist"
+          LC_ALL=C ls -1 | grep -v '^SHA256SUMS$' | LC_ALL=C sort | xargs sha256sum > SHA256SUMS
+          cat SHA256SUMS
+          echo "sha256=$(sha256sum SHA256SUMS | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: waggle-release
+          path: ${{ runner.temp }}/waggle-release/dist/
+          if-no-files-found: error
+          retention-days: 3
+
+  release:
+    name: release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: waggle-release
+          path: ${{ runner.temp }}/waggle-release/dist
+
+      - name: Verify the artifact
+        env:
+          WANT_SUMS_SHA256: ${{ needs.build.outputs.sums-sha256 }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/waggle-release/dist"
+          got="$(sha256sum SHA256SUMS | cut -d' ' -f1)"
+          if [ -z "$WANT_SUMS_SHA256" ] || [ "$got" != "$WANT_SUMS_SHA256" ]; then
+            echo "::error::SHA256SUMS digest $got does not match the build job's $WANT_SUMS_SHA256"
+            exit 1
+          fi
+          sha256sum --strict -c SHA256SUMS
+          listed="$(cut -d' ' -f3- SHA256SUMS | LC_ALL=C sort)"
+          present="$(LC_ALL=C ls -1 | grep -v '^SHA256SUMS$' | LC_ALL=C sort)"
+          if [ "$listed" != "$present" ]; then
+            echo "::error::artifact files do not match SHA256SUMS"
+            exit 1
+          fi
+
+      - name: Create draft release
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/waggle-release/dist"
+          files=()
+          while IFS= read -r f; do files+=("$f"); done < <(LC_ALL=C ls -1 | LC_ALL=C sort)
+          gh release create "$TAG" \
+            --repo "$REPO" \
+            --verify-tag \
+            --draft \
+            --title "$TAG" \
+            --notes "Draft built from $TAG by the release workflow. Check SHA256SUMS before publishing." \
+            "${files[@]}"
