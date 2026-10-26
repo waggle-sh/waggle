@@ -29,6 +29,9 @@ type prEvent struct {
 	headSHA string
 	headRef string
 	body    string
+	// headRepo and baseRepo are owner/name, or "" when the payload has none
+	// (a deleted fork reads as "").
+	headRepo, baseRepo string
 }
 
 // readPREvent reads the event file named by GITHUB_EVENT_PATH. It returns nil
@@ -57,9 +60,17 @@ func readPREvent(getenv func(string) string) (*prEvent, string) {
 		PullRequest struct {
 			Number int `json:"number"`
 			Head   struct {
-				SHA string `json:"sha"`
-				Ref string `json:"ref"`
+				SHA  string `json:"sha"`
+				Ref  string `json:"ref"`
+				Repo *struct {
+					FullName string `json:"full_name"`
+				} `json:"repo"`
 			} `json:"head"`
+			Base struct {
+				Repo *struct {
+					FullName string `json:"full_name"`
+				} `json:"repo"`
+			} `json:"base"`
 			Body *string `json:"body"`
 		} `json:"pull_request"`
 	}
@@ -70,6 +81,12 @@ func readPREvent(getenv func(string) string) (*prEvent, string) {
 	ev := &prEvent{number: pr.Number, headSHA: pr.Head.SHA, headRef: pr.Head.Ref}
 	if pr.Body != nil {
 		ev.body = *pr.Body
+	}
+	if pr.Head.Repo != nil {
+		ev.headRepo = pr.Head.Repo.FullName
+	}
+	if pr.Base.Repo != nil {
+		ev.baseRepo = pr.Base.Repo.FullName
 	}
 	return ev, ""
 }

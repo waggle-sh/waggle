@@ -109,6 +109,8 @@ type commitScan struct {
 	policy  comb.TierPolicy // repo-defined Tier 3 paths, read from baseOID
 	branch  string          // ticket the PR branch binds, or ""
 	bound   map[string]string
+	head    prHead // the PR head every claim's branch list is checked against
+	noHead  bool   // the local no-branch warning was filed
 
 	approvable func(string) bool // paths a listed approver can pass; nil means none
 	filter     bool              // drop tier3 and outside_lease findings on approvable paths
@@ -308,7 +310,8 @@ func (s *commitScan) classify(c gateCommit) (claimLookup, error) {
 }
 
 // claimFor reads the claim of one ticket, once. It is the one place leases
-// reads a claim, so the signature check of section 9.1 adds one call here.
+// reads a claim, so the signature check of section 9.1 adds one call here. A
+// readable claim is also checked against the PR head (checkHead).
 func (s *commitScan) claimFor(id string) (claimLookup, error) {
 	if cl, found := s.claims[id]; found {
 		return cl, nil
@@ -328,9 +331,58 @@ func (s *commitScan) claimFor(id string) (claimLookup, error) {
 			s.rep.warn(checkLeases, fmt.Sprintf("claim for %s expired at %s; accepted",
 				id, l.ExpiresAt.Format(time.RFC3339)))
 		}
+		s.checkHead(id, l)
 	}
 	s.claims[id] = cl
 	return cl, nil
+}
+
+// checkHead fails a bound ticket whose claim does not name the PR head
+// (T-039 section 2.4). The finding has no path, so no approval clears it, and
+// it never echoes the head name, a repository or a claim entry.
+func (s *commitScan) checkHead(id string, l comb.Lease) {
+	h := s.head
+	if h.name == "" {
+		switch {
+		case h.gha:
+			s.rep.fail(checkLeases, "", id+": pull request branch unknown")
+		case !s.noHead:
+			s.noHead = true
+			s.rep.warn(checkLeases, "no pull request branch; claim branches not checked (pass --branch)")
+		}
+		return
+	}
+	if len(l.Branches) == 0 {
+		if _, ignored := branchTicket(h.name); !ignored && h.sameRepo && ticketBranchName(h.name, id) {
+			s.rep.warn(checkLeases, "claim for "+id+" names no branch; accepted on ticket branch name")
+			return
+		}
+		s.rep.fail(checkLeases, "", id+": claim names no branch; renew it with waggle claim --branch")
+		return
+	}
+	for _, e := range l.Branches {
+		repo, branch, fork := strings.Cut(e, ":")
+		switch {
+		case !fork && h.sameRepo && e == h.name:
+			return
+		case fork && !h.sameRepo && h.repo != "" && strings.EqualFold(repo, h.repo) && branch == h.name:
+			return
+		}
+	}
+	s.rep.fail(checkLeases, "", id+": claim does not name this pull request's branch")
+}
+
+// ticketBranchName reports whether name is the ticket's own branch name:
+// t-<d> or waggle/T-<d>, each alone or followed by a non-digit and anything,
+// where <d> is the digits of the canonical id (040 for T-040).
+func ticketBranchName(name, id string) bool {
+	d := strings.TrimPrefix(id, "T-")
+	for _, p := range []string{"t-", "waggle/T-"} {
+		if rest, ok := strings.CutPrefix(name, p+d); ok && (rest == "" || rest[0] < '0' || rest[0] > '9') {
+			return true
+		}
+	}
+	return false
 }
 
 // caseCollisions fails head tree paths that are equal under case folding but
