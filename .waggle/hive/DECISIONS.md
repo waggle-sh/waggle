@@ -6164,3 +6164,22 @@
 **Keeper choice:** Drop internal/forge/: T-040 leases cmd/waggle/, internal/comb/, internal/dispatch/, internal/decisions/ and internal/scaffold/; row 29 (internal/forge/remote.go:21, a string no command prints today) moves to its own follow-up ticket (T-040 section 10 item 4). The claim limit stays 5.
 
 **Rationale:** The brief's planned cut already moved row 29 out at the target, and raising a hive-wide limit for one ticket loosens a policy. Brief round 4 by the scout, fable confirming guard pass. Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
+
+## D-320: Upgrade hive pin to 0d102caaac19c48b3cb4259f0881599763ac6882 and apply the gate workflow render
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-016, T-042
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Move to 0d102caaac19c48b3cb4259f0881599763ac6882
+2. Stay on 97127fc04e4d8eb803d4bd7e5c59e218cccc6e6f
+
+**Hive recommendation:** Move to 0d102caaac19c48b3cb4259f0881599763ac6882
+
+**Keeper choice:** Move the pin from 97127fc04e4d8eb803d4bd7e5c59e218cccc6e6f to 0d102caaac19c48b3cb4259f0881599763ac6882 (main head, carries T-039 #128 and T-040 #135) and apply the re-rendered .github/workflows/waggle-gate.yml (relay-claim stub and inline tier-notice step removed, checkout and setup-go pinned by SHA, gate Action fallback step for a base without the gate source) as a Head Keeper commit; every other managed file is [same]. Opus and fable guards review the PR before a merge card.
+
+**Rationale:** 0d102ca is the known-good build chosen by the Head Keeper (D-041) and is T-042 section 9 Step 1, which must precede the claim renewals and T-042 (D-291 ordering). Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
