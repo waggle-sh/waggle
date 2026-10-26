@@ -161,12 +161,12 @@ func TestClaimForkHeads(t *testing.T) {
 	}
 }
 
-// T-039 AC12 under Q-T039-1 (b).
+// T-039 AC12 under Q-T039-1 (a), T-042 AC3.
 func TestClaimWithoutBranchList(t *testing.T) {
 	r := ticketRepo(t, func(r gateRepo) { r.claim(40, "full", active, "src") })
 	for _, name := range []string{"t-040", "t-040-x", "t-040a", "waggle/T-040"} {
 		code, out := r.runWith(nil, "verify", "--branch", name)
-		if code != 0 || !strings.Contains(out, "leases: warning: "+fallbackWarn) {
+		if code != 1 || !strings.Contains(out, noListMsg) || strings.Contains(out, fallbackWarn) {
 			t.Errorf("%s: exit %d\n%s", name, code, out)
 		}
 	}
@@ -182,17 +182,45 @@ func TestClaimWithoutBranchList(t *testing.T) {
 	}
 }
 
-// The names that bind another ticket conflict before the fallback is reached,
-// so the fallback's own rule is checked directly.
-func TestTicketBranchName(t *testing.T) {
-	for name, want := range map[string]bool{
-		"t-040": true, "t-040-x": true, "t-040a": true, "waggle/T-040": true, "waggle/T-040-x": true,
-		"t-0400": false, "t-0040": false, "t-40": false, "t-041": false, "xt-040": false, "T-040": false,
-		"waggle/t-040": false, "": false,
-	} {
-		if got := ticketBranchName(name, "T-040"); got != want {
-			t.Errorf("%q: got %v, want %v", name, got, want)
-		}
+// T-042 AC3: an expired claim with no list fails the same way, and still warns.
+func TestExpiredClaimWithoutBranchList(t *testing.T) {
+	r := ticketRepo(t, func(r gateRepo) { r.claim(40, "full", "2020-01-02T00:00:00Z", "src") })
+	code, out := r.runWith(nil, "verify", "--branch", "t-040")
+	if code != 1 || !strings.Contains(out, noListMsg) || !strings.Contains(out, "claim for T-040 expired at") ||
+		strings.Contains(out, fallbackWarn) {
+		t.Errorf("exit %d\n%s", code, out)
+	}
+}
+
+// T-042 AC4: no approval clears a claim with no list.
+func TestApproverNoBranchList(t *testing.T) {
+	r := apprRepo(t, apprConfig, nil)
+	r.claim(31, "full", active, "docs")
+	head := r.head()
+	useFake(t, &fakeReviews{rv: forge.PRReviews{Reviews: []forge.Review{approval(1, "alice", "APPROVED", head)}}})
+	code, out := r.runWith(prEnv(writeEvent(t, head, "x", apprBody)), "verify")
+	if code != 1 || !strings.Contains(out, "T-031: claim names no branch; renew it with waggle claim --branch") {
+		t.Errorf("exit %d\n%s", code, out)
+	}
+}
+
+// T-042 AC5: the branch checks that remain.
+func TestNoListUnchangedCases(t *testing.T) {
+	r := ticketRepo(t, func(r gateRepo) { r.claim(40, "full", active, "src") })
+	code, out := r.runWith(nil, "verify")
+	if code != 0 || strings.Count(out, "no pull request branch") != 1 {
+		t.Errorf("local: exit %d\n%s", code, out)
+	}
+	code, out = r.runWith(map[string]string{"GITHUB_ACTIONS": "true"}, "verify")
+	if code != 1 || !strings.Contains(out, "T-040: pull request branch unknown") || strings.Contains(out, "names no branch") {
+		t.Errorf("actions: exit %d\n%s", code, out)
+	}
+	l := ticketRepo(t, listed("t-040"))
+	if code, out := l.runWith(nil, "verify", "--branch", "t-040"); code != 0 {
+		t.Errorf("listed: exit %d\n%s", code, out)
+	}
+	if code, out := l.runWith(nil, "verify", "--branch", "feature/x"); code != 1 || !strings.Contains(out, noBranchMsg) {
+		t.Errorf("other branch: exit %d\n%s", code, out)
 	}
 }
 
