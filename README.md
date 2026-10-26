@@ -9,7 +9,7 @@ You give each task a claim: the directories it may change and the branches its P
 
 Each check links the [gate spec](docs/gate.md) section that cites the code behind it.
 
-1. **Each commit names its task, and the task's claim names this PR's branch.** A commit names its task by a `T-<id>: ` subject, a `Waggle-Ticket:` trailer, or a `waggle/T-<id>` or `t-<id>` branch; a commit naming none, or two different tasks, fails. The task is chosen by the commit's author, so the claim's branch list is what ties it to the PR: a commit fails unless its task's claim lists the PR's head branch, and a claim that names no branch fails every commit ([binding](docs/gate.md#2-binding-a-commit-to-a-task), [branch check](docs/gate.md#3-the-claims-branch-check)).
+1. **Each commit names its task, and the task's claim names this PR's branch.** A commit names its task by a `T-<id>: ` subject, a `Waggle-Ticket:` trailer, or a `waggle/T-<id>` or `t-<id>` branch; a commit naming none, or two different tasks, fails. The task is chosen by the commit's author, so the claim's branch list is what ties it to the PR: a commit fails unless its task's claim lists the PR's head branch, and a claim that names no branch fails every commit that names its task whenever the PR's head branch is known ([binding](docs/gate.md#2-binding-a-commit-to-a-task), [branch check](docs/gate.md#3-the-claims-branch-check)).
 2. **Each commit stays inside its task's lease.** The lease is the directory list in the task's claim. Every commit is checked, not only the final diff, with exact case and no new symlink or submodule; only a merge from the base branch is accepted ([lease check](docs/gate.md#4-the-per-commit-lease-check)). The gate does not check who wrote a claim or when, so a person or the orchestrator writes it, with its branch list, before the work, never from the agent's credentials.
 3. **Protected paths.** Control paths (`.github/workflows/`, `.gitlab-ci.yml`, `.devcontainer/`, `.waggle/`, `go.mod`, `go.sum`, `go.work`, `go.work.sum` and `vendor/`) fail whatever the claim says and pass only by an admin bypass, even with an approval. Paths your repo lists in `gate.protected_paths` fail too, unless a listed approver approved the PR at its exact head commit, or an admin bypasses ([protected paths](docs/gate.md#5-risk-tiers-and-protected-paths), [approvers](docs/gate.md#6-approvers)).
 4. **Intent Packet trailers.** `Waggle-Ticket`, `Waggle-Risk-Tier` and `Waggle-Verdict` in the last paragraph of the PR description are compared with the commits and changed paths, as warnings only. They never fail the gate ([trailers](docs/gate.md#7-trailers)).
@@ -39,9 +39,11 @@ The full workflow is in the [gate spec](docs/gate.md#13-the-calling-workflow). A
 ## Writing a claim
 
 ```
-waggle claim T-<id> --dirs a,b --gate light|full --owner <id> [--branch <name>]...
-waggle release T-<id>
+Usage: waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]... [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]
+Usage: waggle release <task> [--branch <name>] [--unmerged] [--owner <id>] [--repo <dir>] [--json]
 ```
+
+These are the usage lines `waggle claim -h` and `waggle release -h` print (`cmd/waggle/claim.go:178, 243`).
 
 - `--owner` is required in a repo that has only the gate installed. Its help reads `claim owner, usually your GitHub login; required without .waggle/local.yaml, else defaults to its keeper_id`; the file Waggle reads is `.waggle/control/local.yaml`.
 - `--branch` names a PR branch the claim accepts; repeat it, up to 4. With none, a new claim records `t-<nnn>`. Given flags replace the stored list, and a same-owner renewal without flags keeps it. A re-claim after the claim expired starts a new list, so repeat every `--branch`.
@@ -56,6 +58,7 @@ How to run the gate under the agent you already use, in [docs/recipes](docs/reci
 ## Status
 
 Pre-1.0. The [gate spec](docs/gate.md) describes what the code does today, and the recipes have not been run end to end with each tool.
+
 ## Documentation
 
 - [Gate spec](docs/gate.md)

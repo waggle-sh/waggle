@@ -34,7 +34,7 @@ Our hive's records (briefs, decisions, reviews) use bee words. The README, the g
 - Retired names stay listed in section 5 with a pointer to the current term, so old commits, decisions, and review records stay readable.
 - Product design that users rely on also lands in the product docs (D-045); `DECISIONS.md` records how our hive decided, not how Waggle works.
 
-Naming rule (D-073): bee terms are used only for concepts Waggle invents (Hive, Comb, Cell, roles). Things users already know keep their standard industry words (forge, PR, CI, commit, ref), and so do precise mechanisms (Gate, Lease, Claim, Risk Tier, Intent Packet).
+Naming rule (D-073): bee terms are used only for concepts Waggle invents (Hive, Comb, roles). Things users already know keep their standard industry words (forge, PR, CI, commit, ref), and so do precise mechanisms (Gate, Lease, Claim, Risk Tier, Intent Packet).
 
 No em dashes or en dashes in code, docs, or commits.
 
@@ -67,7 +67,7 @@ No em dashes or en dashes in code, docs, or commits.
 - **Nectar.** Cut: reputation from merged commits.
 - **Quorum.** Cut: hive voting weighted by Nectar.
 - **weaver, nurse, studio, assembly.** Cut: the unspecified v0.2 roles.
-- **Lane.** Frozen: an integration branch (`int-<release>-<n>`) where several Light-gate tasks share one guard pass. The per-commit check already makes lanes safe, so no one needs them yet.
+- **Lane.** Frozen: an integration branch (`int-<release>-<n>`) where several Light-gate tasks share one guard pass. Not used.
 - **relay.** The stub job of the old gate workflow, removed from the template.
 - **Cell.** Cut: the worker sandbox with its own dev container. Sandboxing is left to the agent tool; the design history is in `docs/RFC-0003.md`.
 - **waggled.** Frozen: the host daemon. The gate needs no daemon and none ships.
