@@ -6263,3 +6263,161 @@
 **Keeper choice:** Research brief now, build after T-041: a forager verifies, from published sources only, which parallelism and resource knobs Claude Code, Copilot cloud agent and Gas Town expose, and which waggle dispatch lock and claim paths a parallel mode would touch; the scout then writes the T-043 brief with its questions. The build queues after T-025 phase C and the T-041 finalize round.
 
 **Rationale:** Knob availability per tool decides what can be rendered versus only advised, so research comes first; the G5 flip work keeps its order. Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
+
+## D-325: T-043 phase B scope written by behavior, not line ranges (D-204 design card)
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** D-204: the T-043 phase B lease rule failed two consecutive confirming brief guards on run.go edits its line-range list left out. How is the phase B scope written?
+
+**Options considered:**
+1. Rule by behavior: allowed pace reading, load step before the first write, carrying and reporting its result; a forbidden list for lock, claims, keepalive, host-file check, sweep, signals, worktree lifecycle and the existing refusal order
+2. Add the missing range and run another confirming guard
+3. Brief phase A only and brief phase B later
+
+**Hive recommendation:** Rule by behavior: allowed pace reading, load step before the first write, carrying and reporting its result; a forbidden list for lock, claims, keepalive, host-file check, sweep, signals, worktree lifecycle and the existing refusal order
+
+**Keeper choice:** Rule by behavior: the phase B lease rule and AC14 list allowed changes by what they do and a forbidden list (lock, claims, keepalive and renewal, host-file check and record, sweep, signals, worktree creation and removal, existing refusal order and messages); guards judge each hunk against both lists, and cites stay as orientation only. Resolve returns typed warnings so dispatch never matches message text.
+
+**Rationale:** Two consecutive must-fix rounds (round 2 on where Result is built, round 3 on the loaded struct) came from a line list that missed edits the design needs; a behavior rule keeps the safety boundary and stops the churn. Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
+
+## D-326: T-043 profiles: serial, steady, max with the brief's 2.4 values
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-5: profile names and default values?
+
+**Options considered:**
+1. serial, steady, max with the 2.4 table, owner default steady, default limit max
+2. Same names with a smaller max (3 runs, 4 subagents)
+3. Different names (one, few, many)
+
+**Hive recommendation:** serial, steady, max with the 2.4 table, owner default steady, default limit max
+
+**Keeper choice:** serial (1 run, 1 subagent, 50 percent CPU target, 4096 MiB floor), steady (2, 3, 70, 2048) and max (4, 8, 85, 1024); owner default steady, default limit max; the owner can lower any key.
+
+**Rationale:** The names are D-323's examples; 8 subagents sits under Claude Code's default of 20 and its team advice of 3 to 5. Decided by the Head Keeper via queen card on 2026-10-26, after the T-043 brief guards (round 1 opus and fable must-fix, rounds 2 and 3 confirming must-fix, round 4 opus pass); recorded by the queen.
+
+## D-327: T-043 phases: A settings and render, B dispatch load refusal, C parallel runs after a design card
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-6: how is T-043 split into phases?
+
+**Options considered:**
+1. Phase A settings, status, doctor, render; phase B dispatch load and memory refusal with the one-run lock; phase C parallel runs after a design card
+2. Two phases with parallel runs in phase B
+3. One ticket
+
+**Hive recommendation:** Phase A settings, status, doctor, render; phase B dispatch load and memory refusal with the one-run lock; phase C parallel runs after a design card
+
+**Keeper choice:** Phase A: config, local.yaml pick, status, doctor, waggle pace print. Phase B: dispatch refuses with exit 3 (the caller retries, never a wait loop) when load is over the CPU target or memory under the floor, keeping today's one-run lock. Phase C: parallel dispatch runs only after a design card.
+
+**Rationale:** Parallel runs rework the host-file check and the lock that clean and release rely on (D-193, D-205 areas), which should not ride on a settings ticket. Decided by the Head Keeper via queen card on 2026-10-26, after the T-043 brief guards (round 1 opus and fable must-fix, rounds 2 and 3 confirming must-fix, round 4 opus pass); recorded by the queen.
+
+## D-328: T-043 CPU target: 1-minute load average over logical CPUs, checked once before a run
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-7: what does the CPU target measure?
+
+**Options considered:**
+1. 1-minute load average divided by logical CPUs, as a percent, checked once before a run starts
+2. 5-minute load average
+3. Sampled CPU busy percent over one second
+
+**Hive recommendation:** 1-minute load average divided by logical CPUs, as a percent, checked once before a run starts
+
+**Keeper choice:** 1-minute load average divided by logical CPUs, as a percent, checked once before a run starts.
+
+**Rationale:** It is the one reading macOS and Linux both document and needs no dependency. Decided by the Head Keeper via queen card on 2026-10-26, after the T-043 brief guards (round 1 opus and fable must-fix, rounds 2 and 3 confirming must-fix, round 4 opus pass); recorded by the queen.
+
+## D-329: T-043 pick above the limit: clamp with a warning
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-8: what happens when a keeper's pick exceeds the owner's limit?
+
+**Options considered:**
+1. Clamp to the limit with a warning everywhere; an unknown word falls back to the owner's default with a warning; local.yaml takes a profile word only
+2. Refuse until local.yaml is fixed
+3. Clamp and also accept raw keys in local.yaml
+
+**Hive recommendation:** Clamp to the limit with a warning everywhere; an unknown word falls back to the owner's default with a warning; local.yaml takes a profile word only
+
+**Keeper choice:** Clamp to the owner's limit with a warning in status, doctor, waggle pace and dispatch; an unknown word falls back to the owner's default with a warning; local.yaml takes a profile word only.
+
+**Rationale:** Clamping never exceeds the owner's bound (D-322) and never stops a keeper's work over a file only they see. Decided by the Head Keeper via queen card on 2026-10-26, after the T-043 brief guards (round 1 opus and fable must-fix, rounds 2 and 3 confirming must-fix, round 4 opus pass); recorded by the queen.
+
+## D-330: T-043 Claude Code render: print only, the keeper pastes
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-9: how do pace settings reach Claude Code?
+
+**Options considered:**
+1. waggle pace prints the env JSON and shell export; the keeper pastes it
+2. waggle pace --write merges env keys into .claude/settings.local.json
+3. Write the owner default into the committed .claude/settings.json
+
+**Hive recommendation:** waggle pace prints the env JSON and shell export; the keeper pastes it
+
+**Keeper choice:** waggle pace prints the env JSON and the shell export; the keeper pastes them into .claude/settings.local.json. Waggle writes no Claude Code settings file.
+
+**Rationale:** Claude Code rewrites that file on every don't-ask-again, so a Waggle write could race it and drop an allow rule; a --write flag can follow if pasting proves a chore. Decided by the Head Keeper via queen card on 2026-10-26, after the T-043 brief guards (round 1 opus and fable must-fix, rounds 2 and 3 confirming must-fix, round 4 opus pass); recorded by the queen.
+
+## D-331: T-043 memory floor: enforced on Linux only, advice on macOS
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-10: is the memory floor enforced on macOS?
+
+**Options considered:**
+1. Measure and enforce on Linux only; macOS shows not measured
+2. Parse vm_stat or an undocumented sysctl on macOS
+
+**Hive recommendation:** Measure and enforce on Linux only; macOS shows not measured
+
+**Keeper choice:** Measure and enforce the memory floor on Linux only; macOS shows not measured and the dispatch check skips that part.
+
+**Rationale:** macOS documents no available-memory value, and vm_stat would start a program inside the check. Decided by the Head Keeper via queen card on 2026-10-26, after the T-043 brief guards (round 1 opus and fable must-fix, rounds 2 and 3 confirming must-fix, round 4 opus pass); recorded by the queen.
+
+## D-332: T-043 without a pace section: no pace output or checks
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-11: what happens in a repo with no pace: section?
+
+**Options considered:**
+1. No section means no pace: no status line, doctor finding or dispatch check; templates carry a commented example
+2. Built-in steady applies everywhere
+
+**Hive recommendation:** No section means no pace: no status line, doctor finding or dispatch check; templates carry a commented example
+
+**Keeper choice:** No pace: section means no pace: no status line, no doctor finding, no dispatch check, as today; the templates carry a commented example and the owner opts in with one Tier 3 commit.
+
+**Rationale:** Keeps every existing golden and the gate-only footprint unchanged. Decided by the Head Keeper via queen card on 2026-10-26, after the T-043 brief guards (round 1 opus and fable must-fix, rounds 2 and 3 confirming must-fix, round 4 opus pass); recorded by the queen.
