@@ -203,3 +203,120 @@ None.
 - **N3. The T-040-stall (b) branch is rarely reachable under the ruled order.** Q-T042-4 (a) (D-303 to D-307, per the caller) puts T-040 before the pin move, so with T-040 stalled T-042 would normally not have merged unless the queen's card also moves the pin ahead of T-040. The text is conditional and correct; the queen card should say which it is, which the sentence already requires.
 - **N4. The fallback gloss omits the ignored-branch guard.** `:356` also requires `branchTicket(h.name)` not ignored. "its ticket's own same-repo branch names" is a fair plain-terms reading and the builder writes from T-039 2.4 item 3 (b), which carries the detail.
 - **N5. The pitch cite is at main.** `gate_commits.go:221` is the `32adb18` line; at `8978c62` the same check is `:223`. Within the brief's re-read-at-dispatch-base allowance.
+
+Risk-Tier: 2
+
+Confirming brief guard for `.waggle/hive/tasks/T-037.md`, finalize round, `t-037-final` at `cb644c6` against `origin/main` `e2ef598`. I worked read-only. I made one scratch worktree at `e2ef598` under the scratchpad and removed it afterward. I read the full brief, the round's diff (1 file, 58 insertions and 58 deletions), the latest rounds of `brief-T-037-opus.md` and `brief-T-037-fable.md`, and D-185, D-279 to D-283, D-303, D-309 and D-320. Every code cite was checked against the code at `e2ef598`, not against the brief.
+
+**Intent Summary:** This round moves the T-037 docs brief onto the merged T-039 (#128, `ec8086b`), T-040 (#135, `300afe9`), the D-320 pin move to `0d102ca` (`52fa51d`) and T-042 (#141, `39f25ac`). All five hashes are ancestors of `e2ef598`. The round re-cites every `file:line` to `e2ef598` and drops every Q-T039-1 (b) and Q-T037-6 (a) fallback, so a claim that names no branch is described only as failing closed with the renew hint. It also rewrites section 2's release assets from `.github/workflows/release.yml` (`eb0ad68`) and narrows the head-unknown claim-map row to runs that pass no `--branch`. Blast radius is the brief text only. No code, control or CI file changes, and section 4 (other-tool facts) is untouched this round.
+
+**What checks out at `e2ef598`:**
+- **Claim map rows.** Every row matches the code:
+  - binding: `gate_commits.go:33-36, 51-64, 69-90, 260-310`
+  - branch check: `:343-369`
+  - no-list failure: `:355-358`
+  - expired claim: `:330-334`
+  - maintainer commit: `:265-268`
+  - base merge: `:199-207, 244-253`
+  - size limits: `:16-23, 173-174, 194-195`
+  - case and length: `:19, 373-395`
+  - head resolution: `gate_verify.go:130-155`, including `sameRepo = !gha || *branch != ""` at `:154`, which justifies the "passes no `--branch`" narrowing
+  - base config exit 3: `:258-296`
+  - PR event and approver: `gate_approve.go:39-42, 107-158, 175-242`
+  - Tier 3 list and claim refusals: `backend.go:29-53, 88, 121-123, 458-474, 491-544`
+  - per-path rules: `changecheck.go:79-124`
+  - repo-listed paths at claim time: `git.go:601-605`
+  - branch defaults and renewal: `internal/dispatch/claim.go:42-45, 58-65`, `request.go:118-119`
+  - owner requirement: `task.go:72-76`
+  - approver config: `config.go:31, 76-83, 127, 207-212, 311`
+- **Test cites.** All resolve: `claim_branches_test.go:28`; `branches_test.go:202, 215, 237-242`; `gate_bind_test.go:255` (`TestBaseConfigFaultsExit3`).
+- **Literal quotes match the code byte for byte:**
+  - the Tier 3 finding (`changecheck.go:94`)
+  - the listed-path finding (`:96`)
+  - `path is outside the claim directories` (`:85`)
+  - the maintainer-commit format (`gate_commits.go:266`)
+  - the usage sentence over `gate.go:55-56`
+  - the `--owner` help (`claim.go:182`, 247)
+  - the usage lines (`:178`, `:243`)
+  - `- name: Fetch claim refs` (template `:29`)
+  - the renew hint and `pull request branch unknown` (`gate_commits.go:348, 356`)
+  - the local warning (`:351`)
+  - the init lines (`main.go:59, 64-65` with the `layout` constants)
+  - `noRefReason` (`init.go:162`)
+  - `PR too large for the gate; split it`
+  - the `render.go:40` headings
+  - `Waggle Gatekeeper`
+  - The T-040 rows 1, 2, 3, 10 and 30 named in section 3 are the merged rows.
+  - No round 3 hive string survives outside tests (grep empty).
+- **Section 2.** Template lines `:5-9, 11-20, 25-30, 32-72` and `gate/action.yml:5-51` are right. The repo workflow differs from the template only at line 68 (`GATE_REF`/`PIN`). `init.go:391-404, 426-440` is right. Doctor findings and exits are right (`doctor.go:25-34, 56-59, 76-81`, `probe.go:36-41`, `probe_github.go:66-73, 153-189`).
+- **Release values** match `release.yml`: the annotated-tag and ancestor-of-main check (`:39-82`), `<version>` without the `v` (`:99`), linux/darwin `.tar.gz` and windows `.zip` on amd64 and arm64 (`:107-150`), `LICENSE` and `NOTICE` in each archive (`:143`), `SHA256SUMS` (`:159-166`), `sha256sum --strict -c SHA256SUMS` (`:199`), and a draft-only release (`:207-223`). No tag exists locally or on origin (`git ls-remote --tags origin` is empty). Only remote claim ref left: `ticket-42`. It lists branches (`t-042`).
+- **Removed fallback.** Nothing still describes the ticket-branch-name fallback as live. The only mentions are the Status history line, section 7's must-fix bullet and section 13's ruled history.
+- **ACs are buildable.** `git diff`, the Grep tool, Read, the four Go commands and no network are enough. `launch.go:74, 80, 82-85` confirm the tool set and the git allowlist.
+- **Lease rule** is unchanged and consistent.
+- **Section 11 budget** meets D-185: 643 bottom-up, doubled to 1,290; target 1,680 (1.3x); stop 2,320 (1.8x); planned cut present.
+- **Threat model** (section 7) and the verbatim guard sentence are present.
+- **Writing rules.** No U+2013 or U+2014 in the file. The Head Keeper is named only by role.
+
+**Blocking Issues (Must-Fix Only):**
+
+1. **must-fix: the keeper_id error is quoted wrong, and the brief names the wrong local file path.** The file is at `.waggle/control/local.yaml`, not `.waggle/local.yaml`.
+   - `internal/layout/layout.go:32` is `Local = ControlDir + "/local.yaml"`, so `internal/config/local.go:22` prints `config: no usable keeper_id in .waggle/control/local.yaml`.
+   - Brief line 166 (section 5, a hunk this round touched) gives it as "the `config: no usable keeper_id in .waggle/local.yaml` error". Section 5 says these are kept literals "which the docs quote literally", so a builder who copies it ships a string the program never prints.
+   - Brief line 67 (3.1) states as fact that a gate-only repo "has no `.waggle/local.yaml`", and line 166 places `keeper_id` "in `.waggle/local.yaml`". Both name a path the code never reads.
+   - Root cause: the `--owner` help T-040 merged (`cmd/waggle/claim.go:182, 247`) names `.waggle/local.yaml`. Quoting that help literally is still right under D-281, but it points readers at a file Waggle ignores. Comments at `internal/dispatch/task.go:24` and `release.go:24` carry the same wrong path.
+   - Effect: a reader who creates `.waggle/local.yaml` for a default owner gets the error and must pass `--owner`. That fails safe, but it is a wrong quote and a wrong statement in public docs.
+   - Fix:
+     - Correct the line 166 quote to `config: no usable keeper_id in .waggle/control/local.yaml` and cite `local.go:22` with `layout.go:32`.
+     - Change the line 67 and line 166 prose path to `.waggle/control/local.yaml`.
+     - Add one builder rule: any doc that quotes the `--owner` help glosses that the file it names is `.waggle/control/local.yaml`.
+     - Add a section 12 follow-up for a product fix to the help text at `claim.go:182, 247`.
+
+**Notes (not must-fix):**
+
+2. **note, `release.yml:199` command.** The brief allows "no command beyond the one the workflow names". That command, `sha256sum --strict -c SHA256SUMS`, checks the full set and exits non-zero when a reader has downloaded only one archive. It fails safe, but the copied line would mislead. Suggest the builder either names no command or says the command needs every archive present.
+
+3. **note, source build step (section 2).** `go build ./cmd/waggle` at the clone root writes an untracked `waggle` binary, and `.gitignore` covers only `bin/`. The next rebuild in that clone then stamps `vcs.modified=true`, and `init --gate-only` refuses with `noRefReason`. Suggest the docs build with `-o` to a path outside the clone. This also fails safe.
+
+4. **note, L1 wording (brief line 99).** "only ASCII branch names can be listed (`backend.go:524-544`), so a PR from another branch cannot pass for a claimed task" reads as a non sequitur. The true point is that a non-ASCII head can never match a listed entry. Clarify on the next touch.
+
+5. **note, claim-map row for claim refusals (line 89).** `ValidateBranches` also refuses an invalid fork repository in an `<owner>/<repo>:<branch>` entry (`backend.go:505-508`). The row's list omits it.
+
+6. **note, the `light`/`full` gloss (line 45).** It cites `backend.go:468-474` as a gate effect, but those lines are the claim-time refusal of Tier 2 directories under `light`, not a gate check. Only `changecheck.go:97-100` is the gate effect.
+
+7. **note, section 8's grep hit list.** It omits three hits that are code comments only (`gate_bind_test.go:20`, `gate_test.go:77`, `gate_verify_test.go:66`). The conclusion that no test reads the repo's docs still holds.
+
+Verdict: must-fix
+
+Risk-Tier: 2
+
+**Intent Summary:** The fix round (cb644c6 to b21e276, one file, `.waggle/hive/tasks/T-037.md`, +13/-12) fixes the opus must-fix. The brief now gives the keeper config path as `.waggle/control/local.yaml` in 3.1 (line 67) and in the program-text list (line 166), and it quotes the `keeper_id` error as `config: no usable keeper_id in .waggle/control/local.yaml`. That matches `internal/config/local.go:22` plus `layout.Local` (`internal/layout/layout.go:32`). A new builder rule says the `--owner` help, which really does say `.waggle/local.yaml`, is quoted literally with a gloss, and section 12 item 11 adds the product fix as a follow-up. The round also folds in the earlier notes: the checksum command needs every archive, `-o` builds, the non-ASCII head, the fork-repository refusal, the light-claim refusal happening at claim time, the `git grep` at a commit in the Layer line, and the claim usage marked as shorthand. It records the queen's 2026-10-26 re-fetch of G1 and G6. Blast radius is the brief only: no code, no control files.
+
+**Must-fix resolution: resolved correctly.** At b21e276 the brief has four lines containing `local.yaml`, and every one is right:
+- Line 67 gives the path as `.waggle/control/local.yaml` with cites `task.go:72-76` and `layout.go:32`. It quotes the help literally, and that quote matches `cmd/waggle/claim.go:182` and `:247` byte for byte at e2ef598. The added `:247` cite for release is correct. The builder rule glossing the help with the real path is accurate.
+- Line 166 has the path and the error quote, and both are correct against `local.go:22` and `layout.go:32`.
+- Line 4 (Status) names the old path only to record the must-fix. That is intentional.
+- Line 226 (section 12 item 11) is correct. At e2ef598, `git grep` finds `.waggle/local.yaml` in product code only in `claim.go:182, 247`, `internal/dispatch/task.go:24` and `internal/dispatch/release.go:24`. The other hit, `internal/scaffold/init_test.go:222`, is a deliberate legacy `.gitignore` fixture.
+
+**Folded notes checked against e2ef598: all correct.**
+- `sha256sum --strict -c SHA256SUMS` is at `release.yml:199` and runs over the full set. The reasoning that one archive fails holds.
+- On `go build`: `.gitignore` ignores only `bin/`. A stray `waggle` binary at the clone root makes the next build `vcs.modified=true`. Then `resolvePin` and `gateRef` (`internal/scaffold/init.go:105-156`) return not ok, and `init.go:426-429` refuses with `noRefReason`. The cite and the claim both hold, and `-o bin/waggle` is safe.
+- On non-ASCII heads: `validBranchName` allows only 0x21 to 0x7e (`backend.go:524-544`), and the gate compares with exact equality (`gate_commits.go:359-368`). So a non-ASCII head never matches, and the "printable ASCII" wording is accurate.
+- The fork-repository refusal at `backend.go:505-508` is correct.
+- The light-claim refusal at `backend.go:468-474` happens at claim time and is not a gate check. That is correct.
+- Section 4: I re-fetched both rows today. G1's sentence stands verbatim, and the page uses "Copilot cloud agent" plus "GitHub Copilot cloud agent" in Further reading. G6's plan sentence stands.
+
+I found no contradiction with sections 3, 10 or 12. Section 12 item 10 ("Closed") and the new item 11 sit together cleanly. Status line 4 says G1 and G6 were re-fetched, which matches item 2's "re-fetch is done".
+
+**Findings**
+
+1. Note, line 226 (section 12 item 11): the product fix also has to change `cmd/waggle/plain_terms_test.go:47` and `:51`. Both pin the wrong-path help string, so a fix ticket that edits only `claim.go` fails its own tests. One clause naming the test would save that ticket a round.
+
+2. Note, section 4 row G6: the new quote "For organizations on the GitHub Enterprise plan, you can set up rulesets at the organization level." puts a period inside the quote marks. On the live page the sentence goes on ("... to target multiple repositories in your organization"). That is a small misquote. Also, "the page states no ... public or private repository split" is true for plan availability, but the same page says push rulesets apply to private or internal repositories. Neither point changes the fallback wording the docs must use.
+
+3. Note, line 67: citing D-281 for the literal quote of the help is a stretch, since D-281 covers hive words in gate output. The general rule on line 47 ("Program text quoted literally") already covers it. This is harmless.
+
+The round introduced no new wrong quotes or cites. Every new code statement can be checked offline at the dispatch base. Only the section 4 web rows need a network, as they did before.
+
+No scratch worktree was created. Nothing was written, committed or pushed.
+
+Verdict: pass
