@@ -5966,3 +5966,180 @@
 **Keeper choice:** (b): T-042 merges before T-037 dispatches; order T-039, T-040, the hive pin move and claim renewals, T-042, T-037. The docs describe only the fail-closed result and quote the renew hint, written once. (a) stays a fallback only on a later queen card if the pin move or renewals slip.
 
 **Rationale:** Matches D-306. Refresh reviewed by opus and fable refresh guards (both must-fix), two fix rounds, fable confirming must-fix, opus confirming pass. Decided by the Head Keeper via queen card on 2026-10-25; recorded by the queen.
+
+## D-310: T-041 Q1: Astro, static output
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** Q-T041-1: which framework builds the docs site?
+
+**Options considered:**
+1. (a) Astro, static output, no UI framework integration
+2. (b) Next.js 16 App Router with output export
+3. (c) A docs framework (Starlight, VitePress, Docusaurus)
+4. (d) No npm: a Go generator in this module
+
+**Hive recommendation:** (a) Astro, static output, no UI framework integration
+
+**Keeper choice:** (a): Astro with static output and no UI framework integration; pages ship no JavaScript, the CSP stays at script-src 'none', and astro is the one direct dependency.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-311: T-041 Q2: plain CSS from the copied tokens
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** Q-T041-2: how is the site styled?
+
+**Options considered:**
+1. (a) Plain CSS from the copied tokens.css in one file
+2. (b) Tailwind v4 with the typography plugin
+
+**Hive recommendation:** (a) Plain CSS from the copied tokens.css in one file
+
+**Keeper choice:** (a): plain CSS from the copied tokens.css, one stylesheet; no Tailwind and no shadcn/ui (the site has no React).
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-312: T-041 Q3: the site lives in site/ at the root
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** Q-T041-3: where does the site source live?
+
+**Options considered:**
+1. (a) site/ at the root
+2. (b) docs/site/
+
+**Hive recommendation:** (a) site/ at the root
+
+**Keeper choice:** (a): site/ at the repo root. D-289 says only that the source lives in this repo, so this narrows it and supersedes nothing.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-313: T-041 Q4: Vercel after merge, every deployment protected, production off until the flip
+
+- **Date:** 2026-10-26
+- **Kind:** publish
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** Q-T041-4: when does production go public?
+
+**Options considered:**
+1. (a) Connect Vercel after merge; Vercel Authentication at All Deployments and git.deploymentEnabled main false until the flip
+2. (b) Production public from T-041's merge
+3. (c) No Vercel project until the flip; host previews only
+
+**Hive recommendation:** (a) Connect Vercel after merge; Vercel Authentication at All Deployments and git.deploymentEnabled main false until the flip
+
+**Keeper choice:** (a): the Head Keeper connects the Vercel project after T-041 merges; Vercel Authentication protects All Deployments and vercel.json sets git.deploymentEnabled main false; the D-235 flip card turns production on in a Head Keeper commit. Falls back to (c) if the level19 team cannot deploy a waggle-sh private repository. The Head Keeper accepts the residual that a Vercel build runs npm code against a checkout of the whole private repo with egress before the redaction.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-314: T-041 Q5: protect the site's dependency and deploy files right after merge
+
+- **Date:** 2026-10-26
+- **Kind:** policy
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** Q-T041-5: how are site/package.json, site/package-lock.json and site/vercel.json protected?
+
+**Options considered:**
+1. (a) Head Keeper control commit right after merge: gate.protected_paths and CODEOWNERS
+2. (b) CODEOWNERS only
+3. (c) Neither
+
+**Hive recommendation:** (a) Head Keeper control commit right after merge: gate.protected_paths and CODEOWNERS
+
+**Keeper choice:** (a): a Head Keeper control commit right after T-041 merges, once its claim is released and before any other site claim, sets gate.protected_paths to gate/,site/package.json,site/package-lock.json,site/vercel.json and adds the three paths to CODEOWNERS. From then on no lease can be site; later site work leases a narrower directory.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-315: T-041 Q6: the hive page includes the CONTRIBUTING glossary
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** Q-T041-6: what is the source of the how-Waggle-builds-Waggle page?
+
+**Options considered:**
+1. (a) Short site intro, hive-flow.svg, and the CONTRIBUTING glossary section included by heading
+2. (b) All of CONTRIBUTING.md
+3. (c) Site-only prose
+
+**Hive recommendation:** (a) Short site intro, hive-flow.svg, and the CONTRIBUTING glossary section included by heading
+
+**Keeper choice:** (a): a short site-authored intro, hive-flow.svg, and the CONTRIBUTING glossary section included by its heading at build time.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-316: T-041 Q7: copied brand assets under Apache-2.0, fonts under OFL-1.1
+
+- **Date:** 2026-10-26
+- **Kind:** policy
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** Q-T041-7: what license covers the copied assets?
+
+**Options considered:**
+1. (a) Apache-2.0 for diagrams, marks and tokens; fonts stay OFL-1.1 with OFL.txt
+2. (b) Brand assets all rights reserved under a separate notice
+
+**Hive recommendation:** (a) Apache-2.0 for diagrams, marks and tokens; fonts stay OFL-1.1 with OFL.txt
+
+**Keeper choice:** (a): diagrams, marks and tokens under Apache-2.0, stated once in SOURCE.md; Apache-2.0 grants no trademark right, so the mark stays protected as a mark; fonts stay OFL-1.1 with each OFL.txt beside them and the RFN check recorded in SOURCE.md.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-317: T-041 Q8: the studio's hero fix
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** Q-T041-8: how is the hero diagram corrected?
+
+**Options considered:**
+1. (a) The studio's prepared fix: deploy/production.tf, approval at the head c3d81f, T-123, PR #1042, no tool names
+2. (b) Keep the workflow path and show an admin merge
+
+**Hive recommendation:** (a) The studio's prepared fix: deploy/production.tf, approval at the head c3d81f, T-123, PR #1042, no tool names
+
+**Keeper choice:** (a): the studio commits its prepared fix: e19f60 changes deploy/production.tf, a repo-listed protected path outside the lease; dana approves at c3d81f, the PR head; T-123 and ticket-123 everywhere; PR #1042; the agent line reads 'From any agent, or a person with a branch.' The queen verifies the five items at the recorded studio commit before the asset PR.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
+
+## D-318: T-041 Q9: All Deployments protection on the Pro plan, $0 more
+
+- **Date:** 2026-10-26
+- **Kind:** spend
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** Q-T041-9: which Vercel plan and protection level?
+
+**Options considered:**
+1. (a) Vercel Authentication at All Deployments plus deploymentEnabled main false: $0 more
+2. (b) Standard Protection, production domain public: $0 more
+3. (c) No Vercel project until the flip: $0
+
+**Hive recommendation:** (a) Vercel Authentication at All Deployments plus deploymentEnabled main false: $0 more
+
+**Keeper choice:** (a): Vercel Authentication at All Deployments plus git.deploymentEnabled main false, on the level19 team's existing Pro plan (checked active 2026-10-25), $0 more; no plan or seat change and no Password Protection. Falls back to (c) if the team cannot deploy a waggle-sh private repository; the queen re-confirms the plan at the finalize round.
+
+**Rationale:** Decided by the Head Keeper via queen card on 2026-10-26, all nine T-041 questions taken as recommended on one card, after the T-041 brief guards (round 1 opus and fable must-fix, round 2 opus must-fix and fable pass, round 3 opus pass); recorded by the queen.
