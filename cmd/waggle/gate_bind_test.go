@@ -52,7 +52,14 @@ func TestBindSources(t *testing.T) {
 	}
 	for _, tc := range cases {
 		r := leaseRepo(t)
-		r.claim(31, "full", active, "docs")
+		switch {
+		case len(tc.extra) > 0:
+			r.claimOn(31, []string{tc.extra[1]}, "full", active, "docs")
+		case tc.name == "env":
+			r.claimOn(31, []string{"t-031"}, "full", active, "docs")
+		default:
+			r.claim(31, "full", active, "docs")
+		}
 		r.write("docs/a.md", []byte("a\n"))
 		r.commit(tc.msg)
 		env := tc.env
@@ -109,7 +116,11 @@ func TestBindConflicts(t *testing.T) {
 	}
 	for _, tc := range cases {
 		r := leaseRepo(t)
-		r.claim(31, "full", active, "docs")
+		if tc.name == "all agree" {
+			r.claimOn(31, []string{tc.branch}, "full", active, "docs")
+		} else {
+			r.claim(31, "full", active, "docs")
+		}
 		r.write("docs/a.md", []byte("a\n"))
 		r.commit(tc.msg)
 		var extra []string

@@ -333,7 +333,7 @@ func TestApproverInertWithoutApprovers(t *testing.T) {
 
 func TestBranchDefaultFromEvent(t *testing.T) {
 	r := leaseRepo(t)
-	r.claim(31, "full", active, "docs")
+	r.claimOn(31, []string{"t-031"}, "full", active, "docs")
 	r.write("docs/a.md", []byte("a\n"))
 	r.commit("add docs")
 	head := r.git("rev-parse", "branch")
