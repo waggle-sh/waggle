@@ -6183,3 +6183,83 @@
 **Keeper choice:** Move the pin from 97127fc04e4d8eb803d4bd7e5c59e218cccc6e6f to 0d102caaac19c48b3cb4259f0881599763ac6882 (main head, carries T-039 #128 and T-040 #135) and apply the re-rendered .github/workflows/waggle-gate.yml (relay-claim stub and inline tier-notice step removed, checkout and setup-go pinned by SHA, gate Action fallback step for a base without the gate source) as a Head Keeper commit; every other managed file is [same]. Opus and fable guards review the PR before a merge card.
 
 **Rationale:** 0d102ca is the known-good build chosen by the Head Keeper (D-041) and is T-042 section 9 Step 1, which must precede the claim renewals and T-042 (D-291 ordering). Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
+
+## D-321: Agent pace settings: Waggle advises, renders into agent tools, and enforces only in waggle dispatch
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-1: what does Waggle enforce for owner-recommended agent pace settings (parallel subagents, CPU and memory)?
+
+**Options considered:**
+1. Advise, render into each agent tool's own settings where a matching knob exists, and enforce in waggle dispatch
+2. Advisory only
+3. Hard CPU and memory caps per agent process
+
+**Hive recommendation:** Advise, render into each agent tool's own settings where a matching knob exists, and enforce in waggle dispatch
+
+**Keeper choice:** Advise, render, enforce in dispatch: the owner's policy is rendered into each agent tool's own settings where that tool exposes a matching knob (like the D-231 settings generator), enforced in waggle dispatch (max concurrent runs and a load check before a run starts), and shown in waggle status and waggle doctor. Anything an agent tool does not expose is documented as advice only.
+
+**Rationale:** Since D-229 the product is the gate and keepers run agents in their own tools; Cells and waggled are cut or frozen (D-231), so Waggle has no process to cap. Hard caps would reopen Cells, a strategy change. Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
+
+## D-322: Agent pace authority: the owner sets bounds in config.yaml, each keeper picks within them in local.yaml
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-2: who decides agent pace settings, the repo owner or each keeper?
+
+**Options considered:**
+1. Owner sets a default and ceilings in config.yaml; each keeper picks within them in local.yaml
+2. Owner decides with no keeper override
+3. Keeper decides; owner values are only recommendations
+
+**Hive recommendation:** Owner sets a default and ceilings in config.yaml; each keeper picks within them in local.yaml
+
+**Keeper choice:** Owner sets bounds, keeper picks: the committed config.yaml (Tier 3, owner only) holds a default profile and ceilings; each keeper's gitignored local.yaml picks a profile within those ceilings.
+
+**Rationale:** Mirrors the existing split of pin, models and context profile, and keepers' machines differ. Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
+
+## D-323: Agent pace knobs: named profiles that map to raw limits the owner can override
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-3: how are agent pace settings expressed?
+
+**Options considered:**
+1. Named profiles plus raw limits
+2. Raw limits only
+3. Profiles only
+
+**Hive recommendation:** Named profiles plus raw limits
+
+**Keeper choice:** Named profiles plus raw limits: profiles such as serial (one task at a time), steady (fixed small parallelism) and max (as many as fit while system load stays under the CPU target), like context: lean | balanced | thorough; each profile maps to raw keys (max parallel runs, max subagents per run, CPU target percent, free-memory floor) the owner can override. Final names and keys are set in the T-043 brief.
+
+**Rationale:** Profiles are easy for keepers to choose; raw keys let the owner tune ceilings. Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
+
+## D-324: T-043 schedule: research brief now, build after T-025 phase C and T-041
+
+- **Date:** 2026-10-26
+- **Kind:** technical
+- **Tickets:** T-043
+- **Supersedes:** none
+
+**Question:** Q-T043-4: when is the agent pace work scheduled?
+
+**Options considered:**
+1. Research and brief now, build after T-041
+2. Brief and build next
+3. Park it
+
+**Hive recommendation:** Research and brief now, build after T-041
+
+**Keeper choice:** Research brief now, build after T-041: a forager verifies, from published sources only, which parallelism and resource knobs Claude Code, Copilot cloud agent and Gas Town expose, and which waggle dispatch lock and claim paths a parallel mode would touch; the scout then writes the T-043 brief with its questions. The build queues after T-025 phase C and the T-041 finalize round.
+
+**Rationale:** Knob availability per tool decides what can be rendered versus only advised, so research comes first; the G5 flip work keeps its order. Decided by the Head Keeper via queen card on 2026-10-26; recorded by the queen.
