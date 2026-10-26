@@ -155,7 +155,7 @@ func ReleaseTask(ctx context.Context, r ReleaseRequest) (res ReleaseTaskResult, 
 			return res, err
 		}
 		if head == "" {
-			return res, failf(ExitClaim, "%w", taggedError{fmt.Sprintf("branch %s is not merged into main (or is absent); the claim stays until it is, or release it with --unmerged on a Keeper card", branches[0]), errNotMerged})
+			return res, failf(ExitClaim, "%w", taggedError{fmt.Sprintf("branch %s is not merged into main (or is absent); the claim stays until it is; if the task merged by squash or rebase, or makes no PR, release it with --unmerged", branches[0]), errNotMerged})
 		}
 		res.Merged, res.Branch = true, head
 	}

@@ -171,7 +171,7 @@ func TestReleaseClaimNoneAndMalformed(t *testing.T) {
 		t.Fatalf("out %q err %v", out, err)
 	}
 	f.git("update-ref", "refs/waggle/claims/ticket-23", "HEAD") // a commit that is no lease
-	if _, err := doRelease(f, unmerged); code(err) != ExitClaim || !strings.Contains(err.Error(), "force-release") || !claimKept(t, f) {
+	if _, err := doRelease(f, unmerged); code(err) != ExitClaim || !strings.Contains(err.Error(), "delete the malformed claim ref by hand") || !claimKept(t, f) {
 		t.Fatalf("err %v, claim kept %v", err, claimKept(t, f))
 	}
 }
