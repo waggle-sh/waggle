@@ -132,7 +132,7 @@ func TestBindHeadKeeperIgnoresBranch(t *testing.T) {
 	r.write("src/a.go", []byte("package src\n"))
 	r.commit("Head Keeper: tweak\n\nWaggle-Ticket: T-031")
 	code, out := r.runWith(nil, "verify", "--branch", "t-031")
-	if code != 1 || !strings.Contains(out, "merge with a Head Keeper bypass") || strings.Contains(out, "T-031") {
+	if code != 1 || !strings.Contains(out, "merge with an admin bypass") || strings.Contains(out, "T-031") {
 		t.Errorf("exit %d\n%s", code, out)
 	}
 }
@@ -236,7 +236,7 @@ func TestProtectedPaths(t *testing.T) {
 	r = protRepo(t, "version: 1\ngate:\n  protected_paths: \".github/\"\n")
 	r.write(".github/workflows/x.yml", []byte("x\n"))
 	r.commit("T-031: ci")
-	if _, out = r.runWith(nil, "tiers"); !strings.Contains(out, "Tier 3 path; needs Head Keeper commit and bypass") || strings.Contains(out, msg) {
+	if _, out = r.runWith(nil, "tiers"); !strings.Contains(out, "Tier 3 path; only an admin bypass merges it, approval does not") || strings.Contains(out, msg) {
 		t.Errorf("hardcoded text\n%s", out)
 	}
 }

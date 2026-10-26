@@ -151,7 +151,7 @@ var (
 	ErrTier3Path = errors.New("comb: lease covers a Tier 3 control-plane path")
 	// ErrWaggleDir reports a lease directory that equals, is inside, or contains
 	// .waggle (any case, hive included). Returned errors also wrap ErrTier3Path.
-	ErrWaggleDir = errors.New("comb: worker leases never include .waggle/; hive files change only through waggle commands or the Head Keeper")
+	ErrWaggleDir = errors.New("comb: leases never include .waggle/; files there change only through waggle commands or an admin merge")
 	// ErrProtectedPath reports a lease directory that covers a path listed in
 	// gate.protected_paths. Returned errors also wrap ErrTier3Path.
 	ErrProtectedPath = errors.New("protected path listed in .waggle/control/config.yaml; leases never cover it")
@@ -163,8 +163,8 @@ var (
 	ErrAlreadyClaimed = errors.New("comb: ticket already claimed")
 	// ErrNotFound reports that no claim ref exists for the ticket.
 	ErrNotFound = errors.New("comb: claim not found")
-	// ErrNotOwner reports a release attempt by a Keeper that does not own the claim.
-	ErrNotOwner = errors.New("comb: claim owned by another keeper")
+	// ErrNotOwner reports a release attempt by an owner that does not hold the claim.
+	ErrNotOwner = errors.New("comb: claim held by another owner")
 	// ErrConcurrentUpdate reports that the claim ref changed between read and delete.
 	ErrConcurrentUpdate = errors.New("comb: claim changed during release")
 	// ErrMalformedClaim reports a claim ref that cannot be decoded into a valid Lease.
@@ -441,7 +441,7 @@ func validateLeaseFields(l Lease, maxDirs int) (Lease, error) {
 	}
 	l.TicketID = id
 	if !keeperIDPattern.MatchString(l.KeeperID) {
-		return Lease{}, fmt.Errorf("keeper id %q: %w", l.KeeperID, ErrInvalidLease)
+		return Lease{}, fmt.Errorf("owner %q: %w", l.KeeperID, ErrInvalidLease)
 	}
 	if !isClaimRole(l.Role) {
 		return Lease{}, fmt.Errorf("role %q: %w", l.Role, ErrInvalidLease)

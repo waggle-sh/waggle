@@ -24,7 +24,7 @@ var ErrRefused = errors.New("scaffold: refused, nothing written")
 const ManagedLine = "# waggle:managed"
 
 // uninstallLastLine closes every uninstall report.
-const uninstallLastLine = "Review with git status, then commit. Removing " + layout.ControlDir + "/ is Tier 3 and needs Head Keeper approval."
+const uninstallLastLine = "Review with git status, then commit. Removing " + layout.ControlDir + "/ is Tier 3, so only an admin bypass merges it."
 
 // UninstallOptions holds flags passed to `waggle uninstall`.
 type UninstallOptions struct {

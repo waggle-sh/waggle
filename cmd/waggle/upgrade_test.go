@@ -71,7 +71,7 @@ func TestRunUpgradeDryRunAndApply(t *testing.T) {
 	git(t, dir, "commit", "-q", "-m", "init")
 	chdir(t, dir)
 
-	last := "Review with git status, then open a hive PR. This changes .waggle/control/ (Tier 3) and needs Head Keeper approval."
+	last := "Review with git status, then open a PR. This changes .waggle/control/ (Tier 3), so only an admin bypass merges it."
 	code, out, errb := runUp("--runtime=none")
 	if code != 0 || !strings.Contains(out, "Dry run: nothing changed") || !strings.Contains(out, last) || errb != "" {
 		t.Errorf("dry run: code %d, stdout %q, stderr %q", code, out, errb)

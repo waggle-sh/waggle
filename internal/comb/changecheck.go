@@ -91,7 +91,7 @@ func CheckChangesPolicy(l Lease, changes []Change, p TierPolicy) []Violation {
 		}
 		switch tier := RequiredMinTier(c.Path); {
 		case tier == Tier3ControlPlane:
-			add(RuleTier3, c.Path, "Tier 3 path; needs Head Keeper commit and bypass")
+			add(RuleTier3, c.Path, "Tier 3 path; only an admin bypass merges it, approval does not")
 		case p.listed(c.Path):
 			add(RuleTier3, c.Path, "protected path (listed in .waggle/control/config.yaml); needs an admin bypass to merge")
 		case tier == Tier2Logic:

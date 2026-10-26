@@ -74,7 +74,7 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 				return exit(1, "refused: found %s: %v", legacy, scaffold.ErrLegacyLayout)
 			}
 		}
-		return exit(1, "refused: not a hive: %s not found; run waggle init", layout.Config)
+		return exit(1, "refused: not a Waggle repo: %s not found; run waggle init", layout.Config)
 	}
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
@@ -161,11 +161,11 @@ func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaims
 	if len(pin) == 40 && strings.Trim(pin, "0123456789abcdef") == "" {
 		pin = pin[:7] + "..."
 	}
-	fmt.Fprintf(&b, "Hive: %s  pin %s  comb %s (%s)\n", h.Name, pin, h.Mode, cmp.Or(h.Remote, "local"))
+	fmt.Fprintf(&b, "Repo: %s  pin %s  claim refs %s (%s)\n", h.Name, pin, h.Mode, cmp.Or(h.Remote, "local"))
 	if h.Daemon {
-		b.WriteString("waggled: running (socket present)\n")
+		b.WriteString("daemon: running (socket present)\n")
 	} else {
-		fmt.Fprintf(&b, "waggled: stopped (no %s)\n", layout.Socket)
+		fmt.Fprintf(&b, "daemon: stopped (no %s)\n", layout.Socket)
 	}
 
 	sorted := append([]comb.Lease(nil), leases...)
