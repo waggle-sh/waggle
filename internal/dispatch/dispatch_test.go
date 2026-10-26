@@ -232,7 +232,7 @@ func TestAcquireClaimMalformed(t *testing.T) {
 	commit := sh(t, dir, "commit-tree", tree, "-m", "junk")
 	sh(t, dir, "update-ref", "refs/waggle/claims/ticket-23", commit)
 	_, err := AcquireClaim(context.Background(), b, &Git{Dir: dir}, mustValid(t, okReq(dir)), "alice", *now)
-	if code(err) != ExitClaim || !errors.Is(err, comb.ErrMalformedClaim) || !strings.Contains(err.Error(), "force-release") {
+	if code(err) != ExitClaim || !errors.Is(err, comb.ErrMalformedClaim) || !strings.Contains(err.Error(), "delete the malformed claim ref by hand") {
 		t.Fatalf("malformed: %v", err)
 	}
 	if got := sh(t, dir, "rev-parse", "refs/waggle/claims/ticket-23"); got != commit {

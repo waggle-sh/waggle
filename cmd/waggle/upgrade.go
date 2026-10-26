@@ -28,8 +28,8 @@ func runUpgrade(args []string, stdout, stderr io.Writer) int {
 	}
 	apply := fs.Bool("apply", false, "Execute the plan (default: dry run, print it and change nothing)")
 	diff := fs.Bool("diff", false, "Print a unified diff under every [rewrite] line")
-	allowDowngrade := fs.Bool("allow-downgrade", false, "Permit a release tag lower than the hive pin")
-	rt := fs.String("runtime", "claude-code", "Local Keeper agent runtime whose shims to regenerate ('claude-code' or 'none')")
+	allowDowngrade := fs.Bool("allow-downgrade", false, "Permit a release tag lower than the current pin")
+	rt := fs.String("runtime", "claude-code", "Local agent runtime whose shims to regenerate ('claude-code' or 'none')")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
