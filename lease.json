@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "ticket_id": "T-037",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "CONTRIBUTING.md",
+    "README.md",
+    "docs"
+  ],
+  "claimed_at": "2026-10-26T17:38:26Z",
+  "expires_at": "2026-10-26T19:38:26Z",
+  "branches": [
+    "t-037"
+  ]
+}
