@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package decisions is the append-only writer for the hive decision log,
 // .waggle/hive/DECISIONS.md. It validates one structured entry, assigns the
 // next ID, and atomically appends the rendered entry; nothing in this package

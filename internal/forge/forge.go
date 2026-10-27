@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package forge puts the code host behind a hive (GitHub, or none) behind one
 // small interface so that Waggle's core stays plain git. Core packages (comb,
 // decisions, dispatch's claim and lease code) never import this package. The

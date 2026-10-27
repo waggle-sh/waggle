@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package usage reads and writes the per-machine token and cost ledger
 // (layout.Usage, T-021 section 8) and renders the usage section of
 // waggle status. The launcher (T-023) appends with Append; status reads with
