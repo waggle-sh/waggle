@@ -122,7 +122,7 @@ func TestSecondRefusesEmptyModel(t *testing.T) {
 		runs := t.TempDir()
 		rec(t, runs, "T-034-builder-1", Result{Model: c.builder})
 		rec(t, runs, "T-034-guard-1", Result{HeadOID: "A", Verdict: "pass", Model: c.guard})
-		_, _, err := guardModel(runs, p, task34(1, nil), "t-034", "A", true)
+		_, _, err := guardModel(runs, p, task34(1, nil), "t-034", "A", true, false)
 		if code(err) != ExitEnv || err == nil || !strings.Contains(err.Error(), "--second: run record "+c.name+" has no model") {
 			t.Errorf("%s: %v", c.name, err)
 		}
