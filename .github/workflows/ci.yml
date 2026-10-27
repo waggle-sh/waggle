@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: Apache-2.0
 # Product CI for the waggle repo (T-019, D-072). Not part of the hive gate
 # (waggle-gate.yml) and not scaffolded into other hives.
 name: Product CI

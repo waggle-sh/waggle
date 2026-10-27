@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: Apache-2.0
 name: Waggle gate
 description: Build waggle from this Action's own pinned tree and run waggle gate verify on a pull request.
 

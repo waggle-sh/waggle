@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: Apache-2.0
 # Head Keeper review required (T-015). Scaffold templates become control-plane
 # code in every downstream hive, and README.md defines every Waggle term, so a
 # PR touching them needs the Head Keeper as a code owner reviewer. Enforced only
@@ -10,3 +10,6 @@
 /.github/CODEOWNERS             @paulternate
 /.github/workflows/             @paulternate
 /.github/actions/               @paulternate
+/LICENSE                        @paulternate
+/NOTICE                         @paulternate
+/LICENSES/                      @paulternate
