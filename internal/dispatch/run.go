@@ -357,7 +357,9 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 		},
 		func() (e error) {
 			if !guard {
-				claim, e = AcquireClaim(ctx, backend, g, req, l.keeper, now())
+				cr := req
+				cr.addBranch = true
+				claim, e = AcquireClaim(ctx, backend, g, cr, l.keeper, now())
 				want = claim.Lease
 			}
 			return
