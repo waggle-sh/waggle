@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "ticket_id": "T-045",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle",
+    "internal/dispatch"
+  ],
+  "claimed_at": "2026-10-27T20:00:38Z",
+  "expires_at": "2026-10-27T22:00:38Z",
+  "branches": [
+    "t-045"
+  ]
+}
