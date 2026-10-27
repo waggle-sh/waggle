@@ -6421,3 +6421,42 @@
 **Keeper choice:** No pace: section means no pace: no status line, no doctor finding, no dispatch check, as today; the templates carry a commented example and the owner opts in with one Tier 3 commit.
 
 **Rationale:** Keeps every existing golden and the gate-only footprint unchanged. Decided by the Head Keeper via queen card on 2026-10-26, after the T-043 brief guards (round 1 opus and fable must-fix, rounds 2 and 3 confirming must-fix, round 4 opus pass); recorded by the queen.
+
+## D-333: T-025: gate/ is Apache-2.0
+
+- **Date:** 2026-10-27
+- **Kind:** policy
+- **Tickets:** T-025
+- **Supersedes:** none
+
+**Question:** Q-T025-12: which license does gate/ (the composite GitHub Action) carry?
+
+**Options considered:**
+1. Apache-2.0 as product code under D-129
+2. MIT-0 as glue paired with the gate workflow template, named in NOTICE and the README
+3. Exempt from the header check
+
+**Hive recommendation:** Apache-2.0 as product code under D-129
+
+**Keeper choice:** Apache-2.0: gate/action.yml line 1 switches from MIT-0 to Apache-2.0 in the T-025 phase B Head Keeper commit, with the matching assertion in internal/scaffold/gate_action_test.go changed in the same commit.
+
+**Rationale:** Host repos call the Action by reference and never copy it, so Apache-2.0 asks nothing of them, and NOTICE and the README stay accurate as written. Decided by the Head Keeper via queen card on 2026-10-27, after the T-025 phase C finalize round; recorded by the queen.
+
+## D-334: T-025: CLAUDE.md is exempt from the SPDX check
+
+- **Date:** 2026-10-27
+- **Kind:** technical
+- **Tickets:** T-025
+- **Supersedes:** none
+
+**Question:** Q-T025-13: does CLAUDE.md carry an SPDX header?
+
+**Options considered:**
+1. Exempt, like .gitignore
+2. MIT-0 and checked, header added above the marker block in phase B
+
+**Hive recommendation:** Exempt, like .gitignore
+
+**Keeper choice:** Exempt: CLAUDE.md joins the exempt row of the T-025 header table; phase B adds no header to it.
+
+**Rationale:** It holds only the marker block that waggle init manages. Decided by the Head Keeper via queen card on 2026-10-27, after the T-025 phase C finalize round; recorded by the queen.
