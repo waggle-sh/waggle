@@ -72,6 +72,7 @@ type Result struct {
 	NotEnforced    []string         `json:"not_enforced"`
 	Verdict        string           `json:"verdict"`
 	Second         bool             `json:"second"`
+	KeeperCommit   bool             `json:"keeper_commit"`
 	MustFix        int              `json:"must_fix"`         // the count the model step-up used (D-188)
 	Survivors      []Survivor       `json:"survivors_killed"` // processes that outlived the worker and were killed (D-187)
 	Pushed         bool             `json:"pushed"`

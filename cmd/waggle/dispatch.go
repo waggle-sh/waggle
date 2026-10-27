@@ -38,7 +38,7 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, "Usage: waggle dispatch <ticket> --role builder|forager --dir <path>... --gate light|full --no-cell")
-		fmt.Fprintln(stderr, "       waggle dispatch <ticket> --role guard --branch <branch> --no-cell [--second] [--base <rev>] [--tier 0-3] [--json]")
+		fmt.Fprintln(stderr, "       waggle dispatch <ticket> --role guard --branch <branch> --no-cell [--second] [--keeper-commit] [--base <rev>] [--tier 0-3] [--json]")
 		fmt.Fprintln(stderr, "       waggle dispatch clean <ticket> [--role builder|forager|guard] [--runs] [--repo <dir>]")
 		fmt.Fprintln(stderr, "       waggle dispatch clean --host-record [--accept <digest>] [--repo <dir>]")
 		fmt.Fprintln(stderr, "       [--branch <b>] [--base <rev>] [--tier 0-3] [--read <path>...] [--timeout 120m] [--no-push] [--keep-worktree] [--json] [--repo <dir>]")
@@ -51,6 +51,7 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 	var dirs, reads listFlag
 	role, gate := fs.String("role", "", "builder, forager or guard"), fs.String("gate", "", "light or full")
 	second := fs.Bool("second", false, "guard: a model different from the builder's and the first guard's")
+	keeperCommit := fs.Bool("keeper-commit", false, "guard: the head is a Head Keeper commit with no builder run on this branch")
 	branch, base, repo := fs.String("branch", "", "branch, default t-<nnn>"), fs.String("base", "", "base revision"), fs.String("repo", ".", "repository")
 	tier, timeout := fs.Int("tier", -1, "risk tier 0 to 3"), fs.Duration("timeout", 120*time.Minute, "session timeout")
 	noCell, noPush := fs.Bool("no-cell", false, "run on the host without a Cell (required)"), fs.Bool("no-push", false, "do not push the branch")
@@ -80,7 +81,7 @@ func runDispatch(args []string, stdout, stderr io.Writer) int {
 		}
 		return dispatch.ExitUsage
 	}
-	req := dispatch.Request{RepoDir: *repo, Ticket: ticket, Role: *role, Dirs: dirs, Gate: *gate, Branch: *branch, Base: *base, ReadPaths: reads, Second: *second}
+	req := dispatch.Request{RepoDir: *repo, Ticket: ticket, Role: *role, Dirs: dirs, Gate: *gate, Branch: *branch, Base: *base, ReadPaths: reads, Second: *second, KeeperCommit: *keeperCommit}
 	if *tier != -1 {
 		t := comb.RiskTier(*tier)
 		req.Tier = &t
