@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: MIT-0
 # SessionStart hook (hive): prime a fresh, resumed, cleared or compacted queen
 # session with the handoff and the live repo state. Stdout becomes context.
 # Handoff order (WAGGLE.md section 4): the newest
