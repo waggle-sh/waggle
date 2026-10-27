@@ -65,7 +65,9 @@ type Request struct {
 	Tier      *comb.RiskTier
 	ReadPaths []string // read-only context, repo-relative, read from base
 	Second    bool     // guard only: also avoid the first guard's model (D-100)
-	Head      string   // set by Run for a guard: the OID under review, where its worktree is detached
+	// KeeperCommit is guard only: the head is a Head Keeper commit and no builder ran on the branch.
+	KeeperCommit bool
+	Head         string // set by Run for a guard: the OID under review, where its worktree is detached
 
 	// ClaimBranches is the branch list a claim records when the caller names one.
 	ClaimBranches []string
@@ -107,6 +109,8 @@ func (r Request) Validate() (Request, error) {
 		return r, failf(ExitUsage, "a guard takes its directories and gate from the builder's claim; drop --dir and --gate")
 	case r.Second && !guard:
 		return r, failf(ExitUsage, "--second is for the guard role")
+	case r.KeeperCommit && !guard:
+		return r, failf(ExitUsage, "--keeper-commit is for the guard role")
 	case !guard && r.Gate != "light" && r.Gate != "full":
 		return r, failf(ExitUsage, "gate %q: must be light or full", r.Gate)
 	}

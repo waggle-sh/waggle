@@ -279,12 +279,15 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 				sel, e = l.policy.Resolve(req.Role, task, nil)
 				return
 			}
-			sel, guardWarns, e = guardModel(runs, l.policy, *task, req.Branch, req.Head, req.Second)
+			sel, guardWarns, e = guardModel(runs, l.policy, *task, req.Branch, req.Head, req.Second, req.KeeperCommit)
 			return
 		},
 		func() error {
 			if req.Second {
-				return checkSecond(ctx, g, runs, req.Ticket, req.Branch, req.Head, baseOID, sel.Model)
+				pb := *task // the policy's builder model, for the keeper path's re-check
+				pb.SecondGuard = false
+				built, _ := l.policy.Resolve("builder", &pb, nil)
+				return checkSecond(ctx, g, runs, req.Ticket, req.Branch, req.Head, baseOID, sel.Model, req.KeeperCommit, built.Model)
 			}
 			return nil
 		},
@@ -334,6 +337,9 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 			if guard {
 				want, req.Head, claim.OID, e = guardTarget(ctx, backend, g, req)
 				claim.Verb = "read"
+				if req.KeeperCommit && claim.OID == "" {
+					claim.Verb = "none"
+				}
 			}
 			return
 		},
@@ -385,7 +391,7 @@ func Run(ctx context.Context, req Request, d Deps) (res Result, err error) {
 	}
 	res = Result{Schema: 1, Ticket: req.Ticket, Role: req.Role, Branch: req.Branch, BaseOID: baseOID, CheckBaseOID: w.CheckBase,
 		Worktree: w.Path, RunDir: runDir, KeeperID: l.keeper, ClaimOID: claim.OID, ClaimVerb: claim.Verb, ClaimNotes: claim.Notes,
-		Second: req.Second, Cell: d.Cell.Name(), RuntimeVersion: runtimeVersion(ctx, rt.Config().Binary), Model: sel.Model, Profile: cs.Profile.String(),
+		Second: req.Second, KeeperCommit: req.KeeperCommit, Cell: d.Cell.Name(), RuntimeVersion: runtimeVersion(ctx, rt.Config().Binary), Model: sel.Model, Profile: cs.Profile.String(),
 		Floored: cs.Floored, StartedAt: now().UTC(), Final: "final.md", Transcript: "transcript.jsonl", StderrLog: "stderr.log"}
 	res.Warnings = slices.Concat(lockWarns, w.Warnings, claim.Warnings, guardWarns)
 	if point != w.CheckBase { // the branch moved between the two reads; Provision's value stays
