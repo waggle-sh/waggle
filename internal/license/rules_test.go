@@ -42,6 +42,21 @@ func TestWantRows(t *testing.T) {
 		{".waggle/control/WAGGLE.md", "MIT-0", HTML, true},
 		{".waggle/control/scripts/scan-hive.sh", "MIT-0", Hash, true},
 		{".claude/hooks/session-start.sh", "MIT-0", Hash, true},
+		{"site/package.json", "", 0, false},
+		{"site/package-lock.json", "", 0, false},
+		{"site/public/fonts/OFL-public-sans.txt", "", 0, false},
+		{"site/public/favicon.svg", "", 0, false},
+		{"site/src/assets/brand/tokens.css", "", 0, false},
+		{"site/src/assets/brand/diagrams/gate-hero.svg", "", 0, false},
+		{"site/src/assets/brand/mark/waggle-lockup-outlined-mono.svg", "", 0, false},
+		{"site/src/assets/brand/SOURCE.md", "Apache-2.0", HTML, true},
+		{"site/src/lib/sources.ts", "Apache-2.0", Slash, true},
+		{"site/scripts/check-dist.mjs", "Apache-2.0", Slash, true},
+		{"site/src/pages/index.astro", "Apache-2.0", Slash, true},
+		{"site/go.mod", "Apache-2.0", Slash, true},
+		{"site/src/styles/site.css", "Apache-2.0", Block, true},
+		{"site/.gitignore", "Apache-2.0", Hash, true},
+		{"site/.env.example", "Apache-2.0", Hash, true},
 	}
 	for _, tt := range tests {
 		id, form, ok, err := Want(tt.path)
@@ -63,6 +78,8 @@ func TestWantErrors(t *testing.T) {
 		"internal/comb/notes.txt":        "unknown extension",
 		"internal/scaffold/templates/x":  "unknown extension",
 		"internal/scaffold/templates/.a": "unknown extension",
+		"site/src/x.svg":                 "unknown extension",
+		"site/notes.txt":                 "unknown extension",
 	} {
 		_, _, _, err := Want(path)
 		if err == nil || !strings.Contains(err.Error(), want) {
@@ -118,6 +135,13 @@ func TestCheck(t *testing.T) {
 		{"exempt", "go.mod", "module x\n", ""},
 		{"unchecked", ".waggle/hive/a.md", "plain\n", ""},
 		{"unknown path", "newdir/a.go", goOK, "unknown path"},
+		{"css ok", "site/a.css", "/* SPDX-License-Identifier: Apache-2.0 */\nbody {}\n", ""},
+		{"css wrong form", "site/a.css", "// SPDX-License-Identifier: Apache-2.0\nbody {}\n", "wrong SPDX header"},
+		{"astro ok", "site/a.astro", "---\n// SPDX-License-Identifier: Apache-2.0\n\n---\n<p></p>\n", ""},
+		{"astro header on line 1", "site/a.astro", "// SPDX-License-Identifier: Apache-2.0\n---\n", "after a --- fence on line 1"},
+		{"astro wrong id", "site/a.astro", "---\n// SPDX-License-Identifier: MIT-0\n\n---\n", "wrong SPDX header"},
+		{"astro no blank line", "site/a.astro", "---\n// SPDX-License-Identifier: Apache-2.0\n---\n", "blank line"},
+		{"ts no blank line", "site/a.ts", "// SPDX-License-Identifier: Apache-2.0\nexport {}\n", "blank line"},
 	}
 	for _, tt := range tests {
 		err := Check(tt.path, []byte(tt.content))
