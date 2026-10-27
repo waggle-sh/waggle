@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT-0
 # scan-hive.sh: privacy and policy scan for a hive branch (D-183).
 #
 # Usage: .waggle/control/scripts/scan-hive.sh [base] [head]
