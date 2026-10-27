@@ -83,14 +83,18 @@ func countReviewMustFix(data []byte) int {
 // guardTaskLines replace the commit rules of TaskLines (T-023 10.2). bash is the
 // guard's runtime.BashCommands list, without git add or git commit.
 func guardTaskLines(req Request, baseOID string, lease comb.Lease, bash []string) []string {
+	dirs, gate := strings.Join(lease.Directories, ", "), lease.Gate
+	if req.KeeperCommit { // a Head Keeper branch is Tier 3, so gate full; no builder phase's directories apply
+		dirs, gate = "none (Head Keeper commit)", "full (Head Keeper commit)"
+	}
 	return []string{
 		"Ticket: " + req.Ticket,
 		"Role: guard",
 		"Branch: " + req.Branch,
 		"Base: " + baseOID,
 		"Head under review: " + req.Head,
-		"Lease directories: " + strings.Join(lease.Directories, ", "),
-		"Gate: " + lease.Gate,
+		"Lease directories: " + dirs,
+		"Gate: " + gate,
 		bashLine(bash),
 		"Rules: do not commit; write no file in the repo; your final message is the review; delete any probe files before your final message; end with `Verdict: pass` or `Verdict: must-fix` as the last line of your final message.",
 	}
@@ -103,10 +107,17 @@ func guardTarget(ctx context.Context, cb ClaimBackend, g *Git, req Request) (lea
 		return lease, "", "", claimError(err)
 	}
 	switch lease, err = cb.ReadClaim(ctx, req.Ticket); {
+	case errors.Is(err, comb.ErrNotFound) && req.KeeperCommit:
+		lease, claimOID = comb.Lease{}, "" // no claim: a Head Keeper branch may have none
 	case errors.Is(err, comb.ErrNotFound):
 		return lease, "", "", failf(ExitClaim, "no claim for %s: the guard reads the builder's claim", req.Ticket)
 	case err != nil:
 		return lease, "", "", claimError(err)
+	case req.KeeperCommit && slices.Contains(lease.Branches, req.Branch):
+		return lease, "", "", failf(ExitEnv, "--keeper-commit: the claim for %s lists branch %s; drop --keeper-commit", req.Ticket, req.Branch)
+	}
+	if req.KeeperCommit { // the post-run check names the ticket's own claim ref from this
+		lease.TicketID = req.Ticket
 	}
 	rev, ok := g.branchRev(ctx, req.Branch)
 	if !ok {
@@ -160,19 +171,25 @@ func guardRun(runs, ticket, branch string, keep func(Result) bool) (Result, stri
 // avoids the previous round's guard model (D-205), and repeats it with a
 // warning only when no other model is left. A second guard avoids this round's
 // first guard model and needs both records.
-func guardModel(runs string, p runtime.Policy, task runtime.TaskContext, branch, head string, second bool) (runtime.Selection, []string, error) {
+func guardModel(runs string, p runtime.Policy, task runtime.TaskContext, branch, head string, second, keeper bool) (runtime.Selection, []string, error) {
 	b, bName, okB := builderRun(runs, task.TaskID, branch)
+	if err := keeperBuilder(keeper, bName, branch, okB); err != nil {
+		return runtime.Selection{}, nil, err
+	}
 	if okB {
 		task.AvoidModels, task.RecordedBuilder = []string{b.Model}, b.Model
 	}
 	if second {
 		f, fName, okF := guardRun(runs, task.TaskID, branch, func(r Result) bool { return r.HeadOID == head })
-		if !okB || !okF {
-			return runtime.Selection{}, nil, secondMissing(task.TaskID, head)
+		if !okF || (!okB && !keeper) {
+			return runtime.Selection{}, nil, secondMissing(task.TaskID, head, keeper)
 		}
-		for _, rec := range []struct {
-			name, model string
-		}{{bName, b.Model}, {fName, f.Model}} {
+		type named struct{ name, model string }
+		recs := []named{{fName, f.Model}}
+		if okB {
+			recs = []named{{bName, b.Model}, {fName, f.Model}}
+		}
+		for _, rec := range recs {
 			if rec.model == "" {
 				return runtime.Selection{}, nil, failf(ExitEnv, "--second: run record %s has no model", rec.name)
 			}
@@ -210,6 +227,16 @@ func guardModel(runs string, p runtime.Policy, task runtime.TaskContext, branch,
 	return sel, warns, nil
 }
 
+// keeperBuilder refuses --keeper-commit on a branch with a builder record, any
+// head and any end: the flag swaps the builder-record requirement for its
+// opposite (T-045 3.2).
+func keeperBuilder(keeper bool, name, branch string, found bool) error {
+	if keeper && found {
+		return failf(ExitEnv, "--keeper-commit: builder run %s is on branch %s; drop --keeper-commit", name, branch)
+	}
+	return nil
+}
+
 // checkBuilderModel refuses a plain guard on the builder record's model. Resolve
 // avoids it already; this keeps the rule if that ever changes.
 func checkBuilderModel(model string, b Result, name string, ok bool) error {
@@ -219,7 +246,10 @@ func checkBuilderModel(model string, b Result, name string, ok bool) error {
 	return nil
 }
 
-func secondMissing(ticket, head string) error {
+func secondMissing(ticket, head string, keeper bool) error {
+	if keeper {
+		return failf(ExitEnv, "--second needs a first guard run of %s on head %s in %s/runs", ticket, shortOID(head), layout.Worktrees)
+	}
 	return failf(ExitEnv, "--second needs a builder run and a first guard run of %s on head %s in %s/runs", ticket, shortOID(head), layout.Worktrees)
 }
 
@@ -242,11 +272,29 @@ func secondBase(runs, ticket, branch string) (oid, name string, err error) {
 // guard's base exactly (its brief, reviews and must-fix count), with the
 // builder's base equal to it or an ancestor of it, and on a model that neither
 // record used. No record value reaches git before its hex check.
-func checkSecond(ctx context.Context, g *Git, runs, ticket, branch, head, baseOID, model string) error {
+func checkSecond(ctx context.Context, g *Git, runs, ticket, branch, head, baseOID, model string, keeper bool, policyBuilder string) error {
 	b, bName, okB := builderRun(runs, ticket, branch)
 	f, fName, okF := guardRun(runs, ticket, branch, func(r Result) bool { return r.HeadOID == head })
+	if err := keeperBuilder(keeper, bName, branch, okB); err != nil {
+		return err
+	}
+	if keeper { // no builder base: no ancestry rule, nothing reaches merge-base (T-045 3.4)
+		switch {
+		case !okF:
+			return secondMissing(ticket, head, true)
+		case !hexHead.MatchString(f.BaseOID):
+			return failf(ExitEnv, "--second: run record %s has no valid base_oid", fName)
+		case baseOID != f.BaseOID:
+			return failf(ExitEnv, "--second: base %s differs from the first guard's base %s; pass --base %s", baseOID, f.BaseOID, f.BaseOID)
+		case model == f.Model:
+			return failf(ExitEnv, "--second would use %s, the model of the first guard (%s)", model, f.Model)
+		case policyBuilder != "" && model == policyBuilder:
+			return failf(ExitEnv, "--second would use %s, the policy's builder model", model)
+		}
+		return nil
+	}
 	if !okB || !okF {
-		return secondMissing(ticket, head)
+		return secondMissing(ticket, head, false)
 	}
 	for _, r := range []struct{ name, oid string }{{bName, b.BaseOID}, {fName, f.BaseOID}} {
 		if !hexHead.MatchString(r.oid) {

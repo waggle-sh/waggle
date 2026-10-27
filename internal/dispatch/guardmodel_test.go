@@ -139,17 +139,17 @@ func TestGuardAlternates(t *testing.T) {
 	rec(t, runs, "T-034-builder-1", Result{Model: "sonnet"})
 	rec(t, runs, "T-034-guard-1", Result{HeadOID: "A", Verdict: "must-fix", Model: "opus"})
 	rec(t, runs, "T-034-guard-2", Result{HeadOID: "A", Verdict: "pass", Model: "fable", Second: true})
-	sel, warns, err := guardModel(runs, p, task34(1, nil), "t-034", "B", false)
+	sel, warns, err := guardModel(runs, p, task34(1, nil), "t-034", "B", false, false)
 	wantPick(t, sel, warns, err, pick{"fable", ""})
 	tier2 := comb.Tier2Logic
-	sel, warns, err = guardModel(runs, p, task34(1, &tier2), "t-034", "B", false)
+	sel, warns, err = guardModel(runs, p, task34(1, &tier2), "t-034", "B", false, false)
 	wantPick(t, sel, warns, err, pick{"opus", ""})
 
 	rec(t, runs, "T-034-guard-3", Result{HeadOID: "B", Verdict: "must-fix", Model: "fable"})
-	sel, warns, err = guardModel(runs, p, task34(1, nil), "t-034", "C", false)
+	sel, warns, err = guardModel(runs, p, task34(1, nil), "t-034", "C", false, false)
 	wantPick(t, sel, warns, err, pick{"opus", ""})
 	rec(t, runs, "T-034-guard-4", Result{HeadOID: "C", Verdict: "pass", Model: "opus"})
-	sel, warns, err = guardModel(runs, p, task34(1, nil), "t-034", "C", true)
+	sel, warns, err = guardModel(runs, p, task34(1, nil), "t-034", "C", true, false)
 	wantPick(t, sel, warns, err, pick{"fable", ""})
 
 	// After a builder step-up: builder opus, so the walk gives sonnet after fable.
@@ -157,17 +157,17 @@ func TestGuardAlternates(t *testing.T) {
 	rec(t, stepped, "T-034-builder-1", Result{Model: "sonnet"})
 	rec(t, stepped, "T-034-guard-1", Result{HeadOID: "B", Verdict: "must-fix", Model: "fable"})
 	rec(t, stepped, "T-034-builder-2", Result{Model: "opus"})
-	sel, warns, err = guardModel(stepped, p, task34(2, nil), "t-034", "C", false)
+	sel, warns, err = guardModel(stepped, p, task34(2, nil), "t-034", "C", false, false)
 	wantPick(t, sel, warns, err, pick{"sonnet", ""})
 
 	// One guard model only: the guard repeats it and says so.
-	sel, warns, err = guardModel(runs, hiveShape(false), task34(1, nil), "t-034", "D", false)
+	sel, warns, err = guardModel(runs, hiveShape(false), task34(1, nil), "t-034", "D", false, false)
 	wantPick(t, sel, warns, err, pick{"opus", "confirm_model_repeated: opus also reviewed C; no other guard model is available (D-205)"})
 
 	empty := t.TempDir()
-	sel, warns, err = guardModel(empty, p, task34(1, nil), "t-034", "abcdef0123", false)
+	sel, warns, err = guardModel(empty, p, task34(1, nil), "t-034", "abcdef0123", false, false)
 	wantPick(t, sel, warns, err, pick{"opus", "confirm_model_unknown: no guard run record for t-034 before abcdef0; the model did not alternate (D-205)"})
-	sel, warns, err = guardModel(empty, p, task34(0, nil), "t-034", "abcdef0123", false)
+	sel, warns, err = guardModel(empty, p, task34(0, nil), "t-034", "abcdef0123", false, false)
 	wantPick(t, sel, warns, err, pick{"opus", ""})
 }
 
@@ -177,18 +177,18 @@ func TestGuardAvoidsBuilderRecord(t *testing.T) {
 	runs := t.TempDir()
 	rec(t, runs, "T-034-builder-1", Result{Model: "sonnet"})
 	rec(t, runs, "T-034-guard-1", Result{HeadOID: "B", Verdict: "must-fix", Model: "fable"})
-	sel, warns, err := guardModel(runs, hiveShape(true), task34(2, nil), "t-034", "C", false)
+	sel, warns, err := guardModel(runs, hiveShape(true), task34(2, nil), "t-034", "C", false, false)
 	wantPick(t, sel, warns, err, pick{"fable", "confirm_model_repeated: fable also reviewed B"})
 
-	sel, warns, err = guardModel(runs, hiveShape(false), task34(2, nil), "t-034", "C", false)
+	sel, warns, err = guardModel(runs, hiveShape(false), task34(2, nil), "t-034", "C", false, false)
 	if !errors.Is(err, runtime.ErrNoCrossModel) || !strings.Contains(err.Error(), "shares") || sel.Model != "" || warns != nil {
 		t.Fatalf("only the builder record's model left: model %q warnings %q err %v", sel.Model, warns, err)
 	}
 
 	tier2 := comb.Tier2Logic
-	sel, warns, err = guardModel(runs, hiveShape(true), task34(2, &tier2), "t-034", "C", false)
+	sel, warns, err = guardModel(runs, hiveShape(true), task34(2, &tier2), "t-034", "C", false, false)
 	wantPick(t, sel, warns, err, pick{"fable", ""})
-	sel, warns, err = guardModel(runs, hiveShape(false), task34(2, &tier2), "t-034", "C", false)
+	sel, warns, err = guardModel(runs, hiveShape(false), task34(2, &tier2), "t-034", "C", false, false)
 	if !errors.Is(err, runtime.ErrNoCrossModel) || !strings.Contains(err.Error(), `level frontier shares ["opus" "sonnet"]`) || sel.Model != "" {
 		t.Fatalf("tier 2, no alternates: model %q err %v", sel.Model, err)
 	}
@@ -197,7 +197,7 @@ func TestGuardAvoidsBuilderRecord(t *testing.T) {
 	if err := os.RemoveAll(filepath.Join(runs, "T-034-builder-1")); err != nil {
 		t.Fatal(err)
 	}
-	sel, warns, err = guardModel(runs, hiveShape(true), task34(2, nil), "t-034", "C", false)
+	sel, warns, err = guardModel(runs, hiveShape(true), task34(2, nil), "t-034", "C", false, false)
 	wantPick(t, sel, warns, err, pick{"sonnet", ""})
 
 	err = checkBuilderModel("sonnet", Result{Model: "sonnet"}, "T-034-builder-1", true)
@@ -245,7 +245,7 @@ func TestCheckSecondAncestry(t *testing.T) {
 			runs := t.TempDir()
 			rec(t, runs, "T-034-builder-1", Result{Model: "sonnet", BaseOID: c.builder})
 			rec(t, runs, "T-034-guard-1", Result{Model: "opus", BaseOID: c.first, HeadOID: c.firstHead, Verdict: "must-fix"})
-			err := checkSecond(context.Background(), g, runs, "T-034", "t-034", head, c.second, c.model)
+			err := checkSecond(context.Background(), g, runs, "T-034", "t-034", head, c.second, c.model, false, "")
 			switch {
 			case c.want == "" && err != nil:
 				t.Fatalf("refused: %v", err)
