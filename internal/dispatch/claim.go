@@ -33,7 +33,7 @@ type Claim struct {
 
 // AcquireClaim claims the ticket for a builder or forager (T-023 section 6).
 // The guard reads the claim instead and never calls this. req must have passed
-// Validate. The pre-read (after a sync in remote mode) only builds the
+// Validate. A dispatch run's renewal adds req.Branch to the stored list. The pre-read (after a sync in remote mode) only builds the
 // notes; AcquireLease stays the authority. Failures are *Error: ExitClaim for a held, overlapping,
 // malformed or refused claim, ExitEnv for git trouble. Nothing is written
 // when the claim is refused.
@@ -64,6 +64,12 @@ func AcquireClaim(ctx context.Context, cb ClaimBackend, g *Git, req Request, kee
 		c.Verb = "renew"
 		if len(req.ClaimBranches) == 0 && len(old.Branches) > 0 {
 			want.Branches = old.Branches
+			if req.addBranch && !slices.Contains(old.Branches, req.Branch) {
+				if len(old.Branches) >= 4 {
+					return Claim{}, failf(ExitClaim, "%s: claim already names 4 branches and not this run's; set the list with waggle claim %s --branch, or release the claim: %w", req.Ticket, req.Ticket, comb.ErrInvalidLease)
+				}
+				want.Branches = slices.Concat(old.Branches, []string{req.Branch})
+			}
 		}
 		if old.Role != want.Role || old.Gate != want.Gate || !slices.Equal(old.Directories, want.Directories) ||
 			!slices.Equal(old.Branches, want.Branches) {

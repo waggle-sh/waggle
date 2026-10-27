@@ -69,6 +69,9 @@ type Request struct {
 
 	// ClaimBranches is the branch list a claim records when the caller names one.
 	ClaimBranches []string
+
+	// addBranch is set by Run so a renewal adds the run's branch to the stored list.
+	addBranch bool
 }
 
 const maxReadPaths = 50
