@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package dispatch is the library core of waggle dispatch (T-023): request
 // validation, the Comb claim, the worktree lifecycle and the prompt inputs
 // read from the base revision. Phase B is inert: nothing here launches an
