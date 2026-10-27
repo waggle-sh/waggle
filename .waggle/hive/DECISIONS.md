@@ -6539,3 +6539,23 @@
 **Keeper choice:** Keep the rule
 
 **Rationale:** Head Keeper branches such as t-025b and t-025d already pass it, and review file names and record lookups depend on the suffix. Decided by the Head Keeper via queen card on 2026-10-27, after the scout brief; recorded by the queen.
+
+## D-339: The main ruleset also requires dco (T-025 phase D)
+
+- **Date:** 2026-10-27
+- **Kind:** policy
+- **Tickets:** T-025
+- **Supersedes:** D-098
+
+**Question:** After T-025 phase D (merged beb4fab, #157), does the main ruleset require the dco check?
+
+**Options considered:**
+1. Require dco next to product-ci and verify-leases-and-tiers
+2. Merge the job and leave dco advisory
+3. Hold phase D
+
+**Hive recommendation:** Require dco next to product-ci and verify-leases-and-tiers
+
+**Keeper choice:** Ruleset main (id 25310890) now requires product-ci, verify-leases-and-tiers and dco, with up-to-date branches; every other rule, the bypass actors (admin bypass always) and enforcement are unchanged, read back from the API after the change. Every commit in a pull request's range needs a Signed-off-by trailer naming its author email; the queen signs off hive records and Head Keeper commits from now on.
+
+**Rationale:** Completes D-131. Admin bypass still lets an --admin merge pass a red dco, the same as for product-ci. Decided by the Head Keeper via queen card on 2026-10-27; applied and recorded by the queen.
