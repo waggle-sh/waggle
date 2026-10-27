@@ -22,6 +22,8 @@ const (
 	Hash
 	// HTML is a Markdown comment: "<!-- ... -->".
 	HTML
+	// Block is a CSS comment: "/* ... */".
+	Block
 )
 
 const tag = "SPDX-License-Identifier: "
@@ -41,11 +43,20 @@ type rule struct {
 }
 
 // rules is the ordered table of the T-025 brief, section 4. The first match
-// wins. Row 5 (CLAUDE.md) was folded into the exempt row by D-334.
+// wins. Row 5 (CLAUDE.md) was folded into the exempt row by D-334. The two
+// site/ rows are T-041: copied and fetched assets are exempt, the rest of
+// site/ is checked.
 var rules = []rule{
 	{[]string{"**/testdata/**"}, exempt, ""},
 	{[]string{"**/*.json", "internal/scaffold/templates/**/*.json.tmpl"}, exempt, ""},
 	{[]string{"LICENSE", "NOTICE", "LICENSES/**", "go.mod", "go.sum", ".gitignore", "CLAUDE.md"}, exempt, ""},
+	{[]string{
+		"site/public/**",
+		"site/src/assets/brand/tokens.css",
+		"site/src/assets/brand/diagrams/**",
+		"site/src/assets/brand/mark/**",
+	}, exempt, ""},
+	{[]string{"site/**"}, checked, "Apache-2.0"},
 	{[]string{".waggle/hive/**"}, notChecked, ""},
 	{[]string{"internal/scaffold/templates/**"}, checked, "MIT-0"},
 	{[]string{"cmd/**", "internal/**"}, checked, "Apache-2.0"},
@@ -84,13 +95,18 @@ func Want(p string) (id string, form Form, ok bool, err error) {
 // ".tmpl" because a template is written out in its rendered file's syntax.
 func formOf(p string) (Form, error) {
 	base := path.Base(p)
-	if base == "CODEOWNERS" {
+	switch base {
+	case "CODEOWNERS", ".gitignore", ".env.example":
 		return Hash, nil
+	case "go.mod":
+		return Slash, nil
 	}
 	name := strings.TrimSuffix(base, ".tmpl")
 	switch path.Ext(name) {
-	case ".go":
+	case ".go", ".ts", ".mjs", ".astro":
 		return Slash, nil
+	case ".css":
+		return Block, nil
 	case ".sh", ".yml", ".yaml":
 		return Hash, nil
 	case ".md":
@@ -130,6 +146,8 @@ func Line(id string, form Form) string {
 		return "# " + tag + id
 	case HTML:
 		return "<!-- " + tag + id + " -->"
+	case Block:
+		return "/* " + tag + id + " */"
 	}
 	return "// " + tag + id
 }
@@ -146,6 +164,12 @@ func Check(p string, content []byte) error {
 	lines := bytes.SplitN(content, []byte("\n"), 4)
 	n := 0
 	if len(lines) > 0 && bytes.HasPrefix(lines[0], []byte("#!")) {
+		n = 1
+	}
+	if strings.HasSuffix(p, ".astro") {
+		if len(lines) == 0 || string(lines[0]) != "---" {
+			return fmt.Errorf("missing SPDX header: %s: want line 2 %q after a --- fence on line 1", p, want)
+		}
 		n = 1
 	}
 	if n >= len(lines) || len(content) == 0 {
