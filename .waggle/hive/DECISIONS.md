@@ -6460,3 +6460,82 @@
 **Keeper choice:** Exempt: CLAUDE.md joins the exempt row of the T-025 header table; phase B adds no header to it.
 
 **Rationale:** It holds only the marker block that waggle init manages. Decided by the Head Keeper via queen card on 2026-10-27, after the T-025 phase C finalize round; recorded by the queen.
+
+## D-335: T-044: a dispatch renewal appends its run's branch
+
+- **Date:** 2026-10-27
+- **Kind:** technical
+- **Tickets:** T-044
+- **Supersedes:** none
+
+**Question:** Q-T044-1: when a dispatch run renews its claim for a new branch, what happens to the claim's branch list?
+
+**Options considered:**
+1. Append the run's branch unless the list names it
+2. Replace the list with the run's branch
+3. Keep the stored list (today's behavior)
+
+**Hive recommendation:** Append the run's branch unless the list names it
+
+**Keeper choice:** Append the run's branch unless the list names it
+
+**Rationale:** Two open PRs from one ticket both pass the gate; finished phase branches stay accepted until release. Decided by the Head Keeper via queen card on 2026-10-27, after the scout brief; recorded by the queen.
+
+## D-336: T-044: a full branch list refuses; docs cites wait
+
+- **Date:** 2026-10-27
+- **Kind:** technical
+- **Tickets:** T-044
+- **Supersedes:** none
+
+**Question:** Q-T044-2 and Q-T044-3: when the stored list holds 4 branches and none is the run's, and does T-044 fix the stale claim.go cites in docs/?
+
+**Options considered:**
+1. Refuse with ExitClaim before any write; docs cites wait for the next docs ticket
+2. Drop the oldest branch; docs cites wait
+3. Refuse, and T-044 also fixes the docs cites
+
+**Hive recommendation:** Refuse with ExitClaim before any write; docs cites wait for the next docs ticket
+
+**Keeper choice:** Refuse with ExitClaim before any write; docs cites wait for the next docs ticket
+
+**Rationale:** An open PR is never silently unbound, and the lease stays internal/dispatch/ only. Decided by the Head Keeper via queen card on 2026-10-27, after the scout brief; recorded by the queen.
+
+## D-337: T-045: guards on Head Keeper branches use an explicit flag and need no claim
+
+- **Date:** 2026-10-27
+- **Kind:** technical
+- **Tickets:** T-045
+- **Supersedes:** none
+
+**Question:** Q-T045-1 and Q-T045-2: how does dispatch run guards on a Head Keeper branch with no builder run, and must a live claim exist?
+
+**Options considered:**
+1. Explicit --keeper-commit guard flag; a missing claim is accepted
+2. Explicit flag; a live claim naming the branch is required
+3. Automatic when no builder record exists
+
+**Hive recommendation:** Explicit --keeper-commit guard flag; a missing claim is accepted
+
+**Keeper choice:** Explicit --keeper-commit guard flag; a missing claim is accepted
+
+**Rationale:** The flag refuses when a builder record exists on the branch, so the D-188 builder-model check is never dropped silently; a claim that lists the branch still refuses. Fix rounds touching the claim read get two guards (D-205). Decided by the Head Keeper via queen card on 2026-10-27, after the scout brief; recorded by the queen.
+
+## D-338: T-045: guard branches keep the t-<nnn> prefix rule
+
+- **Date:** 2026-10-27
+- **Kind:** technical
+- **Tickets:** T-045
+- **Supersedes:** none
+
+**Question:** Q-T045-3: does the rule that a guard branch must start with t-<nnn> stay?
+
+**Options considered:**
+1. Keep the rule
+2. Relax it under --keeper-commit
+
+**Hive recommendation:** Keep the rule
+
+**Keeper choice:** Keep the rule
+
+**Rationale:** Head Keeper branches such as t-025b and t-025d already pass it, and review file names and record lookups depend on the suffix. Decided by the Head Keeper via queen card on 2026-10-27, after the scout brief; recorded by the queen.
