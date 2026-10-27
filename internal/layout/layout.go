@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package layout names every path Waggle owns in a host repository.
 //
 // Values are repo-relative and slash-separated. Waggle owns .waggle/ and,
