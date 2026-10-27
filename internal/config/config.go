@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package config reads .waggle/control/config.yaml into typed options.
 //
 // Load reads the file, Parse parses bytes, and Config.CombOptions maps the
