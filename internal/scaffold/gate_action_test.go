@@ -46,7 +46,7 @@ var dashes = string([]rune{0x2013, 0x2014})
 
 func TestGateActionText(t *testing.T) {
 	action := readRepoFile(t, "../../gate/action.yml")
-	if !strings.HasPrefix(action, "# SPDX-License-Identifier: MIT-0\n") {
+	if !strings.HasPrefix(action, "# SPDX-License-Identifier: Apache-2.0\n") {
 		t.Error("first line is not the SPDX line")
 	}
 	for _, s := range []string{

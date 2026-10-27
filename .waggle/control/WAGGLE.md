@@ -16,6 +16,7 @@ Define the top-level modules Builders may lease:
 - `internal/decisions/`: Append-only `DECISIONS.md` writer behind `waggle decide` (T-006)
 - `internal/dispatch/`: `waggle dispatch` claim, worktree, headless run and post-run lease check (T-023)
 - `internal/forge/`: `Forge` interface, `none` and GitHub adapters, `waggle doctor` probes (T-018)
+- `internal/license/`: SPDX header rules and repo check (T-025)
 - `internal/layout/`: Repo-relative Waggle path constants (T-011)
 - `internal/runtime/`: `AgentRuntime` adapters and token cap monitors
 - `internal/scaffold/`: `waggle init` embedded templates
