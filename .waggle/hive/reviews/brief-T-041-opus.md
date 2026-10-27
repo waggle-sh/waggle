@@ -215,3 +215,82 @@ None.
 4. **CODEOWNERS could have stayed in precondition 1.** A CODEOWNERS line does not touch claims, so it was safe before dispatch. Moving it with the config edit keeps one commit and changes nothing for T-041's PR, which merges by admin bypass. Fine as written.
 
 Counts: 0 must-fix, 4 notes.
+
+<!-- SPDX-License-Identifier: MIT-0 -->
+# Brief review: T-041 finalize round (opus, first of two models)
+
+Risk-Tier: 3
+
+Reviewed `c042abb:.waggle/hive/tasks/T-041.md` against the merged version at `1425404`, with every code cite read at `1425404`.
+
+## Intent summary
+
+The finalize round re-reads the merged T-037 sources and narrows the hive-page glossary include to start at `### Roles`, because the CONTRIBUTING section 4 intro cites D-236, D-045 and D-073. It adds a phase A that teaches `internal/license` the `site/` rows and four new header forms, since `TestRepoHeaders` would fail the first `site/` commit. It also adds `dco` sign-off to every queen commit (D-339) and a note that `--keeper-commit` does not apply to the asset branch (D-337), and it moves every cite to `1425404`. Blast radius: phase A changes a check that every PR's product-ci runs. Phase B scope is unchanged.
+
+## Findings
+
+1. **must-fix: section 11 cross-references are stale after the renumbering.** Section 11 now has scout items 1 to 6 and queen items 1 to 5. Four places still say "section 11 item 4" for the studio commit: header Depends on (3), 2.2 step 1, Q-T041-8 and the section 12 studio facts line. That item is now queen item 2, and "item 4" resolves to scout item 4 (license) or queen item 4 (Vercel plan and container). Section 7 says the container image is pinned per "section 11 item 6". That is now queen item 4, and "item 6" resolves to scout item 6 (cites). The queen's pre-dispatch fill follows these pointers, so name them as "section 11, queen item N".
+
+2. **must-fix: the hive page skips a heading level.** The include now starts at an H3 (`### Roles`, `### Terms`, `### Cut or frozen`), and the page's own text is the H1 plus about 20 lines of prose (2.4). As written, the page goes from H1 to H3, which breaks 2.6 bullet 2 ("heading levels in order"). The "sources are trusted for their own order" clause covers order inside a source, not the join that the site authors. One sentence fixes it: either the page intro ends with a site-authored H2 before the include, or the include shifts its headings up one level (then say what that does to the fragment ids that 2.3 rule 5 maps). Also reword 2.3 rule 5 "a heading inside the glossary section" to "a heading inside the include". As written, `#4-words-in-this-repos-records` would map to a fragment that is not on the page. No source links a CONTRIBUTING fragment at `1425404`, so that part is latent.
+
+3. **note: phase A is needed and its cites hold.** At `1425404` only `**/*.json` matches a `site/` path (`rules.go:46-58`). The `.gitignore` and `go.mod` entries in the exempt row (`:48`) match by whole segments, so `site/.gitignore` and `site/go.mod` fall through to `unknown path` (`:80`). `TestRepoHeaders` runs in product-ci's `go test -race ./...` (`ci.yml:48-49`). `formOf` is `:85-100`, and the Slash blank-line rule is `:164`. No existing test case changes under items 2 to 4. `TestWantErrors`' `.a` and extensionless cases are untouched, and the only tracked `.gitignore` and `go.mod` are at the root, where they stay exempt.
+
+4. **note: the new forms are global, not scoped to `site/`.** Item 3 adds `.ts`, `.mjs`, `.astro`, `.css` and the base names `.gitignore`, `.env.example` and `go.mod` to `formOf` for every checked row. For example, `internal/x/go.mod` or `docs/a.css` stop failing with `unknown extension` and get a form. No tracked file at `1425404` changes result, so nothing regresses. But the "a new kind of file needs a row first" property in 2.8 now holds only in `site/`. State that in 2.8 so the guards do not flag the global switch as scope creep. Alternatively, scope the base-name cases to `site/`. Either is fine.
+
+5. **note: the `.astro` error text in item 4 is ambiguous.** "Otherwise the error is missing SPDX header ... after a --- fence" reads as applying to every failure. The intent is clearly "when line 1 is not exactly `---`". A fenced file whose line 2 carries a wrong ID should keep the existing `wrong SPDX header` path. Add that Check case to item 5.
+
+6. **note: the exempt row is safe under D-203.** The four patterns are exact or directory-scoped to copied content. `SOURCE.md` inside `brand/` stays checked, and item 5 pins it as HTML. `site/public/**` does let any file kind through the header check, but that is bounded by check-dist rule 2 and review. Anyone who could add a file there could also edit the table, and `rules.go:3-5` says this is compliance, not a boundary.
+
+7. **note: Tier 2 for phase A is right.** `internal/license` is not in `HardcodedTier3Prefixes` (`backend.go:31-41`). T-025 rated C2 "Tier 2 by content" with two guards on different models (T-025 Review paragraph), and the brief copies that rating.
+
+8. **note: the glossary include is consistent with D-315 and rule 4.** D-315 rules "the CONTRIBUTING glossary section included by its heading". Including its three subsections by heading keeps one source for the definitions and drops only maintenance rules, which matches the Q-T041-6 rationale. No new ruling is needed. The span `### Roles` to `## 5. Retired names` (lines 41 to 74 at `1425404`) holds no `D-nnn`, no `T-0nn`, no markdown link and no `<<`, so rule 4's ID part passes. Bee words are allowed on this page.
+
+9. **note: the dco and sign-off additions match `ci.yml:51-74`.** `git rev-list BASE..HEAD` includes merge commits, so `git merge --signoff` is the right branch-update form. Dispatch's prompt requires `git commit -s` (`inputs.go:166`). The `--keeper-commit` note is accurate: `guard.go:116-117` refuses a branch the claim lists. The asset PR still gets no guard review, the same as in rounds 2 and 3.
+
+10. **note: name the branch flags in the claim chain.** `waggle dispatch` defaults to `t-<nnn>` (`request.go:127-128`), and a fresh `waggle claim` stores `t-<nnn>` unless `--branch` is passed (`task.go:24`). Phase A therefore needs `--branch t-041-license`, and the asset claim needs `--branch t-041-assets`. The sequence is sound: release before each next claim, `checkBranch` accepts the suffix, D-237 binds it, D-338 is kept, and the D-335 append does not come into play because the claims are released. Spelling out the two flags removes a guess.
+
+11. **note: the phase A planned cut is nominal.** Cutting 2 bottom-up lines against a 65 target cannot bring an overrun back under, and it reaches into phase B's file list. The arithmetic is right: 25 doubled is 50, the target is 65 and the stop is 90. Phase B's 737 doubled is 1,474, with a target of 1,916 and a stop of 2,653. Given phase A's size, an honest "no meaningful cut" is better than a cut that only exists on paper.
+
+12. **note: one missing link in 2.3 rule 5.** `docs/recipes/README.md` also links `../gate.md#10-limits-and-known-bypasses`, which the list omits. The README's nine distinct `docs/gate.md` fragments, the `## Install` anchor, the pitch and the absence of `<<` in all five sources check out.
+
+13. **note: the other changed cites are correct at `1425404`.** These include `backend.go:31-41`, `:58-66` and `:388-405`; `changecheck.go:76-78`; `task.go:137-144` and `:93`; `run.go:164` and `:316`; `launch.go:82-87` and `:329`; `config.yaml:53`; `ci.yml:33-49` and `:39-46`; `gate_approve.go:109-124`, `:155` and `:235-244`; and `gate_commits.go:224-230`.
+
+14. **note: the rulings are intact.** The Q-T041-1 to Q-T041-9 text is unchanged except for the cite moves and the "read phase B" gloss. Phase A applies D-129 and D-316 without a new choice.
+
+Verdict: must-fix
+
+<!-- SPDX-License-Identifier: MIT-0 -->
+# Brief review: T-041 finalize round 2 (opus, confirming)
+
+Risk-Tier: 3
+
+Reviewed `a17cc5c:.waggle/hive/tasks/T-041.md` against round 1 (`c042abb`, `git diff c042abb a17cc5c`, 17 lines changed in one file). Code cites checked at `1425404`.
+
+## Intent Summary
+
+The scout's second finalize round fixes the two round 1 must-fix items (stale section 11 queen item pointers; the hive page's H1 to H3 skip) and folds in the fable notes: the global `formOf` widening is stated, the `.astro` error text and a wrong-identifier test case are specified, the Astro fence reasoning is corrected, all three branches are named by flag with full commands, phase B moves to `t-041-site`, the asset PR's lack of a guard path is stated, AC0 gains the `Waggle-Risk-Tier: 2` trailer, and rule 5 gains the missing `../gate.md#10-limits-and-known-bypasses` link. Only the brief changes; no code, no lease change. The threat model (section 5, D-203) is untouched.
+
+## Must-fix items from round 1
+
+1. (resolved) Section 11 pointers. Section 11 queen item 2 is the studio commit record and item 4 is the container runtime and Node image digest. Every pointer now matches: Depends on (item 2), 2.2 step 1 (item 2), Q-T041-8 (item 2), section 7 host check (item 4), section 12 studio facts (item 2). No other `section 11, ... item` pointer remains.
+2. (resolved) Heading skip. 2.4 now places a site-authored H2 `Words in this repo's records` above the `### Roles` include, headings unshifted, so the page runs H1, H2, H3 as 2.6 requires and the included ids match GitHub's. 2.3 says the same. Rule 5 now limits the CONTRIBUTING-to-site rewrite to `#roles`, `#terms`, `#cut-or-frozen` and headings below them, and sends `#4-words-in-this-repos-records` to GitHub; CONTRIBUTING at `1425404` has exactly those three H3s under `## 4. Words in this repo's records` (lines 27, 41, 51, 65).
+
+## Folded notes, checked
+
+3. (note, correct) Global `formOf` widening. `git ls-tree -r 1425404` shows no tracked `.ts`, `.mjs`, `.astro`, `.css` or `.env.example` file and only the root `.gitignore` and `go.mod`, so the claim that no tracked file changes result holds.
+4. (note, correct) `.astro` error text and test. 2.8 item 4 now gives the fence error only when line 1 is not `---` and routes line 2 through the existing checks; item 5 adds the fenced wrong-identifier case expecting `wrong SPDX header`. Consistent.
+5. (note, acceptable) Astro reasoning. The claim that only a start tag before the first `---` stops frontmatter, and that a pre-fence comment is emitted into the page, is a compiler fact the brief routes to the queen's host-verified section 12 Astro facts list, which now names it. The `//` header inside the fence is the safe form either way.
+6. (note, correct) Commands and flags. `waggle dispatch ... --role builder --dir <path> --gate full --no-cell --branch <b>` matches `cmd/waggle/dispatch.go:40-44` (`--branch` in the shared options line 44); `waggle claim T-041 --dirs site --gate full --branch t-041-assets` matches `cmd/waggle/claim.go:180`. The defaults cited are right: `internal/dispatch/request.go:127-128` sets `t-<nnn>` when `--branch` is empty, and `internal/dispatch/task.go:24` documents the fresh-claim default. `checkBranch` (`request.go:156-170`) accepts `t-041-license`, `t-041-assets` and `t-041-site` (suffix starts with `-`, not a digit).
+7. (note, correct) Phase B on `t-041-site` and the `roundMustFix` reasoning. `internal/dispatch/inputs.go:135` builds the prefix as `T-041` plus the branch suffix plus `-`. On bare `t-041` that is `T-041-`, which matches phase A's `T-041-license-<model>.md` (remainder `license-...` does not match `briefReview`), so phase A's must-fix verdicts would inflate phase B's step-up count. `t-041-site` gives `T-041-site-`, which matches neither phase A's files nor anything from the asset PR. The brief's ticket-level brief reviews (`brief-T-041-*.md`) do not start with `T-041` and are unaffected either way.
+8. (note, correct) Asset PR has no guard path. `internal/dispatch/guard.go:117` refuses `--keeper-commit` when the claim lists the branch, and a plain guard dispatch needs a builder record; the brief now says the asset PR merges on `product-ci`, `verify-leases-and-tiers` and `dco` plus the sha256 list, with phase B's guards checking AC1 afterwards, and the queen's card says so. This is an explicit, recorded gap rather than an error; the Keeper sees it on the card.
+9. (note, correct) AC0 now requires `Waggle-Risk-Tier: 2`, matching the Risk Tier line for phase A.
+10. (note, correct) Rule 5 link. `docs/recipes/README.md` at `1425404` links `../gate.md`, `../gate.md#10-limits-and-known-bypasses`, `../../README.md#install` and its two siblings; the list now matches.
+
+## New-error re-check
+
+11. (note) Branch names. The only bare `t-041` strings left are in 2.2's new sentence, each one deliberately naming the default or the rejected branch ("default to `t-041`", "not on bare `t-041`", "for branch `t-041`"). Depends on, the commit prefix line, 2.2 step 1 and section 12 all say `t-041-site`. No stale branch reference remains.
+12. (note) The Status line now asks for one confirming brief guard (D-205 fix round), consistent with this review. No em or en dash in the brief; every changed cite resolves at `1425404`.
+
+No blocking issues.
+
+Verdict: pass
