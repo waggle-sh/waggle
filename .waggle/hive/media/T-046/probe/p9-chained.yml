@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe P9 (part (b) chained path). Head Keeper commits this to main of the probe repo,
+# after renaming the probe-review job (P3 file). P1 must be on main with verdict = fail, so
+# probe-gate starts red on every head. Approve, then dismiss; then a PR that deletes p3-review.yml.
+name: probe-chained
+on:
+  workflow_run:
+    workflows: [probe-review]
+    types: [completed]
+permissions:
+  checks: write
+  pull-requests: read
+jobs:
+  chained:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN_HEAD: ${{ github.event.workflow_run.head_sha }}
+      RUN_EVENT: ${{ github.event.workflow_run.event }}
+      PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+    steps:
+      - name: Re-read reviews live and post probe-gate on the PR head
+        run: |
+          echo "triggering event=$RUN_EVENT workflow_run.head_sha=$RUN_HEAD pr=$PR"
+          head=$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)
+          echo "PR head from API=$head"
+          approved=$(gh api "repos/$REPO/pulls/$PR/reviews" --jq \
+            'group_by(.user.login) | map(last) | map(select(.state == "APPROVED")) | length')
+          if [ "$approved" -gt 0 ]; then c=success; else c=failure; fi
+          echo "approvals standing=$approved conclusion=$c"
+          gh api -X POST "repos/$REPO/check-runs" -f name=probe-gate -f head_sha="$head" \
+            -f status=completed -f conclusion="$c"

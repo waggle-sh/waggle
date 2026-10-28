@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe P7: (a) clone contents, C5 fetch without stored credentials, C1 confirm.
+# Head Keeper commits this to main of the probe repo. Its job is not probe-gate.
+name: probe-clone
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  probe-clone:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    strategy: { matrix: { persist: [true, false] } }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: ${{ matrix.persist }}
+      - name: Objects in the clone
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          git cat-file -e "$BASE_SHA^{commit}" && echo "base: present" || echo "base: missing"
+          git cat-file -e "$HEAD_SHA^{commit}" && echo "head: present" || echo "head: missing"
+          git fetch origin "refs/pull/$PR/head" && echo "pull head fetch: ok" || echo "pull head fetch: failed"
+          git cat-file -e "$HEAD_SHA^{commit}" && echo "head after fetch: present" || echo "head after fetch: missing"
+      - name: C1 confirm, label write must fail
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=probe-c1"; then echo "C1: write allowed"; else echo "C1: write refused"; fi
