@@ -41,6 +41,7 @@ type header struct {
 	Mode   string // forge.comb_mode
 	Remote string // forge.remote; "" prints as (local)
 	Daemon bool   // the waggled socket exists
+	Pace   string // the pace line; "" when config.yaml has no pace: section
 }
 
 // runStatus implements `waggle status`. Exit codes: 0 report printed (even
@@ -112,6 +113,11 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 		Mode: cfg.Forge.CombMode, Remote: cfg.Forge.Remote,
 		Daemon: socketExists(filepath.Join(root, layout.Socket)),
 	}
+	var paceWarns []string
+	h.Pace, paceWarns = paceStatus(root)
+	for _, w := range paceWarns {
+		fmt.Fprintln(stderr, w)
+	}
 	block := usage.Render(usage.Summarize(recs), layout.Usage)
 	stdout.Write(renderStatus(h, leases, malformed, block, statusClock()))
 	return 0
@@ -168,6 +174,9 @@ func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaims
 		b.WriteString("daemon: running (socket present)\n")
 	} else {
 		fmt.Fprintf(&b, "daemon: stopped (no %s)\n", layout.Socket)
+	}
+	if h.Pace != "" {
+		b.WriteString(h.Pace + "\n")
 	}
 
 	sorted := append([]comb.Lease(nil), leases...)

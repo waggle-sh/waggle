@@ -96,6 +96,9 @@ func main() {
 	case "status":
 		os.Exit(runStatus(os.Args[2:], os.Stdout, os.Stderr))
 
+	case "pace":
+		os.Exit(runPace(os.Args[2:], os.Stdout, os.Stderr))
+
 	case "upgrade":
 		os.Exit(runUpgrade(os.Args[2:], os.Stdout, os.Stderr))
 
@@ -127,6 +130,7 @@ Commands (v0.1 Bootstrap):
   release   Give back your claim for a task once its branch has merged [--json]
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, daemon state and per-ticket token use
+  pace      Show the agent pace set for this repo and how to apply it in each agent tool [--tool]
   upgrade   Print the plan to re-render managed files from this build and move waggle.pin; --apply executes it
   doctor    Check that claim refs can be pushed and the gate is a required check [--no-write]
   version   Print version`)
