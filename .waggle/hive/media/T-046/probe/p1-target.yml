@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe P1 (part (a)): where a pull_request_target check run attaches.
+# Head Keeper commits this to main of the probe repo, as .github/workflows/p1-target.yml,
+# with a file `verdict` on main containing `fail`. Never checks out PR content.
+name: probe-target
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  probe-gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Report
+        env:
+          EVENT: ${{ github.event_name }}
+          RUN_SHA: ${{ github.sha }}
+          RUN_REF: ${{ github.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          echo "event=$EVENT github.sha=$RUN_SHA github.ref=$RUN_REF"
+          echo "payload base=$BASE_SHA head=$HEAD_SHA"
+          echo "verdict file (default branch copy): $(cat verdict)"
+      - name: Exit per verdict file
+        run: test "$(cat verdict)" = pass
