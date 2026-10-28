@@ -4,6 +4,10 @@ keeper_id: local-keeper
 runtime: {{RUNTIME}}
 ide: vscode
 
+# Agent pace within the owner's limit in config.yaml (run waggle pace to see it).
+# pace:
+#   profile: serial   # serial | steady | max; capped at the owner's limit
+
 claude_code:
   # Personal skills remain in ~/.claude/skills/ on your host and are available
   # automatically in `queen` sessions without polluting the shared repo.

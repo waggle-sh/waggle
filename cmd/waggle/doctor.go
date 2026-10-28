@@ -55,6 +55,12 @@ func runDoctor(args []string, stdout, stderr io.Writer, getenv func(string) stri
 	if err != nil {
 		return exit(3, "failed: %v", err)
 	}
+	if line, warns := paceDoctor(root); line != "" {
+		fmt.Fprintln(stdout, line)
+		for _, w := range warns {
+			fmt.Fprintln(stderr, w)
+		}
+	}
 	if cfg.Forge.Remote == "" {
 		fmt.Fprintln(stdout, "Local-only repo: no forge checks. After adding a remote and setting forge.remote, run waggle doctor.")
 		return 0
