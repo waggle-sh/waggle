@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe P3 (part (b) baseline and R1): which copy a review run uses and where its check attaches.
+# Head Keeper commits this to main of the probe repo. The second account approves, then dismisses.
+# Before P9, the Head Keeper renames the job below to probe-review on main, so that only
+# probe-target and probe-chained post probe-gate.
+name: probe-review
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+permissions:
+  contents: read
+jobs:
+  probe-gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Report
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          STATE: ${{ github.event.review.state }}
+          RUN_SHA: ${{ github.sha }}
+          RUN_REF: ${{ github.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          echo "event=$EVENT action=$ACTION review.state=$STATE"
+          echo "github.sha=$RUN_SHA github.ref=$RUN_REF payload head=$HEAD_SHA"
+          echo "verdict file (copy this run checked out): $(cat verdict)"
+      - name: Exit per verdict file
+        run: test "$(cat verdict)" = pass
