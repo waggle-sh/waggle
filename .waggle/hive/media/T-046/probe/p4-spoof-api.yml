@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe P4b (part (d)): a PR workflow creates, then edits, a probe-gate check run via the API.
+# NOT committed to main. Head Keeper adds it in its own same-repo PR branch (separate from P4a).
+# Run 1: repo default token permission read-only. Run 2: read-write (Head Keeper flips it).
+# Run 3: read-only again, with the two permissions lines below uncommented.
+name: probe-spoof-api
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+# permissions:
+#   checks: write
+jobs:
+  spoof-api:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Create a passing probe-gate check run on the head
+        continue-on-error: true
+        run: |
+          sleep 90
+          gh api -X POST "repos/$REPO/check-runs" -f name=probe-gate -f head_sha="$HEAD_SHA" \
+            -f status=completed -f conclusion=success
+      - name: Edit the protected failing probe-gate check run to success
+        continue-on-error: true
+        run: |
+          ids=$(gh api "repos/$REPO/commits/$HEAD_SHA/check-runs?check_name=probe-gate" \
+            --jq '.check_runs[] | select(.conclusion == "failure") | .id')
+          for id in $ids; do
+            gh api -X PATCH "repos/$REPO/check-runs/$id" -f conclusion=success && echo "patched $id"
+          done
