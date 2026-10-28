@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe P4a (part (d)): a PR adds a pull_request workflow whose job has the required name.
+# NOT committed to main. The Head Keeper adds it in a same-repo PR branch, opened while
+# probe-target (P1) is failing. The sleep makes this run finish after the protected run.
+name: probe-spoof-job
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  probe-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pass after the protected run has finished
+        run: |
+          sleep 90
+          echo "spoof job passing"
