@@ -6559,3 +6559,22 @@
 **Keeper choice:** Ruleset main (id 25310890) now requires product-ci, verify-leases-and-tiers and dco, with up-to-date branches; every other rule, the bypass actors (admin bypass always) and enforcement are unchanged, read back from the API after the change. Every commit in a pull request's range needs a Signed-off-by trailer naming its author email; the queen signs off hive records and Head Keeper commits from now on.
 
 **Rationale:** Completes D-131. Admin bypass still lets an --admin merge pass a red dco, the same as for product-ci. Decided by the Head Keeper via queen card on 2026-10-27; applied and recorded by the queen.
+
+## D-340: Upgrade hive pin to 9b5de54eee5b08fc0df15d024be09e450679ee3d
+
+- **Date:** 2026-10-28
+- **Kind:** technical
+- **Tickets:** T-016, T-044, T-045
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Move to 9b5de54eee5b08fc0df15d024be09e450679ee3d
+2. Stay on 0d102caaac19c48b3cb4259f0881599763ac6882
+
+**Hive recommendation:** Move to 9b5de54eee5b08fc0df15d024be09e450679ee3d
+
+**Keeper choice:** Move the pin from 0d102caaac19c48b3cb4259f0881599763ac6882 to 9b5de54eee5b08fc0df15d024be09e450679ee3d (main head, carries T-037 #144, T-042 #141, T-025 #150, #153, #155 and #157, T-044 #163, T-045 #165 and T-041 phase A #169) and apply the re-rendered .github/workflows/waggle-gate.yml (gate Action ref follows the pin) as a Head Keeper commit; every other managed file is [same]. Opus and fable guards review the PR before a merge card; bin/waggle is rebuilt from 9b5de54 after the merge.
+
+**Rationale:** 9b5de54eee5b08fc0df15d024be09e450679ee3d is the known-good build chosen by the Head Keeper (D-041) and puts T-044 claim and T-045 keeper-commit guards into bin/waggle, which the internal/pace lease commit and T-043 phase A dispatch need. Decided by the Head Keeper via queen card on 2026-10-27; recorded by the queen.
