@@ -6578,3 +6578,23 @@
 **Keeper choice:** Move the pin from 0d102caaac19c48b3cb4259f0881599763ac6882 to 9b5de54eee5b08fc0df15d024be09e450679ee3d (main head, carries T-037 #144, T-042 #141, T-025 #150, #153, #155 and #157, T-044 #163, T-045 #165 and T-041 phase A #169) and apply the re-rendered .github/workflows/waggle-gate.yml (gate Action ref follows the pin) as a Head Keeper commit; every other managed file is [same]. Opus and fable guards review the PR before a merge card; bin/waggle is rebuilt from 9b5de54 after the merge.
 
 **Rationale:** 9b5de54eee5b08fc0df15d024be09e450679ee3d is the known-good build chosen by the Head Keeper (D-041) and puts T-044 claim and T-045 keeper-commit guards into bin/waggle, which the internal/pace lease commit and T-043 phase A dispatch need. Decided by the Head Keeper via queen card on 2026-10-27; recorded by the queen.
+
+## D-341: GA (the G5 public flip) does not wait for T-043
+
+- **Date:** 2026-10-28
+- **Kind:** scope
+- **Tickets:** T-041, T-043
+- **Supersedes:** none
+
+**Question:** T-043 (agent pace) is not on the G5 list (repositioning note section 5 item 5, D-235). Should the G5 public flip wait for it?
+
+**Options considered:**
+1. GA without T-043: finish phase A, then put the pull_request_target spike, T-041 phase B and the demo repo ahead of T-043 phase B
+2. GA after T-043: finish both phases first, then the G5 items
+3. Also defer T-041 phase B: GA ships with the README, docs/gate.md and recipes and no hosted site
+
+**Hive recommendation:** GA without T-043: finish phase A, then put the pull_request_target spike, T-041 phase B and the demo repo ahead of T-043 phase B
+
+**Keeper choice:** GA without T-043. Phase A finishes as dispatched (merged #175); then the D-276 pull_request_target spike, T-041 phase B (asset PR, host facts, Vercel connect) and the demo repo come ahead of T-043 phase B; then the G5 cards in the D-277 order (redaction, history rewrite, post-rewrite pin move, first tag, demo repo pins, flip). T-043 phase B follows GA.
+
+**Rationale:** Outside repos adopt the gate; pace is a dispatch feature only this hive uses today, so holding GA for it costs about three to four days for no adopter-facing gain. Decided by the Head Keeper via queen card on 2026-10-27; recorded by the queen.
