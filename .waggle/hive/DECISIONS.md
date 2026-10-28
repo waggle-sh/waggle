@@ -6598,3 +6598,123 @@
 **Keeper choice:** GA without T-043. Phase A finishes as dispatched (merged #175); then the D-276 pull_request_target spike, T-041 phase B (asset PR, host facts, Vercel connect) and the demo repo come ahead of T-043 phase B; then the G5 cards in the D-277 order (redaction, history rewrite, post-rewrite pin move, first tag, demo repo pins, flip). T-043 phase B follows GA.
 
 **Rationale:** Outside repos adopt the gate; pace is a dispatch feature only this hive uses today, so holding GA for it costs about three to four days for no adopter-facing gain. Decided by the Head Keeper via queen card on 2026-10-27; recorded by the queen.
+
+## D-342: T-046 Q1: the spike reads GitHub docs first and probes only rows the docs leave unknown
+
+- **Date:** 2026-10-28
+- **Kind:** scope
+- **Tickets:** T-046
+- **Supersedes:** none
+
+**Question:** Q-T046-1: does the pull_request_target spike use research, a probe, or both?
+
+**Options considered:**
+1. Docs first, then a probe only for rows the docs leave unknown
+2. Docs only
+3. Probe only
+
+**Hive recommendation:** Docs first, then a probe only for rows the docs leave unknown
+
+**Keeper choice:** Docs first, then a probe only for rows the docs leave unknown (T-046 section 11).
+
+**Rationale:** Docs settle most rows for one forager session; the probe card is spent only where the docs are silent, likely how required checks treat two check runs of one name. Decided by the Head Keeper via queen card on 2026-10-28; recorded by the queen.
+
+## D-343: T-046 Q2: the probe runs in a new private waggle-sh/gate-probe repo, deleted after
+
+- **Date:** 2026-10-28
+- **Kind:** technical
+- **Tickets:** T-046
+- **Supersedes:** none
+
+**Question:** Q-T046-2: where does the probe run, if one is needed?
+
+**Options considered:**
+1. A new private repo waggle-sh/gate-probe, deleted after
+2. A public throwaway repo under the Head Keeper's personal account
+3. A branch and workflow in this repo
+
+**Hive recommendation:** A new private repo waggle-sh/gate-probe, deleted after
+
+**Keeper choice:** A new private repo waggle-sh/gate-probe, created and deleted by the Head Keeper on the probe card.
+
+**Rationale:** Rulesets with required checks already work on private org repos (D-339); about 25 Actions minutes at no charge; this repo's live ruleset and workflows stay untouched. Decided by the Head Keeper via queen card on 2026-10-28; recorded by the queen.
+
+## D-344: T-046 Q3: phase 1 runs as a Claude Code forager subagent and the queen commits the note
+
+- **Date:** 2026-10-28
+- **Kind:** technical
+- **Tickets:** T-046
+- **Supersedes:** none
+
+**Question:** Q-T046-3: who runs phase 1, the docs research?
+
+**Options considered:**
+1. A Claude Code forager subagent; the queen commits the note
+2. waggle dispatch --role forager
+3. The queen herself
+
+**Hive recommendation:** A Claude Code forager subagent; the queen commits the note
+
+**Keeper choice:** A Claude Code forager subagent returns the findings text and the queen commits it in a records batch, as D-256 keeps the scout and brief reviews.
+
+**Rationale:** waggle dispatch cannot run it without product changes: it denies gh, WebFetch and WebSearch (internal/runtime/launch.go:85-87) and no claim may lease .waggle/ (internal/comb/backend.go:461). Decided by the Head Keeper via queen card on 2026-10-28; recorded by the queen.
+
+## D-345: T-046 Q4: one fact-check guard on a model other than the forager's reviews the findings
+
+- **Date:** 2026-10-28
+- **Kind:** technical
+- **Tickets:** T-046
+- **Supersedes:** none
+
+**Question:** Q-T046-4: how many guards review the T-046 findings note?
+
+**Options considered:**
+1. One fact-check guard on a model other than the forager's
+2. Two guards on different models
+3. None
+
+**Hive recommendation:** One fact-check guard on a model other than the forager's
+
+**Keeper choice:** One subagent fact-check guard on a model other than the forager's, filed as .waggle/hive/reviews/T-046-<model>.md, checking each answer against its quoted source or run ID and the outcome against the section 6 rule.
+
+**Rationale:** The note changes no code; any follow-up template change gets two guards under D-205. Decided by the Head Keeper via queen card on 2026-10-28; recorded by the queen.
+
+## D-346: T-046 Q5: the section 6 outcome rule decides the spike result and the D-276 code-owner rule stays under every outcome
+
+- **Date:** 2026-10-28
+- **Kind:** policy
+- **Tickets:** T-046
+- **Supersedes:** none
+
+**Question:** Q-T046-5: does the brief's selection rule decide the outcome, and does the code-owner rule stay?
+
+**Options considered:**
+1. The section 6 rule, with the D-276 code-owner rule kept in the recipes under every outcome
+2. The same rule, but O1 drops the code-owner requirement
+3. No rule; the Head Keeper picks an outcome after the findings
+
+**Hive recommendation:** The section 6 rule, with the D-276 code-owner rule kept in the recipes under every outcome
+
+**Keeper choice:** Adopt the T-046 section 6 rule: O1 (adopt pull_request_target) needs parts (a), (c) and (d) yes and a full review path; O3 (hybrid) needs (a), (c) and (d) yes without one; O2 (keep pull_request plus code-owner review) otherwise, including any unknown. The D-276 code-owner rule on .github/workflows/** stays in the G5 recipes under every outcome.
+
+**Rationale:** A same-repo PR can post a check of the same name from the same GitHub Actions app, so the code-owner rule is kept even if pull_request_target is adopted. Decided by the Head Keeper via queen card on 2026-10-28; recorded by the queen.
+
+## D-347: T-046 Q6: a second personal GitHub account approves on the probe
+
+- **Date:** 2026-10-28
+- **Kind:** spend
+- **Tickets:** T-046
+- **Supersedes:** none
+
+**Question:** Q-T046-6: how does the probe get an approval from an account other than the PR author?
+
+**Options considered:**
+1. A second personal account added as a collaborator for the probe card
+2. A GitHub App that submits reviews through the API
+3. No second account; review rows stay unknown
+
+**Hive recommendation:** A second personal account added as a collaborator for the probe card
+
+**Keeper choice:** A second personal account the Head Keeper holds or creates (free), added as a collaborator to waggle-sh/gate-probe for the probe card and removed with the repo; the Head Keeper checks on the card whether the org charges a prorated seat for it.
+
+**Rationale:** Probe rows P3, P5, P6 and P9 need an approver other than the PR author; without one the result can never be O1. Decided by the Head Keeper via queen card on 2026-10-28; recorded by the queen.
