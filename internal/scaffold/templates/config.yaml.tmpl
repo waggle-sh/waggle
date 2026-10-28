@@ -38,6 +38,13 @@ runtimes:
 context:
   profile: balanced # lean | balanced | thorough
 
+# Agent pace (D-321 to D-323). Keepers pick a profile in .waggle/control/local.yaml.
+# pace:
+#   profile: steady   # default for a keeper who picks none: serial | steady | max
+#   limit: max        # the fastest profile a keeper may pick
+#   max:              # optional per-profile overrides of the raw keys
+#     parallel_runs: 3
+
 cell:
   enforce_ro_root: true
   use_sparse_checkout: false
