@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -125,17 +126,29 @@ func subcommandFlags(text string) map[string][]string {
 	return m
 }
 
+const promptText = "Set up Waggle Gate by following instructions:"
+
 var (
 	tagRe      = regexp.MustCompile(`v\d+\.\d+\.\d+`)
 	assetVerRe = regexp.MustCompile(`waggle_(\d+\.\d+\.\d+)_`)
-	promptRe   = regexp.MustCompile(`(?m)^Set up Waggle Gate by following instructions: (\S+)$`)
+	promptRe   = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(promptText) + ` (\S+)$`)
 	pipeShRe   = regexp.MustCompile(`\|\s*(sh|bash)(\s|$)`)
 	mainURLRe  = regexp.MustCompile(`https?://\S*/main(/|\b)`)
 )
 
-// tagProblems checks that the doc and the README prompt name one tag, in asset names and in the URL.
-func tagProblems(doc, prompt string) []string {
+// tagProblems checks that the README holds one prompt line, and that it and the
+// doc name one tag, in asset names and in the URL, which must be the pinned URL exactly.
+func tagProblems(doc, readme string) []string {
 	var out []string
+	if n := strings.Count(readme, promptText); n > 1 {
+		out = append(out, "want one prompt, README holds "+strconv.Itoa(n))
+	}
+	m := promptRe.FindStringSubmatch(readme)
+	if m == nil {
+		out = append(out, "README holds no setup prompt line")
+		m = []string{"", ""}
+	}
+	prompt, url := m[0], m[1]
 	tags := map[string]bool{}
 	for _, tg := range tagRe.FindAllString(doc+"\n"+prompt, -1) {
 		tags[tg] = true
@@ -150,8 +163,8 @@ func tagProblems(doc, prompt string) []string {
 		}
 	}
 	want := "https://raw.githubusercontent.com/waggle-sh/waggle/refs/tags/" + tag + "/docs/setup.md"
-	if !strings.Contains(prompt, want) {
-		out = append(out, "prompt lacks URL "+want)
+	if prompt != "" && url != want {
+		out = append(out, "prompt URL is not "+want)
 	}
 	return out
 }
@@ -226,15 +239,6 @@ func gateAddProblems(doc string) []string {
 	return []string{"no git add line"}
 }
 
-func readmePrompt(t *testing.T) string {
-	t.Helper()
-	m := promptRe.FindString(readText(t, "../../README.md"))
-	if m == "" {
-		t.Fatal("README.md holds no setup prompt line")
-	}
-	return m
-}
-
 func TestSetupDocCommandsParse(t *testing.T) {
 	doc := readText(t, "../../docs/setup.md")
 	subs := subcommandFlags(doc)
@@ -263,18 +267,27 @@ func TestSetupDocCommandsParse(t *testing.T) {
 }
 
 func TestSetupDocOneTag(t *testing.T) {
-	doc, prompt := readText(t, "../../docs/setup.md"), readmePrompt(t)
-	if p := tagProblems(doc, prompt); len(p) != 0 {
+	doc, readme := readText(t, "../../docs/setup.md"), readText(t, "../../README.md")
+	if p := tagProblems(doc, readme); len(p) != 0 {
 		t.Errorf("tag problems: %v", p)
 	}
 	good := "https://raw.githubusercontent.com/waggle-sh/waggle/refs/tags/v0.1.0/docs/setup.md"
-	for name, c := range map[string][2]string{
-		"second tag":    {doc + "\nv0.2.0", prompt},
-		"asset version": {"waggle_0.2.0_x v0.1.0", "v0.1.0 " + good},
-		"branch URL":    {doc, "v0.1.0 https://raw.githubusercontent.com/waggle-sh/waggle/refs/heads/v0.1.0/docs/setup.md"},
+	line := promptText + " " + good
+	for name, c := range map[string]struct{ doc, readme, reason string }{
+		"second tag":       {doc + "\nv0.2.0", line, "exactly one tag"},
+		"asset version":    {"waggle_0.2.0_x v0.1.0", line, "asset version"},
+		"branch URL":       {doc, promptText + " https://raw.githubusercontent.com/waggle-sh/waggle/refs/heads/v0.1.0/docs/setup.md", "prompt URL"},
+		"URL prefix":       {doc, promptText + " https://evil.example/" + good, "prompt URL"},
+		"URL suffix":       {doc, line + ".evil", "prompt URL"},
+		"second prompt":    {doc, line + "\n" + promptText + " https://evil.example/v0.1.0/docs/setup.md", "want one prompt"},
+		"second, indented": {doc, line + "\n  " + promptText + " https://evil.example/v0.1.0/docs/setup.md", "want one prompt"},
+		"second, trailing": {doc, line + "\n" + line + " now", "want one prompt"},
+		"indented only":    {doc, "  " + line, "no setup prompt line"},
+		"trailing word":    {doc, line + " now", "no setup prompt line"},
+		"no prompt":        {doc, "nothing here", "no setup prompt line"},
 	} {
-		if len(tagProblems(c[0], c[1])) == 0 {
-			t.Errorf("planted %s not caught", name)
+		if p := strings.Join(tagProblems(c.doc, c.readme), "\n"); !strings.Contains(p, c.reason) {
+			t.Errorf("planted %s: want a problem naming %q, got %q", name, c.reason, p)
 		}
 	}
 }
