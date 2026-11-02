@@ -38,3 +38,35 @@ git status          nothing to commit, working tree clean
 ```
 
 Verdict: must-fix
+<!-- waggle-review v1 verdict=pass head=d9b7581896f1b987132da53b0b67b2ecd0e60fd0 -->
+
+Risk-Tier: 2
+
+**Intent Summary:** T-048 rewrites what the gate's user docs claim about admin bypass, the required check and approvals, in light of the T-046 probe: the required check can be forged by a workflow on any branch (delete the failing run, post a passing check) or by a token that can delete runs and write commit statuses, and an approval alone does not clear a failed run. It adds L11's full account and the three partial protections to `docs/gate.md`, the README, and the recipes; links every remaining admin-bypass claim to the limit; and replaces `waggle doctor`'s false closing line "Everything Waggle relies on is enforced on this repo." with two lines that say no required setting was found missing and the check can still be forged. One golden and one test assertion follow. Blast radius: user-facing text and one doctor output line; no exit code, finding, label, template, Action or program message changes. Eight files changed, all inside the lease rule.
+
+**Verification**
+
+| Check | Result |
+|---|---|
+| `go build ./...`, `go vet ./...`, `gofmt -l .` | clean |
+| `go test -race ./...` | all packages ok |
+| Files changed | exactly the 8 the lease rule allows; no `gate/**`, `.github/**`, `.waggle/**`, `internal/scaffold/**`, `internal/comb/**` or `cmd/waggle/gate*.go` |
+| Commits | both `T-048: ` prefixed and signed off |
+
+- **AC1:** every section 3 edit is present; README lines 14, 16, new limits bullet, 27, 33, 35 only; no heading renamed.
+- **AC2:** every `admin` hit in `README.md`, `docs/gate.md`, `docs/recipes/` is linked (L11, `[limits]`, `(limit: L11)`), inside L11 itself, or exempt per section 3 (README 27 and 34, `gate.md` 74, 83 and 112, `recipes/README.md` 16). The three program messages at `gate.md:27`, `:49`, `:50` match `gate_commits.go:268` and `changecheck.go:96, 98` byte for byte.
+- **AC3:** L11 names both routes, the own-PR, other-PR and plain-branch places with their shape, "none is complete alone", the S12 copy exception, the untested Pull requests token and "test workflows, not with the real gate". Each sentence I checked against `media/T-046/probe-log.md` is supported: "a workflow token cannot edit one" is P4b run 3's PATCH 403; "one such PR was merged" is #11; the token, bound and required-review rows match #16, #18, #19 and #15; the 8 December date is the findings' [CL] changelog.
+- **AC4:** section 6 says an approval alone does not turn the check green, names Write, says the real gate was not run, words dismissal and request for changes as "should"; `recipes/README.md:31`, `copilot-cloud-agent.md:25` and README line 14 link to it.
+- **AC5:** `report.go:107-108` prints the section 2 text; lines are 45 and 63 columns and the golden loop at `report_test.go:61-63` checks them; `Enforcement: enforced` and the `Not enforced` branch are untouched. `doctor_test.go:210` asserts `found missing` absent on the native-queue path, which has an unknown finding, so the assertion is meaningful.
+- **AC6:** no en or em dash in any of the five docs. Word search hits are all section 7 non-hits: `.waggle/hive/` product paths, `internal/comb/` code paths, the `Head Keeper: ` subject and `T-123` examples.
+- **Cites:** `gate_verify.go:260-298`, `probe_github.go:97-118, 140-144, 155-172, 174-191`, `probe.go:38-42`, `doctor.go:27-30, 64-67, 84-89` all match the code at `d9b7581`. The `enforced` sentence matches `Report.Enforcement` at `report.go:52-73`.
+
+**Notes (not must-fix)**
+
+- `gate.md:116` says "With no finding missing it closes with" the new line. An `unknown` finding also suppresses it (`NotEnforced` includes unknown, `report.go:42-49`). Precision nit for a polish pass.
+- Cites this ticket was not asked to touch have drifted: `changecheck.go:93-94` and `95-96` are now 95-96 and 97-98; `gate_commits.go:265-268` is now 267-269; `gate_verify.go:225-229` is now 227-230. Polish ticket material.
+- L11's "a classic token with `repo` already reaches Actions and commit statuses" rests on GitHub's scope documentation, not a probe row (the token used also held `workflow`). The brief required the sentence; recording the basis here.
+
+**Blocking Issues (Must-Fix Only):** none.
+
+Verdict: pass
