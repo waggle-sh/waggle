@@ -1,0 +1,71 @@
+<!-- SPDX-License-Identifier: MIT-0 -->
+# T-047 dry run (AC9), queen, 2026-11-02, after the first guard reviews, against `e0cea3e`. Local repos, scratch HOME, no network.
+
+```
+source e0cea3e
+== part 1: main origin
+$ git rev-parse --show-toplevel
+<scratch>/r1
+exit 0
+$ git remote get-url origin
+<scratch>/o1.git
+exit 0
+$ git status --porcelain
+exit 0
+$ git fetch origin
+exit 0
+$ git switch -c waggle-gate-install origin/main
+Switched to a new branch 'waggle-gate-install'
+branch 'waggle-gate-install' set up to track 'origin/main'.
+exit 0
+$ <scratch>/waggle init --gate-only
+Initializing Waggle gate (gate-only)...
+  [create] .github/workflows/waggle-gate.yml
+  [create] .waggle/control/config.yaml
+  [create] .waggle/hive/DECISIONS.md
+Gate initialized. Next: commit .github/workflows/waggle-gate.yml, .waggle/control/config.yaml and .waggle/hive/DECISIONS.md, then require the check verify-leases-and-tiers on your default branch.
+exit 0
+$ git add .github/workflows/waggle-gate.yml .waggle/control/config.yaml .waggle/hive/DECISIONS.md
+exit 0
+$ git commit -q -m Install Waggle Gate
+exit 0
+$ <scratch>/waggle gate verify --base main --head HEAD --branch waggle-gate-install
+leases: FAIL: commit d9df46de26a5 "Install Waggle Gate": commit has no T-<id>: prefix, Waggle-Ticket: trailer or ticket branch
+tiers: FAIL: .github/workflows/waggle-gate.yml: Tier 3 path; only an admin bypass merges it, approval does not
+tiers: FAIL: .waggle/control/config.yaml: Tier 3 path; only an admin bypass merges it, approval does not
+decisions: FAIL: decisions: change is not a pure append: head: entries removed or rewritten (base has 0 entries, head has 0)
+exit 1
+== part 2: master origin
+$ <scratch>/waggle claim T-900 --dirs src --gate full --owner tester --branch t-900 --base origin/master
+claimed T-900 for tester until 2026-11-02T08:11:23Z: src (gate full, claim 0f97be414594)
+exit 0
+$ <scratch>/waggle gate verify --base origin/master --head HEAD --branch t-900
+leases: FAIL: other/f.txt: T-900: path is outside the claim directories
+tiers: ok
+decisions: unchanged
+exit 1
+$ <scratch>/waggle release T-900 --unmerged --owner tester
+released T-900 (claim 0f97be414594, unmerged)
+exit 0
+$ git for-each-ref refs/waggle/claims
+exit 0
+== part 3: non-GitHub origin
+$ <scratch>/waggle init --gate-only
+Initializing Waggle gate (gate-only)...
+  [create] .github/workflows/waggle-gate.yml
+  [create] .waggle/control/config.yaml
+  [create] .waggle/hive/DECISIONS.md
+Gate initialized. Next: commit .github/workflows/waggle-gate.yml, .waggle/control/config.yaml and .waggle/hive/DECISIONS.md, then require the check verify-leases-and-tiers on your default branch.
+exit 0
+$ <scratch>/waggle doctor
+waggle doctor failed: forge: github: remote origin: host "<scratch>/o3.git" is not github.com; provider github supports only github.com (GitHub Enterprise Server is not supported): bad forge remote
+exit 3
+== part 4: a bare .waggle directory
+$ <scratch>/waggle init --gate-only
+Initializing Waggle gate (gate-only)...
+  [create] .github/workflows/waggle-gate.yml
+  [create] .waggle/control/config.yaml
+  [create] .waggle/hive/DECISIONS.md
+Gate initialized. Next: commit .github/workflows/waggle-gate.yml, .waggle/control/config.yaml and .waggle/hive/DECISIONS.md, then require the check verify-leases-and-tiers on your default branch.
+exit 0
+```
