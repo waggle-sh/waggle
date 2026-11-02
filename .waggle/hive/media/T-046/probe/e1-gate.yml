@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe row E1: the gate's real shape. One workflow, one job name, on pull_request and pull_request_review.
+# The job fails unless the run is a review run with state approved, like a named-approver gate.
+name: e1-gate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  pull_request_review:
+    types: [submitted, dismissed]
+permissions:
+  contents: read
+jobs:
+  e1-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide
+        env:
+          EVENT: ${{ github.event_name }}
+          STATE: ${{ github.event.review.state }}
+          RUN_SHA: ${{ github.sha }}
+        run: |
+          echo "event=$EVENT review.state=$STATE github.sha=$RUN_SHA"
+          test "$EVENT" = pull_request_review && test "$STATE" = approved

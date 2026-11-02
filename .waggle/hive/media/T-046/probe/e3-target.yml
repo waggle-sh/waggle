@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe row E3: the required check under pull_request_target, passing only with a standing approval.
+name: e3-target
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  e3-gate:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      ATTEMPT: ${{ github.run_attempt }}
+    steps:
+      - name: Read reviews live
+        run: |
+          n=$(gh api "repos/$REPO/pulls/$PR/reviews" --jq 'group_by(.user.login) | map(last) | map(select(.state == "APPROVED")) | length')
+          echo "attempt=$ATTEMPT approvals standing=$n"
+          test "$n" -gt 0

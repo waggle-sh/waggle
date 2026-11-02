@@ -79,3 +79,7 @@ Not selected now. If T-046b selects O1 or O3, the lease, files and size are sect
 ## Probe card notes for the Head Keeper (phase 2)
 
 Order: commit `verdict` (`fail`), `p1-target.yml`, `p7-clone.yml` and `p3-review.yml` to `main`; run P1 and P7 with a same-repo PR; P3 with the second account; P4a and P4b in separate PRs (flip the token setting between P4b runs and record it); rename the P3 job to `probe-review` and commit `p9-chained.yml`; run P9. Every probe workflow pins `actions/checkout` at `11d5960a326750d5838078e36cf38b85af677262` (v4.4.0, the SHA this repo already pins), uses no other action (API calls go through the runner's `gh`), puts payload fields only in `env:`, and uses no secret beyond `github.token`.
+
+## Phase 2 result
+
+Phase 1 selected O2 pending the probe. See `probe-log.md` for phase 2 and DECISIONS.md for the Head Keeper's ruling: O1 for same-repo PRs, with fork rows and the real-gate test in T-048 before G5.
