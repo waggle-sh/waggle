@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT-0
+# T-048 probe: the protected required check. Fails like a gate that refuses the PR. A branch named slow-* sleeps first.
+name: s-target
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  s-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BR: ${{ github.head_ref }}
+        run: |
+          case "$BR" in slow-*) sleep 240;; esac
+          exit 1
