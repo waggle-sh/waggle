@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT-0
+# T-048 probe: today's template shape, a pull_request job as the required check, failing like a refusing gate.
+name: today
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  t-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 1
