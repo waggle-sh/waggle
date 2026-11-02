@@ -6718,3 +6718,142 @@
 **Keeper choice:** A second personal account the Head Keeper holds or creates (free), added as a collaborator to waggle-sh/gate-probe for the probe card and removed with the repo; the Head Keeper checks on the card whether the org charges a prorated seat for it.
 
 **Rationale:** Probe rows P3, P5, P6 and P9 need an approver other than the PR author; without one the result can never be O1. Decided by the Head Keeper via queen card on 2026-10-28; recorded by the queen.
+
+## D-348: T-046 probe: buy one org seat for the second account and keep it and the probe repo until T-048 is tested
+
+- **Date:** 2026-11-02
+- **Kind:** spend
+- **Tickets:** T-046, T-048
+- **Supersedes:** none
+
+**Question:** The org's one seat was filled and GitHub refused the collaborator without another. Pay, make the probe public, or delete soon after the records commit?
+
+**Options considered:**
+1. Pay for one seat; keep the seat and probe repo until T-048 is tested
+2. Make the probe repo public
+3. Delete after the records commit
+
+**Hive recommendation:** Pay for one seat; keep the seat and probe repo until T-048 is tested
+
+**Keeper choice:** One added seat for the second account on waggle-sh/gate-probe. The seat and repo stay until T-048 is tested; deleting the repo and lowering the seat count come on their own card.
+
+**Rationale:** Keeps the conditions of the runs already done and lets T-048 reuse the repo for its real-gate and fork tests. List price is about 4 USD a month, from memory. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-349: T-046 outcome: O1 for same-repo PRs, with T-048 moving the gate to pull_request_target and running fork rows before G5
+
+- **Date:** 2026-11-02
+- **Kind:** strategy
+- **Tickets:** T-046, T-048
+- **Supersedes:** none
+
+**Question:** The probe shows a chained re-run of a pull_request_target run is a full review path on same-repo PRs, and a passing review run does not clear a failing pull_request run. Which outcome?
+
+**Options considered:**
+1. O1, brief T-048
+2. O3 hybrid
+3. O2, ship as is
+
+**Hive recommendation:** O1, brief T-048
+
+**Keeper choice:** O1. T-048 changes the template to pull_request_target with a chained re-run, and tests the real gate on same-repo and fork PRs before G5. G5 waits for it. D-346 selects O2 on any unknown in (a) and row a3 stays unknown for forks, so this ruling is conditional: if the fork rows fail, the result returns to the Head Keeper, because failing closed on forks regresses today's fork support.
+
+**Rationale:** Evidence is media/T-046/probe-log.md, fact-checked by fable. Test workflows only, not the real gate. E1 shows gate.approvers cannot turn green by approval alone under today's template. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-350: T-047: an agent setup prompt for the gate only, in GA scope, pinned to the first tag, with the merge and rule left to a person
+
+- **Date:** 2026-11-02
+- **Kind:** scope
+- **Tickets:** T-047
+- **Supersedes:** none
+
+**Question:** What scope for an agent setup prompt modeled on the AWS Agent Toolkit prompt?
+
+**Options considered:**
+1. Gate only, in GA, pinned to the first tag with a checksum check
+2. Gate only, after GA
+3. Gate and full hive
+4. Gate only, tracking main
+
+**Hive recommendation:** Gate only, in GA, pinned to the first tag with a checksum check
+
+**Keeper choice:** Gate only (waggle init --gate-only), in GA scope without moving a D-277 card, URL pinned to the first release tag with a SHA256SUMS check. The agent opens the install PR; a person does the merge and creates the required-check and PR rule.
+
+**Rationale:** An agent should not switch on the gate that binds it. The manual README steps are the first impression the D-235 kill criterion measures. Decided on a queen card on 2026-11-01. Recorded by the queen.
+
+## D-351: T-047 Q1, Q2, Q5, Q6: docs/setup.md, first tag v0.1.0, a CODEOWNERS line, and no waggle setup command
+
+- **Date:** 2026-11-02
+- **Kind:** technical
+- **Tickets:** T-047
+- **Supersedes:** none
+
+**Question:** Q-T047-1, 2, 5 and 6: doc path, first tag name, review of later doc changes, and whether to add a setup command.
+
+**Options considered:**
+1. Accept all four recommended answers
+2. Change one
+
+**Hive recommendation:** Accept all four recommended answers
+
+**Keeper choice:** docs/setup.md as one file at a refs/tags raw URL; first tag v0.1.0, written literally; a Head Keeper commit adds /docs/setup.md to CODEOWNERS; no waggle setup command.
+
+**Rationale:** The doc is needed anyway to download the binary, and a protected_paths entry would refuse every later docs lease. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-352: T-047 Q3: the setup agent adds gate rules to an existing CLAUDE.md or AGENTS.md in the install PR, asked once
+
+- **Date:** 2026-11-02
+- **Kind:** policy
+- **Tickets:** T-047
+- **Supersedes:** none
+
+**Question:** Q-T047-3: should the agent add gate rules to the repo's agent instructions file during install?
+
+**Options considered:**
+1. Add in the install PR, asked once
+2. Print it for the user
+3. Leave it out
+
+**Hive recommendation:** Add in the install PR, asked once
+
+**Keeper choice:** Add the block in the install PR, asked once with default yes, only into a file that already exists. It adds no enforcement and the doc says so.
+
+**Rationale:** Without it new users hit failing PRs by default; the person can drop it before merging. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-353: T-047 Q4: rehearse before the flip and run verbatim after it, with Claude Code and Codex CLI
+
+- **Date:** 2026-11-02
+- **Kind:** scope
+- **Tickets:** T-047
+- **Supersedes:** none
+
+**Question:** Q-T047-4: the raw URL is 404 while the repo is private. How is the prompt tested?
+
+**Options considered:**
+1. Claude Code plus Codex
+2. Claude Code only
+3. Another agent the Head Keeper pays for
+
+**Hive recommendation:** Claude Code plus Codex
+
+**Keeper choice:** A rehearsal before the flip using a gh api fetch, a verbatim run right after it, Claude Code and Codex CLI, on throwaway private repos deleted after.
+
+**Rationale:** Codex covers an agent that reads AGENTS.md, and the README can name only agents actually run. About 60 to 90 minutes of Head Keeper time. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-354: T-047 Q7: a tag ruleset before the first tag, if the plan supports it
+
+- **Date:** 2026-11-02
+- **Kind:** policy
+- **Tickets:** T-047
+- **Supersedes:** none
+
+**Question:** Q-T047-7: the prompt pins a tag and no tag ruleset exists. Run T-036's tag ruleset card before the first tag?
+
+**Options considered:**
+1. Add before the first tag
+2. Skip for now
+
+**Hive recommendation:** Add before the first tag
+
+**Keeper choice:** Block moving or deleting v* tags before the first tag. The queen checks plan support first; if unsupported, it returns to the Head Keeper.
+
+**Rationale:** Otherwise the pin rests only on the maintainer account. Admin bypass remains, so it guards against accidents and limited credentials, not a stolen admin login. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.

@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe row E2: does a re-run of the failed pull_request run replace its failure for the required check?
+name: e2-gate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  e2-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail on the first attempt, pass on a re-run
+        env:
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          echo "attempt=$ATTEMPT"
+          test "$ATTEMPT" -gt 1
