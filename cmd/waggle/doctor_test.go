@@ -207,7 +207,7 @@ func TestDoctorGoldenNativeQueue(t *testing.T) {
 			NotEnforced: "this build does not check the merge queue rule.", Fix: "check that a merge queue rule is active on main."}}
 	seamForge(t, &fakeForge{report: report("native_queue", queue...)}, okClaims)
 	code, out, _ := runDoc("--repo", dir, "--no-write")
-	if code != 0 || out != queueGolden || strings.Contains(out, "Everything Waggle relies on is enforced") {
+	if code != 0 || out != queueGolden || strings.Contains(out, "found missing") {
 		t.Errorf("exit %d, got:\n%s", code, out)
 	}
 }
