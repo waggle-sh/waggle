@@ -6937,3 +6937,25 @@
 **Keeper choice:** Copy the remaining workflows into records, commit the final log, then delete the repo and remove the second account; the Head Keeper lowers the seat count in billing.
 
 **Rationale:** Stops about 4 USD a month. Run logs go with the repo; the fact-checked log and workflow copies stay in records. If O1 returns after GA it needs a new repo and seat. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-359: T-047 and T-048 wording: public docs carry no hive path; corrected warning; throwaway repos for the rehearsal; hive credentials limit accepted
+
+- **Date:** 2026-11-02
+- **Kind:** policy
+- **Tickets:** T-047, T-048
+- **Supersedes:** none
+
+**Question:** Four points from the T-047 and T-048 briefs: the setup doc warning's first sentence, hive path cites in public docs, where the rehearsal runs, and whether to narrow hive subagent credentials now.
+
+**Options considered:**
+1. Corrected warning, no hive paths in public docs, throwaway repos per D-353, accept the hive credentials limit and record it
+2. Shorter warning
+3. Keep the cites
+4. Demo repo rehearsal
+5. Narrow subagent credentials now
+
+**Hive recommendation:** Corrected warning, no hive paths in public docs, throwaway repos per D-353, accept the hive credentials limit and record it
+
+**Keeper choice:** The warning opens: Credentials that can push workflow files, or that can both delete Actions runs and write commit statuses, can also forge the required check. This was shown with test workflows, not with the real gate. Public docs carry no media/T-046 path; cites stay in briefs. T-047 rehearses on throwaway private repos. Hive subagents keep the full gh login for now; the limit goes in the queen summary and is revisited before outside contributors.
+
+**Rationale:** The first sentence matches the probe log; the shorter text went past it. Hive paths would break D-236 and point readers at the attack workflow. Every merge in this hive is an admin bypass, so the gate is not the control here. Decided by the Head Keeper via queen cards on 2026-11-02; recorded by the queen.
