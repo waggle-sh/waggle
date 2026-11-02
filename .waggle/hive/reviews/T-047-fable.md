@@ -40,3 +40,45 @@ git status --porcelain       clean
 5. The brief's failure table had a third "Why, from the code" column; the doc drops it for plain terms. The user-facing instruction in every row is intact.
 
 Verdict: pass
+
+<!-- waggle-review v1 verdict=pass head=d30d31adb0c2e98b9c7898e1c895802ef1aa867a -->
+
+Risk-Tier: 3
+
+**Intent Summary:** Fix round 1 of the T-047 build, one commit `d30d31a` on `t-047`, touches only `README.md` and `cmd/waggle/setup_doc_test.go`. It makes the three section 18 changes: the T2 test now reads the README whole, counts the prompt text, extracts the URL from the first prompt line and compares it for equality with the pinned `refs/tags/v0.1.0` URL, with eight new planted rows; the README warning's link line becomes `See [L11](docs/gate.md#10-limits-and-known-bypasses).`; and the README warning's first sentence opens with `docs/setup.md is instructions`. `docs/setup.md` is byte-identical to `e0cea3e`, so no fenced command, stop rule, MUST NOT line or human step changed. Blast radius: one test file and two README lines. No product code, no `internal/`, `gate/`, `.github/` or `.waggle/` change. Hive effect at merge is unchanged from the first review.
+
+**Verification run (all at `d30d31a`):**
+
+| Check | Result |
+| :--- | :--- |
+| `go build ./...` | clean |
+| `go vet ./...` | clean |
+| `gofmt -l .` | no output |
+| `go test -race ./...` | all packages ok, including `internal/license` |
+| `go test -race ./... -run 'TestSetupDoc\|TestHelpPlainTerms' -v ./cmd/waggle` | T1 to T5 pass |
+| `git diff e0cea3e d30d31a --stat -- docs/setup.md` | empty |
+| `git status --porcelain` | clean |
+| Commit | signed off, subject prefix `T-047: ` |
+
+**Item 1 (opus M1), checked against the code at `setup_doc_test.go:129-170` and `:269-293`:**
+- `promptRe.FindStringSubmatch` reads the `(\S+)` group and `url != want` is an equality test (`:146-151`, `:165-168`). The old `strings.Contains` and `readmePrompt` are gone.
+- `strings.Count(readme, promptText) > 1` counts the literal text, not regex matches, so an indented or trailing-word second line is caught (`:143-145`); rows "second, indented" and "second, trailing" cover both.
+- Prefix and suffix rows are full prompt lines and fail on "prompt URL". The `asset version` and `branch URL` rows are now full prompt lines and each fails for its own reason. Each row now asserts the problem text names the intended reason, which is stricter than the old any-problem check.
+- The real README holds the prompt text exactly once, at `README.md:48` (grep across the repo outside `.waggle/` finds only that line and the test constant).
+- The checks are on a function taking text, so the rows drive the real check. The test still writes, pushes and signals nothing; the `-h` helper path is untouched.
+
+**Item 2:** `README.md:43` is exactly `See [L11](docs/gate.md#10-limits-and-known-bypasses).`, the same form the README's doctor line uses at `README.md:36`. Not a URL that follows `main`; it is a relative path, and only the pasted prompt at `:48` is a pinned URL.
+
+**Item 3:** `README.md:42` opens `docs/setup.md is instructions your agent follows with your credentials.` and the rest of the paragraph matches section 8.1 word for word. No test compares the README warning to the doc, and T4 and T5 still read only `docs/setup.md`, so nothing weakened.
+
+**Lease and scope:** both touched files are inside the lease (`README.md`, `cmd/waggle`). No other file changed in this round. The branch's full diff from `416e457` is still only `README.md`, `docs/setup.md` and the test file. Branch point is `416e457`, not Base `f3ea86c`; the brief says nothing under the lease paths differs between them, and the targeted and full test runs pass on this tree.
+
+**Threat bar (D-203):** no finding. The round adds no network endpoint, download, credential handling, permission or change to the human step. The test change narrows what a README edit can slip past, which is the point of M1.
+
+**Blocking Issues (Must-Fix Only):** none.
+
+**Notes, not must-fix:**
+1. The "trailing word" row relies on `(\S+)$` failing when text follows the URL. It does, since the URL has no whitespace to split on, and the test proves it, so this is only a comment on why the row passes.
+2. `README.md:42` now begins with a bare path in prose. The T-041 site renders the README as markdown, so it stays plain text, which the ruling intends.
+
+Verdict: pass
