@@ -6959,3 +6959,62 @@
 **Keeper choice:** The warning opens: Credentials that can push workflow files, or that can both delete Actions runs and write commit statuses, can also forge the required check. This was shown with test workflows, not with the real gate. Public docs carry no media/T-046 path; cites stay in briefs. T-047 rehearses on throwaway private repos. Hive subagents keep the full gh login for now; the limit goes in the queen summary and is revisited before outside contributors.
 
 **Rationale:** The first sentence matches the probe log; the shorter text went past it. Hive paths would break D-236 and point readers at the attack workflow. Every merge in this hive is an admin bypass, so the gate is not the control here. Decided by the Head Keeper via queen cards on 2026-11-02; recorded by the queen.
+
+## D-360: Overnight merges approved in advance on stated conditions
+
+- **Date:** 2026-11-02
+- **Kind:** policy
+- **Tickets:** T-047
+- **Supersedes:** none
+
+**Question:** Can the queen merge overnight without a fresh card per merge?
+
+**Options considered:**
+1. Approve in advance: T-047 fix brief PR, hive records batches, and PR #186 if every confirming guard passes, product-ci is SUCCESS and the reviewed head is unchanged
+2. Records and brief only
+3. No merges tonight
+
+**Hive recommendation:** Approve in advance
+
+**Keeper choice:** Approve in advance. Any must-fix or nonzero exit stops that line for the morning. Applies to this overnight shift only.
+
+**Rationale:** Keeps T-047 moving while the Head Keeper is away; each merge is reversible by revert until the first tag and nothing is published. Decided by the Head Keeper via queen card; recorded by the queen.
+
+## D-361: Overnight scope: T-041 phase B through guards, unmerged, and a brief for the dispatch fix-round bug
+
+- **Date:** 2026-11-02
+- **Kind:** scope
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** What else runs overnight after T-047?
+
+**Options considered:**
+1. T-041 to guards plus a fix-round brief
+2. Fix-round ticket only
+3. T-047 only
+
+**Hive recommendation:** T-041 to guards plus a fix-round brief
+
+**Keeper choice:** T-041 to guards plus a fix-round brief. Approves the WAGGLE.md section 2 site/ line and the asset PR merge. Phase B's PR ends reviewed and unmerged. The fix-round bug gets a brief, no build. No Vercel connect, redaction, rewrite, tag or flip.
+
+**Rationale:** Follows the D-341 order and leaves the Tier 3 merge and every publish step to the Head Keeper. Decided by the Head Keeper via queen card; recorded by the queen.
+
+## D-362: T-047: the README warning names docs/setup.md
+
+- **Date:** 2026-11-02
+- **Kind:** policy
+- **Tickets:** T-047
+- **Supersedes:** none
+
+**Question:** The warning copied into the README opens with This file, which reads as the README. Change it in the fix round?
+
+**Options considered:**
+1. README names docs/setup.md
+2. Keep verbatim everywhere
+
+**Hive recommendation:** README names docs/setup.md
+
+**Keeper choice:** In the README only, the first sentence opens with docs/setup.md is instructions your agent follows with your credentials. The doc and the PR body keep the warning verbatim.
+
+**Rationale:** Accurate for a README reader, one line, reversible until the first tag. Decided by the Head Keeper via queen card; recorded by the queen.
