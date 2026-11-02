@@ -37,6 +37,19 @@ It does not schedule or run agents, and it is not a sandbox. The limits below ar
 
 The full workflow is in the [gate spec](docs/gate.md#13-the-calling-workflow). A pin is written `<commit-sha>`; for a release tag, read the commit with `git rev-parse vX.Y.Z^{commit}`.
 
+### Set up with an agent
+
+This file is instructions your agent follows with your credentials. Read it before you paste the prompt. This setup does not make the gate stronger against the agent that installs it: if your credentials can push claim refs, merge PRs or change rules, so can that agent, and this file only tells it not to. An agent-driven install is trustworthy only once a person has made `verify-leases-and-tiers` and PRs required on the default branch. After that, an agent holding your git credentials can still write its own claim, so write claims yourself, from credentials the agent does not hold. Credentials that can push workflow files, or that can both delete Actions runs and write commit statuses, can also forge the required check. This was shown with test workflows, not with the real gate (gate spec, L11). Give agents credentials limited to Contents and Pull requests. Binding the check to GitHub Actions closes only the status route, and a person's required approval only keeps a person in the merge. None of these is complete alone.
+docs/gate.md#10-limits-and-known-bypasses
+
+Paste this into your coding agent:
+
+```
+Set up Waggle Gate by following instructions: https://raw.githubusercontent.com/waggle-sh/waggle/refs/tags/v0.1.0/docs/setup.md
+```
+
+You can add inputs on the following lines: `repo` (default: the current directory) and `agent_rules` (`yes` or `no`, default `yes`), which adds a short block to an existing `CLAUDE.md` or `AGENTS.md`. The agent installs the gate on a branch, opens the install PR, then stops for you to merge it and create the rule. After that it runs `waggle doctor` and reports what doctor does not check. The pinned URL is the one to paste; [docs/setup.md](docs/setup.md) is for reading.
+
 ## Writing a claim
 
 ```
@@ -59,6 +72,8 @@ How to run the gate under the agent you already use, in [docs/recipes](docs/reci
 ## Status
 
 Pre-1.0. The [gate spec](docs/gate.md) describes what the code does today, and the recipes have not been run end to end with each tool.
+
+The agent setup prompt has not been run end to end with any agent.
 
 ## Documentation
 
