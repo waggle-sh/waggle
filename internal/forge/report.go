@@ -104,7 +104,8 @@ func Render(w io.Writer, r Report) error {
 	}
 	ne := r.NotEnforced()
 	if len(ne) == 0 {
-		b.WriteString("\nEverything Waggle relies on is enforced on this repo.\n")
+		b.WriteString("\nNo required setting above was found missing.\n")
+		b.WriteString("The required check can still be forged: see the gate spec, L11.\n")
 	} else {
 		fmt.Fprintf(&b, "\nNot enforced on this repo (%d):\n", len(ne))
 		for _, f := range ne {
