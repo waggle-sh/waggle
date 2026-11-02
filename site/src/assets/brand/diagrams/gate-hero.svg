@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="wg" viewBox="0 0 1120 580" width="1120" height="580" role="img" aria-labelledby="wg-gate-t wg-gate-d">
+<title id="wg-gate-t">An agent PR through Waggle Gate</title>
+<desc id="wg-gate-d">Task T-123 has a lease written before work starts: internal/comb/ and cmd/waggle/. An agent opens a PR with four commits. Waggle Gate checks each commit against the lease. a41c9e and 7d02b3 stay inside the lease and pass. e19f60 changes deploy/production.tf, a protected path listed in the repo config, which no lease can cover, so it waits until dana, a listed approver, approves the PR at its head commit c3d81f; then it passes. c3d81f changes internal/forge/, outside the lease, so it is must-fix and the PR is blocked. The PR merges only when every commit passes.</desc>
+<style>.wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
+@media (prefers-color-scheme:dark){.wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}}
+[data-theme="light"] .wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
+[data-theme="dark"] .wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}
+.wg .bg{fill:var(--wg-page)}.wg .sf{fill:var(--wg-surface)}
+.wg .s-ink{stroke:var(--wg-ink)}.wg .s-muted{stroke:var(--wg-muted)}.wg .s-rule{stroke:var(--wg-rule)}
+.wg .s-pass{stroke:var(--wg-pass)}.wg .s-block{stroke:var(--wg-block)}.wg .s-wait{stroke:var(--wg-wait)}
+.wg .f-ink{fill:var(--wg-ink)}.wg .f-muted{fill:var(--wg-muted)}.wg .f-page{fill:var(--wg-page)}
+.wg .f-pass{fill:var(--wg-pass)}.wg .f-block{fill:var(--wg-block)}.wg .f-wait{fill:var(--wg-wait)}
+.wg text{font-family:'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;font-size:13px}
+.wg .mono{font-family:'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;font-stretch:87.5%;font-size:12px}
+.wg .sm{font-size:12px}.wg .b{font-weight:600}.wg .mono.b{font-weight:500}.wg .title{font-size:15px;font-weight:600}</style>
+<rect class="bg" width="1120" height="580"/>
+<text x="32" y="36" class="sm b f-muted">1. The lease, written first</text>
+<rect x="32" y="56" width="232" height="172" class="f-page s-ink" stroke-width="1.5"/>
+<text x="52" y="88" class="mono b f-ink">T-123</text>
+<text x="103.34" y="88" class=" f-ink">Add claim verbs</text>
+<path d="M60 108H52V172H60M236 108H244V172H236" fill="none" class="s-ink" stroke-width="2" stroke-linecap="square"/>
+<text x="68" y="134" class="mono f-ink">internal/comb/</text>
+<text x="68" y="156" class="mono f-ink">cmd/waggle/</text>
+<text x="52" y="200" class="sm f-muted">May change only these paths.</text>
+<text x="32" y="252" class="sm f-muted">Written by a human or the orchestrator,</text>
+<text x="32" y="270" class="sm f-muted">before the agent starts. Never by the agent.</text>
+<text x="304" y="36" class="sm b f-muted">2. The agent opens a PR</text>
+<text x="304" y="72" class="b f-ink">PR #1042, 4 commits</text>
+<text x="304" y="90" class="sm f-muted">From any agent, or a person with a branch.</text>
+<line x1="308" y1="140" x2="308" y2="380" class="s-ink" stroke-width="1.5"/>
+<text x="611" y="36" class="sm b f-muted">3. Waggle Gate checks every commit</text>
+<path d="M264 116L609 116L609 124" fill="none" class="s-muted" stroke-width="1.5"/>
+<path d="M609 124L616 124" fill="none" class="s-muted" stroke-width="1.5"/><path d="M611.05 120.61L616 124L611.05 127.39" fill="none" class="s-muted" stroke-width="1.5" stroke-linejoin="miter"/>
+<text x="304" y="110" class="sm f-muted">reads the lease from refs/waggle/claims/ticket-123</text>
+<line x1="619" y1="124" x2="619" y2="452" class="s-ink" stroke-width="3" stroke-linecap="square"/>
+<circle cx="308" cy="140" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="328" y="144" class="mono f-muted">a41c9e</text>
+<text x="392" y="144" class="mono f-ink">internal/comb/lease.go</text>
+<path d="M584 140L613 140" fill="none" class="s-rule" stroke-width="1.5"/>
+<text x="639" y="144" class="f-muted">inside the lease</text>
+<rect x="834" y="128" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="861" y="144" text-anchor="middle" class="mono b f-pass">pass</text>
+<circle cx="308" cy="204" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="328" y="208" class="mono f-muted">7d02b3</text>
+<text x="392" y="208" class="mono f-ink">cmd/waggle/claim.go</text>
+<path d="M560 204L613 204" fill="none" class="s-rule" stroke-width="1.5"/>
+<text x="639" y="208" class="f-muted">inside the lease</text>
+<rect x="834" y="192" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="861" y="208" text-anchor="middle" class="mono b f-pass">pass</text>
+<rect x="382" y="253" width="182" height="30" class="f-page s-ink" stroke-width="1.5"/><rect x="385" y="256" width="176" height="24" fill="none" class="s-ink" stroke-width="1"/>
+<circle cx="308" cy="268" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="328" y="272" class="mono f-muted">e19f60</text>
+<text x="392" y="272" class="mono f-ink">deploy/production.tf</text>
+<path d="M566 268L613 268" fill="none" class="s-rule" stroke-width="1.5"/>
+<text x="639" y="272" class="b f-ink">repo-listed protected path</text>
+<text x="639" y="290" class="sm f-muted">outside the lease too</text>
+<rect x="834" y="256" width="78" height="24" class="f-page s-wait" stroke-width="1.5"/><text x="873" y="272" text-anchor="middle" class="mono b f-wait">waiting</text>
+<path d="M854 280L854 304" fill="none" class="s-ink" stroke-width="1.5"/><path d="M857.39 299.05L854 304L850.61 299.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="834" y="304" width="189" height="32" rx="16" class="f-page s-ink" stroke-width="1.5"/>
+<text x="850" y="324" class=" f-ink">dana approves at c3d81f</text>
+<text x="850" y="356" class="sm f-muted">a listed approver, at the PR's head commit</text>
+<path d="M1023 320L1049 320" fill="none" class="s-ink" stroke-width="1.5"/><path d="M1044.05 316.61L1049 320L1044.05 323.39" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="1051" y="308" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="1078" y="324" text-anchor="middle" class="mono b f-pass">pass</text>
+<circle cx="308" cy="380" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="328" y="384" class="mono f-muted">c3d81f</text>
+<text x="392" y="384" class="mono f-ink">internal/forge/github.go</text>
+<path d="M601 380L613 380" fill="none" class="s-rule" stroke-width="1.5"/>
+<text x="639" y="384" class="b f-ink">outside the lease</text>
+<rect x="834" y="368" width="87" height="24" class="f-page s-block" stroke-width="1.5"/><text x="877.5" y="384" text-anchor="middle" class="mono b f-block">must-fix</text>
+<path d="M619 452L619 496L637 496" fill="none" class="s-block" stroke-width="1.5"/><path d="M632.05 492.61L637 496L632.05 499.39" fill="none" class="s-block" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="639" y="476" width="224" height="40" class="f-page s-block" stroke-width="1.5"/>
+<text x="655" y="501" class="b f-block">Blocked: c3d81f left the lease.</text>
+<text x="639" y="536" class="sm f-muted">Fix the commit or widen the lease.</text>
+<text x="639" y="553" class="sm f-muted">It merges when every commit passes.</text>
+<text x="32" y="501" class="sm b f-muted">4. One must-fix blocks the PR</text>
+</svg>
