@@ -11,4 +11,5 @@ Enforcement: enforced
   ok        bypass          Only the Head Keeper can bypass rulesets.
   skipped   merge-queue     Not used: merge_strategy is up_to_date.
 
-Everything Waggle relies on is enforced on this repo.
+No required setting above was found missing.
+The required check can still be forged: see the gate spec, L11.

@@ -42,7 +42,7 @@ The gate fails the PR with a line such as `T-123: path is outside the claim dire
 
 ## Limit: permission rules are not a boundary
 
-Deny rules for `waggle claim`, `waggle release` and pushes to `refs/waggle/` reduce accidents. They are not a security boundary: a Bash rule "doesn't match the same program invoked in a different form, so a deny or ask rule covers the invocation Claude usually produces and isn't a security boundary around the program" ([permissions](https://code.claude.com/docs/en/permissions#bash-rule-limits)). While the session holds your git credentials, it can still write claims (L3). Teammates start with the lead's permission mode, except `dontAsk` mode ([agent teams](https://code.claude.com/docs/en/agent-teams)).
+Deny rules for `waggle claim`, `waggle release` and pushes to `refs/waggle/` reduce accidents. They are not a security boundary: a Bash rule "doesn't match the same program invoked in a different form, so a deny or ask rule covers the invocation Claude usually produces and isn't a security boundary around the program" ([permissions](https://code.claude.com/docs/en/permissions#bash-rule-limits)). While the session holds your git credentials, it can still write claims (L3), and with credentials that can push workflow files it can forge the required check (L11). Teammates start with the lead's permission mode, except `dontAsk` mode ([agent teams](https://code.claude.com/docs/en/agent-teams)).
 
 ## Optional: a local check in a hook
 

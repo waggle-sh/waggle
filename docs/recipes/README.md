@@ -12,12 +12,13 @@ Each recipe says how one agent tool's output meets the gate. The gate itself is 
 - The gate is installed as [the README](../../README.md#install) describes, and `waggle doctor` passes.
 - `verify-leases-and-tiers` is a required check and PRs are required on the default branch. Without both, the gate binds nothing ([L2](../gate.md#10-limits-and-known-bypasses)).
 - Changes to `.github/workflows/**` need code-owner review, with the ruleset's "Require review from Code Owners" on, or an organization ruleset that requires the workflow. A PR that edits the gate workflow runs its own copy otherwise (L5).
-- The install PR changes the workflow and `.waggle/`, so it fails its own gate and needs an admin merge.
+- Bind the required check to GitHub Actions. Limit an agent's credentials to Contents and Pull requests, with no Workflows, Actions or Commit statuses permission, and keep any workflow you would not want an agent to copy off every branch. Require a person's approval, with stale approvals dismissed, if a person must be in the merge. Without an approval, a copied workflow or a wider credential can merge a forged check with no person. None of these is complete alone ([L11](../gate.md#10-limits-and-known-bypasses)). Keep "Allow GitHub Actions to create and approve pull requests" off.
+- The install PR changes the workflow and `.waggle/`, so it fails its own gate. If a rule already requires the check, it needs an admin merge.
 - Run `waggle init` and `waggle upgrade` from a build made at a pushed commit or from a release, so the pinned Action ref exists. A build from an unpushed commit renders a ref that fails at job setup (L10).
 
 ## Who writes the claim
 
-A person, or the orchestrator that assigns the work, writes the claim and its branch list. Never the agent that does the task, and never from credentials the agent holds: anyone who can push `refs/waggle/claims/*` can write a lease and a branch list, so an agent with your git credentials can write its own (L3). Keep approver credentials and `waggle claim` away from agents.
+A person, or the orchestrator that assigns the work, writes the claim and its branch list. Never the agent that does the task, and never from credentials the agent holds: anyone who can push `refs/waggle/claims/*` can write a lease and a branch list, so an agent with your git credentials can write its own (L3). Keep approver credentials and `waggle claim` away from agents, and credentials that hold the Workflows, Actions or Commit statuses permission, or a classic `repo` token (L11). A narrower token can still push claim refs (L3).
 
 Write the claim before the work and before the PR's first gate run:
 
@@ -27,7 +28,7 @@ waggle claim T-<id> --dirs <a,b> --gate light|full --owner <your GitHub login> -
 
 - `--owner` is required in a repo that has only the gate installed.
 - `--branch` is repeatable, up to 4. Every claim must name the PR branch its commits arrive on. Given flags replace the stored list; a same-owner renewal without flags keeps it. A re-claim after the claim expired starts a new list, so repeat every `--branch` (`internal/dispatch/claim.go:58-65`).
-- A claim write does not trigger the workflow (`internal/scaffold/templates/waggle-gate.yml.tmpl:5-9`). After you change a list, re-run the failed check, or push or review again.
+- A claim write does not trigger the workflow (`internal/scaffold/templates/waggle-gate.yml.tmpl:5-9`). After you change a list, re-run the failed check, or push. A review alone does not clear a failed run, and someone with Write does the re-run ([approvers](../gate.md#6-approvers)).
 - After a squash or rebase merge, release with `waggle release T-<id> --unmerged`. Claims must stay until the PR merges.
 
 ## How commits bind
