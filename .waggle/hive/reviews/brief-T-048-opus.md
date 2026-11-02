@@ -167,3 +167,64 @@ Section 2 item 1 says the docs "do not state it more firmly than that", and sect
 Sources: https://docs.github.com/en/rest/actions/workflow-runs ; https://docs.github.com/en/rest/commits/statuses ; https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets
 
 Verdict: must-fix
+
+# T-048 brief review (opus), round 4, confirming
+
+- **Reviewer:** guard, model opus.
+- **Reviewed oid:** `e387340` on `origin/t-048-brief`, diff from `9643083`.
+- **Read against:** `probe-log.md`, `DECISIONS.md` D-355 to D-358, README, `docs/`, `internal/forge/report.go`, `report_test.go`, `github_enforced.golden` and `doctor_test.go` on `origin/main` at `1344b41`; T-047 at `0b2740e` and `43384dd`. Nothing was run on GitHub and nothing in the repo or its branches changed. Tests were read, not run.
+
+Risk-Tier: 2
+
+**Intent Summary:** This diff answers round 3 using the new token, bound, required-review and green-to-red rows. L11 and the README now name both routes and set out three partial protections, section 6 separates what ran from what should follow, doctor's closing line becomes two lines, the `Enforcement: enforced` label stays by a stated decision, and public docs lose hive cites. Blast radius is unchanged: what every adopter reads at G5, one output line, and T-047's text. M1 to M10 are fixed against the log. Three small items remain, each a few words: one ruling sentence is missing from the recipes, one README sentence goes past the rows on the recommended token, and section 7 and AC6 fail text that section 3 requires or that the lease forbids changing.
+
+## M1 to M10 from round 3
+
+- **M1, fixed.** L11 and the README name the token route. Binding is scoped both ways, matching the bound rows (#18 `BLOCKED`, #19 `UNSTABLE`). Narrow credentials now list Actions and Commit statuses. "A classic token with `repo` already reaches" rests on the REST docs, as a statement about the token and not a run.
+- **M2, fixed.** The review "keeps a person in the merge; it does not protect the check", backed by #15. The order of approval then forge is marked not run in L11.
+- **M3, fixed.** All three places sit on the `pull_request_target` shape, and #14 on today's shape reads mergeable, with several failing runs marked not run. See N2.
+- **M4, fixed.** Green to red is shown (#17, run 41387665265). Dismissal and request for changes say "should", and several re-runs are worded as an inference.
+- **M5, fixed.** The lines are 44 and 63 bytes against `report_test.go:61-63`. Neither contains `Not enforced` (`report_test.go:90`), and `found missing` appears nowhere else in product code or tests, so `doctor_test.go:210` stays meaningful. `github_enforced.golden` is the only golden holding the old line.
+- **M6, fixed.** The label stays, `gate.md:106` explains it, and section 7 is narrowed to the closing line.
+- **M7, fixed.** `copilot-cloud-agent.md:25` is listed and in AC4. No other doc says a review clears a failed run.
+- **M8, fixed in form.** Every `admin` hit in the three doc sets has an edit, a link or an exemption, and "near" is now a named rule. Three lines conflict with that rule: see M13.
+- **M9, fixed.** AC4 and the guard prompt sentence are scoped to section 6, and the other lines link to it.
+- **M10, fixed.** Line 21 says so.
+
+## Blocking Issues (Must-Fix Only)
+
+**M11. Section 3.3, `recipes/README.md:13-14` new bullet: the sentence D-356 rules is missing, so the ruling is contradicted.** D-356's Keeper choice: recipes "ask for a required approval when a person must be in the merge, stating the risk without one". Q-T048-2 (a) says the same and cites 3.3: "saying plainly that without one a copied workflow or a wider credential can merge a forged check (3.3)". The bullet's required text states no such risk, and the line ends with "Strength per D-356", which does not supply the words. T-047's Step 7 did gain the matching sentence ("Without this, a forged check can merge with no person"), so the recipes alone lack it. Fix: add to the bullet "Without an approval, a copied workflow or a wider credential can merge a forged check with no person."
+
+**M12. Section 3.1, README new bullet: "Agent credentials limited to Contents and Pull requests keep an agent from adding a new workflow" says more than any row.** S12 ran Contents write alone. Section 1 bolds "No row ran a token with Contents and Pull requests write", L11 says it, and T-047 section 12 lists it as not verified. The README is the page most readers stop at, the sentence asserts a protection for that exact token, and its qualifier is absent. AC3 requires "the untested Pull requests token" in "the forge text", and this bullet is forge text, so AC3 fails on it as written. Fix: "A token with Contents write alone was refused a new workflow file (Pull requests write added was not tested), but it pushed a copy of one already on another branch, and the copy ran, so this holds only while no such workflow exists on any branch."
+
+**M13. Section 7 and AC6 fail text that section 3 requires or that the lease forbids changing, so neither can be tested as written.**
+
+- **Hive path.** AC6 says no "ticket or decision id, hive path, bee word" in "the changed user docs", and section 7 says the same of "user docs". README line 16 must be edited and keeps `.waggle/hive/DECISIONS.md`, the path the gate itself checks. README 32 and 52 and `gate.md` 49, 51, 66 and 100 hold `.waggle/hive/` too. `gate.md:27` must be edited and keeps the literal `Head Keeper: `, which the code matches. `gate.md:8` and two recipes (line 41) use `T-123` as an example. AC1 and the lease rule forbid removing these, and the guard who runs the search gets hits on unchanged text. Fix: scope both to lines this ticket adds or changes, and define the hive path as a record path (`media/`, `tasks/`, `reviews/`). State that the product paths under `.waggle/hive/`, the `Head Keeper: ` subject and `T-<id>` examples are not hits.
+- **Install lines.** Section 3's rule covers "every admin-bypass claim in prose", and section 7 makes a missing link a must-fix. The required text for README line 33, `gate.md:104` and `recipes/README.md:15` ("If a rule already requires the check, it needs an admin merge") has no link. AC2 passes it as "corrected", while section 7 fails it. Fix: name these three as exempt in section 3 with the reason (a person's install step, and L11 is on the same page or linked at the section top), or add the link.
+
+## Answers to the questions asked
+
+**The `:20` list: sound as guidance, not a must-fix. Three wording points follow.** The shown conditions are narrower: pushing a workflow file, or both deleting a run and posting a status on an unbound check. Status alone and delete alone each read `BLOCKED` (#16, #10). A list of what an agent must not hold may be wider than what forges, because it asserts no protection and no attack. T-047's 8.1 carries the exact conjunction where it states a fact, so the two do not conflict. Wider is also defensible on its merits: Actions write and status write are each one step from the route, and a head where no run fired (the unrun S2 and S3 shapes) might not need the delete at all, which is unrun. Before dispatch I would still tighten three points:
+
+- "can write workflows" literally includes a Contents token after S12, which is the token line 13's new bullet recommends. A reader who takes it literally finds the two lines disagree. Better: "that hold the Workflows, Actions or Commit statuses permission, or a classic `repo` token", which also names the classic case that "can write" hides.
+- "beside credentials the agent must not hold" has no exact site. The only list on that line is "Keep approver credentials and `waggle claim` away from agents". Name that sentence.
+- The line's reason is claim writing, so the addition needs its own "(L11)". The narrow token still pushes claim refs (L3): the new bullet does not change that, and this line is the place a reader could assume it does.
+
+**Public docs: no hive path, ticket id or decision id in any section 3 text.** D-ids in section 3 are instructions to the builder, outside the quoted text. The AC wording is M13.
+
+**Doctor lines: they fit `report_test.go`.** See M5 above.
+
+**Section 4: every item's content matches T-047, but the items describe `0b2740e`, not the live brief.** Items 1 to 8 are all applied at `43384dd`, with the 8.1 sentences, Step 8 lines, Step 10 quote and rules block line byte for byte. Steps 4 to 6 are unchanged between the two. See N1.
+
+## Notes (not blocking)
+
+- **N1, section 4 is stale as an instruction.** The heading says "must change now" and section 12 item 1 says "Apply section 4 to T-047 before its dispatch", but `43384dd` already did. Item 7's "line 165 and N3 go" now names a kept paragraph and a renumbered note on the decisions failure, so applying it again would delete the wrong text. Item 6 lacks the risk sentence T-047 added, and items 5 and 8 say the queen confirms where T-047 records the Head Keeper's card. One line fixes it: "Applied at `43384dd`; line numbers are `0b2740e`."
+- **N2, L11 "did this".** The sentence follows "The PR then merges with no admin rights", so "All three ... did this" can read as all three merged. Only #11 merged; #10 and #13 read `CLEAN`. "Reached a mergeable state, and one was merged" would be exact.
+- **N3, "A token with write access".** The README and L11 use it for the token route, and the row's token held `repo` and `workflow`. The log says "A write token forges" and that a Contents-only token was not used here, yet a Contents token is also "write access" in plain speech. T-047's 8.1 wording is better: "can both delete Actions runs and write commit statuses". It errs toward caution, so it overclaims no protection.
+- **N4, README line 27 "rejects".** The status POST returned 201 on the bound rule, and the rule did not count it. "Does not count a status from any other app or person" matches the row. "Any other app" also generalizes from one token.
+- **N5, README's last sentence.** "A check can be forged after the approval, with no new push" sits after the "shown" sentence and carries no "not run", which L11 has. It warns rather than protects, so this is a note. The same goes for T-047 Step 7, whose section 12 records it.
+- **N6, T-047's warning and S12.** "Credentials that can push workflow files" and "Give agents credentials limited to Contents and Pull requests" sit together with no copy exception, only "None of these is complete alone" and the L11 link. The Head Keeper confirmed that text on a card, so I raise it only to say that the card's wording is thinner than L11's.
+- **N7, records.** The status line still says finalized on `8d264bb`, and the no-hive-path ruling is recorded only in this brief, in none of D-355 to D-358.
+- **N8, L9 and the doctor sentence.** Section 3.2's edit quotes "every append also needs an admin merge", which is line 66's wording; L9 lacks "also". The kept doctor sentence in L11 now sits after the review text, far from its antecedent "that binding", so "that the check is bound to an app" would be clearer.
+
+Verdict: must-fix
