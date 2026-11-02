@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="wg" viewBox="0 0 360 692" width="360" height="692" role="img" aria-labelledby="wg-hive-n-t wg-hive-n-d">
+<title id="wg-hive-n-t">How Waggle builds Waggle</title>
+<desc id="wg-hive-n-d">How the Waggle repo builds Waggle. The Keeper, the human, answers decision cards from the queen, the only agent session the Keeper talks to. The queen sends a goal to a scout, which writes a task brief with its lease, gate and risk tier. A builder writes the code inside that lease. Two guards running on different models review it; each returns pass or must-fix with an Intent Packet, and both must pass. Waggle Gate checks every commit against the lease, protected paths need the Head Keeper, and the PR merges.</desc>
+<style>.wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
+@media (prefers-color-scheme:dark){.wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}}
+[data-theme="light"] .wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
+[data-theme="dark"] .wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}
+.wg .bg{fill:var(--wg-page)}.wg .sf{fill:var(--wg-surface)}
+.wg .s-ink{stroke:var(--wg-ink)}.wg .s-muted{stroke:var(--wg-muted)}.wg .s-rule{stroke:var(--wg-rule)}
+.wg .s-pass{stroke:var(--wg-pass)}.wg .s-block{stroke:var(--wg-block)}.wg .s-wait{stroke:var(--wg-wait)}
+.wg .f-ink{fill:var(--wg-ink)}.wg .f-muted{fill:var(--wg-muted)}.wg .f-page{fill:var(--wg-page)}
+.wg .f-pass{fill:var(--wg-pass)}.wg .f-block{fill:var(--wg-block)}.wg .f-wait{fill:var(--wg-wait)}
+.wg text{font-family:'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;font-size:13px}
+.wg .mono{font-family:'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;font-stretch:87.5%;font-size:12px}
+.wg .sm{font-size:12px}.wg .b{font-weight:600}.wg .mono.b{font-weight:500}.wg .title{font-size:15px;font-weight:600}</style>
+<rect class="bg" width="360" height="692"/>
+<text x="20" y="32" class="title f-ink">How Waggle builds Waggle</text>
+<rect x="20" y="60" width="132" height="44" rx="22" class="f-page s-ink" stroke-width="1.5"/>
+<text x="86" y="87" class="b f-ink" text-anchor="middle">Keeper</text>
+<text x="168" y="76" class="sm f-muted">The human. Answers cards</text><text x="168" y="92" class="sm f-muted">and approves protected</text><text x="168" y="108" class="sm f-muted">paths.</text>
+<path d="M79 106L79 128" fill="none" class="s-ink" stroke-width="1.5"/><path d="M82.39 123.05L79 128L75.61 123.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<path d="M93 128L93 106" fill="none" class="s-ink" stroke-width="1.5"/><path d="M89.61 110.95L93 106L96.39 110.95" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<text x="106" y="121" class="sm f-muted">decision cards</text>
+<rect x="20" y="132" width="132" height="44" class="f-page s-ink" stroke-width="1.5"/>
+<text x="86" y="159" class="b f-ink" text-anchor="middle">queen</text>
+<text x="168" y="148" class="sm f-muted">The one session the Keeper</text><text x="168" y="164" class="sm f-muted">talks to. Never writes code.</text>
+<path d="M86 178L86 200" fill="none" class="s-ink" stroke-width="1.5"/><path d="M89.39 195.05L86 200L82.61 195.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="20" y="204" width="132" height="44" class="f-page s-ink" stroke-width="1.5"/>
+<text x="86" y="231" class="b f-ink" text-anchor="middle">scout</text>
+<text x="168" y="220" class="sm f-muted">Plans. Turns a goal into task</text><text x="168" y="236" class="sm f-muted">briefs.</text>
+<path d="M86 250L86 272" fill="none" class="s-ink" stroke-width="1.5"/><path d="M89.39 267.05L86 272L82.61 267.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="20" y="276" width="132" height="68" class="f-page s-ink" stroke-width="1.5"/>
+<text x="32" y="296" class="mono b f-ink">T-123 brief</text>
+<path d="M40 306H32V332H40M132 306H140V332H132" fill="none" class="s-ink" stroke-width="2" stroke-linecap="square"/>
+<text x="42" y="324" class="sm f-ink">the lease</text>
+<text x="168" y="292" class="sm f-muted">Written before work starts:</text><text x="168" y="308" class="sm f-muted">the lease, the gate, the risk</text><text x="168" y="324" class="sm f-muted">tier.</text>
+<path d="M86 346L86 368" fill="none" class="s-ink" stroke-width="1.5"/><path d="M89.39 363.05L86 368L82.61 363.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="20" y="372" width="132" height="44" class="f-page s-ink" stroke-width="1.5"/>
+<text x="86" y="399" class="b f-ink" text-anchor="middle">builder</text>
+<text x="168" y="388" class="sm f-muted">Writes the code, inside the</text><text x="168" y="404" class="sm f-muted">lease only.</text>
+<path d="M86 418L86 440" fill="none" class="s-ink" stroke-width="1.5"/><path d="M89.39 435.05L86 440L82.61 435.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="20" y="444" width="132" height="36" class="f-page s-ink" stroke-width="1.5"/>
+<text x="30" y="467" class="sm b f-ink">guard A</text>
+<rect x="20" y="488" width="132" height="36" class="f-page s-ink" stroke-width="1.5"/>
+<text x="30" y="511" class="sm b f-ink">guard B</text>
+<rect x="92" y="450" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="119" y="466" text-anchor="middle" class="mono b f-pass">pass</text>
+<rect x="92" y="494" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="119" y="510" text-anchor="middle" class="mono b f-pass">pass</text>
+<text x="168" y="460" class="sm f-muted">Two reviewers on different</text><text x="168" y="476" class="sm f-muted">models. Both must pass.</text><text x="168" y="492" class="sm f-muted">They never fix.</text>
+<path d="M86 526L86 548" fill="none" class="s-ink" stroke-width="1.5"/><path d="M89.39 543.05L86 548L82.61 543.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<line x1="20" y1="564" x2="152" y2="564" class="s-ink" stroke-width="3" stroke-linecap="square"/>
+<text x="20" y="586" class="sm b f-ink">Waggle Gate</text>
+<text x="168" y="568" class="sm f-muted">Checks every commit</text><text x="168" y="584" class="sm f-muted">against the lease.</text>
+<path d="M86 594L86 616" fill="none" class="s-ink" stroke-width="1.5"/><path d="M89.39 611.05L86 616L82.61 611.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="20" y="620" width="132" height="44" class="f-page s-pass" stroke-width="1.5"/>
+<text x="86" y="647" class="b f-pass" text-anchor="middle">merge</text>
+<text x="168" y="636" class="sm f-muted">Recorded in DECISIONS.md</text><text x="168" y="652" class="sm f-muted">and the merge trailers.</text>
+</svg>
