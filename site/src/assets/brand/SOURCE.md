@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Brand asset sources
 
-Studio commit: `3b0098921dc7400b204e768cb50c51faeeceaf68`, directory `products/waggle/`. Each studio file below is a byte for byte copy.
+Studio commit: `47a73e740ed256c358048d710fe2955b78631a3d`, directory `products/waggle/`. Each studio file below is a byte for byte copy.
 
 | Copy | Studio path | sha256 |
 | :--- | :--- | :--- |
 | `site/src/assets/brand/tokens.css` | `tokens.css` | `d6299476471d8ad9b8aa920d62c393b5fb1d7d6cc81c22f1614bccf60a35d43e` |
 | `site/src/assets/brand/diagrams/gate-hero.svg` | `diagrams/gate-hero.svg` | `448eb0177f25b94f6aa712ca1ae0310f0f348678a3c976ca74fdafa040a2ea2f` |
-| `site/src/assets/brand/diagrams/gate-hero-narrow.svg` | `diagrams/gate-hero-narrow.svg` | `04cf21abc5c95cf230e2327dcb6376e345f8c111f77005a1b3265ccb220dc931` |
+| `site/src/assets/brand/diagrams/gate-hero-narrow.svg` | `diagrams/gate-hero-narrow.svg` | `a86b6b05e79ffde3f86d4cf8cc21d2e90ffe71a0b8232f51f864e6f8e3f18c17` |
 | `site/src/assets/brand/diagrams/hive-flow.svg` | `diagrams/hive-flow.svg` | `2e04b397752c1c374dbd6ee83e996a0fb55da4877d39134371853f276101665c` |
 | `site/src/assets/brand/diagrams/hive-flow-narrow.svg` | `diagrams/hive-flow-narrow.svg` | `ecad8857939b3126b711275bdced235ae3b38e9950bd1771307ac239f4b0ca45` |
 | `site/src/assets/brand/mark/waggle-lockup-outlined-mono.svg` | `mark/final/waggle-lockup-outlined-mono.svg` | `753980357e511938d743454c55352414c7df93602af87e14db2da4f699334941` |
