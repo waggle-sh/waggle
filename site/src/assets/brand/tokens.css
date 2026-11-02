@@ -1,0 +1,36 @@
+/* Waggle tokens for the docs site (Lease direction, D-290). Light is the default; dark follows the OS unless the site
+   sets data-theme on <html>. The same values drive every diagram in diagrams/ (lib.mjs), so a diagram and the page
+   around it always agree. Verdict colors are GitHub Primer's check colors and are used for verdicts only. */
+:root {
+  --wg-page: #FFFFFF;
+  --wg-surface: #F4F5F7;
+  --wg-ink: #181B1E;     /* 17.3:1 on page */
+  --wg-muted: #575B60;   /* 6.8:1 on page */
+  --wg-rule: #D5D8DB;
+  --wg-pass: #1A7F37;    /* 5.1:1 */
+  --wg-block: #CF222E;   /* must-fix, 5.4:1 */
+  --wg-wait: #9A6700;    /* waiting, 4.9:1 */
+  --wg-focus: #181B1E;
+
+  --wg-font-sans: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --wg-font-mono: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --wg-mono-stretch: 87.5%;
+
+  --wg-text-h1: 44px; --wg-text-h1-sm: 32px;
+  --wg-text-h2: 28px; --wg-text-h3: 20px;
+  --wg-text-body: 17px; --wg-text-small: 14px; --wg-text-code: 14px;
+  --wg-measure: 68ch;
+  --wg-space: 8px;       /* every gap is a multiple */
+  --wg-radius: 0;        /* square corners on machines and surfaces; only people are round */
+  --wg-line: 1.5px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wg-page: #101214; --wg-surface: #181B1E; --wg-ink: #ECEFF1; --wg-muted: #A0A5AB; --wg-rule: #323639;
+    --wg-pass: #3FB950; --wg-block: #F85149; --wg-wait: #D29922; --wg-focus: #ECEFF1;
+  }
+}
+:root[data-theme="dark"] {
+  --wg-page: #101214; --wg-surface: #181B1E; --wg-ink: #ECEFF1; --wg-muted: #A0A5AB; --wg-rule: #323639;
+  --wg-pass: #3FB950; --wg-block: #F85149; --wg-wait: #D29922; --wg-focus: #ECEFF1;
+}
