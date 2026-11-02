@@ -6877,3 +6877,63 @@
 **Keeper choice:** O2. No template change. T-048 becomes a docs ticket: the README and docs/gate.md state the forge limit, and approvers document the manual re-run. G5 no longer waits for a build. O1 may return after GA.
 
 **Rationale:** O1 does not close the forge, so its build would buy only approvers and fork self-edits. A required review still blocks a forged check. A credential without the workflow permission cannot plant a new workflow, but can copy one already on another branch (S12). Test workflows, not the real gate; evidence in media/T-046/probe-log.md. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-356: T-048: program messages stay; docs name both forge routes and set out partial protections
+
+- **Date:** 2026-11-02
+- **Kind:** policy
+- **Tickets:** T-048
+- **Supersedes:** none
+
+**Question:** T-048 Q1 to Q3: should program messages change, what do the recipes ask for, and how much of the attack do the docs show?
+
+**Options considered:**
+1. Leave messages, explain in docs; recipes assume a bound check and narrow agent credentials and ask for an approval when a person must be in the merge; docs name both routes in plain sentences
+2. Reword messages
+3. Always require approval
+4. State only that it can be forged
+
+**Hive recommendation:** Leave messages, explain in docs; recipes assume a bound check and narrow agent credentials and ask for an approval when a person must be in the merge; docs name both routes in plain sentences
+
+**Keeper choice:** Messages that say only an admin bypass changes a protected path stay, with the limit stated in the docs beside each quote. Recipes assume a check bound to GitHub Actions and agent credentials limited to Contents and Pull requests, and ask for a required approval when a person must be in the merge, stating the risk without one. Docs name both forge routes in plain sentences; the attack YAML stays in hive records, and the redaction card decides whether it goes public.
+
+**Rationale:** No protection is complete alone. Anyone reading GitHub's API docs can work out the mechanism, and readers need it to judge their exposure. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-357: Bind this repo's three required checks to GitHub Actions and read back worker credentials
+
+- **Date:** 2026-11-02
+- **Kind:** policy
+- **Tickets:** T-048
+- **Supersedes:** none
+
+**Question:** This repo's ruleset binds no app on its required checks, so a write token could likely forge through a commit status. Bind them and read back what credentials dispatched workers hold?
+
+**Options considered:**
+1. Bind and check credentials
+2. Check credentials only
+3. Neither
+
+**Hive recommendation:** Bind and check credentials
+
+**Keeper choice:** verify-leases-and-tiers, product-ci and dco on ruleset 25310890 are bound to GitHub Actions (integration 15368), applied and read back on 2026-11-02. Findings on credentials go to the Head Keeper before any further change.
+
+**Rationale:** Closes the status route at no cost; it does not stop the workflow route. Each check's latest run came from app 15368 before the change. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-358: Delete waggle-sh/gate-probe after the final records commit
+
+- **Date:** 2026-11-02
+- **Kind:** delete
+- **Tickets:** T-046, T-048
+- **Supersedes:** D-348
+
+**Question:** D-348 kept the probe repo and seat until T-048 was tested; under O2 T-048 tests nothing there. Delete it?
+
+**Options considered:**
+1. Delete after the records commit
+2. Keep through GA
+
+**Hive recommendation:** Delete after the records commit
+
+**Keeper choice:** Copy the remaining workflows into records, commit the final log, then delete the repo and remove the second account; the Head Keeper lowers the seat count in billing.
+
+**Rationale:** Stops about 4 USD a month. Run logs go with the repo; the fact-checked log and workflow copies stay in records. If O1 returns after GA it needs a new repo and seat. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.

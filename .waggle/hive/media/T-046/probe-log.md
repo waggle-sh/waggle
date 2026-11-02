@@ -54,3 +54,17 @@ Probe main `00ff6f0` held only `s-target.yml` (`pull_request_target`, job `s-gat
 Part (d) is `no`: a credential that can push a workflow file can remove the protected result and supply a passing one. The D-346 rule selects O2. S2 and S3 were not run; they cannot change this answer. S12, whether a credential without the workflow permission is stopped, is not yet run.
 
 S12, run by the Head Keeper on 2026-11-02 with a fine-grained token (Contents write, no Workflows). Control `s12-c` (a plain file): pushed. `s12-a` (a new workflow file): refused, "refusing to allow a Personal AccessToken to create or update workflow `.github/workflows/s12.yml` without `workflow` scope". `s12-b` (a file identical to one on another branch): pushed. **A credential without the workflow permission cannot plant a new workflow, but it can copy a workflow file that already exists on another branch.** The copied `atk-4.yml` then ran on `s12-b` (run 41385839102) with its own write token: POST of a passing check 201 (its delete got 404, since that run was already gone). So the limit holds only while no attack workflow exists on any branch of the repo. Whether a copy must match the path and bytes exactly was not tested beyond this one case.
+
+Required review row, 2026-11-02 UTC: rule `s-gate` plus 1 approval. Victim #15, `319bb14`, attacker plain branch `atk5`: delete then post. The forged pass landed; state `REVIEW_REQUIRED BLOCKED`; `gh pr merge` with no admin flag refused and the PR stayed open. `can_approve_pull_request_reviews` is false on this repo. **A required review blocks a forged check until a person approves. An approver would see a green check that was forged.**
+
+More rows, 2026-11-02 UTC, added after the opus brief review of `9643083` (approvals 0; main account token holding `repo` and `workflow`, used through the API with no workflow file):
+
+| Row | PR, head | Rule | Result |
+|---|---|---|---|
+| Token route, status only | #16, `85dafc7` | `s-gate`, not bound | POST of a passing commit status named `s-gate` 201; the failing check run stays. `BLOCKED`. |
+| Token route, delete | #16 | `s-gate`, not bound | DELETE of the protected run 204 with the status in place. `UNSTABLE`, mergeable. The same token gets 403 posting a check run. **A write token forges through a commit status with no workflow file when the check is not bound to an app.** A token with only Contents write was not used here. |
+| Token route, bound | #18, `e61613a` | `s-gate` bound to GitHub Actions (integration 15368) | Delete 204, status 201. `BLOCKED`. **Binding closes the status route.** |
+| Workflow route, bound | #19, `893387f` | same | Plain-branch workflow, delete then post: `UNSTABLE`, mergeable. **Binding does not stop a workflow, whose check comes from GitHub Actions.** |
+| Green to red | #17, `43e5141` | `g2r-gate`, not bound | One job passes on `pull_request` and fails on a review run. After the `pull_request` run: `UNSTABLE`, mergeable. After a comment-only review's failing run (41387665265): `BLOCKED`, no re-run. **A later failing review run blocks with no manual step.** Not run for a dismissal or a request for changes after green, nor with several failed runs. |
+
+Rows `s-target.yml`, `today.yml` and `g2r.yml` as run are in `probe/`.

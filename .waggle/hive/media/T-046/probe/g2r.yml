@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT-0
+# T-048 probe: passes on pull_request, fails on a review run, as a dismissal run would.
+name: g2r
+on:
+  pull_request:
+  pull_request_review:
+    types: [submitted, dismissed]
+permissions:
+  contents: read
+jobs:
+  g2r-gate:
+    runs-on: ubuntu-latest
+    env:
+      E: ${{ github.event_name }}
+    steps:
+      - run: test "$E" = pull_request
