@@ -22,7 +22,7 @@ The person who assigns the task writes the claim first, then renews it once the 
 waggle claim T-<id> --dirs <a,b> --gate full --owner <your GitHub login> --branch copilot/<slug>
 ```
 
-Add `--branch t-<nnn>` too if work also lands there. Until the claim names the PR's branch the gate fails the PR, which fails closed (`cmd/waggle/gate_commits.go:359-368`). A claim write does not trigger the workflow, so after the renewal re-run the failed check, or let the next push or review run it. Workflows on Copilot's pushes wait for "Approve and run workflows", so the check stays pending until a person approves the run.
+Add `--branch t-<nnn>` too if work also lands there. Until the claim names the PR's branch the gate fails the PR, which fails closed (`cmd/waggle/gate_commits.go:359-368`). A claim write does not trigger the workflow, so after the renewal re-run the failed check, or let the next push run it. A review alone does not clear a failed run ([approvers](../gate.md#6-approvers)). Workflows on Copilot's pushes wait for "Approve and run workflows", so the check stays pending until a person approves the run.
 
 A re-claim after the claim expired drops `copilot/<slug>`: repeat every `--branch` (`internal/dispatch/claim.go:58-60`). Copilot PRs are often squash-merged; release with `waggle release T-<id> --unmerged`.
 
@@ -42,7 +42,7 @@ The gate fails the PR with a line such as `T-123: path is outside the claim dire
 
 ## Limit
 
-Binding depends on Copilot following the instruction; the gate only fails closed when it does not. The check is a required check that waits for a person's approval of the run, so a PR can sit pending. The claim is written by a person, never by Copilot (L3).
+Binding depends on Copilot following the instruction; the gate only fails closed when it does not. The check is a required check that waits for a person's approval of the run, so a PR can sit pending. The claim is written by a person, never by Copilot (L3). The required check can be forged by a workflow or a wider credential, and a person's approval of the run is not shown to stop that (L11).
 
 ## Sources
 
