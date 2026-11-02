@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="wg" viewBox="0 0 360 904" width="360" height="904" role="img" aria-labelledby="wg-gate-n-t wg-gate-n-d">
+<title id="wg-gate-n-t">An agent PR through Waggle Gate</title>
+<desc id="wg-gate-n-d">Task T-123 has a lease written before work starts: internal/comb/ and cmd/waggle/. An agent opens a PR with four commits. Waggle Gate checks each commit against the lease. a41c9e and 7d02b3 stay inside the lease and pass. e19f60 changes deploy/production.tf, a protected path listed in the repo config, which no lease can cover, so it waits until dana, a listed approver, approves the PR at its head commit c3d81f; then it passes. c3d81f changes internal/forge/, outside the lease, so it is must-fix and the PR is blocked. The PR merges only when every commit passes.</desc>
+<style>.wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
+@media (prefers-color-scheme:dark){.wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}}
+[data-theme="light"] .wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
+[data-theme="dark"] .wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}
+.wg .bg{fill:var(--wg-page)}.wg .sf{fill:var(--wg-surface)}
+.wg .s-ink{stroke:var(--wg-ink)}.wg .s-muted{stroke:var(--wg-muted)}.wg .s-rule{stroke:var(--wg-rule)}
+.wg .s-pass{stroke:var(--wg-pass)}.wg .s-block{stroke:var(--wg-block)}.wg .s-wait{stroke:var(--wg-wait)}
+.wg .f-ink{fill:var(--wg-ink)}.wg .f-muted{fill:var(--wg-muted)}.wg .f-page{fill:var(--wg-page)}
+.wg .f-pass{fill:var(--wg-pass)}.wg .f-block{fill:var(--wg-block)}.wg .f-wait{fill:var(--wg-wait)}
+.wg text{font-family:'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;font-size:13px}
+.wg .mono{font-family:'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;font-stretch:87.5%;font-size:12px}
+.wg .sm{font-size:12px}.wg .b{font-weight:600}.wg .mono.b{font-weight:500}.wg .title{font-size:15px;font-weight:600}</style>
+<rect class="bg" width="360" height="904"/>
+<text x="20" y="28" class="sm b f-muted">1. The lease, written first</text>
+<rect x="20" y="44" width="320" height="132" class="f-page s-ink" stroke-width="1.5"/>
+<text x="36" y="74" class="mono b f-ink">T-123</text>
+<text x="87.34" y="74" class=" f-ink">Add claim verbs</text>
+<path d="M44 90H36V150H44M316 90H324V150H316" fill="none" class="s-ink" stroke-width="2" stroke-linecap="square"/>
+<text x="52" y="115" class="mono f-ink">internal/comb/</text>
+<text x="52" y="137" class="mono f-ink">cmd/waggle/</text>
+<text x="36" y="166" class="sm f-muted">Written before the agent starts.</text>
+<text x="20" y="212" class="sm b f-muted">2. The agent opens a PR</text>
+<text x="20" y="234" class="b f-ink">PR #1042, 4 commits, from any agent</text>
+<circle cx="24" cy="262" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="40" y="266" class="mono f-muted">a41c9e</text>
+<text x="40" y="286" class="mono f-ink">internal/comb/lease.go</text>
+<circle cx="24" cy="314" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="40" y="318" class="mono f-muted">7d02b3</text>
+<text x="40" y="338" class="mono f-ink">cmd/waggle/claim.go</text>
+<rect x="32" y="372" width="308" height="26" class="f-page s-ink" stroke-width="1.5"/><rect x="35" y="375" width="302" height="20" fill="none" class="s-ink" stroke-width="1"/>
+<circle cx="24" cy="366" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="40" y="370" class="mono f-muted">e19f60</text>
+<text x="40" y="390" class="mono f-ink">deploy/production.tf</text>
+<circle cx="24" cy="418" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="40" y="422" class="mono f-muted">c3d81f</text>
+<text x="40" y="442" class="mono f-ink">internal/forge/github.go</text>
+<line x1="24" y1="267" x2="24" y2="413" class="s-ink" stroke-width="1.5"/>
+<line x1="20" y1="474" x2="340" y2="474" class="s-ink" stroke-width="3" stroke-linecap="square"/>
+<text x="20" y="498" class="sm b f-muted">3. Waggle Gate checks every commit</text>
+<text x="20" y="516" class="sm f-muted">against the lease, read from the base branch</text>
+<text x="20" y="550" class="mono f-muted">a41c9e</text>
+<text x="84" y="550" class="f-muted">inside the lease</text>
+<rect x="286" y="534" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="313" y="550" text-anchor="middle" class="mono b f-pass">pass</text>
+<text x="20" y="594" class="mono f-muted">7d02b3</text>
+<text x="84" y="594" class="f-muted">inside the lease</text>
+<rect x="286" y="578" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="313" y="594" text-anchor="middle" class="mono b f-pass">pass</text>
+<text x="20" y="638" class="mono f-muted">e19f60</text>
+<text x="84" y="638" class="b f-ink">protected path</text>
+<rect x="262" y="622" width="78" height="24" class="f-page s-wait" stroke-width="1.5"/><text x="301" y="638" text-anchor="middle" class="mono b f-wait">waiting</text>
+<text x="84" y="656" class="sm f-muted">repo-listed, outside the lease</text>
+<path d="M301 646L301 680" fill="none" class="s-ink" stroke-width="1.5"/><path d="M304.39 675.05L301 680L297.61 675.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="60" y="680" width="280" height="30" rx="15" class="f-page s-ink" stroke-width="1.5"/>
+<text x="74" y="699" class="sm f-ink">dana, a listed approver, approves at c3d81f</text>
+<rect x="286" y="716" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="313" y="732" text-anchor="middle" class="mono b f-pass">pass</text>
+<text x="84" y="732" class="f-muted">then it passes</text>
+<text x="20" y="784" class="mono f-muted">c3d81f</text>
+<text x="84" y="784" class="b f-ink">outside the lease</text>
+<rect x="253" y="768" width="87" height="24" class="f-page s-block" stroke-width="1.5"/><text x="296.5" y="784" text-anchor="middle" class="mono b f-block">must-fix</text>
+<rect x="20" y="824" width="320" height="40" class="f-page s-block" stroke-width="1.5"/>
+<text x="36" y="849" class="b f-block">Blocked: c3d81f left the lease.</text>
+<text x="20" y="880" class="sm f-muted">It merges when every commit passes.</text>
+</svg>
