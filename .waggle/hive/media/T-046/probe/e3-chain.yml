@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe row E3: on a finished review run, re-run the protected run for that head.
+name: e3-chain
+on:
+  workflow_run:
+    workflows: [e3-review]
+    types: [completed]
+permissions:
+  actions: write
+jobs:
+  rerun:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Re-run e3-target at the PR head
+        run: |
+          echo "head=$HEAD_SHA"
+          id=$(gh api "repos/$REPO/actions/workflows/e3-target.yml/runs?head_sha=$HEAD_SHA&event=pull_request_target" --jq '.workflow_runs[0].id')
+          echo "target run=$id"
+          gh api -X POST "repos/$REPO/actions/runs/$id/rerun"

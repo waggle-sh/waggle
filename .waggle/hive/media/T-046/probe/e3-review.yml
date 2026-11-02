@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT-0
+# T-046 probe row E3: a review run that only signals; its job name differs from the required check.
+name: e3-review
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+permissions:
+  contents: read
+jobs:
+  signal:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo signal
