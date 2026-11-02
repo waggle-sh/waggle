@@ -83,3 +83,5 @@ Order: commit `verdict` (`fail`), `p1-target.yml`, `p7-clone.yml` and `p3-review
 ## Phase 2 result
 
 Phase 1 selected O2 pending the probe. See `probe-log.md` for phase 2 and DECISIONS.md for the Head Keeper's ruling: O1 for same-repo PRs, with fork rows and the real-gate test in T-048 before G5.
+
+The attack rows reversed that ruling: part (d) is `no`, and the Head Keeper ruled O2. See the end of `probe-log.md` and the latest decision for T-046.
