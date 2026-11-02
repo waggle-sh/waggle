@@ -6857,3 +6857,23 @@
 **Keeper choice:** Block moving or deleting v* tags before the first tag. The queen checks plan support first; if unsupported, it returns to the Head Keeper.
 
 **Rationale:** Otherwise the pin rests only on the maintainer account. Admin bypass remains, so it guards against accidents and limited credentials, not a stolen admin login. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
+
+## D-355: T-046 final outcome: O2, because a credential that can push a workflow can forge the required check on any template
+
+- **Date:** 2026-11-02
+- **Kind:** strategy
+- **Tickets:** T-046, T-048
+- **Supersedes:** D-349
+
+**Question:** The attack rows show delete then post forges the required check from a PR or plain branch, on O1 and on today's shape, so part (d) is no and D-346 selects O2. Which way?
+
+**Options considered:**
+1. O2, state the limit
+2. Keep O1 anyway
+3. Hold G5 and design a check bound to a dedicated GitHub App
+
+**Hive recommendation:** O2, state the limit
+
+**Keeper choice:** O2. No template change. T-048 becomes a docs ticket: the README and docs/gate.md state the forge limit, and approvers document the manual re-run. G5 no longer waits for a build. O1 may return after GA.
+
+**Rationale:** O1 does not close the forge, so its build would buy only approvers and fork self-edits. A required review still blocks a forged check. A credential without the workflow permission cannot plant a new workflow, but can copy one already on another branch (S12). Test workflows, not the real gate; evidence in media/T-046/probe-log.md. Decided by the Head Keeper via queen card on 2026-11-02; recorded by the queen.
