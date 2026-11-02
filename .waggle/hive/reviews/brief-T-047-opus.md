@@ -175,3 +175,79 @@ Step 1 now fences this call and M6 makes it mandatory, so such a repo ends at "f
 None contradicted by the diff. No attack finding clears D-203.
 
 Verdict: must-fix
+
+# Brief review: T-047, O2 round (opus, confirming)
+
+Risk-Tier: 3
+
+Reviewed oid: `43384ddf38d3644c597987f96a43a75f4c83517d` on `origin/t-047-brief`, file `.waggle/hive/tasks/T-047.md`. Scope: the diff from `e7c9014`, against `T-048.md` section 4 at `e387340` on `origin/t-048-brief`, `media/T-046/probe-log.md` and the code at `origin/main` `1344b41`.
+
+## Intent Summary
+
+This diff records D-350 to D-355, applies T-048 section 4 (warning sentences, Step 7 additions, Step 8 report, Step 10 credentials sentence, the rules block line), drops the O1 wait and moves the rehearsal to throwaway private repos after the first tag. There is still no scope or lease change, and the blast radius is one doc, one README subsection and one test. The T-048 text is applied faithfully, the O1 material is gone, and the warning holds against the probe log. Three one-line fixes remain: one wrong fact that T-048 section 4 itself carries, one overclaim of protection in Step 7 item 3, and one path that the D-352 edit to section 5 opened in Steps 6 and 10.
+
+## How this was checked
+
+I read the diff, T-048 sections 1 to 4, D-350 to D-358 and the final probe log. I built the binary from `origin/main` into a scratch directory and ran `doctor --no-write` on this repo, whose checks D-357 bound to GitHub Actions. Live reads were GET only. Nothing in this repo or its branches changed; the only git writes were fetches.
+
+## Blocking Issues (Must-Fix Only)
+
+**M11. Section 4.2 Steps 6 and 10 against section 5: the default path fails on any repo with neither `CLAUDE.md` nor `AGENTS.md`.** The diff changes section 5 to "If neither exists, the agent adds nothing and shows the block in its Step 10 message", which D-352 requires. Steps 6 and 10 did not follow. Step 6 still says "If `agent_rules` is `yes`, apply section 5 first and run the second `git add` line", `agent_rules` defaults to `yes`, and that line then has no file to name. Run:
+
+```
+git add CLAUDE.md
+fatal: pathspec 'CLAUDE.md' did not match any files
+exit 128
+```
+
+Under 4.1 that failure is "report the full output and stop", so an agent reading the step literally stops before the PR. Step 10 says "If section 5 ran: start a new session so the agent reads the rules", which is false when nothing was written, and its success clause does not require the block that section 5 sends there. Fix: Step 6 runs the second line only if section 5 wrote a file. Step 10 gives the new-session prompt only if a file was written, otherwise shows the block, and its success clause says so.
+
+**M12. Section 4.2 Step 8 report line and section 12: "Doctor's `Enforcement: enforced` covers only the three findings above" is a wrong fact.** It covers two. `Report.Enforcement()` (`internal/forge/report.go`, the function above `Render`) reads `required-gate` and the merge strategy's rule, here `up-to-date`, and never `claim-refs`. Run on this repo:
+
+```
+Enforcement: enforced
+
+  skipped   claim-refs      Not tested; run waggle doctor without --no-write.
+  ok        required-gate   A rule on main requires the verify-leases-and-tiers check.
+  ok        up-to-date      Pull requests into main must be up to date before they merge.
+```
+
+The old closing line did read all three, through `NotEnforced()`, so the swap to the label changed what the sentence is about. The text comes from T-048 section 4 item 7, which is not one of the card-ruled sentences. Fix: "Doctor's `Enforcement: enforced` covers only required-gate and up-to-date, and the required check can still be forged." The T-048 brief should follow.
+
+**M13. Section 4.2 Step 7 item 3: "A PR that edits the gate workflow runs its own copy without it" overclaims.** It reads as though the CODEOWNERS line stops the PR running its own copy. It does not: the copy runs either way, and the line only requires an owner's review before that PR merges. `docs/gate.md` L5 says "Mitigation, not a fix", README's limits say "it does not fix it", and T-048 adds that code-owner review "does not cover a workflow on another branch". The probe log's own-PR row shows a PR's own job can forge the check. T-048 section 4 item 6 says this wording "stays true", and it does not hold beside that row. Fix: "A PR that edits the gate workflow runs its own copy either way. This makes a code owner review that change before it merges. It does not cover a workflow on another branch."
+
+## Checked and holding
+
+- **Warning, against the log.** Workflow push forges (S1 rows, `CLEAN`, `UNSTABLE`). Delete plus status forges only unbound, and the sentence on binding follows at once (token rows, `BLOCKED` when bound). Binding does not stop a workflow (bound workflow row). A required approval blocks the merge and leaves a forged green (required review row). "Limited to Contents and Pull requests" is advice with no claim of closure, and "None of these is complete alone" sits beside it, so the S12 exception is not contradicted. Text matches `T-048.md` section 4 item 5 at `e387340` byte for byte.
+- **Step 7.** Item 2 and "Without this, a forged check can merge with no person" match the other-PR row (merged, no admin flag) and D-356's "stating the risk without one". The success rule is unchanged.
+- **Step 8.** A check bound to GitHub Actions still reads `required-gate ok` (run above), and `internal/forge` never reads `integration_id` (git grep), so "which app may post" under "Not checked" is true. The rules list does carry `required_approving_review_count` and `dismiss_stale_reviews_on_push` (read live). The list prints the four types as quoted.
+- **Step 10.** "could push workflow files, which the install needed" is true by Step 6. A classic `repo` token does hold more.
+- **With T-048 merged first.** Doctor's exit codes and findings do not change, and Step 8 reads only those, so the new closing lines break nothing. No T1 to T5 assertion reads doctor's output. T5's bare words and `hive` check pass on the new warning and Step 7 text. README step 3 under T-048 agrees with Step 7 item 1 and section 2. Section 7's paragraph anchor is at the current README and T-048 does not touch it. No product file differs from `339c823` through `1344b41` (`git diff --stat` empty), as the Status says.
+- **Rehearsal in the G5 order.** D-341's order has the first tag, then demo repo pins, then the flip, so the slot exists and moves no card. D-353 is followed. The org plan is `team`, so a private throwaway passes Step 1's rules call with no 403. The `gh api` raw form works (run on `README.md`). `git ls-remote` over HTTPS on the private repo worked here with prompts off, on this machine's credential helper. `access_level` is still `none`, as the item says. Item 7's new-tag path still fits.
+- **O1 remnants.** None outside the dated Status history. T-048 items 1 to 4 and 7 are applied: Depends on, section 2, section 11 part 1, section 17, the old line 165, N3 and N4 renumbered, section 16 reads N1 to N3.
+- **Human steps.** Every new sentence is in Step 7's printed text, which opens "Only a person should do this part", or follows Step 10's "Tell the person". Nothing tells the agent to merge, set a rule, create a token or change a setting. Section 8.5 gains the right must-fix line.
+- **Rulings.** D-351 to D-355 are marked and match their entries. The Head Keeper card closures in the Status have no DECISIONS entry of their own, so I took them as stated.
+
+## Notes (not blocking)
+
+**N20. Section 4 against 8.1.** Section 4 says "no L-number without its link", and AC1 holds the warning verbatim with "(gate spec, L11)" and no link. A builder cannot satisfy both, and the PR body in a user's repo has no gate spec to point at. One clause settles it: name a link beside the warning in the doc and README, and let the verbatim text stand.
+
+**N21. Warning and Step 10: the recommended token can still write claims.** Contents write reaches `refs/waggle/*`, so "write claims yourself, from credentials the agent does not hold" still applies after the person narrows the token. Nothing claims otherwise, but the two sentences sit close together. Not run. Step 10 could add one clause.
+
+**N22. "the status route"** is not defined anywhere the setup reader sees it, in the warning or Step 7. "Writing a commit status" would read plainly. The text is card-ruled in the warning, so this is the Head Keeper's choice.
+
+**N23. Step 7's "can be forged after the approval with no new push"** is flat in the doc, and section 12 records that order as not run, where T-048's L11 says so to the reader. It errs toward less protection, so it is not an overclaim. The flat form is what T-048 section 4 asks for.
+
+**N24. Section 9 item 2: the setup is not stated.** D-353's reason for Codex is an agent that reads `AGENTS.md`, and the block goes only into a file that exists, so a README-only throwaway never exercises the block. Seed `AGENTS.md` for the Codex run and `CLAUDE.md` for the Claude Code run, or run the M11 path on one on purpose. The repo also needs a first commit, since Step 4 needs `origin/<default>`. The pass rule could also name Step 10's credentials sentence.
+
+**N25. Step 8 "whatever doctor printed".** After a second doctor exit 1, the report's last line names a label doctor may have printed as `advisory`. "If doctor printed" would cover it.
+
+**N26. MUST NOT list.** Step 7 now names an Actions setting and a CODEOWNERS line. Step 7's heading covers them, but the list says only "a ruleset or branch protection". "Or any repository setting" costs three words.
+
+**N27. Status cites `T-048.md` section 4 "at `8d264bb`".** Items 5 and 6 changed by `e387340`. The next sentence and the text are right, so this affects only the cite.
+
+**N28. AC6 does not carry the card ruling that public docs hold no hive path** (T-048 Status). T5 lets `.waggle/hive/...` through by design, so only a guard catches it. Harmless while the doc copies nothing from `media/`.
+
+**N29. For T-048, not this brief.** Its section 8 says the probe repo "is deleted (D-358)". A GET still returned `waggle-sh/gate-probe` at this review.
+
+Verdict: must-fix
