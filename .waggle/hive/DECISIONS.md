@@ -7018,3 +7018,61 @@
 **Keeper choice:** In the README only, the first sentence opens with docs/setup.md is instructions your agent follows with your credentials. The doc and the PR body keep the warning verbatim.
 
 **Rationale:** Accurate for a README reader, one line, reversible until the first tag. Decided by the Head Keeper via queen card; recorded by the queen.
+
+## D-363: T-041 Q10: the studio fixes the narrow hero's lease line before the asset PR merges
+
+- **Date:** 2026-11-02
+- **Kind:** policy
+- **Tickets:** T-041
+- **Supersedes:** none
+
+**Question:** gate-hero-narrow.svg line 43 says the lease is read from the base branch, which is false. How is it fixed?
+
+**Options considered:**
+1. Studio fix, then merge the asset PR
+2. Merge as is and fix before the flip
+
+**Hive recommendation:** Studio fix, then merge the asset PR
+
+**Keeper choice:** Studio fix, then merge: the studio changes the line in a new commit, the queen recopies it and updates SOURCE.md, then merges the asset PR.
+
+**Rationale:** The gate reads the lease from the claim ref, and the wide cut already says so. One line, no cost, and no false claim reaches main. Decided by the Head Keeper via queen card; recorded by the queen.
+
+## D-364: T-049 Q1: dispatch inlines guard reviews into a fix round automatically
+
+- **Date:** 2026-11-02
+- **Kind:** technical
+- **Tickets:** T-049
+- **Supersedes:** none
+
+**Question:** How should guard reviews reach a dispatched builder fix round?
+
+**Options considered:**
+1. Inline automatically
+2. A --fix flag
+3. A queen rule with no code
+
+**Hive recommendation:** Inline automatically
+
+**Keeper choice:** Inline automatically: dispatch adds the review rounds for the branch's start head to the prompt, with no new flag and no queen step.
+
+**Rationale:** A step someone must remember is how the T-047 empty round happened. Decided by the Head Keeper via queen card; recorded by the queen.
+
+## D-365: T-049 Q2: an empty fix round ends no_change with exit 1
+
+- **Date:** 2026-11-02
+- **Kind:** technical
+- **Tickets:** T-049
+- **Supersedes:** none
+
+**Question:** Should a builder fix round that makes no commit stay exit 0?
+
+**Options considered:**
+1. Fail it: no_change, exit 1, no push, when the head did not move and the remote already holds it
+2. Keep exit 0 and add a warning
+
+**Hive recommendation:** Fail it
+
+**Keeper choice:** Fail it: no_change, exit 1, no push, when the head did not move and the remote already holds it. A builder who rightly rejects every finding becomes a Head Keeper card.
+
+**Rationale:** Of the 7 reruns on record it changes only T-047-builder-2, and T-029-builder-2's legitimate no-commit run keeps passing. Decided by the Head Keeper via queen card; recorded by the queen.
