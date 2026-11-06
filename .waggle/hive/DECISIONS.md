@@ -7076,3 +7076,23 @@
 **Keeper choice:** Fail it: no_change, exit 1, no push, when the head did not move and the remote already holds it. A builder who rightly rejects every finding becomes a Head Keeper card.
 
 **Rationale:** Of the 7 reruns on record it changes only T-047-builder-2, and T-029-builder-2's legitimate no-commit run keeps passing. Decided by the Head Keeper via queen card; recorded by the queen.
+
+## D-366: Restore Nectar, Quorum, and multi-Keeper; keep gate-first sequencing
+
+- **Date:** 2026-11-06
+- **Kind:** strategy
+- **Tickets:** T-050, T-051, T-052, T-053, T-054, T-055
+- **Supersedes:** D-229
+
+**Question:** On 2026-10-23 the Head Keeper approved D-229 option 1 (gate first, dispatch second, cut list as in repositioning.md section 4). That cut list deleted Nectar and Quorum and froze multi-Keeper. The Head Keeper did not mean to drop those core pieces and now wants them back, while keeping gate-first shipping order. How should the hive treat Nectar, Quorum, and multi-Keeper?
+
+**Options considered:**
+1. Restore Nectar, Quorum, and multi-Keeper as core vision; keep gate public first, then Nectar/Quorum; flag future cuts of those items as CUT needing a typed Head Keeper reason
+2. Keep the Oct 23 cuts; treat honey and multi-Keeper as abandoned
+3. Restore the words in docs only; leave the roadmap and tickets as cut/frozen
+
+**Hive recommendation:** Restore Nectar, Quorum, and multi-Keeper as core vision; keep gate public first, then Nectar/Quorum; flag future cuts of those items as CUT needing a typed Head Keeper reason
+
+**Keeper choice:** Option 1, approved by the Head Keeper in writing on 2026-11-05: "Vision looks good" and "we need to bring those things back." Multi-Keeper is restored in full: each Keeper runs their own agents on their own plan for their own work, so there is no token donation and no third-party terms question. Waggle ships open source and drops into any repo, public or private, greenfield or brownfield. Nectar, Quorum, and multi-Keeper (including the 1-to-many Keepers story) are restored as core. Gate still ships public first; Nectar and Quorum follow after, because the gate's claim and merge records are what Nectar measures. Any later proposal that cuts or narrows those core items must be marked CUT and needs a typed Head Keeper reason. D-231 Cells cut stays unless reversed on its own card. Plain user-facing vocabulary (D-236) and gate-led marketing (D-287) stay.
+
+**Rationale:** The Oct 23 prior-art review was right that the per-task merge gate is the sharp near-term product, and wrong to treat Nectar, Quorum, and multi-Keeper as disposable. Those are the reason Waggle exists for open source and for Level 19's own many-teams-on-one-repo problem. Approving a bundled "cut list" without a typed reason for each core cut was a process miss. Gate-first sequencing still holds; restore is not a rewrite of the G1..G5 path. The vision guard lives in .waggle/hive/VISION.md; the follow-ups T-050 to T-055 are on .waggle/hive/ROADMAP.md. Supersedes D-229 only for the Keeper choice and rationale behind the Nectar cut, the Quorum cut and the Multi-Keeper freeze taken from repositioning.md section 4; D-229's gate-first and dispatch-second sequencing stays. Also supersedes the Nectar and Quorum "Cut" rows and the Multi-Keeper "Freeze" row in docs/rfc-notes/repositioning.md section 4, and the Nectar and Quorum entries under "Cut or frozen" in CONTRIBUTING.md (written under T-037 / D-236 after D-229). Does not supersede D-231 (Cells), D-232 to D-236 (lease store, approvers, ticket binding, public-at-G5, plain user vocabulary), or D-287 (marketing may still lead with the gate while the long vision stays multi-Keeper and honey). Decided by the Head Keeper in writing; recorded by the queen.
