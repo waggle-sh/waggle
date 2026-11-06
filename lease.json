@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "ticket_id": "T-056",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "README.md",
+    "cmd/waggle",
+    "docs/gate.md"
+  ],
+  "claimed_at": "2026-11-06T02:54:46Z",
+  "expires_at": "2026-11-08T02:54:46Z",
+  "branches": [
+    "t-056-hive-approval",
+    "t-056-brief"
+  ]
+}
