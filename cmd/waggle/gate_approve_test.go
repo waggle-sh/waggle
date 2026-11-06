@@ -18,15 +18,24 @@ import (
 
 // fakeReviews is the review source tests install; it makes no HTTP call.
 type fakeReviews struct {
-	rv    forge.PRReviews
-	err   error
-	calls int
+	rv          forge.PRReviews
+	err         error
+	calls       int
+	comments    []forge.Comment
+	commentsErr error
 }
 
 func (f *fakeReviews) Reviews(ctx context.Context, number int) (forge.PRReviews, error) {
 	f.calls++
 	return f.rv, f.err
 }
+
+func (f *fakeReviews) Comments(ctx context.Context, number int) ([]forge.Comment, error) {
+	return f.comments, f.commentsErr
+}
+
+// noApproval is the warning when no listed approver's approval counts.
+const noApproval = "no approving review or waggle-approve comment from a listed approver"
 
 // useFake installs f as the review source. It keeps the real constructor's
 // repository and token validation.
@@ -176,7 +185,7 @@ func TestApproverFailsClosed(t *testing.T) {
 		base, bout := r.runWith(map[string]string{"GITHUB_ACTIONS": "true"}, "verify", "--branch", "x") // T-039 2.4: no head fails closed
 		code, out := r.runWith(prEnv(writeEvent(t, head, "x", apprBody)), "verify")
 		if code != 1 || base != 1 || errLines(out) != errLines(bout) || errLines(out) == "" ||
-			!strings.Contains(out, "no approving review from a listed approver at "+head[:12]) {
+			!strings.Contains(out, noApproval+" at "+head[:12]) {
 			t.Errorf("exit %d\n%s\nbaseline:\n%s", code, out, bout)
 		}
 	})

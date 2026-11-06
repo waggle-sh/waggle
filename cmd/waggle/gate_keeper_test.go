@@ -44,7 +44,7 @@ func keeperRepo(t *testing.T, config string, more func(r gateRepo)) gateRepo {
 func TestHeadKeeperHivePaths(t *testing.T) {
 	const brief = "file=.waggle/hive/tasks/T-099.md::leases: T-031: path is outside the claim directories"
 	const passed = "hive paths approved by the Head Keeper alice at "
-	const needKeeper = "hive paths need an approving review from the Head Keeper (the first entry of gate.approvers)"
+	const needKeeper = "hive paths need an approving review or waggle-approve comment from the Head Keeper (the first entry of gate.approvers)"
 	add := func(files map[string]string, msg string) func(r gateRepo) {
 		return func(r gateRepo) {
 			for p, c := range files {
@@ -71,15 +71,15 @@ func TestHeadKeeperHivePaths(t *testing.T) {
 		{name: "other approver", reviews: at("bob", "APPROVED"), code: 1,
 			want: []string{brief, needKeeper}, not: []string{passed}},
 		{name: "unlisted approver", reviews: at("carol", "APPROVED"), code: 1,
-			want: []string{brief, "no approving review from a listed approver"}},
+			want: []string{brief, noApproval}},
 		{name: "no approval", reviews: func(string, string) []forge.Review { return nil }, code: 1,
-			want: []string{brief, "no approving review from a listed approver"}},
+			want: []string{brief, noApproval}},
 		{name: "head keeper commented only", reviews: at("alice", "COMMENTED"), code: 1, want: []string{brief}},
 		{name: "stale sha after a new push",
 			more: add(map[string]string{"docs/b.md": "b\n"}, "T-031: more"),
 			reviews: func(head, prev string) []forge.Review {
 				return []forge.Review{approval(1, "alice", "APPROVED", prev)}
-			}, code: 1, want: []string{brief, "no approving review from a listed approver"}, not: []string{passed}},
+			}, code: 1, want: []string{brief, noApproval}, not: []string{passed}},
 		{name: "other approver requests changes",
 			reviews: func(head, prev string) []forge.Review {
 				return []forge.Review{approval(1, "alice", "APPROVED", head), approval(2, "bob", "CHANGES_REQUESTED", head)}
