@@ -198,7 +198,8 @@ func TestApproverFailsClosed(t *testing.T) {
 		want   string
 	}{
 		"hardcoded path": {apprConfig, func(r gateRepo) { r.write("go.sum", []byte("x\n")); r.commit("T-031: sum") }, "go.sum"},
-		"hive path listed": {"version: 1\ngate:\n  protected_paths: deploy/, .waggle/hive/tasks/\n  approvers: alice\n",
+		// alice is listed but is not the Head Keeper, so the hive path stays (T-056).
+		"hive path listed": {"version: 1\ngate:\n  protected_paths: deploy/, .waggle/hive/tasks/\n  approvers: bob, alice\n",
 			func(r gateRepo) { r.write(".waggle/hive/tasks/T-099.md", []byte("b\n")); r.commit("T-031: brief") }, ".waggle/hive/tasks/T-099.md"},
 		"unbound commit": {apprConfig, func(r gateRepo) { r.write("deploy/y", []byte("y\n")); r.commit("other work") }, "commit has no T-<id>"},
 		"symlink": {apprConfig, func(r gateRepo) {

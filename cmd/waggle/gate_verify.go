@@ -200,6 +200,9 @@ type scanInput struct {
 	head     prHead // the PR head the claims are checked against
 	tree     bool   // also check the head tree for case collisions
 	filter   bool   // drop tier3 and outside_lease findings on approvable paths
+	// keeperFilter drops tier3 and outside_lease findings on hive paths; set
+	// only after the Head Keeper's approval counts (T-056).
+	keeperFilter bool
 }
 
 // scanOutcome is what a pass learned beyond its findings.
@@ -207,6 +210,7 @@ type scanOutcome struct {
 	baseOID, headOID string
 	approvers        []string      // gate.approvers of the base config
 	hit              bool          // a tier3 finding on an approvable path
+	keeperHit        bool          // a tier3 or outside_lease finding on a hive path
 	bound            []string      // distinct tickets the commits bind, sorted
 	maxTier          comb.RiskTier // highest tier the changed paths require
 }
@@ -239,12 +243,13 @@ func scanRange(g gitRunner, base, head string, in scanInput, rep *gateReport) (s
 	}
 	s := commitScan{g: g, comb: cb, now: time.Now(), rep: rep, claims: map[string]claimLookup{},
 		baseOID: baseOID, policy: policy, branch: in.branchID, head: in.head, bound: map[string]string{},
-		approvable: approvablePath(policy), filter: in.filter}
+		approvable: approvablePath(policy), filter: in.filter,
+		keeper: keeperPath, keeperFilter: in.keeperFilter}
 	res := scanOutcome{baseOID: baseOID, headOID: headOID, approvers: approvers}
 	if err := s.scan(mb, headOID); err != nil {
 		return res, err
 	}
-	res.hit, res.maxTier = s.hit, s.maxTier
+	res.hit, res.keeperHit, res.maxTier = s.hit, s.keeperHit, s.maxTier
 	for _, id := range s.bound {
 		if !slices.Contains(res.bound, id) {
 			res.bound = append(res.bound, id)
