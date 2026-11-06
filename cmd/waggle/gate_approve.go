@@ -93,10 +93,11 @@ func readPREvent(getenv func(string) string) (*prEvent, string) {
 	return ev, ""
 }
 
-// reviewSource reads the reviews of one pull request. Tests replace
-// newReviewSource with a fake; no gate test talks HTTP.
+// reviewSource reads the reviews and conversation comments of one pull
+// request. Tests replace newReviewSource with a fake; no gate test talks HTTP.
 type reviewSource interface {
 	Reviews(ctx context.Context, number int) (forge.PRReviews, error)
+	Comments(ctx context.Context, number int) ([]forge.Comment, error)
 }
 
 var newReviewSource = func(repository, token string) (reviewSource, error) {
@@ -139,8 +140,11 @@ func isHeadKeeper(entry string, approvers []string) bool {
 // approvedBy returns the config entry of a listed approver whose approval
 // passes the PR, or "". Reviews are ordered by ID. For each listed approver
 // the counted state is that login's last APPROVED, CHANGES_REQUESTED or
-// DISMISSED review. Any counted CHANGES_REQUESTED blocks; an approval counts
-// only at exactly head and strictly after the last base change.
+// DISMISSED review. Any counted CHANGES_REQUESTED blocks, and no comment
+// clears it. An approval counts only at exactly head and strictly after the
+// last base change. It is either a counted APPROVED review or, since GitHub
+// refuses a review on your own PR, a comment by that login with a whole line
+// "waggle-approve <head>" (T-057).
 func approvedBy(rv forge.PRReviews, approvers []string, head string) string {
 	reviews := slices.SortedFunc(slices.Values(rv.Reviews), func(a, b forge.Review) int {
 		switch {
@@ -163,14 +167,27 @@ func approvedBy(rv forge.PRReviews, approvers []string, head string) string {
 			}
 		}
 		switch {
-		case last == nil:
-		case last.State == "CHANGES_REQUESTED":
+		case last != nil && last.State == "CHANGES_REQUESTED":
 			return ""
-		case last.State == "APPROVED" && last.CommitID == head && last.Submitted.After(rv.LastBaseChange) && winner == "":
+		case winner != "":
+		case last != nil && last.State == "APPROVED" && last.CommitID == head && last.Submitted.After(rv.LastBaseChange):
+			winner = entry
+		case commentApproves(rv, entry, head):
 			winner = entry
 		}
 	}
 	return winner
+}
+
+// commentApproves reports whether a comment by entry names exactly head on a
+// waggle-approve line and was made strictly after the last base change.
+func commentApproves(rv forge.PRReviews, entry, head string) bool {
+	for _, c := range rv.Comments {
+		if strings.EqualFold(c.Login, entry) && c.Created.After(rv.LastBaseChange) && slices.Contains(c.Approves, head) {
+			return true
+		}
+	}
+	return false
 }
 
 // prRun carries what the approver and trailer checks need after the first scan.
@@ -240,16 +257,33 @@ func (p prRun) approve(rep *gateReport, out scanOutcome, reason string) *gateRep
 		}
 		return skip("GitHub reviews unavailable")
 	}
+	// Comments are a second approval signal; a failed read leaves them empty
+	// and the reviews decide alone. Bodies are never printed.
+	rv.Comments = nil
+	commentsRead := true
+	if cs, err := src.Comments(ctx, p.ev.number); err == nil {
+		rv.Comments = cs
+	} else {
+		commentsRead = false
+	}
+	// unread says so when an approval may have been missed for that reason.
+	unread := func(r *gateReport) {
+		if !commentsRead {
+			r.warn(chk, "PR comments could not be read; only reviews were checked")
+		}
+	}
 	short := out.headOID[:12]
 	entry := approvedBy(rv, out.approvers, out.headOID)
 	if entry == "" {
-		rep.warn(chk, "no approving review from a listed approver at "+short)
+		rep.warn(chk, "no approving review or waggle-approve comment from a listed approver at "+short)
+		unread(rep)
 		return rep
 	}
 	keeper := isHeadKeeper(entry, out.approvers)
-	needKeeper := "hive paths need an approving review from the Head Keeper (the first entry of gate.approvers) at " + short
+	needKeeper := "hive paths need an approving review or waggle-approve comment from the Head Keeper (the first entry of gate.approvers) at " + short
 	if !out.hit && !keeper {
 		rep.warn(chk, needKeeper)
+		unread(rep)
 		return rep
 	}
 	// Rescan at the resolved OIDs with the approvable findings dropped: listed
@@ -270,6 +304,7 @@ func (p prRun) approve(rep *gateReport, out scanOutcome, reason string) *gateRep
 		again.warn(chk, "hive paths approved by the Head Keeper "+entry+" at "+short)
 	case out.keeperHit:
 		again.warn(chk, needKeeper)
+		unread(again)
 	}
 	return again
 }

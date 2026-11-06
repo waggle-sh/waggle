@@ -23,10 +23,13 @@ type Review struct {
 }
 
 // PRReviews is every review of one pull request in ID order, and the time of
-// its last base branch change (zero when the base never changed).
+// its last base branch change (zero when the base never changed). Comments
+// holds the conversation comments the gate read for waggle-approve lines; it
+// is empty when they could not be read (T-057).
 type PRReviews struct {
 	Reviews        []Review
 	LastBaseChange time.Time
+	Comments       []Comment
 }
 
 // StatusError is a non-2xx GitHub answer. It carries the status only: no
