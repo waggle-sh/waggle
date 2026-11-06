@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-059",
+  "keeper_id": "cursor-agent",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/rfc-notes"
+  ],
+  "claimed_at": "2026-11-06T21:00:42Z",
+  "expires_at": "2026-11-06T23:00:42Z",
+  "branches": [
+    "t-059-repositioning-overlay"
+  ]
+}
