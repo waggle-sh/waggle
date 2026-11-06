@@ -64,8 +64,8 @@ No em dashes or en dashes in code, docs, or commits.
 
 ### Cut or frozen
 
-- **Nectar.** Restored (D-366), planned v0.2: reputation from merged commits that survive 30 days on main without revert.
-- **Quorum.** Restored (D-366), planned v0.2: hive voting weighted by sqrt(Nectar), Head Keeper veto.
+- **Nectar.** Cut: reputation from merged commits.
+- **Quorum.** Cut: hive voting weighted by Nectar.
 - **weaver, nurse, studio, assembly.** Cut: the unspecified v0.2 roles.
 - **Lane.** Frozen: an integration branch (`int-<release>-<n>`) where several Light-gate tasks share one guard pass. Not used.
 - **relay.** The stub job of the old gate workflow, removed from the template.
