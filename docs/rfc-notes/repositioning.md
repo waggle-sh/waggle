@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # RFC note: repositioning Waggle as an agent-agnostic merge gate
 
-- **Status:** Ruled by the Head Keeper on 2026-10-23 (D-229, D-231 to D-236); section 5 is the plan of record.
+- **Status:** Ruled by the Head Keeper on 2026-10-23 (D-229, D-231 to D-236); section 5 is the plan of record for gate sequencing. D-366 restores Nectar, Quorum, and multi-Keeper as core vision; section 4 rows for those three items are amended below. Cells (D-231) stay cut unless reversed on their own card.
 - **Date:** 2026-10-23
 - **Inputs:** the prior-art review of 2026-10-22 (research output; its claims are treated as data and its source links are kept below), `README.md`, `docs/RFC-0003.md`, `.waggle/control/WAGGLE.md`, `.waggle/hive/tasks/`, and the code under `cmd/` and `internal/` at `4a65fc4`.
 - **Sizes:** added non-test lines, bottom-up. Under D-185 each ticket brief doubles these before setting estimate, target and stop.
@@ -11,6 +11,8 @@
 The review found that the swarm vision in RFC-0003 section 1 ("1 solo Keeper to 500+ distributed Keepers donating local compute and tokens") is already shipped by others and is mostly redundant for us. The review reports that Gas Town with Beads and the Wasteland covers the coordinator, worktree workers, git-backed claims, a merge queue, ten-plus runtimes and a federated reputation board ([gastown](https://github.com/gastownhall/gastown), [beads](https://github.com/gastownhall/beads), [WASTELAND.md](https://github.com/gastownhall/gastown/blob/main/docs/WASTELAND.md)), that Bernstein covers the deterministic, policy-gated orchestrator ([bernstein](https://github.com/sipyourdrink-ltd/bernstein)), that Claude Code ships agent teams and the OS sandbox our Cells were going to rebuild ([agent teams](https://code.claude.com/docs/en/agent-teams), [sandboxing](https://code.claude.com/docs/en/sandboxing)), and that OpenAI ships cross-model review as a Claude Code plugin ([codex-plugin-cc](https://github.com/openai/codex-plugin-cc)). It reports that claims in git refs are common ([aco](https://github.com/overnightworks/aco), [grite](https://github.com/neul-labs/grite)). The one piece the review rated strongest is per-task path leases checked commit by commit at merge, under any orchestrator, because each vendor wants its own agent in charge and is unlikely to build a cross-vendor gate. The current pitch leads with the parts that lost and buries the part that might win. It also leads with vocabulary (Keeper, Hive, Comb, Cell, Nectar, Quorum) a project with no audience cannot afford, and the review reports that "queen-led swarm" is already Ruflo's framing ([ruflo](https://github.com/ruvnet/ruflo)).
 
 One correction to the review's data: it counts about 56,600 lines of Go. `wc -l` over `cmd/` and `internal/` gives 12,760 non-test and 15,770 test lines at `4a65fc4`. The conclusion does not change.
+
+Amendment (D-366): prior art can cover parts of a swarm coordinator and still leave Waggle's job open. The gate remains the v0.1 wedge. The 1-to-many Keepers story, Nectar, and Quorum stay in the product vision; they are sequenced after the gate, not discarded because someone else shipped a coordinator.
 
 ## 2. Proposed positioning
 
@@ -30,7 +32,9 @@ The sharp difference from CODEOWNERS and push rulesets ([rulesets docs](https://
 
 **One-sentence pitch:** "Waggle Gate lets you run parallel coding agents from any vendor and know that each PR touched only what its task was given, and that nothing in your control plane merged without a named human."
 
-**First user:** a solo developer or a two to five person team already running two or more agents in parallel on one GitHub repo (Claude Code agent teams, Copilot coding agent, or Gas Town polecats), who has had an agent edit a file outside its task. l19 is user zero: this repo already runs the gate on every PR.
+**First user (v0.1 gate):** a solo developer or a two to five person team already running two or more agents in parallel on one GitHub repo (Claude Code agent teams, Copilot coding agent, or Gas Town polecats), who has had an agent edit a file outside its task. l19 is user zero: this repo already runs the gate on every PR.
+
+**North-star users (unchanged by gate-first):** multi-Keeper teams on public or private repos (including companies with many teams on one private repo) and open source maintainers who need claims, a merge gate, and later honey (Nectar + Quorum) so durable contributors gain priority on roadmap and issues (D-366).
 
 ## 3. What exists and what is missing
 
@@ -63,11 +67,11 @@ Gate total, bottom-up: about 1,150 Go and 200 YAML lines, about 2,700 after the 
 | T-021 phase C | Cut | Blocked on `waggled` and a session launcher that this positioning no longer needs. |
 | T-008 (dependency inputs as Tier 3, about 50 lines) | Keep | Protecting `go.mod` and friends from agent PRs is a direct selling point, and it is the first protected-path rule users will want for their own lockfiles. |
 | `waggled` and `run.sock` | Freeze | The gate needs no daemon and dispatch runs without one today. |
-| Nectar | Cut | The review reports that Wasteland stamps and Gittensor exist and that the signal is gameable, and it matters only with many contributors ([Gittensor](https://subnetalpha.ai/subnet/gittensor/)). |
-| Quorum | Cut | Quadratic voting needs Sybil resistance we have not designed, and there is one Keeper. |
-| Relay mode | Cut from v0.1 | Unimplemented; the workflow ships an `echo` stub that implies a feature. Remove the job; keep the RFC text as a deferred design. |
+| Nectar | Restore (v0.2) | D-366. Core vision. Ship after the public gate; score merged commits that survive 30 days on main without revert, using claim records the gate already writes. Prior-art overlap and gameability are design risks for T-050/T-051, not grounds to delete the feature. |
+| Quorum | Restore (v0.2) | D-366. Core vision. Quadratic voting with weight sqrt(Nectar) and Head Keeper veto. Sybil resistance is a design problem for T-053/T-054, not a cut. "One Keeper today" is a temporary hive fact, not the product ceiling. |
+| Relay mode | Cut from v0.1; revisit for multi-Keeper | Still out of the public gate slice. Needed later so contributors without push access can claim; track under T-055. |
 | v0.2 roles (weaver, nurse, studio, assembly) | Cut | Unspecified, and roles are orchestrator territory we are leaving. |
-| Multi-Keeper (contention, token donation) | Freeze | CAS claims already serve several writers with push access; the donation terms risk is unverified ([VentureBeat](https://venturebeat.com/ai/anthropic-cracks-down-on-unauthorized-claude-usage-by-third-party-harnesses/)). |
+| Multi-Keeper (contention, coordination) | Restore in full (docs now; build after gate) | D-366. Core vision (1 solo Keeper to many Keepers on one repo, public or private). Each Keeper runs their own agents on their own plan; nothing is donated, so the old terms-risk note is dropped. CAS claims stay the base. Contention docs and relay/claim path for contributors without push access ride T-055. |
 | Lanes (`int-<release>-<n>`) | Freeze | The per-commit check already makes lanes safe; no user needs them yet. |
 | README vocabulary | Replace in user-facing docs | Lead with task, claim, lease, protected path, approver, reviewer; keep bee names for this hive's own roles and records. |
 | D-205 second guard | No change here | D-226 revisits it after T-028 and T-029; the gate product does not depend on it. |
