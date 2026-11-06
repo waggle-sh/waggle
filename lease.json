@@ -5,14 +5,11 @@
   "role": "builder",
   "gate": "full",
   "directories": [
-    "README.md",
-    "cmd/waggle",
-    "docs/gate.md"
+    "cmd"
   ],
-  "claimed_at": "2026-11-06T02:54:46Z",
-  "expires_at": "2026-11-08T02:54:46Z",
+  "claimed_at": "2026-11-06T03:32:38Z",
+  "expires_at": "2026-11-06T05:32:38Z",
   "branches": [
-    "t-056-hive-approval",
-    "t-056-brief"
+    "t-057-self-approve"
   ]
 }
