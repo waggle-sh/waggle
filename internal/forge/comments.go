@@ -5,6 +5,7 @@ package forge
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -22,18 +23,29 @@ type Comment struct {
 	Approves []string
 }
 
-// commentMaxPages bounds one comment read. The query asks for 25 comments a
-// page, so 25 bodies of 65536 characters stay under the response cap.
-const commentMaxPages = 20
+// commentPageSize is how many comment bodies one GraphQL page requests.
+// GitHub caps a body at commentBodyMax characters, and JSON may encode each
+// character as a 6-byte \uXXXX escape. One page plus commentPageWrapper
+// must stay within maxBody (github_transport.go). Past commentMaxPages the
+// read fails closed and the reviews decide alone.
+const (
+	commentBodyMax     = 65536
+	commentJSONWorst   = 6
+	commentPageWrapper = 64 << 10
+	commentPageSize    = 2
+	commentMaxPages    = 50
+)
 
-const commentsQuery = `query($owner: String!, $name: String!, $n: Int!, $cursor: String) {
+// commentsQuery is built from commentPageSize so the request and the cap
+// test cannot drift.
+var commentsQuery = fmt.Sprintf(`query($owner: String!, $name: String!, $n: Int!, $cursor: String) {
   repository(owner: $owner, name: $name) { pullRequest(number: $n) {
-    comments(first: 25, after: $cursor) {
+    comments(first: %d, after: $cursor) {
       pageInfo { hasNextPage endCursor }
       nodes { fullDatabaseId createdAt body author { login } editor { login } }
     }
   } }
-}`
+}`, commentPageSize)
 
 // approveLine is a whole comment line, spaces trimmed, that approves one commit.
 var approveLine = regexp.MustCompile(`^waggle-approve[ \t]+([0-9a-f]{40})$`)
@@ -85,7 +97,7 @@ func (r *ReviewReader) Comments(ctx context.Context, number int) ([]Comment, err
 	cursor := (*string)(nil)
 	for page := 1; ; page++ {
 		if page > commentMaxPages {
-			return nil, errors.New("forge: comments: more than 20 pages of comments")
+			return nil, fmt.Errorf("forge: comments: more than %d pages of comments", commentMaxPages)
 		}
 		in := map[string]any{"query": commentsQuery, "variables": map[string]any{
 			"owner": r.owner, "name": r.repo, "n": number, "cursor": cursor}}
