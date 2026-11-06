@@ -3,16 +3,14 @@
 
 - **Status:** Ruled by the Head Keeper on 2026-10-23 (D-229, D-231 to D-236); section 5 is the plan of record for gate sequencing. D-366 restores Nectar, Quorum, and multi-Keeper as core vision; section 4 rows for those three items are amended below. Cells (D-231) stay cut unless reversed on their own card.
 - **Date:** 2026-10-23
-- **Inputs:** the prior-art review of 2026-10-22 (research output; its claims are treated as data and its source links are kept below), `README.md`, `docs/RFC-0003.md`, `.waggle/control/WAGGLE.md`, `.waggle/hive/tasks/`, and the code under `cmd/` and `internal/` at `4a65fc4`.
-- **Sizes:** added non-test lines, bottom-up. Under D-185 each ticket brief doubles these before setting estimate, target and stop.
+- **Public text:** The prior-art survey, competitor assessments, and the internal sizing and schedule notes are removed. Ruled product decisions stay, including the D-235 eight-week, three-outside-repos kill criterion.
+- **Inputs:** `README.md`, `docs/RFC-0003.md`, `.waggle/control/WAGGLE.md`, `.waggle/hive/tasks/`, and the code under `cmd/` and `internal/` at `4a65fc4`.
 
 ## 1. Problem
 
-The review found that the swarm vision in RFC-0003 section 1 ("1 solo Keeper to 500+ distributed Keepers donating local compute and tokens") is already shipped by others and is mostly redundant for us. The review reports that Gas Town with Beads and the Wasteland covers the coordinator, worktree workers, git-backed claims, a merge queue, ten-plus runtimes and a federated reputation board ([gastown](https://github.com/gastownhall/gastown), [beads](https://github.com/gastownhall/beads), [WASTELAND.md](https://github.com/gastownhall/gastown/blob/main/docs/WASTELAND.md)), that Bernstein covers the deterministic, policy-gated orchestrator ([bernstein](https://github.com/sipyourdrink-ltd/bernstein)), that Claude Code ships agent teams and the OS sandbox our Cells were going to rebuild ([agent teams](https://code.claude.com/docs/en/agent-teams), [sandboxing](https://code.claude.com/docs/en/sandboxing)), and that OpenAI ships cross-model review as a Claude Code plugin ([codex-plugin-cc](https://github.com/openai/codex-plugin-cc)). It reports that claims in git refs are common ([aco](https://github.com/overnightworks/aco), [grite](https://github.com/neul-labs/grite)). The one piece the review rated strongest is per-task path leases checked commit by commit at merge, under any orchestrator, because each vendor wants its own agent in charge and is unlikely to build a cross-vendor gate. The current pitch leads with the parts that lost and buries the part that might win. It also leads with vocabulary (Keeper, Hive, Comb, Cell, Nectar, Quorum) a project with no audience cannot afford, and the review reports that "queen-led swarm" is already Ruflo's framing ([ruflo](https://github.com/ruvnet/ruflo)).
+RFC-0003 section 1 leads with a swarm of Keepers. The v0.1 product is narrower. Waggle Gate is a merge gate any agent or orchestrator can run under. The per-task path lease, checked on every commit at merge, is the part that ships first. User-facing docs use plain terms. Bee names stay in this hive's own roles and records (D-236).
 
-One correction to the review's data: it counts about 56,600 lines of Go. `wc -l` over `cmd/` and `internal/` gives 12,760 non-test and 15,770 test lines at `4a65fc4`. The conclusion does not change.
-
-Amendment (D-366): prior art can cover parts of a swarm coordinator and still leave Waggle's job open. The gate remains the v0.1 wedge. The 1-to-many Keepers story, Nectar, and Quorum stay in the product vision; they are sequenced after the gate, not discarded because someone else shipped a coordinator.
+Amendment (D-366): coverage of parts of a swarm coordinator does not close Waggle's job. The gate remains the v0.1 wedge. The 1-to-many Keepers story, Nectar, and Quorum stay in the product vision. They are sequenced after the gate, not discarded.
 
 ## 2. Proposed positioning
 
@@ -28,32 +26,17 @@ It runs under Gas Town, Copilot coding agent, Claude Code agent teams, Agent Orc
 
 The sharp difference from CODEOWNERS and push rulesets ([rulesets docs](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)): those are static per path for every PR. A lease is per task, so it catches an agent that wanders outside its assignment into a path nobody thought to protect.
 
-**Product two: `waggle dispatch`.** A lease-scoped headless runner: claim, worktree, headless agent run, post-run lease and dirty checks, push tripwire, token caps, cost ledger. It is the gate's reference client and l19's own tool. It ships after the gate, and only grows a second runtime when someone outside l19 asks for one.
+**Product two: `waggle dispatch`.** A lease-scoped headless runner: claim, worktree, headless agent run, post-run lease and dirty checks, push tripwire, token caps, cost ledger. It is the gate's reference client. It ships after the gate, and only grows a second runtime when a second user asks for one.
 
 **One-sentence pitch:** "Waggle Gate lets you run parallel coding agents from any vendor and know that each PR touched only what its task was given, and that nothing in your control plane merged without a named human."
 
-**First user (v0.1 gate):** a solo developer or a two to five person team already running two or more agents in parallel on one GitHub repo (Claude Code agent teams, Copilot coding agent, or Gas Town polecats), who has had an agent edit a file outside its task. l19 is user zero: this repo already runs the gate on every PR.
+**First user (v0.1 gate):** a solo developer or a two to five person team already running two or more agents in parallel on one GitHub repo (Claude Code agent teams, Copilot coding agent, or Gas Town polecats), who has had an agent edit a file outside its task. This repository already runs the gate on every pull request.
 
 **North-star users (unchanged by gate-first):** multi-Keeper teams on public or private repos (including companies with many teams on one private repo) and open source maintainers who need claims, a merge gate, and later honey (Nectar + Quorum) so durable contributors gain priority on roadmap and issues (D-366).
 
 ## 3. What exists and what is missing
 
-| Package | Exists today | Missing for the gate pitch | Rough size |
-| :--- | :--- | :--- | :--- |
-| `internal/comb` (2,171) | Claim refs with CAS, lease validation, `CheckChanges`, `RequiredMinTier`, hardcoded Tier 2 and 3 lists, overlap check, `WORKPLAN.md` renderer | Repo-defined protected paths (raise-only, read from a Tier 3 config file); T-008 dependency inputs | 120 |
-| `cmd/waggle` gate (642) | `gate verify` runs leases, tiers, case collisions, decisions; GitHub annotations; built from base, never head | Ticket binding beyond the `T-<id>:` subject (trailer or branch name); a Tier 3 approver check; a trailer check; tolerate a merge commit from GitHub's "Update branch" button, which fails the gate today | 300 |
-| `cmd/waggle` claim verbs | None. Claims are written only inside `waggle dispatch`; `dispatch release` (T-030) frees them | `waggle claim` and `waggle release` usable by any human or orchestrator, with `--dirs`, `--gate`, `--ttl` and JSON output | 150 |
-| `internal/forge` (1,039) | `Forge` interface, `none` and GitHub adapters (open, comment, merge with Intent Packet body), CI annotator | Read PR reviews at the head SHA for the approver check; T-018 phase C doctor, cut down to "is the gate a required check, can this clone push claim refs" | 250 |
-| Gate workflow (`.github/workflows/waggle-gate.yml`, template) | Runs `waggle gate verify` in this repo only, built from source; the scaffold template omits that step (T-007 Q-T007-1); the relay job is an `echo` stub | Release binaries with checksums; a composite Action pinned by tag and SHA; the template runs the gate; the stub job removed | 100 Go, 200 YAML |
-| `internal/decisions` (704) | Append-only writer, renderer, `gate decisions` | Make it optional per repo | 20 |
-| `internal/scaffold` (1,506) | `init`, `upgrade`, `uninstall`, embedded roles and roster | `waggle init --gate-only`: workflow, config and `DECISIONS.md` only, no roles, roster or queen | 120 |
-| `internal/config` (947) | Typed config, local config, roster, runtimes | `protected_paths` and `approvers` keys | 80 |
-| `internal/dispatch` (3,231) | Claim, worktree, headless run, post-run check, guard dispatch, ledger, clean, release | Nothing for the gate. For product two: read the brief from a path or stdin instead of `.waggle/hive/tasks/` | 60 |
-| `internal/runtime` (1,438) | Claude Code adapter: argv allowlist, settings isolation, env allowlist, stream parser, caps | For product two only: lease-derived sandbox settings for Claude Code's sandbox; a Codex CLI adapter later | 150, then 300 |
-| `internal/usage` (313) | Ledger reader behind `waggle status` | Nothing | 0 |
-| Docs | RFC-0003, README in hive vocabulary | README in plain terms; three integration recipes; a gate spec separate from the hive spec | 0 Go |
-
-Gate total, bottom-up: about 1,150 Go and 200 YAML lines, about 2,700 after the D-185 doubling, across four tickets. Almost all of the hard part (claim storage, validation, the per-commit check, safe annotations) is built and reviewed.
+At the date of this note, claim storage, lease validation, the per-commit check, and safe annotations were already built. Section 5 is what was still missing for a public gate: ticket binding, claim verbs anyone can run, a named approver, and distribution. The internal package inventory and line-count sheet are omitted.
 
 ## 4. Cut, freeze or keep
 
@@ -61,50 +44,46 @@ Gate total, bottom-up: about 1,150 Go and 200 YAML lines, about 2,700 after the 
 | :--- | :--- | :--- |
 | T-028, T-029 | Keep | Already dispatched under D-226; they fix dispatch, which survives every option. |
 | T-023 phase E (handoff loop, `MaxSessions`, target 350) | Freeze | Long-session handoff serves the queen-swarm model; lease-scoped headless runs should be short, so revisit only if real runs hit the cap. |
-| T-024 Cells (six phases, about 2,500 target lines) | Cut | The review reports that Claude Code's sandbox-runtime already does Seatbelt, bubblewrap, write paths and an egress allowlist; replace with a small settings generator from the lease ([sandbox-runtime](https://github.com/anthropics/sandbox-runtime)). |
+| T-024 Cells (six phases, about 2,500 target lines) | Cut | Replace with a small settings generator from the lease. A vendor sandbox already covers the isolation primitives Cells would have rebuilt. |
 | T-025 phases B to D (CODEOWNERS lines, SPDX sweep, DCO check) | Keep | Cheap, and a public OSS release needs them; run phase C in a window with no other claims under `internal/` or `cmd/`. |
 | T-018 phase C (probes, doctor, target 650) | Keep, cut to about 300 | "Is the gate a required check" and "can this clone push claim refs" are the setup questions every new user hits; the nine-finding ruleset walk can wait. |
 | T-021 phase C | Cut | Blocked on `waggled` and a session launcher that this positioning no longer needs. |
 | T-008 (dependency inputs as Tier 3, about 50 lines) | Keep | Protecting `go.mod` and friends from agent PRs is a direct selling point, and it is the first protected-path rule users will want for their own lockfiles. |
 | `waggled` and `run.sock` | Freeze | The gate needs no daemon and dispatch runs without one today. |
-| Nectar | Restore (v0.2) | D-366. Core vision. Ship after the public gate; score merged commits that survive 30 days on main without revert, using claim records the gate already writes. Prior-art overlap and gameability are design risks for T-050/T-051, not grounds to delete the feature. |
+| Nectar | Restore (v0.2) | D-366. Core vision. Ship after the public gate; score merged commits that survive 30 days on main without revert, using claim records the gate already writes. Gameability and overlap with other reputation systems are design risks for T-050/T-051, not grounds to delete the feature. |
 | Quorum | Restore (v0.2) | D-366. Core vision. Quadratic voting with weight sqrt(Nectar) and Head Keeper veto. Sybil resistance is a design problem for T-053/T-054, not a cut. "One Keeper today" is a temporary hive fact, not the product ceiling. |
 | Relay mode | Cut from v0.1; revisit for multi-Keeper | Still out of the public gate slice. Needed later so contributors without push access can claim; track under T-055. |
-| v0.2 roles (weaver, nurse, studio, assembly) | Cut | Unspecified, and roles are orchestrator territory we are leaving. |
-| Multi-Keeper (contention, coordination) | Restore in full (docs now; build after gate) | D-366. Core vision (1 solo Keeper to many Keepers on one repo, public or private). Each Keeper runs their own agents on their own plan; nothing is donated, so the old terms-risk note is dropped. CAS claims stay the base. Contention docs and relay/claim path for contributors without push access ride T-055. |
+| v0.2 roles (weaver, nurse, studio, assembly) | Cut | Unspecified. Roles are orchestrator territory, which is not the v0.1 product. |
+| Multi-Keeper (contention, coordination) | Restore in full (docs now; build after gate) | D-366. Core vision (1 solo Keeper to many Keepers on one repo, public or private). Each Keeper runs their own agents on their own plan. CAS claims stay the base. Contention docs and the claim path for contributors without push access ride T-055. |
 | Lanes (`int-<release>-<n>`) | Freeze | The per-commit check already makes lanes safe; no user needs them yet. |
 | README vocabulary | Replace in user-facing docs | Lead with task, claim, lease, protected path, approver, reviewer; keep bee names for this hive's own roles and records. |
 | D-205 second guard | No change here | D-226 revisits it after T-028 and T-029; the gate product does not depend on it. |
 
 ## 5. Sequence to a public v0.1 of the gate
 
-Each step is one ticket, Tier 3, built through `waggle dispatch` in this hive. Sizes are bottom-up; the briefs double them.
+Each step is one ticket, Tier 3, built through `waggle dispatch` in this hive.
 
-1. **G1: ticket binding and protected paths.** `gate verify` binds a commit to a ticket by its `T-<id>:` subject, a `Waggle-Ticket:` trailer, or a `waggle/T-<id>` branch name, and fails on a conflict. Repo-defined protected paths, raise-only, from a Tier 3 config key; fold in T-008. Allow a PR's merge commits from the base branch only. Lease: `cmd/waggle/`, `internal/comb/`, `internal/config/`. About 350.
-2. **G2: claim verbs for anyone.** `waggle claim T-<id> --dirs a,b --gate full` and `waggle release T-<id>` outside dispatch, reusing `AcquireLease` and the T-030 merged check, with JSON output for orchestrators. Repo-defined protected paths (`gate.protected_paths`) also apply at lease time and in dispatch's post-run check (moved here from G1 by T-031). Lease: `cmd/waggle/`, `internal/comb/`, `internal/dispatch/`. About 200.
-3. **G3: named approver and trailers.** A protected-path change passes when a listed approver approved the PR at its head SHA (GitHub reviews API, read-only token); otherwise it fails as today and the admin bypass remains. Check Intent Packet trailers in the PR body. Lease: `internal/forge/`, `cmd/waggle/`. About 300.
-4. **G4: distribution.** Tagged release binaries with checksums, a composite Action pinned by tag and SHA, `waggle init --gate-only`, the scaffold template runs the gate, the relay stub removed, T-018 phase C cut to the two doctor checks. Lease: `internal/scaffold/`, `internal/forge/`, `cmd/waggle/`, plus Head Keeper commits for workflows. About 350 Go and 200 YAML.
+1. **G1: ticket binding and protected paths.** `gate verify` binds a commit to a ticket by its `T-<id>:` subject, a `Waggle-Ticket:` trailer, or a `waggle/T-<id>` branch name, and fails on a conflict. Repo-defined protected paths, raise-only, from a Tier 3 config key; fold in T-008. Allow a PR's merge commits from the base branch only. Lease: `cmd/waggle/`, `internal/comb/`, `internal/config/`.
+2. **G2: claim verbs for anyone.** `waggle claim T-<id> --dirs a,b --gate full` and `waggle release T-<id>` outside dispatch, reusing `AcquireLease` and the T-030 merged check, with JSON output for orchestrators. Repo-defined protected paths (`gate.protected_paths`) also apply at lease time and in dispatch's post-run check (moved here from G1 by T-031). Lease: `cmd/waggle/`, `internal/comb/`, `internal/dispatch/`.
+3. **G3: named approver and trailers.** A protected-path change passes when a listed approver approved the PR at its head SHA (GitHub reviews API, read-only token); otherwise it fails as today and the admin bypass remains. Check Intent Packet trailers in the PR body. Lease: `internal/forge/`, `cmd/waggle/`.
+4. **G4: distribution.** Tagged release binaries with checksums, a composite Action pinned by tag and SHA, `waggle init --gate-only`, the scaffold template runs the gate, the relay stub removed, T-018 phase C cut to the two doctor checks. Lease: `internal/scaffold/`, `internal/forge/`, `cmd/waggle/`, plus Head Keeper commits for workflows.
 5. **G5: public release.** README rewritten in plain terms, a gate spec, three recipes (Claude Code agent teams, Copilot coding agent, Gas Town), T-025 phases B to D, a demo repo where an agent PR is refused for a path outside its lease. The repo goes public only after redaction, the history rewrite and the Head Keeper's flip card, each on its own card (D-235). Mostly prose and Head Keeper commits.
 
-G1 and G2 both lease `cmd/waggle/` and `internal/comb/`, so they run in sequence; both fit in one week. G3 depends on G1. G4 depends on G1 and G3. At recent rates (about one Tier 3 ticket every one to two days with two guards) this is two to three weeks.
+G1 and G2 both lease `cmd/waggle/` and `internal/comb/`, so they run in sequence. G3 depends on G1. G4 depends on G1 and G3.
 
 ## 6. Risks and the kill criterion
 
 - **Someone has to write the lease.** The gate's value is a lease set by someone other than the agent. If orchestrators will not call `waggle claim` and humans will not either, we fall back to the agent declaring its own lease, which is weak. G2's JSON verbs and the recipes exist to test this early.
 - **Merges that skip PRs.** The gate binds only when merges go through a PR with required checks. An orchestrator that merges locally and pushes to `main` (Gas Town's Refinery may do this; not verified) needs a ruleset requiring PRs first, or the gate is advisory.
-- **Custom refs friction.** GitHub's UI does not show `refs/waggle/`, contributors without push access cannot write them, and forks complicate it (review, differentiator 1).
-- **Platform copy.** GitHub could add per-PR path scopes to rulesets or to Agent HQ; review estimate: about a week for an incumbent ([GitHub blog](https://github.blog/news-insights/product-news/welcome-home-agents/)).
+- **Custom refs friction.** GitHub's UI does not show `refs/waggle/`, contributors without push access cannot write them, and forks complicate it.
 - **Gate strictness.** No merge commits, `fetch-depth: 0`, a 500-commit cap and a required ticket prefix will frustrate a Copilot user on day one unless G1 relaxes the binding.
-- **Process weight leaks in.** As of 2026-10-23, this hive runs 226 decisions and two-guard Tier 3 reviews; a gate user must get none of that by default.
-- **No audience.** As of 2026-10-23: one maintainer, private repo, crowded category ([awesome-agent-orchestrators](https://github.com/andyrewlee/awesome-agent-orchestrators)). A gate is easier to adopt than an orchestrator, but distribution is still the bottleneck.
-- **Sunk cost on dispatch.** About 4,700 non-test lines in `internal/dispatch` and `internal/runtime` serve product two; if the gate wins and dispatch does not, most of that stays internal.
 
 **Kill criterion.** Eight weeks after the repo goes public (at G5, after redaction, the history rewrite and the Head Keeper's flip card, D-235), if fewer than three repos outside l19 run the gate as a required check (counted by public workflow references to the Action, or by users telling us) and no outside issue or PR has arrived, stop community work and keep Waggle as l19's internal tool, per the review's fallback. An earlier technical kill: if in G5's demo the gate cannot bind tickets for a Copilot or Claude Code agent-teams PR without changes to that agent's behavior, the "agent-agnostic" claim is false and the pitch needs rework before going public.
 
 ## 7. Questions for the Head Keeper
 
 **Q1 (strategy). Approve the repositioning?**
-1. Gate first, dispatch second, cut list as in section 4. **Recommended:** reuses the strongest built code, complements the incumbents instead of fighting them.
+1. Gate first, dispatch second, cut list as in section 4. **Recommended:** reuses the strongest built code.
 2. Gate only; dispatch stays internal and gets no public docs.
 3. Stay the course on RFC-0003.
 
@@ -131,7 +110,7 @@ Ruling: option 1 (D-233).
 Ruling: option 1 (D-234).
 
 **Q5 (scope). T-024 Cells?**
-1. Cut; replace with a lease-to-sandbox-settings generator for product two. **Recommended:** about 150 lines against about 2,500 target lines, on a vendor-maintained primitive.
+1. Cut; replace with a lease-to-sandbox-settings generator for product two. **Recommended.**
 2. Freeze the brief unchanged.
 3. Build as designed.
 
