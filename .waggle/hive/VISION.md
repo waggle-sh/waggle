@@ -1,6 +1,6 @@
 # Waggle vision
 
-Owned by Paul (Head Keeper, Level 19 LLC). This file is the bar for product direction. Agents and leads may sequence work; they may not quietly shrink what is below.
+Owned by the Head Keeper. This file is the bar for product direction. Agents and leads may sequence work; they may not quietly shrink what is below.
 
 ## What Waggle is for
 
@@ -33,7 +33,7 @@ Honey = Nectar + Quorum. Gate ships public first; Nectar and Quorum follow in v0
 
 ## Explicitly out of scope (for now)
 
-- Competing with every orchestrator on scheduling, prompts, and role swarms. We stay agent-agnostic at the gate; `waggle dispatch` is our reference client, not the only way in. [inferred from Oct 23 gate-first sequencing Paul kept]
+- Competing with every orchestrator on scheduling, prompts, and role swarms. We stay agent-agnostic at the gate; `waggle dispatch` is our reference client, not the only way in. [inferred from Oct 23 gate-first sequencing the Head Keeper kept]
 - Rebuilding a full Cell sandbox stack when a vendor sandbox already covers the same targets. Sandbox settings derived from a lease are fine; a giant Cell rewrite is not required to keep the vision. [inferred: D-231 Cell cut can stay as sequencing unless I reverse it by name]
 - Inventing unspecified v0.2 bee roles (weaver, nurse, studio, assembly) before Nectar and Quorum have a design. Deliberation for Quorum may need a role later; that is a design card, not a silent cut of honey itself.
 
@@ -48,5 +48,5 @@ Honey = Nectar + Quorum. Gate ships public first; Nectar and Quorum follow in v0
 ## Sources
 
 - RFC-0003 core thesis and Nectar/Quorum (docs/RFC-0003.md).
-- Paul's framing of honey, greenfield/brownfield drop-in, and many humans' agent teams on one repo (2026-11-05 vision notes; Claude session extract under /workspace/waggle-sessions/).
+- The Head Keeper's framing of honey, greenfield/brownfield drop-in, and many humans' agent teams on one repo (2026-11-05 vision notes).
 - Oct 23 repositioning (docs/rfc-notes/repositioning.md) and D-229, D-231..D-236: gate-first sequencing kept; Nectar, Quorum, and multi-Keeper cuts reversed by the restore decision.
