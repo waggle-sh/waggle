@@ -65,7 +65,7 @@ jobs:
 
       - name: Waggle gate (Action)
         if: steps.src.outputs.present == 'false'
-        uses: waggle-sh/waggle/gate@9b5de54eee5b08fc0df15d024be09e450679ee3d # waggle.pin 9b5de54eee5b08fc0df15d024be09e450679ee3d
+        uses: waggle-sh/waggle/gate@a0cca9f6e1c9a6224faf166029dd69fa4be52c90 # waggle.pin a0cca9f6e1c9a6224faf166029dd69fa4be52c90
         with:
           base-sha: ${{ github.event.pull_request.base.sha }}
           head-sha: ${{ github.event.pull_request.head.sha }}

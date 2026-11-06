@@ -6,7 +6,7 @@
 version: 1
 
 waggle:
-  pin: 9b5de54eee5b08fc0df15d024be09e450679ee3d # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
+  pin: a0cca9f6e1c9a6224faf166029dd69fa4be52c90 # the Waggle build this hive runs: a release tag or a 40-hex commit. Change only through a logged upgrade.
 
 hive:
   profile: cli
@@ -51,3 +51,4 @@ leases:
 # gate/ holds the T-036 composite Action (D-270, D-272), listed after phase A merged (T-036 2.11 item 2).
 gate:
   protected_paths: gate/
+  approvers: paulternate
