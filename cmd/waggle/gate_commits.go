@@ -118,6 +118,10 @@ type commitScan struct {
 	filter     bool              // drop tier3 and outside_lease findings on approvable paths
 	hit        bool              // a tier3 finding on an approvable path was seen
 	maxTier    comb.RiskTier     // highest tier the changed paths require
+
+	keeper       func(string) bool // paths only the Head Keeper can pass; nil means none
+	keeperFilter bool              // drop tier3 and outside_lease findings on keeper paths
+	keeperHit    bool              // a tier3 or outside_lease finding on a keeper path was seen
 }
 
 // listCommits returns mb..head oldest first. One commit past the limit is
@@ -222,6 +226,12 @@ func (s *commitScan) scan(mb, head string) error {
 			s.maxTier = max(s.maxTier, s.policy.RequiredMinTier(ch.Path))
 		}
 		for _, v := range comb.CheckChangesPolicy(cl.lease, changes, s.policy) {
+			if s.keeper != nil && s.keeper(v.Path) && (v.Rule == comb.RuleTier3 || v.Rule == comb.RuleOutsideLease) {
+				s.keeperHit = true
+				if s.keeperFilter {
+					continue
+				}
+			}
 			if s.approvable != nil && s.approvable(v.Path) && (v.Rule == comb.RuleTier3 || v.Rule == comb.RuleOutsideLease) {
 				s.hit = s.hit || v.Rule == comb.RuleTier3
 				if s.filter {
