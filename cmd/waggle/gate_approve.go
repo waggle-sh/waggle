@@ -122,6 +122,20 @@ func approvablePath(p comb.TierPolicy) func(string) bool {
 	}
 }
 
+// keeperPath reports the paths only the Head Keeper's approval can pass: the
+// exact-case .waggle/hive/ carve-out, which no claim can lease. A case variant
+// such as .waggle/HIVE/ resolves to Tier 3 and stays out (T-056).
+func keeperPath(path string) bool {
+	return strings.HasPrefix(path, comb.HiveCarveOut) && comb.RequiredMinTier(path) == comb.Tier2Logic
+}
+
+// isHeadKeeper reports whether entry, as approvedBy returns it, is the first
+// entry of gate.approvers. approvedBy walks the list in order, so it returns
+// the first entry whenever that entry's approval counts.
+func isHeadKeeper(entry string, approvers []string) bool {
+	return entry != "" && len(approvers) > 0 && strings.EqualFold(entry, approvers[0])
+}
+
 // approvedBy returns the config entry of a listed approver whose approval
 // passes the PR, or "". Reviews are ordered by ID. For each listed approver
 // the counted state is that login's last APPROVED, CHANGES_REQUESTED or
@@ -189,7 +203,7 @@ func (p prRun) finish(rep *gateReport, out scanOutcome) *gateReport {
 }
 
 func (p prRun) approve(rep *gateReport, out scanOutcome, reason string) *gateReport {
-	if len(out.approvers) == 0 || !out.hit {
+	if len(out.approvers) == 0 || (!out.hit && !out.keeperHit) {
 		return rep
 	}
 	chk := checkTiers
@@ -232,14 +246,30 @@ func (p prRun) approve(rep *gateReport, out scanOutcome, reason string) *gateRep
 		rep.warn(chk, "no approving review from a listed approver at "+short)
 		return rep
 	}
-	// Rescan at the resolved OIDs with the approvable findings dropped. The
+	keeper := isHeadKeeper(entry, out.approvers)
+	needKeeper := "hive paths need an approving review from the Head Keeper (the first entry of gate.approvers) at " + short
+	if !out.hit && !keeper {
+		rep.warn(chk, needKeeper)
+		return rep
+	}
+	// Rescan at the resolved OIDs with the approvable findings dropped: listed
+	// paths for any listed approver, hive paths for the Head Keeper only. The
 	// first report stays as it is when this fails.
 	again := &gateReport{findings: slices.Clone(p.pre)}
 	in := p.in
 	in.filter = true
+	in.keeperFilter = keeper
 	if _, err := scanRange(p.g, out.baseOID, out.headOID, in, again); err != nil {
 		return skip("rescan failed")
 	}
-	again.warn(chk, "protected paths approved by "+entry+" at "+short)
+	if out.hit {
+		again.warn(chk, "protected paths approved by "+entry+" at "+short)
+	}
+	switch {
+	case out.keeperHit && keeper:
+		again.warn(chk, "hive paths approved by the Head Keeper "+entry+" at "+short)
+	case out.keeperHit:
+		again.warn(chk, needKeeper)
+	}
 	return again
 }
