@@ -80,8 +80,19 @@ func TestCommentsDecode(t *testing.T) {
 	if got[2].Approves != nil || !got[2].Created.IsZero() {
 		t.Errorf("third = %+v", got[2])
 	}
-	if len(*reqs) != 1 || !strings.Contains((*reqs)[0], `"n":7`) || !strings.Contains((*reqs)[0], "comments(first: 25") {
+	if len(*reqs) != 1 || !strings.Contains((*reqs)[0], `"n":7`) || !strings.Contains((*reqs)[0], fmt.Sprintf("comments(first: %d", commentPageSize)) {
 		t.Errorf("requests = %q", *reqs)
+	}
+}
+
+// TestCommentPageFitsUnderCap locks the page size to the transport cap. A
+// public repo lets any account post max-length comments; a page that does
+// not fit fails the comment read and the Head Keeper's own PR loses the
+// only approval GitHub allows.
+func TestCommentPageFitsUnderCap(t *testing.T) {
+	page := commentPageSize*commentBodyMax*commentJSONWorst + commentPageWrapper
+	if commentPageSize < 1 || commentMaxPages < 1 || page > maxBody {
+		t.Fatalf("page %d bytes, size %d, pages %d, maxBody %d", page, commentPageSize, commentMaxPages, maxBody)
 	}
 }
 
@@ -94,7 +105,7 @@ func TestCommentsPagingAndErrors(t *testing.T) {
 		t.Fatalf("got %+v %v after %q", got, err, *reqs)
 	}
 	rr, reqs = reviewServer(t, 200, cpage(nil, "more"))
-	if _, err := rr.Comments(context.Background(), 1); err == nil || len(*reqs) != 20 {
+	if _, err := rr.Comments(context.Background(), 1); err == nil || len(*reqs) != commentMaxPages {
 		t.Errorf("err = %v after %d requests", err, len(*reqs))
 	}
 	for name, body := range map[string]string{
