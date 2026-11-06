@@ -5,10 +5,13 @@
   "role": "builder",
   "gate": "full",
   "directories": [
-    "cmd"
+    "README.md",
+    "cmd",
+    "docs/gate.md",
+    "internal/forge"
   ],
-  "claimed_at": "2026-11-06T03:32:38Z",
-  "expires_at": "2026-11-06T05:32:38Z",
+  "claimed_at": "2026-11-06T03:35:43Z",
+  "expires_at": "2026-11-06T06:35:43Z",
   "branches": [
     "t-057-self-approve"
   ]
