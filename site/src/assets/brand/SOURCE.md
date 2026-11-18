@@ -23,7 +23,7 @@ The site uses Inter and JetBrains Mono, self-hosted from npm packages pinned in 
 | Inter, variable weight, latin | `@fontsource-variable/inter` | 5.3.0 | `files/inter-latin-wght-normal.woff2` | `3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62` |
 | JetBrains Mono, variable weight, latin | `@fontsource-variable/jetbrains-mono` | 5.3.0 | `files/jetbrains-mono-latin-wght-normal.woff2` | `18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e` |
 
-Each package carries the family's `OFL-1.1` text in its `LICENSE` file (sha256 `3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345` for Inter, `403581b69dac5cff4079205e01c6b467e56af449ecbd7247693ddb1baafa005b` for JetBrains Mono). The build copies the two woff2 files into `dist/_astro/`; the `LICENSE` texts stay in `node_modules/` and are not copied into `dist/`. If the site is published, ship each `LICENSE` beside the fonts.
+Each package carries the family's `OFL-1.1` text in its `LICENSE` file (sha256 `3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345` for Inter, `403581b69dac5cff4079205e01c6b467e56af449ecbd7247693ddb1baafa005b` for JetBrains Mono). The build copies the two woff2 files into `dist/_astro/`. Copies of the two `LICENSE` texts are committed as `site/public/fonts/LICENSE-inter.txt` and `site/public/fonts/LICENSE-jetbrains-mono.txt` (same sha256 as above), so they ship in `dist/fonts/` with the site. Update them when the packages are bumped.
 
 Reserved Font Name: neither copyright line names a reserved name. The `@font-face` family names `Inter` and `JetBrains Mono` are the upstream names. `Public Sans` and `Martian Mono` are also declared in `site/src/styles/site.css`, as local aliases for the same two files, because the byte-copied diagrams name those two families in their own styles.
 
@@ -31,4 +31,4 @@ The Walt kit named in the site brief was not available in this repository; this 
 
 ## License
 
-Diagrams, marks and tokens are under Apache-2.0 like the product files, covered by the repository `LICENSE`. Apache-2.0 section 6 grants no trademark right, so the mark stays protected as a mark. The fonts are under OFL-1.1, with each license text in its npm package.
+Diagrams, marks and tokens are under Apache-2.0 like the product files, covered by the repository `LICENSE`. Apache-2.0 section 6 grants no trademark right, so the mark stays protected as a mark. The fonts are under OFL-1.1, with each license text in its npm package and copied to `site/public/fonts/`.
