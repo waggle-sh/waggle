@@ -1,0 +1,110 @@
+---
+// SPDX-License-Identifier: Apache-2.0
+
+import '../assets/brand/tokens.css';
+import '../styles/site.css';
+import heroWide from '../assets/brand/diagrams/gate-hero.svg?raw';
+import heroNarrow from '../assets/brand/diagrams/gate-hero-narrow.svg?raw';
+
+const title = 'Waggle Gate: task claims and a merge gate for AI coding agents';
+const description =
+  'Waggle Gate is a GitHub merge check. It fails a pull request whose commits change paths outside the claim of the task each commit names.';
+const site = import.meta.env.SITE;
+const canonical = site ? new URL('/', site).href : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
+  <body class="lp">
+    <div class="lp-wrap">
+      <nav class="lp-nav" aria-label="Main">
+        <a class="mark" href="/">Waggle</a>
+        <a href="/quick-start/">Quick start</a>
+        <a href="/gate/">Gate</a>
+        <a href="/claims-and-leases/">Claims</a>
+        <a href="/config/">Config</a>
+        <a href="/cli/">CLI</a>
+        <a href="/recipes/">Recipes</a>
+      </nav>
+
+      <header class="lp-hero">
+        <h1>Agents work inside the lines you draw.</h1>
+        <p class="lede">
+          Waggle Gate is a GitHub merge check for repos where AI agents write code. Give each task a claim: the directories
+          it may change and the branches its PR may come from. The gate fails a PR whose commits step outside it.
+        </p>
+        <div class="lp-actions">
+          <a class="lp-btn primary" href="/quick-start/">Quick start</a>
+          <a class="lp-btn" href="/gate/">Read the gate spec</a>
+        </div>
+      </header>
+
+      <figure class="lp-diagram" style="margin-inline: 0">
+        <div class="wide" set:html={heroWide} />
+        <div class="narrow" set:html={heroNarrow} />
+      </figure>
+
+      <section class="lp-grid" aria-label="How it works">
+        <div>
+          <h3>A claim before the work</h3>
+          <p>
+            A person or the orchestrator writes a claim, a git ref, with the task's directories and PR branches. Not the
+            agent. <a href="/claims-and-leases/">Claims and leases</a>
+          </p>
+        </div>
+        <div>
+          <h3>Every commit, not the final diff</h3>
+          <p>
+            Each commit names its task, and each is checked against that task's lease, so a stray path fails even if a
+            later commit reverts it. <a href="/gate/#4-the-per-commit-lease-check">The lease check</a>
+          </p>
+        </div>
+        <div>
+          <h3>Protected paths need a person</h3>
+          <p>
+            Control paths such as <code>.github/workflows/</code> fail whatever the claim says. Paths you list pass only
+            with a listed approver's approval. <a href="/gate/#5-risk-tiers-and-protected-paths">Protected paths</a>
+          </p>
+        </div>
+        <div>
+          <h3>Any agent that opens a PR</h3>
+          <p>
+            The gate reads git and the PR, not the tool. Recipes cover
+            <a href="/recipes/claude-code-agent-teams/">Claude Code agent teams</a> and the
+            <a href="/recipes/copilot-cloud-agent/">Copilot cloud agent</a>.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <section class="lp-limits">
+      <div class="lp-wrap">
+        <h2>What it does not do</h2>
+        <p>
+          It does not schedule or run agents, and it is not a sandbox. It binds only on PRs that must pass the check, an
+          admin bypass merges without it, and the required check can be forged by a workflow or token with the right
+          permissions. The limits are written down, with the tests that show them, in
+          <a href="/gate/#10-limits-and-known-bypasses">the gate spec</a>.
+        </p>
+        <p>
+          Waggle is pre-1.0 and supports GitHub only. The spec describes what the code does today, and the recipes have not
+          been run end to end with each tool.
+        </p>
+      </div>
+    </section>
+
+    <footer class="lp-wrap lp-foot">
+      <p>The <code>waggle</code> CLI is Apache-2.0. The templates <code>waggle init</code> writes into your repo are MIT-0.</p>
+      <p>Copyright 2026 Level 19 Enterprises, LLC.</p>
+    </footer>
+  </body>
+</html>
