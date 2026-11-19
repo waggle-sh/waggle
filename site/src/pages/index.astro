@@ -22,12 +22,18 @@ const canonical = site ? new URL('/', site).href : undefined;
     <meta name="description" content={description} />
     {canonical && <link rel="canonical" href={canonical} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/brand/logo/w-mark-favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/brand/logo/w-mark-favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
   <body class="lp">
     <div class="lp-wrap">
       <nav class="lp-nav" aria-label="Main">
-        <a class="mark" href="/">Waggle</a>
+        <a class="mark" href="/">
+          <img class="mark-img light-only" src="/brand/logo/w-mark-light.svg" alt="" width="24" height="24" />
+          <img class="mark-img dark-only" src="/brand/logo/w-mark-dark.svg" alt="" width="24" height="24" />
+          Waggle
+        </a>
         <a href="/docs/">Docs</a>
         <a href="/docs/quick-start/">Quick start</a>
         <a href="/docs/gate/">Gate</a>
@@ -38,6 +44,14 @@ const canonical = site ? new URL('/', site).href : undefined;
       </nav>
 
       <header class="lp-hero">
+        <img
+          class="walt"
+          src="/brand/mascot/walt-vector-normalized.svg"
+          width="200"
+          height="160"
+          alt="Walt, the Waggle mascot: a round apricot bee with two dark stripes, soft wings and a small smile."
+        />
+        <div class="lp-hero-copy">
         <h1>When contributors run agents, the agents collide.</h1>
         <p class="lede">
           Overlapping edits, the same work done twice, pull requests that conflict, and nobody who can say who is on what.
@@ -46,6 +60,7 @@ const canonical = site ? new URL('/', site).href : undefined;
         <div class="lp-actions">
           <a class="lp-btn primary" href="/docs/">Read the docs</a>
           <a class="lp-btn" href="/docs/quick-start/">Quick start</a>
+        </div>
         </div>
       </header>
 
@@ -107,10 +122,23 @@ const canonical = site ? new URL('/', site).href : undefined;
       </section>
 
       <section aria-labelledby="who">
-        <h2 id="who">Who it's for</h2>
-        <p>
-          Teams, and open-source projects, where more than one contributor uses an AI coding agent on the same repository.
-        </p>
+        <div class="lp-who">
+          <img
+            class="walt-small"
+            src="/brand/mascot/walt-vector-normalized.svg"
+            width="100"
+            height="80"
+            alt="Walt the bee."
+            loading="lazy"
+          />
+          <div>
+            <h2 id="who">Who it's for</h2>
+            <p>
+              Teams, and open-source projects, where more than one contributor uses an AI coding agent on the same
+              repository. If that is you, the quick start is the place to begin.
+            </p>
+          </div>
+        </div>
       </section>
     </div>
 
