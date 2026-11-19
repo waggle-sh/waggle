@@ -6,7 +6,7 @@
 - **Status:** Proposed, roadmap (ticket T-062). Nothing is frozen.
 - **Date:** 2026-11-19
 - **Builds on:** `docs/RFC-0003.md` (hive taxonomy, claims, leases), `docs/gate.md` (what the gate checks today), `CONTRIBUTING.md` section 4 (words in our records).
-- **Vocabulary:** bee words for the roles and places this RFC introduces, standard words for mechanisms (D-073): Keeper, queen, hive, comb, claim, lease, gate. A note on D-368 is under Open questions.
+- **Vocabulary:** bee words for the roles and places this RFC introduces, standard words for mechanisms (D-073): Keeper, queen, hive, comb, claim, lease, gate.
 
 ## 1. Problem and motivation
 
@@ -194,16 +194,15 @@ At `work`, the hub runs a hive's own `waggle claim` and `waggle dispatch` on the
 
 ## 10. Open questions
 
-1. **D-368.** The request for this RFC referred to a decision numbered D-368 on bee language. The decision log in this checkout ends at D-367, and D-368 is not in it or in any file here. This RFC therefore follows the vocabulary rules that are in the repo (`CONTRIBUTING.md` section 4, D-073 and D-236). If D-368 exists elsewhere, check this RFC against it before acceptance.
-2. **Registry location and format.** A user config file is proposed; a per-machine daemon registry is the alternative.
-3. **Hub placement.** Does the hub live in one of the hives, or in none? One of the hives would let it read that hive's records for free but would tie the hub to it. None is proposed.
-4. **How the hub reads a hive.** By the hive's local checkout, or from the remote. A checkout is faster and may be stale; the remote is authoritative for claims (RFC-0003 section 3.1).
-5. **Cards across hives.** Whether one merged card list can carry a hive's decision card without the hub answering it for the Keeper (it must not).
-6. **Interaction with multi-Keeper (D-366).** A hive may have several Keepers each with their own hub. The design assumes the hub adds no shared state, so this should hold; phase 1 should test it.
+1. **Registry location and format.** A user config file is proposed; a per-machine daemon registry is the alternative.
+2. **Hub placement.** Does the hub live in one of the hives, or in none? One of the hives would let it read that hive's records for free but would tie the hub to it. None is proposed.
+3. **How the hub reads a hive.** By the hive's local checkout, or from the remote. A checkout is faster and may be stale; the remote is authoritative for claims (RFC-0003 section 3.1).
+4. **Cards across hives.** Whether one merged card list can carry a hive's decision card without the hub answering it for the Keeper (it must not).
+5. **Interaction with multi-Keeper (D-366).** A hive may have several Keepers each with their own hub. The design assumes the hub adds no shared state, so this should hold; phase 1 should test it.
 
 ## Appendix A: Proposed decision entry (not recorded)
 
-This is the text proposed for the hive's decision log. It is **not** in `.waggle/hive/DECISIONS.md`: that file is append-only through the queen and the Head Keeper (RFC-0003 section 2.2), and this ticket does not edit `.waggle/hive/`. The ID is left open for the queen to assign.
+This is the text proposed for the hive's decision log. It is **not** in `.waggle/hive/DECISIONS.md`: that file is append-only through the queen and the Head Keeper (the `queen` row of the roster table in RFC-0003 section 2.2, and `docs/gate.md` section 8), and this ticket does not edit `.waggle/hive/`. The ID is left open for the queen to assign.
 
 ```
 ## D-<next>: T-062: multi-repo queen is roadmap; phase 0 is the RFC
