@@ -18,7 +18,7 @@
         line/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false
     zz_probe2_test.go:97: "tab\there" reuse: err=<nil> reused=true
     zz_probe2_test.go:97: "quo\"te" reuse: err=<nil> reused=true
-    zz_probe2_test.go:112: case-different repo path: err=/VAR/FOLDERS/8Y/XSQ0G8LS1G5BQFDZJSL9M0P00000GN/T/TESTPROBE2PATHSHAPES2092775523/005/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false
+    zz_probe2_test.go:112: case-different repo path: err=/VAR/FOLDERS/<TMP>/T/TESTPROBE2PATHSHAPES2092775523/005/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false
     zz_probe2_test.go:121: /private-prefixed repo path: err=<nil> reused=true
     zz_probe2_test.go:129: locked entry reuse: err=<nil> reused=true
     zz_probe2_test.go:135: locked missing entry: exit=3 err=git worktree: exit status 128: Preparing worktree (checking out 't-023')
@@ -73,7 +73,7 @@
     zz_probe4_test.go:142: no-space: err=<nil>
     zz_probe4_test.go:142: relative: err=<nil>
     zz_probe4_test.go:142: via-var: err=<nil>
-    zz_probe4_test.go:142: upper-case: err=/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/011/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/011/.waggle/worktrees/T-023-builder/.git points at /PRIVATE/VAR/FOLDERS/8Y/XSQ0G8LS1G5BQFDZJSL9M0P00000GN/T/TESTPROBE4GITFILEVARIANTS336923800/011/.GIT/WORKTREES/T-023-BUILDER, not its registration)
+    zz_probe4_test.go:142: upper-case: err=$TMPDIR/TestProbe4GitFileVariants336923800/011/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it ($TMPDIR/TestProbe4GitFileVariants336923800/011/.waggle/worktrees/T-023-builder/.git points at /PRIVATE/VAR/FOLDERS/<TMP>/T/TESTPROBE4GITFILEVARIANTS336923800/011/.GIT/WORKTREES/T-023-BUILDER, not its registration)
     zz_probe4_test.go:142: oversize: err=/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/013/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/013/.waggle/worktrees/T-023-builder/.git is larger than 4096 bytes)
     zz_probe4_test.go:142: two-lines: err=/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/015/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it (/private/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/015/.waggle/worktrees/T-023-builder/.git points at /private/var/folders/<tmp>/T/TestProbe4GitFileVariants336923800/015/.git/worktrees/T-023-builder
         gitdir: /elsewhere, not its registration)
