@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Waggle Gate
 
+Waggle lets many **keepers** (the humans who own work on a repo), each with their own team of AI agents, work on one repo without stepping on each other. The gate is the first piece you can use today; Nectar (reputation from merged work), Quorum (weighted voting) and the multi-keeper parts are roadmap.
+
 Waggle Gate is a GitHub merge check for repos where AI agents write code. On a repo where it is a required check and PRs are required, it fails a PR whose commits change paths outside the claim of the task each commit names, or whose task's claim does not name the PR's branch.
 
 Each task gets a claim, written by the keeper's queen agent or another trusted coordinator and never by the agent doing the work: the directories it may change and the branches its PR may come from. The gate reads the claims from git and compares them with the PR's commits.
@@ -56,7 +58,7 @@ These are the usage lines `waggle claim -h` and `waggle release -h` print (`cmd/
 
 ## Recipes
 
-How to run the gate under the agent you already use, in [docs/recipes](docs/recipes/README.md): [Claude Code agent teams](docs/recipes/claude-code-agent-teams.md), [GitHub Copilot cloud agent](docs/recipes/copilot-cloud-agent.md), and the requirements for Gas Town.
+How to run the gate under the agent you already use, in [docs/recipes](docs/recipes/README.md): [Claude Code agent teams](docs/recipes/claude-code-agent-teams.md) and [GitHub Copilot cloud agent](docs/recipes/copilot-cloud-agent.md).
 
 ## Status
 
