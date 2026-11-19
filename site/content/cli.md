@@ -31,7 +31,7 @@ Scaffold Waggle into the current directory.
 waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]... [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]
 ```
 
-Lease directories for a task. See [Claims and leases](/docs/claims-and-leases/).
+Lease directories for a task. The queen runs this (or a trusted person, without a queen), never the agent doing the task. See [Claims and leases](/docs/claims-and-leases/).
 
 | Flag | Meaning |
 | :--- | :--- |
