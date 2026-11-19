@@ -18,9 +18,7 @@ Each recipe says how one agent tool's output meets the gate. The gate itself is 
 
 ## Who writes the claim
 
-The queen, or another coordinator the keeper trusts, writes the claim and its branch list. A keeper talks with their queen, and that is the usual way work starts. The queen runs `waggle claim`, or `waggle dispatch` for a builder or forager, which writes or renews the same claim. Opening a GitHub issue from that conversation is not automatic yet. A keeper can still open the issue directly.
-
-Never the agent that does the task, and never from credentials that agent holds: anyone who can push `refs/waggle/claims/*` can write a lease and a branch list, so a worker with your git credentials can write its own (L3). Keep approver credentials and `waggle claim` away from the worker, and credentials that hold the Workflows, Actions or Commit statuses permission, or a classic `repo` token (L11). A narrower token can still push claim refs (L3).
+The keeper's queen agent, or another trusted coordinator, writes the claim and its branch list, with the keeper in control; a person writing it is the fallback when there is no queen. Never the agent that does the task, and never from credentials the agent holds: anyone who can push `refs/waggle/claims/*` can write a lease and a branch list, so an agent with your git credentials can write its own (L3). Keep approver credentials and `waggle claim` away from agents, and credentials that hold the Workflows, Actions or Commit statuses permission, or a classic `repo` token (L11). A narrower token can still push claim refs (L3).
 
 Write the claim before the work and before the PR's first gate run:
 
