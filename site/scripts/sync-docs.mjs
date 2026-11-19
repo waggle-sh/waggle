@@ -84,8 +84,15 @@ for (const [src, route] of routes) {
   writeFileSync(out, `---\ntitle: "${title}"\n---\n\n${body}`);
 }
 
+// Starlight's built-in /404 route looks up a docs entry with id 404; without one it logs a warning.
+// draft: true keeps the entry out of the catch-all docs route, which would otherwise conflict with /404.
+writeFileSync(
+  join(outDir, '404.md'),
+  '---\ntitle: Page not found\ndraft: true\n---\n\nThis page does not exist. Go back to the [home page](/).\n',
+);
+
 if (errors.length > 0) {
   for (const e of errors) console.error(`sync-docs: ${e}`);
   process.exit(1);
 }
-console.log(`sync-docs: wrote ${routes.size - 1} pages to src/content/docs`);
+console.log(`sync-docs: wrote ${routes.size} pages (including 404) to src/content/docs`);
