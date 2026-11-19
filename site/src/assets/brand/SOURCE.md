@@ -16,22 +16,19 @@ Studio commit: `47a73e740ed256c358048d710fe2955b78631a3d`, directory `products/w
 
 ## Fonts
 
-User agent sent for each CSS2 request: `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36`.
+The site uses Inter and JetBrains Mono, self-hosted from npm packages pinned in `site/package-lock.json`, not copied into the repo. This replaces the earlier Public Sans and Martian Mono files and their `OFL` texts, which were removed.
 
-Public Sans, variable 400 to 600, latin, 26,636 bytes.
-- Fetch URL: `https://fonts.googleapis.com/css2?family=Public+Sans:wght@400..600&subset=latin&display=swap`
-- Resolved to: `https://fonts.gstatic.com/s/publicsans/v21/ijwRs572Xtc6ZYQws9YVwnNGfJ7QwOk1.woff2`
-- sha256: `c1b6da516e0062e9c2f341b3a51dd2d621d946da72f06c6cfe05fd9d2dd8622d`
-- `OFL-public-sans.txt` from `https://raw.githubusercontent.com/uswds/public-sans/develop/OFL.txt`, sha256 `157a9e77f7580246e97c769490e2e977ae94399f9d30f4556015c41fe8c28bac`.
+| Family | Package | Version | File used | sha256 |
+| :--- | :--- | :--- | :--- | :--- |
+| Inter, variable weight, latin | `@fontsource-variable/inter` | 5.3.0 | `files/inter-latin-wght-normal.woff2` | `3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62` |
+| JetBrains Mono, variable weight, latin | `@fontsource-variable/jetbrains-mono` | 5.3.0 | `files/jetbrains-mono-latin-wght-normal.woff2` | `18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e` |
 
-Martian Mono, variable at width 87.5, 400 to 500, latin, 23,524 bytes.
-- Fetch URL: `https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@87.5,400..500&subset=latin&display=swap`
-- Resolved to: `https://fonts.gstatic.com/s/martianmono/v6/2V0PKIcADoYhV6w87xrTKjs4CYElh_VS9YA4TjPnaTq9wXulPFk.woff2`
-- sha256: `68af56c335e8eacf46d452044f265e444118b682f6c09a5cec0c11364ce0dc25`
-- `OFL-martian-mono.txt` from `https://raw.githubusercontent.com/evilmartians/mono/main/OFL.txt`, sha256 `ddafd2c3f37ef1d83ef284ca63e159befd3820850c5e9eded14ca52eee92c256`.
+Each package carries the family's `OFL-1.1` text in its `LICENSE` file (sha256 `3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345` for Inter, `403581b69dac5cff4079205e01c6b467e56af449ecbd7247693ddb1baafa005b` for JetBrains Mono). The build copies the two woff2 files into `dist/_astro/`. Copies of the two `LICENSE` texts are committed as `site/public/fonts/LICENSE-inter.txt` and `site/public/fonts/LICENSE-jetbrains-mono.txt` (same sha256 as above), so they ship in `dist/fonts/` with the site. Update them when the packages are bumped.
 
-Reserved Font Name: neither `OFL.txt` declares one; the copyright line of each names no reserved name. The `@font-face` family names on this site are local aliases.
+Reserved Font Name: neither copyright line names a reserved name. The `@font-face` family names `Inter` and `JetBrains Mono` are the upstream names. `Public Sans` and `Martian Mono` are also declared in `site/src/styles/site.css`, as local aliases for the same two files, because the byte-copied diagrams name those two families in their own styles.
+
+The Walt kit named in the site brief was not available in this repository; this site keeps the studio's Lease tokens (`tokens.css`) and swaps only the two font families.
 
 ## License
 
-Diagrams, marks and tokens are under Apache-2.0 like the product files, covered by the repository `LICENSE`. Apache-2.0 section 6 grants no trademark right, so the mark stays protected as a mark. The fonts stay under OFL-1.1, with each license text beside them in `site/public/fonts/`.
+Diagrams, marks and tokens are under Apache-2.0 like the product files, covered by the repository `LICENSE`. Apache-2.0 section 6 grants no trademark right, so the mark stays protected as a mark. The fonts are under OFL-1.1, with each license text in its npm package and copied to `site/public/fonts/`.
