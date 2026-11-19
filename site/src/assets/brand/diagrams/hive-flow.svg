@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="wg" viewBox="0 0 1120 312" width="1120" height="312" role="img" aria-labelledby="wg-hive-t wg-hive-d">
 <title id="wg-hive-t">How Waggle builds Waggle</title>
-<desc id="wg-hive-d">How the Waggle repo builds Waggle. The Keeper, the human, answers decision cards from the queen, the only agent session the Keeper talks to. The queen sends a goal to a scout, which writes a task brief with its lease, gate and risk tier. A builder writes the code inside that lease. Two guards running on different models review it; each returns pass or must-fix with an Intent Packet, and both must pass. Waggle Gate checks every commit against the lease, protected paths need the Head Keeper, and the PR merges.</desc>
+<desc id="wg-hive-d">How the Waggle repo builds Waggle. The Keeper, the human, answers decision cards from the queen, the only agent session the Keeper talks to. The queen sends a goal to a scout, which writes a task brief with its lease, gate and risk tier. A builder writes the code inside that lease. Two reviewers running on different models review it; each returns pass or must-fix with an Intent Packet, and both must pass. Waggle Gate checks every commit against the lease, protected paths need the Head Keeper, and the PR merges.</desc>
 <style>.wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
 @media (prefers-color-scheme:dark){.wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}}
 [data-theme="light"] .wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
@@ -35,10 +35,10 @@
 <text x="640" y="115" class="b f-ink" text-anchor="middle">builder</text>
 <path d="M560 110L589 110" fill="none" class="s-ink" stroke-width="1.5"/><path d="M584.05 106.61L589 110L584.05 113.39" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
 <rect x="720" y="58" width="176" height="44" class="f-page s-ink" stroke-width="1.5"/>
-<text x="734" y="85" class="b f-ink">guard, model A</text>
+<text x="734" y="85" class="b f-ink">reviewer, model A</text>
 <rect x="832" y="68" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="859" y="84" text-anchor="middle" class="mono b f-pass">pass</text>
 <rect x="720" y="118" width="176" height="44" class="f-page s-ink" stroke-width="1.5"/>
-<text x="734" y="145" class="b f-ink">guard, model B</text>
+<text x="734" y="145" class="b f-ink">reviewer, model B</text>
 <rect x="832" y="128" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="859" y="144" text-anchor="middle" class="mono b f-pass">pass</text>
 <path d="M688 110L704 110L704 80L717 80" fill="none" class="s-ink" stroke-width="1.5"/><path d="M712.05 76.61L717 80L712.05 83.39" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
 <path d="M704 110L704 140L717 140" fill="none" class="s-ink" stroke-width="1.5"/><path d="M712.05 136.61L717 140L712.05 143.39" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
@@ -59,7 +59,7 @@
 <text x="392" y="234" class="sm f-muted">Written before work starts: the</text><text x="392" y="251" class="sm f-muted">lease, the gate, the risk tier.</text>
 <text x="592" y="216" class="sm b f-ink">builder</text>
 <text x="592" y="234" class="sm f-muted">Writes the code,</text><text x="592" y="251" class="sm f-muted">inside the lease</text><text x="592" y="268" class="sm f-muted">only.</text>
-<text x="720" y="216" class="sm b f-ink">guards</text>
+<text x="720" y="216" class="sm b f-ink">reviewers</text>
 <text x="720" y="234" class="sm f-muted">Two reviewers on</text><text x="720" y="251" class="sm f-muted">different models. Both</text><text x="720" y="268" class="sm f-muted">must pass. They never</text><text x="720" y="285" class="sm f-muted">fix.</text>
 <text x="884" y="216" class="sm b f-ink">Waggle Gate</text>
 <text x="884" y="234" class="sm f-muted">Checks every</text><text x="884" y="251" class="sm f-muted">commit</text><text x="884" y="268" class="sm f-muted">against the</text><text x="884" y="285" class="sm f-muted">lease.</text>

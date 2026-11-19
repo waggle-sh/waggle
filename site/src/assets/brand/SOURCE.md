@@ -8,8 +8,10 @@ Studio commit: `47a73e740ed256c358048d710fe2955b78631a3d`, directory `products/w
 | `site/src/assets/brand/tokens.css` | `tokens.css` | `d6299476471d8ad9b8aa920d62c393b5fb1d7d6cc81c22f1614bccf60a35d43e` |
 | `site/src/assets/brand/diagrams/gate-hero.svg` | `diagrams/gate-hero.svg` | `448eb0177f25b94f6aa712ca1ae0310f0f348678a3c976ca74fdafa040a2ea2f` |
 | `site/src/assets/brand/diagrams/gate-hero-narrow.svg` | `diagrams/gate-hero-narrow.svg` | `a86b6b05e79ffde3f86d4cf8cc21d2e90ffe71a0b8232f51f864e6f8e3f18c17` |
-| `site/src/assets/brand/diagrams/hive-flow.svg` | `diagrams/hive-flow.svg` | `2e04b397752c1c374dbd6ee83e996a0fb55da4877d39134371853f276101665c` |
-| `site/src/assets/brand/diagrams/hive-flow-narrow.svg` | `diagrams/hive-flow-narrow.svg` | `ecad8857939b3126b711275bdced235ae3b38e9950bd1771307ac239f4b0ca45` |
+| `site/src/assets/brand/diagrams/hive-flow.svg` | `diagrams/hive-flow.svg` | `1557103eab1ecab50a02b5ad12bc09162e16c85f2fd9f0acaa1fc33cc01c8cb7` (T-061 edit, see below) |
+| `site/src/assets/brand/diagrams/hive-flow-narrow.svg` | `diagrams/hive-flow-narrow.svg` | `127a3098e2014f30dde1cfaba35f3f1286a222b5d2ae689f1533992994606e99` (T-061 edit, see below) |
+
+The two hive-flow diagrams are no longer byte copies. T-061 renamed the review agents from "guard" to "reviewer" in their labels and descriptions, because on this site "guard" means the merge gate. The hashes above are of the edited files. The studio originals had `2e04b397752c1c374dbd6ee83e996a0fb55da4877d39134371853f276101665c` and `ecad8857939b3126b711275bdced235ae3b38e9950bd1771307ac239f4b0ca45`.
 | `site/src/assets/brand/mark/waggle-lockup-outlined-mono.svg` | `mark/final/waggle-lockup-outlined-mono.svg` | `753980357e511938d743454c55352414c7df93602af87e14db2da4f699334941` |
 | `site/public/favicon.svg` | `mark/final/waggle-favicon.svg` | `ac2b24d8eff0d35874a912ba7409427e51d7ed112a817a76d423f79e8f40f309` |
 | `site/public/apple-touch-icon.png` | `mark/final/png/waggle-app-icon-180.png` | `3ffbd918f6098b3b059db56ec21e69010628431604a16a38b96de3ac210bf926` |
