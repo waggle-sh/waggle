@@ -11,7 +11,7 @@ Each orchestrator job gets a GitHub issue on `waggle-sh/waggle` before the work,
 
 - Title: the job, in plain language. When the job has a Waggle ticket, start the title with `T-<id>:`.
 - Body: what the job is, the ticket id when there is one, the leased paths if a claim exists, and the links a later session needs. The issue is not a ticket and it is not a claim. The gate still binds commits to a `T-<id>`, and a person or the orchestrator writes the claim. The agent doing the work does not.
-- Label: `orchestrator`. Suggested description: "Work driven by an outside orchestrator." The label was not on the repo on 2026-11-18. Create it once. Until it exists, the session-start query fails and the session falls back to the handoff.
+- Label: `orchestrator`. It is on `waggle-sh/waggle`. Description: "Work done or coordinated by the orchestrator (Eddie)". List open work with `gh issue list --repo waggle-sh/waggle --label orchestrator --state open`. The open deploy job is [#208](https://github.com/waggle-sh/waggle/issues/208). If GitHub says the label is missing, say so and use the handoff. A missing label is not an empty list.
 - Comments at each milestone, on the issue, not only on the pull request: pull request opened (number and head sha), approval (who, head sha, review or `waggle-approve` comment), merge (merge commit), deploy or apply (commit, result), and follow-ups still open. Close the issue when the follow-ups are done or explicitly dropped, and say which.
 
 A Waggle ticket stays the unit the gate checks. The issue is the record a session can list without reading the hive.
@@ -50,7 +50,7 @@ Checked 2026-11-19 03:53 UTC: `https://github.com/example/infra/tree/main/docs/o
 - https://github.com/example/infra/blob/main/docs/waggle-site-deploy.md
 - https://github.com/example/infra/commit/8d8c315eb597d80425064d6d0de65d2e87026243
 
-When an apply file appears under `docs/ops/applies/`, link that file from the entry here. Do not paste a second copy of the apply log.
+Open pull request [example/infra#28](https://github.com/example/infra/pull/28) adds `docs/ops/applies/2026-11-18-waggle-site.md`. Issue [example/infra#29](https://github.com/example/infra/issues/29) tracks the hosting stack. The file is not on `main` until that pull request merges. Link the merged file from the entry here. Do not paste a second copy of the apply log.
 
 ## This handoff's own gate
 
@@ -76,39 +76,6 @@ Waggle-Verdict: pass
 
 `CLAUDE.md` makes the required tier 2. The verdict trailer is the guard's. `pass` belongs there only after a guard says so. Until then, leave the verdict off rather than invent it. These trailers warn only. They never make the gate pass.
 
-## Issue to open: deploy the docs site
+## Deploy follow-up
 
-This session could not create GitHub issues or labels. Open this issue, label it `orchestrator`, and link it from [docs/HANDOFF.md](../HANDOFF.md).
-
-Title: `Deploy the docs site from main`
-
-Body:
-
-```
-Waggle ticket: none yet. Follow-up to T-041. Do not reuse the T-041 claim.
-It leases `site` on branch `t-041-site` and is expired.
-
-Build is not part of the handoff docs change. Add a GitHub Actions workflow
-in waggle-sh/waggle that builds site/ and syncs dist/ to the site bucket,
-then invalidates the distribution. The role, the bucket, and the constraints
-are in example/infra docs/waggle-site-deploy.md. Do not pass --acl.
-The role is arn:aws:iam::000000000000:role/example-role
-It trusts main and the Actions environment `site` via GitHub OIDC. Limit
-that environment's deployment branches to main. Before the first deploy,
-compare a real token's sub with github_deploy_subjects in
-stacks/waggle-site/locals.tf.
-
-Reported apply, evening of 2026-11-18 PT (not re-read from AWS here):
-bucket example-site-bucket-519019395035, distribution EEXAMPLE0000000,
-example.cloudfront.net. Alias CNAMEs in Cloudflare are still pending:
-getwaggle.dev, www.getwaggle.dev, getwaggle.sh, www.getwaggle.sh, DNS only,
-not proxied.
-
-The Astro config sets no /docs base, so the build emits pages at the site
-root. The stack expects docs/index.html for https://getwaggle.dev/docs.
-Resolve that before the first deploy.
-
-Also still open, not this issue's build: Walt brand kit colors are not
-applied (the kit is not in the repo). The hero diagram may overflow with
-Inter and JetBrains Mono.
-```
+The site deploy workflow is issue [#208](https://github.com/waggle-sh/waggle/issues/208), label `orchestrator`. Build it on that issue, not on the handoff pull request.
