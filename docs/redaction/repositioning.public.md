@@ -22,7 +22,7 @@ Amendment (D-366): coverage of parts of a swarm coordinator does not close Waggl
 4. **Intent Packet trailers.** Ticket, risk tier and verdict as machine-readable trailers, so `git log` answers "which task and which review let this in".
 5. **A decisions log.** An append-only `DECISIONS.md` the gate refuses to let anyone rewrite.
 
-It runs under Gas Town, Copilot coding agent, Claude Code agent teams, Agent Orchestrator, Codex or a human with a branch. It does not schedule, prompt or run agents.
+It runs under Copilot coding agent, Claude Code agent teams, Agent Orchestrator, Codex or a human with a branch. It does not schedule, prompt or run agents.
 
 The sharp difference from CODEOWNERS and push rulesets ([rulesets docs](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)): those are static per path for every PR. A lease is per task, so it catches an agent that wanders outside its assignment into a path nobody thought to protect.
 
@@ -30,7 +30,7 @@ The sharp difference from CODEOWNERS and push rulesets ([rulesets docs](https://
 
 **One-sentence pitch:** "Waggle Gate lets you run parallel coding agents from any vendor and know that each PR touched only what its task was given, and that nothing in your control plane merged without a named human."
 
-**First user (v0.1 gate):** a solo developer or a two to five person team already running two or more agents in parallel on one GitHub repo (Claude Code agent teams, Copilot coding agent, or Gas Town polecats), who has had an agent edit a file outside its task. This repository already runs the gate on every pull request.
+**First user (v0.1 gate):** a solo developer or a two to five person team already running two or more agents in parallel on one GitHub repo (Claude Code agent teams or Copilot coding agent), who has had an agent edit a file outside its task. This repository already runs the gate on every pull request.
 
 **North-star users (unchanged by gate-first):** multi-Keeper teams on public or private repos (including companies with many teams on one private repo) and open source maintainers who need claims, a merge gate, and later honey (Nectar + Quorum) so durable contributors gain priority on roadmap and issues (D-366).
 
@@ -67,14 +67,14 @@ Each step is one ticket, Tier 3, built through `waggle dispatch` in this hive.
 2. **G2: claim verbs for anyone.** `waggle claim T-<id> --dirs a,b --gate full` and `waggle release T-<id>` outside dispatch, reusing `AcquireLease` and the T-030 merged check, with JSON output for orchestrators. Repo-defined protected paths (`gate.protected_paths`) also apply at lease time and in dispatch's post-run check (moved here from G1 by T-031). Lease: `cmd/waggle/`, `internal/comb/`, `internal/dispatch/`.
 3. **G3: named approver and trailers.** A protected-path change passes when a listed approver approved the PR at its head SHA (GitHub reviews API, read-only token); otherwise it fails as today and the admin bypass remains. Check Intent Packet trailers in the PR body. Lease: `internal/forge/`, `cmd/waggle/`.
 4. **G4: distribution.** Tagged release binaries with checksums, a composite Action pinned by tag and SHA, `waggle init --gate-only`, the scaffold template runs the gate, the relay stub removed, T-018 phase C cut to the two doctor checks. Lease: `internal/scaffold/`, `internal/forge/`, `cmd/waggle/`, plus Head Keeper commits for workflows.
-5. **G5: public release.** README rewritten in plain terms, a gate spec, three recipes (Claude Code agent teams, Copilot coding agent, Gas Town), T-025 phases B to D, a demo repo where an agent PR is refused for a path outside its lease. The repo goes public only after redaction, the history rewrite and the Head Keeper's flip card, each on its own card (D-235). Mostly prose and Head Keeper commits.
+5. **G5: public release.** README rewritten in plain terms, a gate spec, recipes for Claude Code agent teams and Copilot coding agent, T-025 phases B to D, a demo repo where an agent PR is refused for a path outside its lease. The repo goes public only after redaction, the history rewrite and the Head Keeper's flip card, each on its own card (D-235). Mostly prose and Head Keeper commits.
 
 G1 and G2 both lease `cmd/waggle/` and `internal/comb/`, so they run in sequence. G3 depends on G1. G4 depends on G1 and G3.
 
 ## 6. Risks and the kill criterion
 
 - **Someone has to write the lease.** The gate's value is a lease set by someone other than the agent. If orchestrators will not call `waggle claim` and humans will not either, we fall back to the agent declaring its own lease, which is weak. G2's JSON verbs and the recipes exist to test this early.
-- **Merges that skip PRs.** The gate binds only when merges go through a PR with required checks. An orchestrator that merges locally and pushes to `main` (Gas Town's Refinery may do this; not verified) needs a ruleset requiring PRs first, or the gate is advisory.
+- **Merges that skip PRs.** The gate binds only when merges go through a PR with required checks. An orchestrator that merges locally and pushes to `main` needs a ruleset requiring PRs first, or the gate is advisory.
 - **Custom refs friction.** GitHub's UI does not show `refs/waggle/`, contributors without push access cannot write them, and forks complicate it.
 - **Gate strictness.** No merge commits, `fetch-depth: 0`, a 500-commit cap and a required ticket prefix will frustrate a Copilot user on day one unless G1 relaxes the binding.
 
