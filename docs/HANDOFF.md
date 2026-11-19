@@ -21,6 +21,7 @@ The docs site build does not publish this file or [docs/ops/](ops/README.md). `s
 
 ## In flight
 
+- Pull request 207, branch `cursor/orchestrator-handoff-edb7`, is this handoff. It has no ticket and no claim, so the gate fails until a person or the orchestrator writes the full claim in [docs/ops/README.md](ops/README.md#this-handoffs-own-gate). https://github.com/waggle-sh/waggle/pull/207
 - Pull request 205, ticket T-060, branch `t-060-staged-gate-modes`, head `18657121b69033507bad7f2a2af207bd84fa49c8`. Design only: `docs/rfc-notes/staged-gate-modes.md` and `.waggle/hive/tasks/T-060.md`. It is open, with no review and no comment. Its base is `220f1a7fae4f9dcaa93a3761cd146c00a6b5a269`, which is main from before pull request 206. https://github.com/waggle-sh/waggle/pull/205
 - Alias DNS CNAMEs in Cloudflare are not created yet. After the apply they are DNS-only CNAMEs for `getwaggle.dev`, `www.getwaggle.dev`, `getwaggle.sh`, and `www.getwaggle.sh`, aimed at `dxbcf6ndsiref.cloudfront.net`. Do not proxy them.
 - A site deploy workflow in this repo is not built. Do not add it while doing a docs or handoff change. The tracking issue was not opened: this session could not create GitHub issues. The text to open is in [docs/ops/README.md](ops/README.md#issue-to-open-deploy-the-docs-site). When the issue exists, replace that pointer with the issue link.
@@ -32,7 +33,7 @@ The docs site build does not publish this file or [docs/ops/](ops/README.md). `s
 - Rulings on RFC questions 1, 2, 3, and 9 before any code ticket is cut. In short: (1) how a new install chooses the mode, (2) whether raising `open` to `guard` can avoid a Tier 3 admin merge, (3) whether a broken base config still fails in `open`, (9) whether staged modes land before or after the public gate. Questions 4 to 8 are also open. They are not the ones blocking the ruling.
 - The alias CNAMEs above. DNS stays on Cloudflare. The stack creates no Route 53 records.
 - An explicit yes before this repo becomes public.
-- A new Waggle ticket and a full claim for the handoff docs, if that pull request is still open. This session did not write a claim. T-041 and T-060 do not cover it. The claim the gate needs is stated in [docs/ops/README.md](ops/README.md) under "This handoff's own gate".
+- A new Waggle ticket and a full claim for pull request 207, while it is open. This session did not write a claim. T-041 and T-060 do not cover it. The claim the gate needs is in [docs/ops/README.md](ops/README.md#this-handoffs-own-gate). The branch is `cursor/orchestrator-handoff-edb7`.
 
 ## Recent orchestrator changes
 
