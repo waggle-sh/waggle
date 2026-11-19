@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Builds site/src/content/docs/ (generated, gitignored) from two sources:
+// Builds site/src/content/docs/docs/ (generated, gitignored) from two sources:
 //   1. the repo's own markdown: docs/gate.md and docs/recipes/*.md, so the site never forks them;
 //   2. the pages written for the site in site/content/*.md.
 // Each source starts with an SPDX comment and an H1. The H1 becomes the Starlight title, and the
-// comment is dropped. Relative links to other sources are rewritten to site routes. The script
+// comment is dropped. Links to other published pages are rewritten to /docs/ routes. The script
 // exits 1 on a missing source or a relative .md link it cannot map, so a renamed file fails the build.
 
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -29,7 +29,25 @@ for (const f of authored) routes.set(`site/content/${f}`, f.replace(/\.md$/, '')
 const errors = [];
 
 function routeUrl(route) {
-  return '/' + route.replace(/\/?index$/, '') + (route === 'index' ? '' : '/');
+  const tail = route.replace(/\/?index$/, '');
+  return tail === '' ? '/docs/' : '/docs/' + tail + '/';
+}
+
+// Absolute site paths that name a published route, with or without the /docs prefix.
+// The site root is the landing page and is not a docs route.
+function routeFromPath(pathname) {
+  let p = pathname;
+  if (p.length > 1 && p.endsWith('/')) p = p.slice(0, -1);
+  if (p === '/docs') p = '/';
+  else if (p.startsWith('/docs/')) p = p.slice('/docs'.length);
+  if (!p.startsWith('/')) return null;
+  const bare = p.slice(1);
+  if (bare === '') return null;
+  for (const route of routes.values()) {
+    const asDir = route.replace(/\/index$/, '');
+    if (bare === route || bare === asDir) return route;
+  }
+  return null;
 }
 
 function rewriteLinks(text, srcPath) {
@@ -40,8 +58,15 @@ function rewriteLinks(text, srcPath) {
       if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
       if (inFence) return line;
       return line.replace(/\]\(([^)\s]+)\)/g, (m, href) => {
-        if (/^(https?:|mailto:|#|\/)/.test(href)) return m;
-        const [file, hash] = href.split('#');
+        if (/^(https?:|mailto:|#)/.test(href)) return m;
+        const hashAt = href.indexOf('#');
+        const file = hashAt === -1 ? href : href.slice(0, hashAt);
+        const hash = hashAt === -1 ? '' : href.slice(hashAt);
+        if (file.startsWith('/')) {
+          const route = routeFromPath(file);
+          if (!route) return m;
+          return `](${routeUrl(route)}${hash})`;
+        }
         if (!file.endsWith('.md')) return m;
         const target = resolve(repoDir, dirname(srcPath), file);
         const rel = target.slice(repoDir.length + 1);
@@ -50,7 +75,7 @@ function rewriteLinks(text, srcPath) {
           errors.push(`${srcPath}: link ${href} points at ${rel}, which the site does not publish`);
           return m;
         }
-        return `](${routeUrl(route)}${hash ? '#' + hash : ''})`;
+        return `](${routeUrl(route)}${hash})`;
       });
     })
     .join('\n');
@@ -79,7 +104,7 @@ for (const [src, route] of routes) {
   }
   const title = lines[h1].slice(2).trim().replace(/"/g, '\\"');
   const body = rewriteLinks(lines.slice(h1 + 1).join('\n').replace(/^\n+/, ''), src);
-  const out = join(outDir, route + '.md');
+  const out = join(outDir, 'docs', route + '.md');
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, `---\ntitle: "${title}"\n---\n\n${body}`);
 }
@@ -88,4 +113,4 @@ if (errors.length > 0) {
   for (const e of errors) console.error(`sync-docs: ${e}`);
   process.exit(1);
 }
-console.log(`sync-docs: wrote ${routes.size - 1} pages to src/content/docs`);
+console.log(`sync-docs: wrote ${routes.size - 1} pages under src/content/docs/docs`);

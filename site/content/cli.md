@@ -31,7 +31,7 @@ Scaffold Waggle into the current directory.
 waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]... [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]
 ```
 
-Lease directories for a task. See [Claims and leases](/claims-and-leases/).
+Lease directories for a task. See [Claims and leases](/docs/claims-and-leases/).
 
 | Flag | Meaning |
 | :--- | :--- |
@@ -73,7 +73,7 @@ The merge-gate checks CI runs against a pull request. Each compares `merge-base(
 | `tiers` | No commit touches a Tier 3 path (including `gate.protected_paths` of the base config) or, under a `light` claim, a Tier 2 path. |
 | `decisions` | Rejects any change to `DECISIONS.md` that is not a pure append of well-formed entries. |
 
-`--base` and `--head` are required. `--repo` defaults to `.`. `verify`, `leases` and `tiers` also take `--branch <name>` (default `GITHUB_HEAD_REF` under GitHub Actions). Details and the code behind each check are in the [gate spec](/gate/#9-output-and-exit-codes).
+`--base` and `--head` are required. `--repo` defaults to `.`. `verify`, `leases` and `tiers` also take `--branch <name>` (default `GITHUB_HEAD_REF` under GitHub Actions). Details and the code behind each check are in the [gate spec](/docs/gate/#9-output-and-exit-codes).
 
 ### `waggle doctor`
 
@@ -81,7 +81,7 @@ The merge-gate checks CI runs against a pull request. Each compares `merge-base(
 waggle doctor [--repo <dir>] [--no-write]
 ```
 
-Checks that claim refs can be pushed and the gate is a required check. It reports `claim-refs`, `required-gate` and `up-to-date`. `--no-write` skips the temporary refs it would otherwise push under `refs/waggle/probe/`. It does not check that PRs are required, required reviews, code-owner review, or which app may post the check. See [the gate spec](/gate/#12-install-and-waggle-doctor).
+Checks that claim refs can be pushed and the gate is a required check. It reports `claim-refs`, `required-gate` and `up-to-date`. `--no-write` skips the temporary refs it would otherwise push under `refs/waggle/probe/`. It does not check that PRs are required, required reviews, code-owner review, or which app may post the check. See [the gate spec](/docs/gate/#12-install-and-waggle-doctor).
 
 ## Hive commands
 
