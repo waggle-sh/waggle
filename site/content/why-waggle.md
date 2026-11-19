@@ -7,11 +7,11 @@ The full vision has three parts. **Claims and leases** say who is working on wha
 
 ## The problem
 
-One person's agents can coordinate fine. The queen they talk to knows the plan. The trouble starts when agents run by different contributors work on the same repo. They cannot see each other and they cannot talk to each other, and nothing shared records who is on what. The same things keep going wrong:
+One person's agents can coordinate fine, because one person holds the plan. The trouble starts when agents run by different contributors work on the same repo. They cannot see each other, and nothing shared records who is on what. The same things keep going wrong:
 
 - **Overlapping edits.** Your agents and a teammate's agents change the same files. One side overwrites the other, or the two pull requests conflict and someone untangles them by hand.
 - **The same work, twice.** Nothing shared records that a task is taken, so another contributor's agent starts it too.
-- **Pull requests that wander.** An agent asked to fix the parser also "tidies" the CI workflow and a lockfile. The diff is large, and the stray change is easy to miss in review.
+- **Pull requests that wander.** A teammate's agent asked to fix the parser also "tidies" the CI workflow and a lockfile. Nothing says in advance what it may touch, so the diff is large and the stray change is easy to miss in review.
 - **Nobody knows who is on what.** Each contributor's agents know only their own work. Branches pile up. To find out whose agent is on which task, a person reads the diffs and asks around.
 
 Waggle answers this with three pieces you can use today. A **claim** says which task is being worked on, which directories it may change (its **lease**), and which branches its pull request may come from. It is written before the work starts by the keeper's **queen** (the coordinating agent a keeper talks to), or another trusted coordinator, never by the **forager** (a worker agent) doing the work. The **gate** is a required GitHub check that fails a pull request whose commits leave the lease. And a keeper on the repo's approver list signs off on the paths you protect. The rest of this page answers the questions teams ask first.
