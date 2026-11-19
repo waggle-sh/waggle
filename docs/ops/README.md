@@ -56,10 +56,10 @@ When an apply file appears under `docs/ops/applies/`, link that file from the en
 
 The change that added `CLAUDE.md`'s session rule, `docs/HANDOFF.md`, and this directory has no Waggle ticket. No claim was written for it.
 
-The gate needs a new ticket id (not T-041, not T-060) and a full claim whose branch list is exactly the pull request's head branch. `CLAUDE.md` is Tier 2, so a `light` claim fails. `waggle claim` accepts a file path. The directories are `CLAUDE.md` and `docs`.
+The gate needs a new ticket id (not T-041, not T-060) and a full claim whose branch list is exactly `cursor/orchestrator-handoff-edb7` (pull request 207). `CLAUDE.md` is Tier 2, so a `light` claim fails. `waggle claim` accepts a file path. The directories are `CLAUDE.md` and `docs`.
 
 ```
-waggle claim T-<id> --dirs CLAUDE.md,docs --gate full --owner <login> --branch <the PR head branch>
+waggle claim T-<id> --dirs CLAUDE.md,docs --gate full --owner <login> --branch cursor/orchestrator-handoff-edb7
 ```
 
 A person or the orchestrator runs that. The agent that edits the files does not. On 2026-11-19 the unexpired claims did not overlap those paths. Expired claims that name `docs` (T-037, branch `t-037`; T-047, branch `t-047`) do not block a new claim: the overlap check skips a claim that is not active (`internal/comb/git.go`). T-041 leases `site` on `t-041-site` and is expired.
