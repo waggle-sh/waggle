@@ -1,4 +1,5 @@
 ---
+# SPDX-License-Identifier: Apache-2.0
 name: Bug report
 about: Something in Waggle does not work as documented
 labels: bug
