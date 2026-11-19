@@ -116,7 +116,7 @@ Every step that changes the remote is a Head Keeper step. None of it is done by 
 
 **Before the rewrite**
 
-1. Land the leaf work that must be in the rewritten tree: B1 scrub (PR 219), `install.sh` (PRs 218 and 220, merging one), and any other open T-062 branch. Then freeze merges to `main` and tell contributors.
+1. Land the leaf work that must be in the rewritten tree: B1 scrub (PR 219), `install.sh` (PR 220), and any other open T-062 branch. Then freeze merges to `main` and tell contributors.
 2. Release or let expire the active claims that lease paths the scrub touches (the cookbook names claim `ticket-55`). Note that claim refs are rewritten and force-pushed with everything else.
 3. Copy `docs/redaction/` out of the clone to a directory outside it. The expression file holds the private strings, and `--replace-text` would rewrite it inside history.
 4. Run `docs/redaction/dry-run.sh` and save the counts as the "before" figures.
