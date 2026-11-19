@@ -1,6 +1,30 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Waggle Gate
 
+## Quick start
+
+Install the `waggle` CLI (Linux and macOS, amd64 and arm64). The script downloads the latest release archive, checks it against the release's `SHA256SUMS`, and installs to `~/.local/bin` (or `/usr/local/bin`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/waggle-sh/waggle/main/install.sh | sh
+```
+
+(This will be served from `https://getwaggle.dev/install.sh` later.) Set `WAGGLE_VERSION=vX.Y.Z` to pin a release or `WAGGLE_INSTALL_DIR` to choose the directory. Or, with Go installed:
+
+```sh
+go install github.com/waggle-sh/waggle/cmd/waggle@latest
+```
+
+Run the gate on your own repo:
+
+```sh
+cd your-repo
+waggle init --gate-only          # writes the workflow, config and decisions log
+git add .github .waggle && git commit -m "Add Waggle gate"
+```
+
+Push that commit (it changes the workflow and `.waggle/`, so it needs an admin merge), then require the check `verify-leases-and-tiers` and PRs on your default branch, and run `waggle doctor`. Before agent work, give each task a claim with `waggle claim T-1 --dirs src/ --gate light --owner <you> --branch <pr-branch>`. Details are in [Install](#install) and [Writing a claim](#writing-a-claim). To build from source instead, see Install below.
+
 Waggle Gate is a GitHub merge check for repos where AI agents write code. On a repo where it is a required check and PRs are required, it fails a PR whose commits change paths outside the claim of the task each commit names, or whose task's claim does not name the PR's branch.
 
 You give each task a claim: the directories it may change and the branches its PR may come from. The gate reads the claims from git and compares them with the PR's commits.
