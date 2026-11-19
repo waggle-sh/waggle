@@ -8,7 +8,7 @@ import heroNarrow from '../assets/brand/diagrams/gate-hero-narrow.svg?raw';
 
 const title = 'Waggle: when contributors run agents, the agents collide';
 const description =
-  'Several people, each running an AI coding agent, means overlapping edits, duplicated work, and conflicting pull requests. Waggle gives each task a claim and a GitHub check that blocks a merge outside it. A person stays in control.';
+  'Several people, each running an AI coding agent, means overlapping edits, duplicated work, and conflicting pull requests. The queen writes each task a claim, and a GitHub check blocks a merge outside it. The keeper stays in control.';
 const site = import.meta.env.SITE;
 const canonical = site ? new URL('/', site).href : undefined;
 ---
@@ -27,7 +27,10 @@ const canonical = site ? new URL('/', site).href : undefined;
   <body class="lp">
     <div class="lp-wrap">
       <nav class="lp-nav" aria-label="Main">
-        <a class="mark" href="/">Waggle</a>
+        <a class="mark" href="/">
+          <img src="/favicon.svg" alt="" width="28" height="28" />
+          Waggle
+        </a>
         <a href="/docs/">Docs</a>
         <a href="/docs/quick-start/">Quick start</a>
         <a href="/docs/gate/">Gate</a>
@@ -38,14 +41,26 @@ const canonical = site ? new URL('/', site).href : undefined;
       </nav>
 
       <header class="lp-hero">
-        <h1>When contributors run agents, the agents collide.</h1>
-        <p class="lede">
-          Overlapping edits, the same work done twice, pull requests that conflict, and nobody who can say who is on what.
-          Waggle gives each task a lane and fails a merge that leaves it. A person writes the lane and stays in control.
-        </p>
-        <div class="lp-actions">
-          <a class="lp-btn primary" href="/docs/">Read the docs</a>
-          <a class="lp-btn" href="/docs/quick-start/">Quick start</a>
+        <div class="lp-hero-row">
+          <img
+            class="lp-walt"
+            src="/brand/mascot/walt-vector-normalized.svg"
+            alt="Walt, the Waggle bee: a small apricot bee with ink stripes, dot eyes, and a smile"
+            width="116"
+            height="93"
+          />
+          <div>
+            <h1>When contributors run agents, the agents collide.</h1>
+            <p class="lede">
+              Overlapping edits, the same work done twice, pull requests that conflict, and nobody who can say who is on
+              what. Your queen writes each task a lane, and the gate fails a merge that leaves it. You stay in control.
+              The agent doing the work never writes its own claim.
+            </p>
+            <div class="lp-actions">
+              <a class="lp-btn primary" href="/docs/">Read the docs</a>
+              <a class="lp-btn" href="/docs/quick-start/">Quick start</a>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -78,9 +93,8 @@ const canonical = site ? new URL('/', site).href : undefined;
           <div>
             <h3>A claim</h3>
             <p>
-              A record a person writes before the work starts. It names the task, the directories that task may change, and
-              the branches its pull request may come from. The agent does not write it.
-              <a href="/docs/claims-and-leases/">Claims and leases</a>
+              The task, the directories it may change, and the branches its pull request may come from. Your queen writes
+              it after you talk, or another coordinator you trust does. The worker does not. <a href="/docs/claims-and-leases/">Claims and leases</a>
             </p>
           </div>
           <div>
@@ -91,19 +105,29 @@ const canonical = site ? new URL('/', site).href : undefined;
             <h3>The gate</h3>
             <p>
               A GitHub merge check. It fails a pull request whose commits change a path outside the lease, or whose claim
-              does not name that pull request's branch. It checks every commit, not only the final diff.
-              <a href="/docs/gate/">The gate spec</a>
+              does not name that pull request's branch. It checks every commit, not only the final diff. <a href="/docs/gate/">The gate spec</a>
             </p>
           </div>
           <div>
-            <h3>A Keeper stays in control</h3>
+            <h3>A keeper stays in control</h3>
             <p>
-              A Keeper is a person on the approver list. Paths you list as protected still need that person's approval.
-              Control files such as workflows fail no matter what the claim says. Waggle does not run the agents.
-              <a href="/docs/gate/#5-risk-tiers-and-protected-paths">Protected paths</a>
+              A keeper is the person who talks with the queen. Paths you list as protected still need a listed approver.
+              Control files such as workflows fail no matter what the claim says. Waggle does not run the agents. <a href="/docs/gate/#5-risk-tiers-and-protected-paths">Protected paths</a>
             </p>
           </div>
         </div>
+        <figure class="lp-roles">
+          <img
+            src="/brand/mascot/walt-roles.png"
+            alt="Walt in five roles: Queen with a clipboard, Scout with a map, Forager with a drop of honey, Builder with a wrench, and Guard with a check"
+            width="960"
+            height="280"
+          />
+          <figcaption>
+            The queen holds the clipboard and writes the claim. Builders and foragers do the work inside it. The guard
+            checks, and does not write a claim. Opening the GitHub issue from that conversation is not automatic yet.
+          </figcaption>
+        </figure>
       </section>
 
       <section aria-labelledby="who">

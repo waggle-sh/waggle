@@ -16,7 +16,7 @@ Copilot's branch names do not bind: the gate binds only `waggle/T-<id>` and `t-<
 
 ## Who claims, and when
 
-The person who assigns the task writes the claim first, then renews it once the PR opens and its branch name is known:
+The queen, or the coordinator for the task, writes the claim first, then renews it once the PR opens and its branch name is known. Copilot does not write the claim:
 
 ```
 waggle claim T-<id> --dirs <a,b> --gate full --owner <your GitHub login> --branch copilot/<slug>

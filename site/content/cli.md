@@ -31,7 +31,7 @@ Scaffold Waggle into the current directory.
 waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]... [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]
 ```
 
-Lease directories for a task. See [Claims and leases](/docs/claims-and-leases/).
+Lease directories for a task. The queen, or another coordinator the keeper trusts, runs this. The worker does not. `waggle dispatch` for a builder or forager writes or renews the same claim. See [Claims and leases](/docs/claims-and-leases/).
 
 | Flag | Meaning |
 | :--- | :--- |

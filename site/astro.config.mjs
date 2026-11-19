@@ -18,6 +18,12 @@ export default defineConfig({
       title: 'Waggle',
       description: 'Task claims and a merge gate for AI coding agents on Git.',
       favicon: '/favicon.svg',
+      logo: {
+        light: './public/brand/logo/w-mark-light.svg',
+        dark: './public/brand/logo/w-mark-dark.svg',
+        alt: 'Waggle',
+      },
+      disable404Route: true,
       customCss: ['./src/assets/brand/tokens.css', './src/styles/site.css'],
       sidebar: [
         { label: 'Overview', slug: 'docs' },

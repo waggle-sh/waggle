@@ -52,9 +52,11 @@
   --sl-color-gray-6: var(--wg-surface);
   --sl-color-gray-7: var(--wg-surface);
   --sl-color-black: var(--wg-page);
-  --sl-color-accent-low: var(--wg-surface);
-  --sl-color-accent: var(--wg-ink);
-  --sl-color-accent-high: var(--wg-ink);
+  --wg-blue: #506afd;
+  --wg-apricot: #ffa161;
+  --sl-color-accent-low: color-mix(in srgb, var(--wg-blue) 16%, var(--wg-page));
+  --sl-color-accent: var(--wg-blue);
+  --sl-color-accent-high: var(--wg-blue);
   --sl-color-text-accent: var(--wg-ink);
   --sl-color-green: var(--wg-pass);
   --sl-color-red: var(--wg-block);
@@ -66,6 +68,10 @@
 :root {
   --sl-border-radius: 0;
   --ec-brdRad: 0;
+}
+.site-title img {
+  width: 1.75rem;
+  height: 1.75rem;
 }
 .sl-markdown-content a:not(:where(.not-content *)) {
   text-decoration-thickness: var(--wg-line);
@@ -108,16 +114,59 @@
   border-bottom: var(--wg-line) solid var(--wg-rule);
 }
 .lp-nav .mark {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--wg-space) * 1);
   font-weight: 600;
   font-size: 1.25rem;
   text-decoration: none;
   margin-right: auto;
+}
+.lp-nav .mark img {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: block;
+}
+.lp-nav .mark-dark {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  .lp-nav .mark-light {
+    display: none;
+  }
+  .lp-nav .mark-dark {
+    display: block;
+  }
 }
 .lp-nav a:not(.mark) {
   font-size: var(--wg-text-small);
 }
 .lp-hero {
   padding: calc(var(--wg-space) * 8) 0 calc(var(--wg-space) * 4);
+}
+.lp-hero-row {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--wg-space) * 4);
+}
+.lp-walt {
+  width: 7.25rem;
+  height: auto;
+  flex: 0 0 auto;
+}
+.lp-roles {
+  margin: 0 0 calc(var(--wg-space) * 4);
+}
+.lp-roles img {
+  display: block;
+  width: min(100%, 48rem);
+  height: auto;
+}
+.lp-roles figcaption {
+  color: var(--wg-muted);
+  font-size: var(--wg-text-small);
+  max-width: var(--wg-measure);
+  margin-top: calc(var(--wg-space) * 2);
 }
 .lp h1 {
   font-size: var(--wg-text-h1);
@@ -191,6 +240,13 @@
   }
   .lp h1 {
     font-size: var(--wg-text-h1-sm);
+  }
+  .lp-hero-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .lp-walt {
+    width: 4.75rem;
   }
 }
 .lp-grid {
