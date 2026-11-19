@@ -3,14 +3,14 @@
 
 Waggle Gate is a GitHub merge check for repos where AI agents write code. On a repo where it is a required check and PRs are required, it fails a PR whose commits change paths outside the claim of the task each commit names, or whose task's claim does not name the PR's branch.
 
-You give each task a claim: the directories it may change and the branches its PR may come from. The gate reads the claims from git and compares them with the PR's commits.
+Each task gets a claim, written by the keeper's queen agent or another trusted coordinator and never by the agent doing the work: the directories it may change and the branches its PR may come from. The gate reads the claims from git and compares them with the PR's commits.
 
 ## What it checks
 
 Each check links the [gate spec](docs/gate.md) section that cites the code behind it.
 
 1. **Each commit names its task, and the task's claim names this PR's branch.** A commit names its task by a `T-<id>: ` subject, a `Waggle-Ticket:` trailer, or a `waggle/T-<id>` or `t-<id>` branch; a commit naming none, or two different tasks, fails. The task is chosen by the commit's author, so the claim's branch list is what ties it to the PR: a commit fails unless its task's claim lists the PR's head branch, and a claim that names no branch fails every commit that names its task whenever the PR's head branch is known ([binding](docs/gate.md#2-binding-a-commit-to-a-task), [branch check](docs/gate.md#3-the-claims-branch-check)).
-2. **Each commit stays inside its task's lease.** The lease is the directory list in the task's claim. Every commit is checked, not only the final diff, with exact case and no new symlink or submodule; only a merge from the base branch is accepted ([lease check](docs/gate.md#4-the-per-commit-lease-check)). The gate does not check who wrote a claim or when, so a person or the orchestrator writes it, with its branch list, before the work, never from the agent's credentials.
+2. **Each commit stays inside its task's lease.** The lease is the directory list in the task's claim. Every commit is checked, not only the final diff, with exact case and no new symlink or submodule; only a merge from the base branch is accepted ([lease check](docs/gate.md#4-the-per-commit-lease-check)). The gate does not check who wrote a claim or when, so the queen or another trusted coordinator writes it, with its branch list, before the work, never from the agent's credentials.
 3. **Protected paths.** Control paths (`.github/workflows/`, `.gitlab-ci.yml`, `.devcontainer/`, `.waggle/`, `go.mod`, `go.sum`, `go.work`, `go.work.sum` and `vendor/`) fail whatever the claim says. An approval does not pass them, except that the Head Keeper (the first entry of `gate.approvers`) can approve a change under `.waggle/hive/`; an admin can bypass the check. Paths your repo lists in `gate.protected_paths` fail too, unless a listed approver approved the PR at its exact head commit (by review, or by a `waggle-approve <sha>` comment) and someone with Write re-ran the failed check ([approvers](docs/gate.md#6-approvers)), or an admin bypasses ([protected paths](docs/gate.md#5-risk-tiers-and-protected-paths)). A forged check can also merge them ([limits](#what-it-does-not-do)).
 4. **Intent Packet trailers.** `Waggle-Ticket`, `Waggle-Risk-Tier` and `Waggle-Verdict` in the last paragraph of the PR description are compared with the commits and changed paths, as warnings only. They never fail the gate ([trailers](docs/gate.md#7-trailers)).
 5. **Decisions log.** `.waggle/hive/DECISIONS.md` accepts only appended, well-formed entries, judged on the PR's net change. No claim can lease `.waggle/`, so an append also needs the Head Keeper's approval at the PR's exact head commit and a re-run of the failed check, or an admin merge, unless the check is forged. The approval never passes an edit to an existing entry ([limits](#what-it-does-not-do); [decisions log](docs/gate.md#8-the-decisions-log)).
@@ -38,6 +38,8 @@ It does not schedule or run agents, and it is not a sandbox. The limits below ar
 The full workflow is in the [gate spec](docs/gate.md#13-the-calling-workflow). A pin is written `<commit-sha>`; for a release tag, read the commit with `git rev-parse vX.Y.Z^{commit}`.
 
 ## Writing a claim
+
+In a hive the keeper talks with their queen agent and she writes the claim; `waggle dispatch` acquires it when she starts a worker. Turning that conversation into GitHub issues is coming soon. Without a queen, a trusted person or orchestrator runs these commands. The agent doing the work never writes its own claim.
 
 ```
 Usage: waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]... [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]

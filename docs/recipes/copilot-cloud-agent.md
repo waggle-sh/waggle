@@ -16,7 +16,7 @@ Copilot's branch names do not bind: the gate binds only `waggle/T-<id>` and `t-<
 
 ## Who claims, and when
 
-The person who assigns the task writes the claim first, then renews it once the PR opens and its branch name is known:
+The queen, or whoever assigns the task for the keeper, writes the claim first, then renews it once the PR opens and its branch name is known:
 
 ```
 waggle claim T-<id> --dirs <a,b> --gate full --owner <your GitHub login> --branch copilot/<slug>
@@ -42,7 +42,7 @@ The gate fails the PR with a line such as `T-123: path is outside the claim dire
 
 ## Limit
 
-Binding depends on Copilot following the instruction; the gate only fails closed when it does not. The check is a required check that waits for a person's approval of the run, so a PR can sit pending. The claim is written by a person, never by Copilot (L3). The required check can be forged by a workflow or a wider credential, and a person's approval of the run is not shown to stop that (L11).
+Binding depends on Copilot following the instruction; the gate only fails closed when it does not. The check is a required check that waits for a person's approval of the run, so a PR can sit pending. The claim is written by the queen or another trusted coordinator, never by Copilot (L3). The required check can be forged by a workflow or a wider credential, and a person's approval of the run is not shown to stop that (L11).
 
 ## Sources
 
