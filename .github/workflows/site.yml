@@ -1,0 +1,98 @@
+# SPDX-License-Identifier: Apache-2.0
+# Publish the docs site to the waggle site bucket (T-061).
+# Role, bucket, and distribution are the applied example-infra stack stacks/waggle-site.
+# Do not pass --acl: the bucket owner is enforced and the role has no s3:PutObjectAcl.
+name: site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: site-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: site
+      url: https://getwaggle.dev
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: site/package.json
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Build the site
+        working-directory: site
+        env:
+          SITE_URL: https://getwaggle.dev
+          ASTRO_TELEMETRY_DISABLED: "1"
+        run: npm ci && npm run build
+
+      - name: Read the GitHub OIDC subject
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request, base64
+          req = urllib.request.Request(
+              os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=sts.amazonaws.com",
+              headers={"Authorization": "bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]},
+          )
+          with urllib.request.urlopen(req) as res:
+              token = json.load(res)["value"]
+          payload = token.split(".")[1]
+          payload += "=" * (-len(payload) % 4)
+          data = json.loads(base64.urlsafe_b64decode(payload))
+          # The token itself is not printed. sub is what the role trust compares.
+          allowed = {
+              "repo:waggle-sh@344024626/waggle@1423515277:ref:refs/heads/main",
+              "repo:waggle-sh@344024626/waggle@1423515277:environment:site",
+              "repo:waggle-sh/waggle:ref:refs/heads/main",
+              "repo:waggle-sh/waggle:environment:site",
+          }
+          sub = data.get("sub", "")
+          aud = data.get("aud", "")
+          print(f"sub={sub}")
+          print(f"aud={aud}")
+          print(f"ref={data.get('ref', '')}")
+          print(f"job_workflow_ref={data.get('job_workflow_ref', '')}")
+          if sub not in allowed:
+              print("::error::OIDC sub is not one of github_deploy_subjects in example-infra stacks/waggle-site/locals.tf")
+              raise SystemExit(1)
+          PY
+
+      - name: Get AWS credentials by OIDC
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::000000000000:role/example-role
+          role-session-name: waggle-site-deploy
+          role-duration-seconds: 900
+          aws-region: us-west-2
+          audience: sts.amazonaws.com
+
+      - name: Sync
+        run: aws s3 sync site/dist/ "s3://example-site-bucket" --delete --only-show-errors
+
+      - name: Invalidate
+        run: aws cloudfront create-invalidation --distribution-id EEXAMPLE0000000 --paths "/*"

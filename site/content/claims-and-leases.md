@@ -52,11 +52,11 @@ A commit that names no task fails. The task is chosen by the commit's author, wh
 
 - anything under `.waggle/`,
 - Tier 3 control paths (`.github/workflows/`, `.gitlab-ci.yml`, `.devcontainer/`, `go.mod`, `go.sum`, `go.work`, `go.work.sum`, `vendor/`),
-- paths listed in [`gate.protected_paths`](/config/#gate),
+- paths listed in [`gate.protected_paths`](/docs/config/#gate),
 - Tier 2 paths (`CLAUDE.md`, `AGENTS.md`, `.waggle/hive/`) under a `light` claim: use `--gate full` for those.
 
-Protected paths and approvals are covered in the gate spec: [risk tiers and protected paths](/gate/#5-risk-tiers-and-protected-paths) and [approvers](/gate/#6-approvers).
+Protected paths and approvals are covered in the gate spec: [risk tiers and protected paths](/docs/gate/#5-risk-tiers-and-protected-paths) and [approvers](/docs/gate/#6-approvers).
 
 ## Who writes the claim
 
-Never the agent that does the task. The [recipes](/recipes/#who-writes-the-claim) say how to keep `waggle claim` and approver credentials away from agents.
+Never the agent that does the task. The [recipes](/docs/recipes/#who-writes-the-claim) say how to keep `waggle claim` and approver credentials away from agents.
