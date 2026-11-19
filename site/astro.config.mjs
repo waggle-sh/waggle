@@ -3,9 +3,8 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// The public URL is not decided yet, so it is never written here. Set SITE_URL in the build
-// environment (see .env.example). Unset, the build still works and emits no canonical URLs or sitemap.
-const site = process.env.SITE_URL || undefined;
+// The public URL. SITE_URL overrides it (see .env.example), e.g. for preview deploys.
+const site = process.env.SITE_URL || 'https://getwaggle.dev';
 
 export default defineConfig({
   site,
