@@ -33,4 +33,4 @@ The Walt kit named in the site brief was not available in this repository; this 
 
 Diagrams, marks and tokens are under Apache-2.0 like the product files, covered by the repository `LICENSE`. Apache-2.0 section 6 grants no trademark right, so the mark stays protected as a mark. The fonts are under OFL-1.1, with each license text in its npm package and copied to `site/public/fonts/`.
 
-The Starlight header logo uses `site/src/assets/brand/logo/w-mark-light.svg` and `w-mark-dark.svg`, byte copies of the files of the same name in `site/public/brand/logo/` (Starlight reads logo files from `src/`).
+The Starlight header logo uses `site/src/assets/brand/mark/w-mark-light.svg` and `w-mark-dark.svg`, byte copies of the files of the same name in `site/public/brand/logo/`. Starlight reads logo files from `src/`, and `site/src/assets/brand/mark/` is the exempt path for copied marks.

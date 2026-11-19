@@ -19,8 +19,8 @@ export default defineConfig({
       description: 'Task claims and a merge gate for AI coding agents on Git.',
       favicon: '/favicon.svg',
       logo: {
-        light: './src/assets/brand/logo/w-mark-light.svg',
-        dark: './src/assets/brand/logo/w-mark-dark.svg',
+        light: './src/assets/brand/mark/w-mark-light.svg',
+        dark: './src/assets/brand/mark/w-mark-dark.svg',
         alt: 'Waggle [W] mark',
       },
       head: [
