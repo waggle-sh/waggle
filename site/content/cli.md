@@ -96,3 +96,13 @@ These serve the full Waggle hive workflow (roles, worktrees, a decisions log). Y
 | `waggle upgrade` | `waggle upgrade [--apply] [--diff] [--allow-downgrade] [--runtime=claude-code\|none]` | Print the plan to re-render managed files from this build and move `waggle.pin`. `--apply` executes it. |
 | `waggle uninstall` | `waggle uninstall [--apply]` | Print the plan to remove everything `init` installed. `--apply` executes it and needs a clean tree. |
 | `waggle version` | `waggle version` | Print the version. |
+
+### Role status
+
+`waggle dispatch` runs these roles today.
+
+| Role | Status | What it does |
+| :--- | :--- | :--- |
+| Builder | Ready | `waggle dispatch <ticket> --role builder` claims the ticket, runs the agent in a worktree and checks its changes against the claim. |
+| Forager | Ready | `--role forager` does triage, repro and lease mapping the same way. |
+| Reviewer | Ready | `--role guard` runs a review agent on a branch. The flag value is `guard` for historical reasons. On this site the guard is the merge gate, so the agent is called the reviewer. |

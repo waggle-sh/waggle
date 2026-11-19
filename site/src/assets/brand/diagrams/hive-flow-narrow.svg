@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="wg" viewBox="0 0 360 692" width="360" height="692" role="img" aria-labelledby="wg-hive-n-t wg-hive-n-d">
 <title id="wg-hive-n-t">How Waggle builds Waggle</title>
-<desc id="wg-hive-n-d">How the Waggle repo builds Waggle. The Keeper, the human, answers decision cards from the queen, the only agent session the Keeper talks to. The queen sends a goal to a scout, which writes a task brief with its lease, gate and risk tier. A builder writes the code inside that lease. Two guards running on different models review it; each returns pass or must-fix with an Intent Packet, and both must pass. Waggle Gate checks every commit against the lease, protected paths need the Head Keeper, and the PR merges.</desc>
+<desc id="wg-hive-n-d">How the Waggle repo builds Waggle. The Keeper, the human, answers decision cards from the queen, the only agent session the Keeper talks to. The queen sends a goal to a scout, which writes a task brief with its lease, gate and risk tier. A builder writes the code inside that lease. Two reviewers running on different models review it; each returns pass or must-fix with an Intent Packet, and both must pass. Waggle Gate checks every commit against the lease, protected paths need the Head Keeper, and the PR merges.</desc>
 <style>.wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
 @media (prefers-color-scheme:dark){.wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}}
 [data-theme="light"] .wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
@@ -40,9 +40,9 @@
 <text x="168" y="388" class="sm f-muted">Writes the code, inside the</text><text x="168" y="404" class="sm f-muted">lease only.</text>
 <path d="M86 418L86 440" fill="none" class="s-ink" stroke-width="1.5"/><path d="M89.39 435.05L86 440L82.61 435.05" fill="none" class="s-ink" stroke-width="1.5" stroke-linejoin="miter"/>
 <rect x="20" y="444" width="132" height="36" class="f-page s-ink" stroke-width="1.5"/>
-<text x="30" y="467" class="sm b f-ink">guard A</text>
+<text x="30" y="467" class="sm b f-ink">reviewer A</text>
 <rect x="20" y="488" width="132" height="36" class="f-page s-ink" stroke-width="1.5"/>
-<text x="30" y="511" class="sm b f-ink">guard B</text>
+<text x="30" y="511" class="sm b f-ink">reviewer B</text>
 <rect x="92" y="450" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="119" y="466" text-anchor="middle" class="mono b f-pass">pass</text>
 <rect x="92" y="494" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="119" y="510" text-anchor="middle" class="mono b f-pass">pass</text>
 <text x="168" y="460" class="sm f-muted">Two reviewers on different</text><text x="168" y="476" class="sm f-muted">models. Both must pass.</text><text x="168" y="492" class="sm f-muted">They never fix.</text>
