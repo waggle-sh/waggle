@@ -1,4 +1,5 @@
 ---
+# SPDX-License-Identifier: Apache-2.0
 name: Feature request
 about: Suggest a change or addition
 labels: enhancement

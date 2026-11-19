@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 ## What and why
 
 <!-- One or two sentences. Link the issue or task, for example "Closes #123" or "T-123". -->
