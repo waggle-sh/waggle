@@ -370,3 +370,41 @@
 .lp a:not(.lp-btn):hover {
   color: var(--wg-blue);
 }
+
+/* Meet the hive */
+.lp-note {
+  font-size: var(--wg-text-small);
+  color: var(--wg-muted);
+}
+.lp-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: calc(var(--wg-space) * 2);
+  padding: calc(var(--wg-space) * 2) 0;
+}
+.lp-role {
+  border: var(--wg-line) solid var(--wg-rule);
+  border-top: 3px solid var(--wg-apricot);
+  background: var(--wg-surface);
+  padding: calc(var(--wg-space) * 2);
+}
+.lp-role h3 {
+  margin-top: 0;
+}
+.lp-role p {
+  margin-bottom: 0;
+}
+.lp-tag {
+  display: inline-block;
+  font-size: var(--wg-text-small);
+  font-weight: 600;
+  padding: 0 0.45em;
+  border: var(--wg-line) solid currentColor;
+  white-space: nowrap;
+}
+.lp-tag.live {
+  color: var(--wg-pass);
+}
+.lp-tag.soon {
+  color: var(--wg-wait);
+}
