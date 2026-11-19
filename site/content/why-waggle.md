@@ -1,7 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Why Waggle
 
-Waggle is for teams and open-source projects where several people work on one repository and each of them runs an AI coding agent. One person with one agent can keep the plan in their head. Five people with five agents cannot.
+Waggle lets many **keepers** (the humans who own work on a repo), each with their own team of AI agents, work on one repository without stepping on each other. One person with one agent can keep the plan in their head. Five people with five agents cannot.
+
+The full vision has three parts. **Claims and leases** say who is working on what. The **gate** is a merge check that holds every pull request to its claim. **Honey** is how contributors earn a say: **Nectar** (reputation from merged work that survives on `main`) and **Quorum** (weighted voting on what gets picked up next, with a Master Keeper veto). The gate is the first piece you can use today. Nectar, Quorum and the multi-keeper parts are on the roadmap. They are not built yet, and this page marks each one as it comes up.
 
 ## The problem
 
@@ -12,7 +14,19 @@ Agents are fast and they do not talk to each other. Put a few of them on the sam
 - **Pull requests that wander.** An agent asked to fix the parser also "tidies" the CI workflow and a lockfile. The diff is large, and the stray change is easy to miss in review.
 - **Nobody knows who is on what.** Branches pile up. To find out which agent is working on which task, a person reads the diffs and asks around.
 
-Waggle answers this with three small pieces. A **claim** says which task is being worked on, which directories it may change (its **lease**), and which branches its pull request may come from. It is written before the work starts by the keeper's queen (or another trusted coordinator), never by the agent doing the work. The **gate** is a required GitHub check that fails a pull request whose commits leave the lease. And a **Keeper**, a person on the repo's approver list, signs off on the paths you protect. The rest of this page answers the questions teams ask first.
+Waggle answers this with three pieces you can use today. A **claim** says which task is being worked on, which directories it may change (its **lease**), and which branches its pull request may come from. It is written before the work starts by the keeper's **queen** (the coordinating agent a keeper talks to), or another trusted coordinator, never by the **forager** (a worker agent) doing the work. The **gate** is a required GitHub check that fails a pull request whose commits leave the lease. And a keeper on the repo's approver list signs off on the paths you protect. The rest of this page answers the questions teams ask first.
+
+## Meet the hive
+
+Waggle borrows its vocabulary from a beehive. Each term means one plain thing:
+
+- **Hive:** the repo's shared Waggle setup, with the keepers and agents working in it. Its records live under `.waggle/`.
+- **Keeper:** a human who owns work on the repo. The **Head Keeper** is the first login in `gate.approvers`.
+- **Queen:** the coordinating agent a keeper talks to. She does not write code. She writes claims, and will open issues from the conversation (coming soon).
+- **Forager, builder, scout:** worker agents. A forager does triage, repro and lease mapping, a builder implements a task, and a scout writes briefs and specs.
+- **Guard:** a reviewer agent that checks a builder's work, on a different model than the builder's.
+- **Honey:** Nectar plus Quorum (roadmap).
+- **Walt:** our bee mascot.
 
 ## How is this different from branch protection or CODEOWNERS?
 
@@ -24,9 +38,9 @@ They work together. The gate needs branch protection (or a ruleset) to require p
 
 ## Who writes the claims?
 
-The keeper's queen, or another trusted coordinator. Never the agent doing the work.
+The keeper's queen, or another trusted coordinator. Never the forager or builder doing the work.
 
-In the full Waggle setup, each Keeper talks with their own **queen** agent, a coordinating agent that does not write code. The Keeper and the queen agree on the task. The queen opens the issue and writes the claim, then starts a worker agent with `waggle dispatch`, which records the claim before the worker runs. The worker agent never writes its own claim. Waggle does not open issues itself; the queen does that with the GitHub tools it already has.
+In the full Waggle setup, each keeper talks with their own queen. The keeper and the queen agree on the task. Today the queen writes the claim and starts a worker with `waggle dispatch`, which records the claim before the worker runs. **Coming soon:** the queen opening GitHub issues from the keeper's conversation. That is not built yet, and Waggle does not open issues today. The worker never writes its own claim.
 
 People can also skip the queen entirely. Open an issue by hand, write the claim yourself with `waggle claim`, and point any agent at it:
 
@@ -58,13 +72,13 @@ Some paths fail no matter what the claim says. Workflows under `.github/workflow
 
 If you run workers through `waggle dispatch`, it also checks the worker's changes against the claim when the run ends, so you hear about a stray edit early. Then you choose: widen the claim if the task needs it, or have the agent back the change out.
 
-## What does a Keeper approve?
+## What does a keeper approve?
 
 The paths you decide matter. You list them in `gate.protected_paths` in `.waggle/control/config.yaml`, and you list your approvers' GitHub logins in `gate.approvers`. A change to a protected path fails the gate until a listed approver approves the pull request at its exact head commit and someone with write access re-runs the check. A push after the approval makes it stale.
 
 GitHub does not let you approve your own pull request, so an approver who opened it posts a `waggle-approve <head commit SHA>` comment instead.
 
-The first login in `gate.approvers` is the Head Keeper. Only the Head Keeper's approval passes a change under `.waggle/hive/`, the shared files that steer every later agent. The gate reads both lists from the base branch, so a pull request cannot add its author as an approver.
+The first login in `gate.approvers` is the Head Keeper, the keeper who leads the hive. Only the Head Keeper's approval passes a change under `.waggle/hive/`, the shared files that steer every later agent. The gate reads both lists from the base branch, so a pull request cannot add its author as an approver.
 
 An approval never passes the hardcoded control paths above. Those need an admin merge, on purpose. The full rules are in [Approvers](/docs/gate/#6-approvers).
 
@@ -72,9 +86,9 @@ An approval never passes the hardcoded control paths above. Those need an admin 
 
 Yes. The gate does not run, prompt or schedule agents. It reads commits and claims, so it works with any agent that pushes a branch and opens a pull request. An agent only has to name its task in each commit, with a `T-123: ` subject prefix, a `Waggle-Ticket: T-123` trailer, or a branch named `t-123`.
 
-There are recipes for [Claude Code agent teams](/docs/recipes/claude-code-agent-teams/) and the [GitHub Copilot cloud agent](/docs/recipes/copilot-cloud-agent/), and notes on [Gas Town](/docs/recipes/#gas-town-requirements-and-status). We have not yet run each recipe end to end with each tool, and the recipes say so.
+There are recipes for [Claude Code agent teams](/docs/recipes/claude-code-agent-teams/) and the [GitHub Copilot cloud agent](/docs/recipes/copilot-cloud-agent/). We have not yet run each recipe end to end with each tool, and the recipes say so.
 
-`waggle dispatch`, the runner the queen uses to start workers, runs Claude Code today.
+`waggle dispatch`, the runner the queen uses to start foragers and builders, runs Claude Code today.
 
 A few limits to know: Waggle supports GitHub only, the gate does not run in GitHub's merge queue, and a merge that skips pull requests skips the gate.
 
@@ -82,13 +96,22 @@ A few limits to know: Waggle supports GitHub only, the gate does not run in GitH
 
 Outside contributors, including anyone opening a pull request from a fork, cannot write claim refs to your repo. Today a maintainer writes the claim for them, naming the fork's branch as `<owner>/<repo>:<branch>`. The gate always reads claims from your repo, never from the fork.
 
-**Coming soon:** a way for contributors without push access to request and hold their own claims, and guidance for many Keepers sharing one repo.
+**Coming soon:** a way for contributors without push access to request and hold their own claims, and guidance for many keepers sharing one repo. These multi-keeper parts are on the roadmap and not built yet.
+
+## What are Nectar and Quorum?
+
+**Coming soon.** Nectar and Quorum are designed but not built. They are the other half of the vision, and they follow the gate.
+
+- **Nectar** is reputation earned from merged work that survives on `main`. The claim and merge records the gate keeps are what Nectar will score.
+- **Quorum** is weighted voting on what gets picked up next. A contributor's weight grows with their Nectar, and the Master Keeper holds a veto.
+
+Together they are **honey**: the way a contributor, human or agent team, earns a say by shipping work that sticks. It matters most for open-source maintainers and for companies with many teams on one repo.
 
 ## Is it open source?
 
 The `waggle` CLI and the gate are licensed Apache-2.0, and the templates `waggle init` writes into your repo are MIT-0, so you can use and change them freely.
 
-The repository is not public yet. We are finishing the work to publish it. Until then, these docs describe what the code does today, and the [gate spec](/docs/gate/) cites the code behind every rule.
+These docs describe what the code does today, and the [gate spec](/docs/gate/) cites the code behind every rule.
 
 ## What Waggle does not do
 

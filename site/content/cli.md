@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # CLI reference
 
-`waggle <command> [flags]`. Usage lines and flag help below are the ones the v0.1 source defines (`cmd/waggle/`); `waggle <command> -h` prints the same for your build. The commands you need for the gate are `init --gate-only`, `claim`, `release`, `gate` and `doctor`. The rest serve the full hive workflow.
+`waggle <command> [flags]`. Usage lines and flag help below are the ones the v0.1 source defines (`cmd/waggle/`); `waggle <command> -h` prints the same for your build. The commands you need for the gate are `init --gate-only`, `claim`, `release`, `gate` and `doctor`. The rest serve the full **hive** workflow (the hive is the repo's shared Waggle setup; its **keepers** are the humans, its **queen** the coordinating agent they talk to).
 
 ## Exit codes
 
@@ -31,7 +31,7 @@ Scaffold Waggle into the current directory.
 waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]... [--ttl <duration>] [--owner <id>] [--base <rev>] [--repo <dir>] [--json]
 ```
 
-Lease directories for a task. The queen runs this (or a trusted person, without a queen), never the agent doing the task. See [Claims and leases](/docs/claims-and-leases/).
+Lease directories for a task. The queen (the coordinating agent a keeper talks to) runs this, or a trusted person without a queen, never the forager or builder doing the task. See [Claims and leases](/docs/claims-and-leases/).
 
 | Flag | Meaning |
 | :--- | :--- |
@@ -85,7 +85,7 @@ Checks that claim refs can be pushed and the gate is a required check. It report
 
 ## Hive commands
 
-These serve the full Waggle hive workflow (roles, worktrees, a decisions log). You do not need them to run the gate.
+These serve the full Waggle hive workflow: roles (a **forager** triages and maps leases, a **builder** implements, a **guard** reviews, a **scout** writes briefs), worktrees and a decisions log. You do not need them to run the gate. There is no command for Nectar or Quorum yet; both are on the roadmap.
 
 | Command | Usage | Purpose |
 | :--- | :--- | :--- |

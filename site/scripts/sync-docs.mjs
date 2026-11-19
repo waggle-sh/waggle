@@ -28,6 +28,15 @@ for (const f of authored) routes.set(`site/content/${f}`, f.replace(/\.md$/, '')
 
 const errors = [];
 
+// Internal notes are never published. docs/rfc-notes and the hive records are not routes, and a
+// route that points into them fails the build instead of shipping.
+const private_prefixes = ['docs/rfc-notes/', '.waggle/'];
+for (const src of routes.keys()) {
+  if (private_prefixes.some((p) => src.startsWith(p))) {
+    errors.push(`${src}: internal notes must not be published`);
+  }
+}
+
 function routeUrl(route) {
   const tail = route.replace(/\/?index$/, '');
   return tail === '' ? '/docs/' : '/docs/' + tail + '/';

@@ -3,8 +3,10 @@
 
 This page says what `waggle gate verify` checks, what it does not check, and how to install it. Every statement of what the gate enforces cites the code or test that does it, as `file:line` at the commit this page was written against. A line number can drift; the function named by the cite is the authority.
 
-Plain terms used here:
+Terms used here. Waggle borrows its vocabulary from a beehive, and each term gets a plain gloss:
 
+- A **keeper** is a human who owns work on the repo. Many keepers, each with their own agent team, can share one repo; the gate is the first piece of that you can use today. Nectar (reputation from merged work) and Quorum (weighted voting) are roadmap, not built yet.
+- A **queen** is the coordinating agent a keeper talks to. She writes claims for the workers. A **forager** and a **builder** are worker agents, and a **guard** is a reviewer agent. The **hive** is the repo's shared Waggle setup, kept under `.waggle/`.
 - A **task** is a unit of work with an id of the form `T-<id>` (for example `T-123`).
 - A **claim** is a record that a task is being worked on. It is stored as a git ref `refs/waggle/claims/ticket-<n>` and holds the task, an owner, an expiry, a gate level, a list of directories (the **lease**) and a list of branch names.
 - A **lease** is the list of directories a task's commits may change.

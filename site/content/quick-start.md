@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Quick start
 
-Waggle Gate is a GitHub merge check for repos where AI agents write code. This page takes a repo from nothing to a required check in about ten minutes. Waggle is pre-1.0: the [gate spec](/docs/gate/) describes what the code does today, and the [recipes](/docs/recipes/) have not been run end to end with each agent tool.
+Waggle lets many **keepers** (humans who own work on a repo) and their agent teams share one repo without colliding. Its first usable piece is the gate, a GitHub merge check for repos where AI agents write code; Nectar, Quorum and the multi-keeper parts are roadmap, not built yet. This page takes a repo from nothing to a required check in about ten minutes. Waggle is pre-1.0: the [gate spec](/docs/gate/) describes what the code does today, and the [recipes](/docs/recipes/) have not been run end to end with each agent tool.
 
 ## What you get
 
@@ -25,7 +25,7 @@ The full workflow is in the [gate spec](/docs/gate/#13-the-calling-workflow). A 
 
 ## Write a claim
 
-Before an agent starts a task, a trusted coordinator writes its claim, never the agent doing the work. In a hive that is your queen agent, working with you as keeper. Today she writes the claim when she dispatches a worker; turning your conversation into GitHub issues is coming soon. Without a queen, you or your orchestrator run the command:
+Before an agent starts a task, a trusted coordinator writes its claim, never the agent doing the work. In a **hive** (the repo's shared Waggle setup) that is your **queen**, the coordinating agent you talk to as keeper. Today she writes the claim when she dispatches a **forager** or **builder** (worker agents); turning your conversation into GitHub issues is coming soon. Without a queen, you or your orchestrator run the command:
 
 ```
 waggle claim T-123 --dirs internal/parser,docs --gate light --owner <your GitHub login> --branch t-123
