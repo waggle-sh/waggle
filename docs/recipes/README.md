@@ -5,7 +5,6 @@ Each recipe says how one agent tool's output meets the gate. The gate itself is 
 
 - [Claude Code agent teams](claude-code-agent-teams.md)
 - [GitHub Copilot cloud agent](copilot-cloud-agent.md)
-- [Gas Town](#gas-town-requirements-and-status) (requirements and status only)
 
 ## What every recipe assumes
 
@@ -40,15 +39,3 @@ A commit binds by a `T-<id>: ` subject prefix, a `Waggle-Ticket:` trailer, or a 
 - `<id>: claim names no branch; renew it with waggle claim --branch`: the claim has no branch list. Renew it with `--branch <the PR branch>`, then re-run the check (`cmd/waggle/gate_commits.go:355-358`). An older build that renews a claim drops the list (L10), so renew with a build that records branches. The L-numbers in these recipes are the limits in [the gate spec](../gate.md#10-limits-and-known-bypasses).
 - `<id>: claim does not name this pull request's branch`: add the PR's head branch to the claim with `--branch` and re-run the check (`cmd/waggle/gate_commits.go:368`).
 - `commit <12 hex> "<subject>": commit has no T-<id>: prefix, Waggle-Ticket: trailer or ticket branch`: that commit names no task (`cmd/waggle/gate_commits.go:305`).
-
-## Gas Town: requirements and status
-
-Marked untested. There is no step-by-step recipe.
-
-What Gas Town's public pages say:
-
-- Its Refinery "batches merge requests, runs verification gates, and merges to main"; polecats never push to main, and `gt done` pushes the branch and files a merge request ([repository](https://github.com/gastownhall/gastown)). A merge that skips pull requests skips the gate (L2).
-- The repository holds a reference harness in its `docs/contrib-harnesses/` folder for rigs that gate polecat work on a GitHub PR. Polecats "push their branch and open (or confirm) a GitHub PR before running `gt done`", the harness leaves the merge to "a maintainer / merge-queue concern", and it calls itself "a starting template, not a drop-in product" ([harness README](https://github.com/gastownhall/gastown/blob/main/docs/contrib-harnesses/polecat-pr-flow/README.md)).
-- Its release notes describe a `merge_strategy=pr` option that uses GitHub's merge queue ([v1.0.0 notes](https://github.com/gastownhall/gastown/releases/tag/v1.0.0)). Waggle has not tested it, and the gate does not support merge queues (L12).
-
-Requirements for the gate to bind Gas Town's work: the work arrives as PRs that must pass the required check, each claim names the polecat's PR branch, and nothing merges through GitHub's merge queue. Status: not run by Waggle.
