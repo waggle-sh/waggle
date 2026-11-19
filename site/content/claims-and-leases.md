@@ -14,7 +14,7 @@ A claim is a git ref, `refs/waggle/claims/ticket-<n>`, in the repo's remote. It 
 - the lease: up to `leases.max_directories_per_claim` directories (5 by default),
 - the branch list: up to 4 PR branches the claim accepts.
 
-The gate does not check who wrote a claim or when. A person or the orchestrator writes it, with its branch list, before the work, and never from the agent's credentials: anyone who can push `refs/waggle/claims/*` can write a lease.
+The gate does not check who wrote a claim or when. The queen, or another coordinator the keeper trusts, writes it, with its branch list, before the worker starts. The agent doing the work does not. Anyone who can push `refs/waggle/claims/*` can still write a lease, so that split is a practice, not a check the gate enforces.
 
 ## Writing and giving back a claim
 
@@ -59,4 +59,8 @@ Protected paths and approvals are covered in the gate spec: [risk tiers and prot
 
 ## Who writes the claim
 
-Never the agent that does the task. The [recipes](/docs/recipes/#who-writes-the-claim) say how to keep `waggle claim` and approver credentials away from agents.
+A keeper talks with their queen. The queen writes the claim: the task, the directories it may change, and the branches its pull request may come from. Another coordinator the keeper trusts can write it instead. The agent doing the work never writes its own.
+
+Today that write is `waggle claim`, or `waggle dispatch` for a builder or forager, which creates or renews the same claim (`internal/dispatch/claim.go`). Opening a GitHub issue from the conversation is not automatic yet. A keeper can still open the issue directly. That is the secondary path.
+
+The [recipes](/docs/recipes/#who-writes-the-claim) say how to keep `waggle claim` and approver credentials away from the worker.

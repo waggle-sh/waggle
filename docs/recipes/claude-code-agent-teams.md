@@ -16,7 +16,7 @@ The pages above do not say where teammates work. This recipe infers that teammat
 
 ## Who claims, and when
 
-The lead's human, or whoever starts the team, writes one claim per task before the teammates start, each with the PR branch:
+The queen, or the coordinator who starts the team, writes one claim per task before the teammates start, each with the PR branch. The teammates do not:
 
 ```
 waggle claim T-<id> --dirs <a,b> --gate full --owner <your GitHub login> --branch <the PR branch>
