@@ -18,6 +18,15 @@ export default defineConfig({
       title: 'Waggle',
       description: 'Task claims and a merge gate for AI coding agents on Git.',
       favicon: '/favicon.svg',
+      logo: {
+        light: './src/assets/brand/logo/w-mark-light.svg',
+        dark: './src/assets/brand/logo/w-mark-dark.svg',
+        alt: 'Waggle [W] mark',
+      },
+      head: [
+        { tag: 'link', attrs: { rel: 'icon', href: '/brand/logo/w-mark-favicon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' } },
+        { tag: 'link', attrs: { rel: 'icon', href: '/brand/logo/w-mark-favicon-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' } },
+      ],
       customCss: ['./src/assets/brand/tokens.css', './src/styles/site.css'],
       sidebar: [
         { label: 'Overview', slug: 'docs' },

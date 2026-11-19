@@ -216,3 +216,101 @@
 .lp-foot p {
   margin: 0 0 var(--wg-space);
 }
+
+/* Walt and the brand accents (apricot and blue from waggle-tokens.css; verdict colors stay for verdicts) */
+:root {
+  --wg-apricot: #ffa161;
+  --wg-blue: #506afd;
+}
+:root[data-theme='dark'] {
+  --wg-blue: #8497ff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --wg-blue: #8497ff;
+  }
+}
+.lp-nav .mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wg-space);
+}
+.mark-img {
+  display: block;
+}
+.dark-only {
+  display: none;
+}
+:root[data-theme='dark'] .light-only {
+  display: none;
+}
+:root[data-theme='dark'] .dark-only {
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .light-only {
+    display: none;
+  }
+  :root:not([data-theme='light']) .dark-only {
+    display: block;
+  }
+}
+.lp-hero {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--wg-space) * 6);
+}
+.lp-hero .walt {
+  flex: none;
+  width: 12.5rem;
+  height: auto;
+}
+.lp-hero-copy {
+  min-width: 0;
+}
+.lp-who {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--wg-space) * 3);
+}
+.walt-small {
+  flex: none;
+  width: 6.25rem;
+  height: auto;
+}
+.lp-who p {
+  margin-bottom: 0;
+}
+@media (max-width: 760px) {
+  .lp-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(var(--wg-space) * 2);
+    padding-top: calc(var(--wg-space) * 4);
+  }
+  .lp-hero .walt {
+    width: 8.75rem;
+  }
+  .lp-who {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+.lp-grid > div {
+  border-top-color: var(--wg-apricot);
+  border-top-width: 3px;
+}
+.lp-limits {
+  border-top: 3px solid var(--wg-apricot);
+}
+.lp-btn:hover,
+.lp-btn:focus-visible {
+  border-color: var(--wg-blue);
+}
+.lp-btn.primary:hover {
+  background: var(--wg-blue);
+  color: var(--wg-page);
+}
+.lp a:not(.lp-btn):hover {
+  color: var(--wg-blue);
+}
