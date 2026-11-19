@@ -14,6 +14,8 @@ Studio commit: `47a73e740ed256c358048d710fe2955b78631a3d`, directory `products/w
 | `site/public/favicon.svg` | `mark/final/waggle-favicon.svg` | `ac2b24d8eff0d35874a912ba7409427e51d7ed112a817a76d423f79e8f40f309` |
 | `site/public/apple-touch-icon.png` | `mark/final/png/waggle-app-icon-180.png` | `3ffbd918f6098b3b059db56ec21e69010628431604a16a38b96de3ac210bf926` |
 
+The landing page no longer imports `gate-hero.svg` or `gate-hero-narrow.svg`. It uses `site/src/assets/diagrams/checkout-example.svg` and `checkout-example-narrow.svg`, site-authored adaptations of them with the Apple Pay example (they reuse the studio's styles and layout, so they are not byte copies).
+
 ## Fonts
 
 The site uses Inter and JetBrains Mono, self-hosted from npm packages pinned in `site/package-lock.json`, not copied into the repo. This replaces the earlier Public Sans and Martian Mono files and their `OFL` texts, which were removed.
