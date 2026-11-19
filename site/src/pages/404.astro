@@ -11,38 +11,38 @@ import '../styles/site.css';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Page not found | Waggle</title>
-    <meta name="description" content="This path is not on the Waggle site." />
+    <meta name="robots" content="noindex" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" href="/brand/logo/w-mark-favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/brand/logo/w-mark-favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
   </head>
   <body class="lp">
     <div class="lp-wrap">
       <nav class="lp-nav" aria-label="Main">
         <a class="mark" href="/">
-          <img src="/favicon.svg" alt="" width="28" height="28" />
+          <img class="mark-img light-only" src="/brand/logo/w-mark-light.svg" alt="" width="24" height="24" />
+          <img class="mark-img dark-only" src="/brand/logo/w-mark-dark.svg" alt="" width="24" height="24" />
           Waggle
         </a>
         <a href="/docs/">Docs</a>
       </nav>
-      <header class="lp-hero">
-        <div class="lp-hero-row">
-          <img
-            class="lp-walt"
-            src="/brand/mascot/walt-vector-normalized.svg"
-            alt="Walt, the Waggle bee"
-            width="88"
-            height="70"
-          />
-          <div>
-            <h1>This path is empty.</h1>
-            <p class="lede">Walt checked. Nothing here is on the site.</p>
-            <div class="lp-actions">
-              <a class="lp-btn primary" href="/">Back home</a>
-              <a class="lp-btn" href="/docs/">Read the docs</a>
-            </div>
+      <main class="lp-hero">
+        <img
+          class="walt"
+          src="/brand/mascot/walt-vector-normalized.svg"
+          width="200"
+          height="160"
+          alt="Walt the bee, looking for the page."
+        />
+        <div class="lp-hero-copy">
+          <h1>That page is not here.</h1>
+          <p class="lede">Walt looked and could not find it. The link may be old, or the address may have a typo.</p>
+          <div class="lp-actions">
+            <a class="lp-btn primary" href="/docs/">Go to the docs</a>
+            <a class="lp-btn" href="/">Back to the start</a>
           </div>
         </div>
-      </header>
+      </main>
     </div>
   </body>
 </html>
