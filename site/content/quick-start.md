@@ -5,7 +5,7 @@ Waggle Gate is a GitHub merge check for repos where AI agents write code. This p
 
 ## What you get
 
-On a repo where the check is required and PRs are required, the gate fails a PR whose commits change paths outside the claim of the task each commit names, or whose task's claim does not name the PR's branch. A keeper talks with their queen. The queen gives each task a [claim](/docs/claims-and-leases/): the directories it may change and the branches its PR may come from. The worker does not write that claim. The gate reads the claims from git and compares them with the PR's commits.
+On a repo where the check is required and PRs are required, the gate fails a PR whose commits change paths outside the claim of the task each commit names, or whose task's claim does not name the PR's branch. Each task gets a [claim](/docs/claims-and-leases/): the directories it may change and the branches its PR may come from. The gate reads the claims from git and compares them with the PR's commits.
 
 ## Before you start
 
@@ -23,20 +23,20 @@ On a repo where the check is required and PRs are required, the gate fails a PR 
 
 The full workflow is in the [gate spec](/docs/gate/#13-the-calling-workflow). A pin is written `<commit-sha>`; for a release tag, read the commit with `git rev-parse vX.Y.Z^{commit}`.
 
-## The queen writes the first claim
+## Write a claim
 
-A keeper talks with their queen, and the queen writes the claim before a worker starts. Opening the GitHub issue from that conversation is not automatic yet. A keeper can still open the issue directly. The command the queen runs is:
+Before an agent starts a task, a trusted coordinator writes its claim, never the agent doing the work. In a hive that is your queen agent, working with you as keeper. Today she writes the claim when she dispatches a worker; turning your conversation into GitHub issues is coming soon. Without a queen, you or your orchestrator run the command:
 
 ```
 waggle claim T-123 --dirs internal/parser,docs --gate light --owner <your GitHub login> --branch t-123
 ```
 
-Then the worker starts on branch `t-123` and names the task in every commit subject, `T-123: fix the tokenizer`. The queen opens the PR. The gate runs `verify-leases-and-tiers`:
+Then the agent works on branch `t-123` and names the task in every commit subject, `T-123: fix the tokenizer`. Open the PR. The gate runs `verify-leases-and-tiers`:
 
 - a commit that touches `cmd/main.go` fails with `path is outside the claim directories`, because `cmd` is not in the lease;
 - a PR from branch `fix-parser` fails with `claim does not name this pull request's branch`, because the claim lists only `t-123`.
 
-When the PR merges, the queen gives the claim back: `waggle release T-123` (after a squash or rebase merge, `waggle release T-123 --unmerged`). See [Claims and leases](/docs/claims-and-leases/) for every rule.
+When the PR merges, give the claim back: `waggle release T-123` (after a squash or rebase merge, `waggle release T-123 --unmerged`). See [Claims and leases](/docs/claims-and-leases/) for every rule.
 
 ## What it does not do
 
