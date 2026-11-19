@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-# Publish the docs site to the waggle site bucket (T-061).
-# Role, bucket, and distribution are the applied example-infra stack stacks/waggle-site.
-# Do not pass --acl: the bucket owner is enforced and the role has no s3:PutObjectAcl.
+# Publish the docs site (T-061).
+# The role, bucket, distribution, and allowed OIDC subjects are variables on
+# the site environment. Do not pass --acl: the bucket owner is enforced.
 name: site
 
 on:
@@ -30,6 +30,11 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      SITE_BUCKET: ${{ vars.SITE_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      OIDC_ALLOWED_SUBJECTS: ${{ vars.OIDC_ALLOWED_SUBJECTS }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,6 +55,18 @@ jobs:
           ASTRO_TELEMETRY_DISABLED: "1"
         run: npm ci && npm run build
 
+      - name: Require deploy settings
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in AWS_ROLE_ARN SITE_BUCKET CLOUDFRONT_DISTRIBUTION_ID OIDC_ALLOWED_SUBJECTS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not set on the site environment"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
       - name: Read the GitHub OIDC subject
         run: |
           set -euo pipefail
@@ -65,34 +82,28 @@ jobs:
           payload += "=" * (-len(payload) % 4)
           data = json.loads(base64.urlsafe_b64decode(payload))
           # The token itself is not printed. sub is what the role trust compares.
-          allowed = {
-              "repo:waggle-sh@344024626/waggle@1423515277:ref:refs/heads/main",
-              "repo:waggle-sh@344024626/waggle@1423515277:environment:site",
-              "repo:waggle-sh/waggle:ref:refs/heads/main",
-              "repo:waggle-sh/waggle:environment:site",
-          }
+          raw = os.environ.get("OIDC_ALLOWED_SUBJECTS", "")
+          allowed = {part.strip() for part in raw.replace("\n", ",").split(",") if part.strip()}
           sub = data.get("sub", "")
-          aud = data.get("aud", "")
           print(f"sub={sub}")
-          print(f"aud={aud}")
+          print(f"aud={data.get('aud', '')}")
           print(f"ref={data.get('ref', '')}")
-          print(f"job_workflow_ref={data.get('job_workflow_ref', '')}")
           if sub not in allowed:
-              print("::error::OIDC sub is not one of github_deploy_subjects in example-infra stacks/waggle-site/locals.tf")
+              print("::error::OIDC sub is not one of OIDC_ALLOWED_SUBJECTS")
               raise SystemExit(1)
           PY
 
       - name: Get AWS credentials by OIDC
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
-          role-to-assume: arn:aws:iam::000000000000:role/example-role
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           role-session-name: waggle-site-deploy
           role-duration-seconds: 900
           aws-region: us-west-2
           audience: sts.amazonaws.com
 
       - name: Sync
-        run: aws s3 sync site/dist/ "s3://example-site-bucket" --delete --only-show-errors
+        run: aws s3 sync site/dist/ "s3://${SITE_BUCKET}/" --delete --only-show-errors
 
       - name: Invalidate
-        run: aws cloudfront create-invalidation --distribution-id EEXAMPLE0000000 --paths "/*"
+        run: aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
