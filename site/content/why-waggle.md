@@ -12,7 +12,7 @@ Agents are fast and they do not talk to each other. Put a few of them on the sam
 - **Pull requests that wander.** An agent asked to fix the parser also "tidies" the CI workflow and a lockfile. The diff is large, and the stray change is easy to miss in review.
 - **Nobody knows who is on what.** Branches pile up. To find out which agent is working on which task, a person reads the diffs and asks around.
 
-Waggle answers this with three small pieces. A **claim** says which task is being worked on, which directories it may change (its **lease**), and which branches its pull request may come from. A person writes it before the work starts. The **gate** is a required GitHub check that fails a pull request whose commits leave the lease. And a **Keeper**, a person on the repo's approver list, signs off on the paths you protect. The rest of this page answers the questions teams ask first.
+Waggle answers this with three small pieces. A **claim** says which task is being worked on, which directories it may change (its **lease**), and which branches its pull request may come from. It is written before the work starts by the keeper's queen (or another trusted coordinator), never by the agent doing the work. The **gate** is a required GitHub check that fails a pull request whose commits leave the lease. And a **Keeper**, a person on the repo's approver list, signs off on the paths you protect. The rest of this page answers the questions teams ask first.
 
 ## How is this different from branch protection or CODEOWNERS?
 
@@ -24,7 +24,7 @@ They work together. The gate needs branch protection (or a ruleset) to require p
 
 ## Who writes the claims?
 
-A person, or the orchestrator that hands out the work. Never the agent doing the task.
+The keeper's queen, or another trusted coordinator. Never the agent doing the work.
 
 In the full Waggle setup, each Keeper talks with their own **queen** agent, a coordinating agent that does not write code. The Keeper and the queen agree on the task. The queen opens the issue and writes the claim, then starts a worker agent with `waggle dispatch`, which records the claim before the worker runs. The worker agent never writes its own claim. Waggle does not open issues itself; the queen does that with the GitHub tools it already has.
 
