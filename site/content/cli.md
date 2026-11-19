@@ -105,4 +105,4 @@ These serve the full Waggle hive workflow (roles, worktrees, a decisions log). Y
 | :--- | :--- | :--- |
 | Builder | Ready | `waggle dispatch <ticket> --role builder` claims the ticket, runs the agent in a worktree and checks its changes against the claim. |
 | Forager | Ready | `--role forager` does triage, repro and lease mapping the same way. |
-| Reviewer | Ready | `--role guard` runs a review agent on a branch. The flag value is `guard` for historical reasons. On this site the guard is the merge gate, so the agent is called the reviewer. |
+| Guard | Ready | `--role guard` runs the review agent on a branch. The guard is the review bee; the required merge check `verify-leases-and-tiers` is the gate, not the guard. |
