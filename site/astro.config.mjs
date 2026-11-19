@@ -31,6 +31,7 @@ export default defineConfig({
       customCss: ['./src/assets/brand/tokens.css', './src/styles/site.css'],
       sidebar: [
         { label: 'Overview', slug: 'docs' },
+        { label: 'Why Waggle', slug: 'docs/why-waggle' },
         { label: 'Quick start', slug: 'docs/quick-start' },
         {
           label: 'Concepts',
