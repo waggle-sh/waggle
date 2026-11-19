@@ -54,7 +54,7 @@ These are the usage lines `waggle claim -h` and `waggle release -h` print (`cmd/
 
 ## Recipes
 
-How to run the gate under the agent you already use, in [docs/recipes](docs/recipes/README.md): [Claude Code agent teams](docs/recipes/claude-code-agent-teams.md), [GitHub Copilot cloud agent](docs/recipes/copilot-cloud-agent.md), and the requirements for Gas Town.
+How to run the gate under the agent you already use, in [docs/recipes](docs/recipes/README.md): [Claude Code agent teams](docs/recipes/claude-code-agent-teams.md), and [GitHub Copilot cloud agent](docs/recipes/copilot-cloud-agent.md).
 
 ## Status
 
