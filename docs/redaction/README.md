@@ -21,7 +21,7 @@ This pull request does not rewrite history. It adds this recipe, the public text
 - Author and committer identity `27632860+paulternate@users.noreply.github.com`, whatever name it already has (`paulternate` or `Paul Cleary`).
 - Committer `noreply@github.com` / `GitHub` on commits GitHub itself created.
 - `ghp_` strings. They are short test fixtures, not live tokens. Do not treat them as secrets to strip.
-- Generic prose that says `/var/folders/` or `/var/folders/...` without the machine-specific directory `8y/xsq0g8ls1g5bqfdzjsl9m0p00000gn`. That generic prefix is how the repo talks about macOS temp dirs, including `.waggle/control/scripts/scan-hive.sh`.
+- Generic prose that names the macOS temp root without a machine-specific directory under it. That is how the repo talks about macOS temp dirs, including `.waggle/control/scripts/scan-hive.sh`.
 
 ## Mailmap
 
@@ -247,7 +247,7 @@ These are still in HEAD after the expression list. They are not private emails, 
 - The word `protonmail` in review prose, after the full address is replaced: `.waggle/hive/media/T-020c/pr-body.md`, `.waggle/hive/reviews/T-020c-fable.md`, `.waggle/hive/reviews/T-020c-sonnet.md`, `.waggle/hive/reviews/hive-records-7.md`, `hive-records-8.md`, `hive-records-9.md`, `hive-records-10.md`.
 - `USER=paul` and `LOGNAME=paul` in `.waggle/hive/media/T-023a/fable-spec.json`, `fable-worker-bash-env.txt`, and `sonnet-rereview-spec.json`.
 - macOS `ls` owner `paul` in `.waggle/hive/media/T-011a/init-runs.txt`, `.waggle/hive/media/T-016/hostile4-symlinks.txt`, and `.waggle/hive/media/T-016/rehearsal-rerun.txt`.
-- `~/code/l19-design` in `.waggle/hive/reviews/brief-T-041-fable.md` and `brief-T-041-opus.md`.
+- The level19 Vercel team name and plan in `.waggle/hive/DECISIONS.md` (D-313, D-318). `DECISIONS.md` is append-only, so a working-tree edit is not allowed; the history rewrite is the only fix. The design repo path in the T-041 briefs, the team name and plan in `tasks/T-041.md` and the briefs, and the machine temp directory in `media/T-023b/` were scrubbed in T-062.
 - `Cursor Agent <cursoragent@cursor.com>` and `Co-authored-by: Paul Cleary <paulternate@users.noreply.github.com>` on `9fa9ac1`, once pull request 201 merges.
 - The public handle `paulternate` inside the captured `.gitconfig` text in `fable-run2-tools.jsonl`. `CODEOWNERS` keeps `@paulternate`, so the login is not a strip target.
 
