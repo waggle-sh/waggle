@@ -1,0 +1,218 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Fonts: Inter and JetBrains Mono, self-hosted from the @fontsource-variable packages (OFL-1.1, see
+   src/assets/brand/SOURCE.md). The brand diagrams name 'Public Sans' and 'Martian Mono' in their own
+   styles and are byte copies, so those two names are local aliases for the new files. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('../../node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Martian Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('../../node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+:root,
+:root[data-theme='light'],
+:root[data-theme='dark'] {
+  --wg-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --wg-font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --wg-mono-stretch: 100%; /* JetBrains Mono has no width axis */
+
+  /* Starlight's palette, drawn from the Waggle tokens. Color is for verdicts only, so the accent is ink. */
+  --sl-font: var(--wg-font-sans);
+  --sl-font-mono: var(--wg-font-mono);
+  --sl-text-body: 1.0625rem;
+  --sl-color-white: var(--wg-ink);
+  --sl-color-gray-1: var(--wg-ink);
+  --sl-color-gray-2: color-mix(in srgb, var(--wg-ink) 85%, var(--wg-page));
+  --sl-color-gray-3: color-mix(in srgb, var(--wg-ink) 70%, var(--wg-page));
+  --sl-color-gray-4: var(--wg-muted);
+  --sl-color-gray-5: var(--wg-rule);
+  --sl-color-gray-6: var(--wg-surface);
+  --sl-color-gray-7: var(--wg-surface);
+  --sl-color-black: var(--wg-page);
+  --sl-color-accent-low: var(--wg-surface);
+  --sl-color-accent: var(--wg-ink);
+  --sl-color-accent-high: var(--wg-ink);
+  --sl-color-text-accent: var(--wg-ink);
+  --sl-color-green: var(--wg-pass);
+  --sl-color-red: var(--wg-block);
+  --sl-color-orange: var(--wg-wait);
+  --sl-content-width: 50rem;
+}
+
+/* Square corners on machines and surfaces. */
+:root {
+  --sl-border-radius: 0;
+  --ec-brdRad: 0;
+}
+.sl-markdown-content a:not(:where(.not-content *)) {
+  text-decoration-thickness: var(--wg-line);
+  text-underline-offset: 0.2em;
+}
+:focus-visible {
+  outline: var(--wg-line) solid var(--wg-focus);
+  outline-offset: 2px;
+}
+.sl-markdown-content table {
+  display: block;
+  overflow-x: auto;
+}
+
+/* Landing page */
+.lp {
+  background: var(--wg-page);
+  color: var(--wg-ink);
+  font-family: var(--wg-font-sans);
+  font-size: var(--wg-text-body);
+  line-height: 1.55;
+  margin: 0;
+}
+.lp a {
+  color: inherit;
+  text-decoration-thickness: var(--wg-line);
+  text-underline-offset: 0.2em;
+}
+.lp-wrap {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 calc(var(--wg-space) * 3);
+}
+.lp-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--wg-space) * 3);
+  align-items: center;
+  padding: calc(var(--wg-space) * 3) 0;
+  border-bottom: var(--wg-line) solid var(--wg-rule);
+}
+.lp-nav .mark {
+  font-weight: 600;
+  font-size: 1.25rem;
+  text-decoration: none;
+  margin-right: auto;
+}
+.lp-nav a:not(.mark) {
+  font-size: var(--wg-text-small);
+}
+.lp-hero {
+  padding: calc(var(--wg-space) * 8) 0 calc(var(--wg-space) * 4);
+}
+.lp h1 {
+  font-size: var(--wg-text-h1);
+  line-height: 1.15;
+  margin: 0 0 calc(var(--wg-space) * 2);
+  max-width: 20ch;
+  letter-spacing: -0.02em;
+}
+.lp h2 {
+  font-size: var(--wg-text-h2);
+  line-height: 1.2;
+  margin: 0 0 calc(var(--wg-space) * 2);
+}
+.lp h3 {
+  font-size: var(--wg-text-h3);
+  margin: 0 0 var(--wg-space);
+}
+.lp p {
+  max-width: var(--wg-measure);
+  margin: 0 0 calc(var(--wg-space) * 2);
+}
+.lp .lede {
+  color: var(--wg-muted);
+  font-size: 1.25rem;
+}
+.lp code {
+  font-family: var(--wg-font-mono);
+  font-size: var(--wg-text-code);
+  background: var(--wg-surface);
+  padding: 0.1em 0.35em;
+}
+.lp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--wg-space) * 2);
+  margin-top: calc(var(--wg-space) * 3);
+}
+.lp-btn {
+  display: inline-block;
+  padding: calc(var(--wg-space) * 1.5) calc(var(--wg-space) * 3);
+  border: var(--wg-line) solid var(--wg-ink);
+  border-radius: var(--wg-radius);
+  font-weight: 600;
+  text-decoration: none !important;
+}
+.lp-btn.primary {
+  background: var(--wg-ink);
+  color: var(--wg-page);
+}
+.lp-diagram {
+  margin: calc(var(--wg-space) * 4) 0;
+  border: var(--wg-line) solid var(--wg-rule);
+  background: var(--wg-page);
+}
+.lp-diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.lp-diagram .narrow {
+  display: none;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+@media (max-width: 760px) {
+  .lp-diagram .wide {
+    display: none;
+  }
+  .lp-diagram .narrow {
+    display: block;
+  }
+  .lp h1 {
+    font-size: var(--wg-text-h1-sm);
+  }
+}
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: calc(var(--wg-space) * 3);
+  padding: calc(var(--wg-space) * 4) 0;
+}
+.lp-grid > div {
+  border-top: var(--wg-line) solid var(--wg-ink);
+  padding-top: calc(var(--wg-space) * 2);
+}
+.lp-limits {
+  background: var(--wg-surface);
+  padding: calc(var(--wg-space) * 4) 0;
+  margin-top: calc(var(--wg-space) * 4);
+}
+.lp-foot {
+  padding: calc(var(--wg-space) * 4) 0 calc(var(--wg-space) * 6);
+  color: var(--wg-muted);
+  font-size: var(--wg-text-small);
+}
+.lp-foot p {
+  margin: 0 0 var(--wg-space);
+}
