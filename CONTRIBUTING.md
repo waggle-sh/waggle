@@ -3,6 +3,14 @@
 
 This file is for people building Waggle itself. If you use Waggle in your own repo, the [README](README.md) and the [gate spec](docs/gate.md) are what you need; nothing here applies to your repo.
 
+## Contributing
+
+- **Build and test:** `go build ./... && go test -race ./...`; also `go vet ./...` and `gofmt -l .` (empty output means clean).
+- **Sign off every commit** with `git commit -s`. The DCO check fails a PR whose commits lack `Signed-off-by` (section 6).
+- New files start with an SPDX header; no em dashes or en dashes.
+- **Where work comes from.** Work items normally come from keepers' queens, who open issues and write claims for them. Humans can also open issues: use the bug or feature template, and report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). A maintainer may need to write a claim naming your branch before the repo's gate passes on your PR.
+- Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## 1. Two layers in this repo
 
 - **Product:** Waggle itself. `cmd/`, `internal/` (including `internal/scaffold/templates/`, which is what every other hive receives), `go.mod`, `LICENSE`, `README.md`, `docs/` (the gate spec `docs/gate.md`, the recipes in `docs/recipes/`, the design history `docs/RFC-0003.md`), and the product CI workflow. This is what ships.
