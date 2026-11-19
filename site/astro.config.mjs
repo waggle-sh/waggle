@@ -32,6 +32,8 @@ export default defineConfig({
       sidebar: [
         { label: 'Overview', slug: 'docs' },
         { label: 'Why Waggle', slug: 'docs/why-waggle' },
+        { label: 'The hive', slug: 'docs/hive' },
+        { label: 'Glossary', slug: 'docs/glossary' },
         { label: 'Quick start', slug: 'docs/quick-start' },
         {
           label: 'Concepts',

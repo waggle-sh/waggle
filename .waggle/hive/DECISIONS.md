@@ -7115,3 +7115,22 @@
 **Keeper choice:** Option 1, decided by the Head Keeper on 2026-11-18: the docs site uses Astro Starlight. This supersedes D-310 (plain Astro, no JavaScript, Starlight rejected) and D-311 (plain CSS).
 
 **Rationale:** Docs readers expect search, sidebar navigation and dark mode. Starlight is the standard Astro docs framework and ships only a small amount of JavaScript, for search, theme switching and the table of contents. The landing page can remain mostly static. Decided by the Head Keeper in writing; the log edit needs Head Keeper approval before it counts as recorded (queen.md: the queen never edits DECISIONS.md).
+
+## D-368: T-061: the public site and docs use bee vocabulary and lead with the full vision
+
+- **Date:** 2026-11-18
+- **Kind:** scope
+- **Tickets:** T-061
+- **Supersedes:** D-287
+
+**Question:** D-236 set plain user-facing vocabulary (task, claim, lease, gate) and D-287 let marketing lead with the gate. Should the public site and docs keep that, or use the bee vocabulary and lead with the full vision?
+
+**Options considered:**
+1. Bee language is the brand on the public site and docs: keepers, queens, foragers, guards, scouts, builders, the hive, honey (Nectar and Quorum, with the Master Keeper veto) and Walt, each with a one-line plain gloss on first use per page. The full vision leads (many keepers and their agent teams on one repo); the gate is the first piece usable today. Unbuilt parts are marked roadmap or coming soon. Supersedes D-236 for public site and docs vocabulary and supersedes D-287.
+2. Keep D-236 plain vocabulary and D-287 gate-led marketing on the public site and docs
+
+**Hive recommendation:** Not recorded
+
+**Keeper choice:** Option 1, decided by the Head Keeper in writing on 2026-11-18. The public site and docs retire D-236 plain vocabulary and replace D-287. Bee language is the brand. The problem-first message, the current layout and style, and Walt stay. Other orchestrators are not named on public pages, and the public pages do not say the repository is public.
+
+**Rationale:** The vision in .waggle/hive/VISION.md is many keepers and their agent teams on one repo without collisions, and the gate is its first layer, not the whole product. Plain-only wording hid that. Anything not built yet (Nectar, Quorum, multi-Keeper parts, queens opening issues from keeper conversations) is labelled roadmap or coming soon so the pages stay accurate. Supersedes D-236 only for public site and docs vocabulary; hive and CLI vocabulary are unchanged. Decided by the Head Keeper in writing; recorded by the orchestrator, with the Head Keeper's approval of this hive edit.
