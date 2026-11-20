@@ -1,0 +1,222 @@
+{
+  "detail_version": 1,
+  "counts": {
+    "unbound": 1,
+    "unattributed": 0,
+    "orphaned": 0,
+    "unmerged": 0,
+    "incomplete": 0,
+    "third_party": 0,
+    "fork_mismatch": 0,
+    "direct_push": 0,
+    "self_merge": 0,
+    "carried": 0,
+    "unconfirmed_revert": 0,
+    "excluded": [],
+    "reciprocal_pairs": []
+  },
+  "units": [
+    {
+      "task": "T-001",
+      "kind": "unit",
+      "commits": [
+        "16e756846a4c43e6b0aa994d8445a2b59bc4eef1"
+      ],
+      "merged_sha": "16e756846a4c43e6b0aa994d8445a2b59bc4eef1",
+      "base_sha": null,
+      "merged_at": "2026-01-01T01:00:00Z",
+      "first_seen": null,
+      "matures_at": "2026-01-31T01:00:00Z",
+      "state": "matured",
+      "keeper_id": "alice",
+      "keeper_share": 1.485,
+      "co_keepers": [],
+      "weight": 1.485,
+      "factors": {
+        "tier": 0,
+        "size": 1.485,
+        "review": 1.000,
+        "changed_lines": 10.000,
+        "code_lines": 10,
+        "docs_lines": 0,
+        "excluded_files": []
+      },
+      "alive_ratio": null,
+      "clawed_back": 0.000,
+      "carried": 0.000,
+      "receipt": {
+        "oid": "554fe704abe92d4cef88b33d0f5c766b083849e9",
+        "source": "release",
+        "status": "merged",
+        "merge_proof": "forge",
+        "incomplete": false,
+        "released_by": "alice",
+        "pr_number": 7,
+        "pr_author": "alice",
+        "head_branch": "t-001",
+        "approvers": [
+          "bob"
+        ]
+      },
+      "third_party": false,
+      "maintainer": false,
+      "relay": false,
+      "fork_mismatch": false,
+      "direct_push": false,
+      "self_merge": false,
+      "rewritten": false,
+      "missing": false,
+      "reasons": []
+    },
+    {
+      "task": "T-002",
+      "kind": "unit",
+      "commits": [
+        "25c6df19ab159c30fc2bc52c43d016af0ce96f4f"
+      ],
+      "merged_sha": "25c6df19ab159c30fc2bc52c43d016af0ce96f4f",
+      "base_sha": "16e756846a4c43e6b0aa994d8445a2b59bc4eef1",
+      "merged_at": "2026-01-01T03:00:00Z",
+      "first_seen": null,
+      "matures_at": "2026-01-31T03:00:00Z",
+      "state": "matured",
+      "keeper_id": "bob",
+      "keeper_share": 5.334,
+      "co_keepers": [
+        {
+          "keeper_id": "alice",
+          "share": 5.334
+        }
+      ],
+      "weight": 10.668,
+      "factors": {
+        "tier": 2,
+        "size": 3.556,
+        "review": 1.000,
+        "changed_lines": 122.000,
+        "code_lines": 120,
+        "docs_lines": 4,
+        "excluded_files": []
+      },
+      "alive_ratio": null,
+      "clawed_back": 0.000,
+      "carried": 0.000,
+      "receipt": {
+        "oid": "5039638d47528e1bb504fa8415429060479bd2ff",
+        "source": "release",
+        "status": "merged",
+        "merge_proof": "forge",
+        "incomplete": false,
+        "released_by": "bob",
+        "pr_number": 7,
+        "pr_author": "bob",
+        "head_branch": "t-002",
+        "approvers": [
+          "bob"
+        ]
+      },
+      "third_party": false,
+      "maintainer": false,
+      "relay": false,
+      "fork_mismatch": false,
+      "direct_push": false,
+      "self_merge": false,
+      "rewritten": false,
+      "missing": false,
+      "reasons": []
+    },
+    {
+      "task": "T-003",
+      "kind": "unit",
+      "commits": [
+        "c8b983d3915749397089d994592ac382e9a61911"
+      ],
+      "merged_sha": "c8b983d3915749397089d994592ac382e9a61911",
+      "base_sha": "25c6df19ab159c30fc2bc52c43d016af0ce96f4f",
+      "merged_at": "2026-02-10T04:00:00Z",
+      "first_seen": null,
+      "matures_at": "2026-03-12T04:00:00Z",
+      "state": "pending",
+      "keeper_id": "carol",
+      "keeper_share": 1.057,
+      "co_keepers": [],
+      "weight": 1.057,
+      "factors": {
+        "tier": 0,
+        "size": 1.057,
+        "review": 1.000,
+        "changed_lines": 1.000,
+        "code_lines": 1,
+        "docs_lines": 0,
+        "excluded_files": []
+      },
+      "alive_ratio": null,
+      "clawed_back": 0.000,
+      "carried": 0.000,
+      "receipt": {
+        "oid": "a275306309cb5a933ecb8e24fcb4c5d5c9f330b2",
+        "source": "release",
+        "status": "merged",
+        "merge_proof": "forge",
+        "incomplete": false,
+        "released_by": "carol",
+        "pr_number": 7,
+        "pr_author": "carol",
+        "head_branch": "t-003",
+        "approvers": [
+          "bob"
+        ]
+      },
+      "third_party": false,
+      "maintainer": false,
+      "relay": false,
+      "fork_mismatch": false,
+      "direct_push": false,
+      "self_merge": false,
+      "rewritten": false,
+      "missing": false,
+      "reasons": []
+    },
+    {
+      "task": "",
+      "kind": "unit",
+      "commits": [
+        "29310fe6b638f849a02c9bf6e65f66c98a10150f"
+      ],
+      "merged_sha": "29310fe6b638f849a02c9bf6e65f66c98a10150f",
+      "base_sha": null,
+      "merged_at": "2026-02-10T05:03:00Z",
+      "first_seen": null,
+      "matures_at": null,
+      "state": "unbound",
+      "keeper_id": null,
+      "keeper_share": 0.000,
+      "co_keepers": [],
+      "weight": 0.000,
+      "factors": {
+        "tier": 0,
+        "size": 0.000,
+        "review": 1.000,
+        "changed_lines": 0.000,
+        "code_lines": 0,
+        "docs_lines": 0,
+        "excluded_files": []
+      },
+      "alive_ratio": null,
+      "clawed_back": 0.000,
+      "carried": 0.000,
+      "receipt": null,
+      "third_party": false,
+      "maintainer": false,
+      "relay": false,
+      "fork_mismatch": false,
+      "direct_push": false,
+      "self_merge": false,
+      "rewritten": false,
+      "missing": false,
+      "reasons": [
+        "no_binding"
+      ]
+    }
+  ]
+}
