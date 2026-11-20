@@ -7115,3 +7115,63 @@
 **Keeper choice:** Option 1, decided by the Head Keeper on 2026-11-18: the docs site uses Astro Starlight. This supersedes D-310 (plain Astro, no JavaScript, Starlight rejected) and D-311 (plain CSS).
 
 **Rationale:** Docs readers expect search, sidebar navigation and dark mode. Starlight is the standard Astro docs framework and ships only a small amount of JavaScript, for search, theme switching and the table of contents. The landing page can remain mostly static. Decided by the Head Keeper in writing; the log edit needs Head Keeper approval before it counts as recorded (queen.md: the queen never edits DECISIONS.md).
+
+## D-368: T-050: Nectar design (RFC-0005) accepted pending fix
+
+- **Date:** 2026-11-20
+- **Kind:** strategy
+- **Tickets:** T-050, T-051, T-052
+- **Supersedes:** none
+
+**Question:** Should the hive adopt the Nectar design in docs/RFC-0005-nectar.md (PR #234)?
+
+**Options considered:**
+1. Adopt this design
+2. Adopt with changes to the open questions in section 11.3
+3. Per-commit unit
+4. Need more evidence: land T-051a first and tune constants on real data
+
+**Hive recommendation:** Adopt this design, with the receipt ref (T-051a) built first
+
+**Keeper choice:** Option 1, accepted pending fix by the Head Keeper, Paul Cleary, on 2026-11-19. Starting values (section 11.3 question 1) are tuned on this repo's history before v0.2. RFC-0005 merged in #234 at 80a1ef2.
+
+**Rationale:** The receipt ref keeps claim owners after release, so attribution survives from the public gate onward. Constants stay starting values until real history exists. Nothing in VISION core item 5 is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-369: T-051: receipt version 1 fields (Q-T051-1) and DECISIONS.md owners in backfill (Q-T051-4)
+
+- **Date:** 2026-11-20
+- **Kind:** technical
+- **Tickets:** T-051
+- **Supersedes:** none
+
+**Question:** Which extra fields does receipt version 1 carry (Q-T051-1), and how does backfill name an owner for a task whose only source is a DECISIONS.md reference (Q-T051-4)?
+
+**Options considered:**
+1. Q-T051-1 (a): add status, incomplete and merge_proof to version 1. Q-T051-4 (a): backfill takes --owner for DECISIONS.md-only tasks after the Head Keeper reviews the dry-run plan
+2. Q-T051-1 (b): add only status and incomplete. Q-T051-4 (b): credit the single gate.approvers login on single-Keeper repos
+3. Q-T051-4 (c): a DECISIONS.md reference is evidence only (CUT? needs Head Keeper typed reason)
+
+**Hive recommendation:** Q-T051-1 (a) and Q-T051-4 (a)
+
+**Keeper choice:** Q-T051-1 option (a) and Q-T051-4 option (a), as the T-051 brief recommends, approved by the Head Keeper, Paul Cleary, on 2026-11-20. Receipt version 1 carries status (merged or unmerged), incomplete and merge_proof (forge, binding, merged_tip or none). waggle nectar backfill takes --owner for tasks whose only source is DECISIONS.md; without it they stay unattributed and listed. Backfill reaches every task with a credited merge on main, with no cutoff.
+
+**Rationale:** A later version bump would leave early receipts without merge_proof, which T-052 explain uses. An explicit owner keeps a human choice where DECISIONS.md cannot name one and works for multi-Keeper repos. Option (c) would narrow RFC-0005 section 6.2. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-370: T-051: phase A docs item 2.1.6 follows the T-066 and T-062 claims
+
+- **Date:** 2026-11-20
+- **Kind:** scope
+- **Tickets:** T-051, T-062, T-066
+- **Supersedes:** none
+
+**Question:** T-051 phase A (PR #241) left out brief item 2.1.6 (docs/gate.md section 10 receipts entry and L13, the docs/recipes --co note, the README release usage line) because docs/gate.md is leased to T-066 and README.md to T-062. Where does that work go?
+
+**Options considered:**
+1. Record it as a T-051 follow-up and land it once the T-066 and T-062 claims release those paths
+2. Widen the phase A claim now
+
+**Hive recommendation:** Record it as a T-051 follow-up
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-20. Item 2.1.6 stays in T-051 scope and is not cut. It lands in a T-051 docs PR after T-066 releases docs/gate.md and T-062 releases README.md. The Head Keeper approves the docs/gate.md receipts entry at that merge.
+
+**Rationale:** Leases do not widen silently, and phase A merged without its docs. Recording the follow-up keeps the work on the roadmap. Decided by the Head Keeper in writing; recorded by the queen.
