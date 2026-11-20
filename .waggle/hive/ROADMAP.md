@@ -23,7 +23,7 @@ Gate-first is sequencing, not a cut.
 
 T-050 · Nectar design brief (scoring rules, revert window, attribution from claims) · S · proposed · v0.2 · design
 T-051 · Nectar scorer (git history + claim owners, 30-day survival, revert clawback) · M · proposed · v0.2 · product
-T-052 · Nectar status surfaces (CLI / derived view; no public dashboard required) · S · proposed · v0.2 · product
+T-052 · Nectar status surfaces (CLI / derived view; no public dashboard required) · M · proposed · v0.2 · product
 T-053 · Quorum design brief (ballot store, sqrt weight, Head Keeper veto, Sybil notes) · S · proposed · v0.2 · design
 T-054 · Quorum voting MVP (roadmap/issue priority ballots) · M · proposed · v0.2 · product
 T-055 · Multi-Keeper story restore (RFC + README/CONTRIBUTING cut-list unwind; relay design spike) · S · proposed · v0.2 · docs+design
