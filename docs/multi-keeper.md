@@ -93,7 +93,7 @@ Ana and Ben share `example/shop`. Both logins are in `gate.approvers`; Ana is fi
 
 ## 7. What is not built yet
 
-- **Claims for contributors without push access.** Today a maintainer writes the claim for a fork PR, with an `<owner>/<repo>:<branch>` branch entry (gate spec L3). `forge.comb_mode: relay` is accepted by config but every claim operation then refuses with "relay comb mode not implemented" (`internal/comb/git.go`). The design spike is [docs/rfc-notes/relay.md](rfc-notes/relay.md). Planned.
+- **Claims for contributors without push access.** Today a maintainer writes the claim for a fork PR, with an `<owner>/<repo>:<branch>` branch entry (gate spec L3). `forge.comb_mode: relay` is accepted by config but every claim operation then refuses with "relay comb mode not implemented" (`internal/comb/git.go`). The design spike is [docs/rfc-notes/relay.md](rfc-notes/relay.md). Head Keeper decision, Paul Cleary, 2026-11-19: maintainer claims on a contributor's behalf now; v0.2 builds the `/waggle claim` comment relay with maintainer approval on by default.
 - **Nectar (T-050).** Reputation from merged commits that survive 30 days on main without a revert, attributed through claim owners (`keeper_id`). Planned for v0.2. Note that release deletes the claim ref today, so Nectar needs a durable record of who claimed what.
 - **Quorum (T-053).** Quadratic votes on roadmap and issue priority, weight `sqrt(Nectar)`, with a Head Keeper veto. Planned for v0.2.
 - **A force-release command** for the Head Keeper, and case-folded overlap checks. Planned, no ticket yet.
