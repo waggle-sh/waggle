@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/waggle-sh/waggle/internal/decisions"
 	"github.com/waggle-sh/waggle/internal/layout"
@@ -34,10 +35,14 @@ const (
 func runHives(args []string, stdout, stderr io.Writer, getenv func(string) string) int {
 	if len(args) == 0 || args[0] == "-h" || args[0] == "--help" || args[0] == "help" {
 		fmt.Fprintln(stderr, "Usage: waggle hives status [--registry <file>] [--json]")
+		fmt.Fprintln(stderr, "       waggle hives plan <new|add|show|list|check|brief|rm> ... (see docs/hives.md)")
 		if len(args) > 0 {
 			return 0
 		}
 		return 2
+	}
+	if args[0] == "plan" {
+		return runHivesPlan(args[1:], stdout, stderr, getenv)
 	}
 	if args[0] != "status" {
 		fmt.Fprintf(stderr, "waggle hives: unknown subcommand %q\n", args[0])
@@ -63,17 +68,10 @@ func runHives(args []string, stdout, stderr io.Writer, getenv func(string) strin
 		return 2
 	}
 
-	path := *registry
-	if path == "" {
-		path = getenv(registryEnv)
-	}
-	if path == "" {
-		dir, err := os.UserConfigDir()
-		if err != nil {
-			fmt.Fprintf(stderr, "waggle hives status: refused: no registry given and no user config dir: %v\n", err)
-			return 1
-		}
-		path = filepath.Join(dir, "waggle", "hives.json")
+	path, err := registryPath(*registry, getenv)
+	if err != nil {
+		fmt.Fprintf(stderr, "waggle hives status: refused: %v\n", err)
+		return 1
 	}
 	entries, err := readRegistry(path)
 	if err != nil {
@@ -83,12 +81,7 @@ func runHives(args []string, stdout, stderr io.Writer, getenv func(string) strin
 
 	views := make([]HiveView, 0, len(entries))
 	for _, e := range entries {
-		in, err := readHive(e)
-		if err != nil {
-			views = append(views, UnreachableView(e, err.Error()))
-			continue
-		}
-		views = append(views, BuildHiveView(e, in, statusClock()))
+		views = append(views, viewHive(e, statusClock()))
 	}
 	report := BuildReport(views)
 	if *asJSON {
@@ -97,6 +90,32 @@ func runHives(args []string, stdout, stderr io.Writer, getenv func(string) strin
 		stdout.Write(RenderHivesText(report))
 	}
 	return 0
+}
+
+// registryPath resolves the registry file: the flag, else the environment,
+// else waggle/hives.json in the user config directory.
+func registryPath(flagVal string, getenv func(string) string) (string, error) {
+	if flagVal != "" {
+		return flagVal, nil
+	}
+	if p := getenv(registryEnv); p != "" {
+		return p, nil
+	}
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("no registry given and no user config dir: %v", err)
+	}
+	return filepath.Join(dir, "waggle", "hives.json"), nil
+}
+
+// viewHive reads one hive and builds its view; a hive that cannot be read
+// gets the unreachable view. Shared by `hives status` and `hives plan check`.
+func viewHive(e RegistryEntry, now time.Time) HiveView {
+	in, err := readHive(e)
+	if err != nil {
+		return UnreachableView(e, err.Error())
+	}
+	return BuildHiveView(e, in, now)
 }
 
 // readRegistry reads the Keeper's registry file. It is a user file outside any

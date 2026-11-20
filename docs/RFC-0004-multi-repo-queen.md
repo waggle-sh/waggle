@@ -221,7 +221,7 @@ This is the text proposed for the hive's decision log. It is **not** in `.waggle
 
 **Hive recommendation:** Option 2, the cheapest way to learn whether the read-only view is worth having before any write path exists.
 
-**Keeper choice:** Not decided.
+**Keeper choice:** Phases 0 and 1 accepted (option 2); phase 2 approved by Paul Cleary 2026-11-19. Phase 3 not decided.
 
 **Rationale:** A Keeper with several repos is the link between their hives today. A registry and a read-only view add that awareness without any cross-repo authority. No claim is written across repos in any phase. Nothing is implemented by this decision.
 ```
