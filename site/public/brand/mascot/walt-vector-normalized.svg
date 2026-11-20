@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" width="200" height="160" role="img" aria-label="Walt, the Waggle bee">
+<!-- NORMALIZED VECTOR INTERPRETATION of Walt (not a pixel-perfect trace of the raster).
+     Features locked to the selected original blue/apricot bee style: compact rounded apricot body,
+     two broad ink stripes, tiny black dot eyes, small warm smile, two antennae, soft off-white wings,
+     dark simple limbs. Colors sampled/normalized: Apricot #FFA161, Ink #181B1E, Wing #F7F5F0, Blue #506AFD. -->
+  <defs>
+    <style>
+      .apricot { fill: #FFA161; }
+      .ink { fill: #181B1E; }
+      .wing { fill: #F7F5F0; opacity: 0.92; }
+      .stroke-ink { stroke: #181B1E; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+  <ellipse class="wing" cx="78" cy="48" rx="28" ry="18" transform="rotate(-18 78 48)"/>
+  <ellipse class="wing" cx="95" cy="42" rx="24" ry="15" transform="rotate(-8 95 42)"/>
+  <ellipse class="apricot" cx="108" cy="88" rx="62" ry="48"/>
+  <mask id="bodymask">
+    <ellipse cx="108" cy="88" rx="62" ry="48" fill="white"/>
+  </mask>
+  <g mask="url(#bodymask)">
+    <rect class="ink" x="46" y="76" width="124" height="18"/>
+    <rect class="ink" x="50" y="100" width="116" height="16"/>
+  </g>
+  <ellipse class="ink" cx="48" cy="92" rx="8" ry="7"/>
+  <circle class="ink" cx="128" cy="72" r="3.2"/>
+  <circle class="ink" cx="142" cy="72" r="3.2"/>
+  <path class="stroke-ink" d="M128 84 Q135 90 142 84" stroke-width="2.5"/>
+  <path class="stroke-ink" d="M118 52 Q112 30 104 24" stroke-width="2.5"/>
+  <path class="stroke-ink" d="M130 50 Q132 28 138 22" stroke-width="2.5"/>
+  <circle class="ink" cx="104" cy="24" r="2.4"/>
+  <circle class="ink" cx="138" cy="22" r="2.4"/>
+  <path class="stroke-ink" d="M95 128 Q90 142 82 148" stroke-width="4"/>
+  <path class="stroke-ink" d="M120 130 Q128 144 138 150" stroke-width="4"/>
+  <circle class="ink" cx="82" cy="148" r="3"/>
+  <circle class="ink" cx="138" cy="150" r="3"/>
+</svg>
