@@ -5,6 +5,30 @@ Waggle Gate is a GitHub merge check for repos where AI agents write code. On a r
 
 You give each task a claim: the directories it may change and the branches its PR may come from. The gate reads the claims from git and compares them with the PR's commits.
 
+## Quick start
+
+Install the `waggle` CLI (macOS or Linux, amd64 or arm64):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/waggle-sh/waggle/main/install.sh | sh
+waggle version
+```
+
+The script downloads the latest release archive for your OS and CPU, checks it against the release's `SHA256SUMS`, and installs `waggle` to `~/.local/bin` (or `/usr/local/bin` when that is not writable). Set `WAGGLE_VERSION=0.1.0` to pin a release or `WAGGLE_INSTALL_DIR` to choose the directory. With Go installed, `go install github.com/waggle-sh/waggle/cmd/waggle@latest` works too; that build prints a `-dev` version, since only release builds stamp it. On Windows, download the `.zip` from the [releases page](https://github.com/waggle-sh/waggle/releases).
+
+Then gate your own GitHub repo:
+
+```sh
+cd your-repo
+waggle init --gate-only     # writes the gate workflow, a small config and DECISIONS.md
+git add .github .waggle && git commit -m "Add Waggle gate" && git push
+# on GitHub: require the check verify-leases-and-tiers, and PRs, on your default branch
+waggle doctor               # checks claim refs can be pushed and the check is required
+waggle claim T-001 --dirs src --gate light --branch t-001 --owner <your-github-login>
+```
+
+Now a PR from branch `t-001` whose commits start with `T-001: ` passes while they change only `src/`, and fails once one touches anything else. The install commit changes `.github/workflows/` and `.waggle/`, which the gate always protects, so if you push it as a PR it fails its own gate and needs an admin merge. [Install](#install) has the details, and [Writing a claim](#writing-a-claim) covers the flags.
+
 ## What it checks
 
 Each check links the [gate spec](docs/gate.md) section that cites the code behind it.
@@ -29,7 +53,7 @@ It does not schedule or run agents, and it is not a sandbox. The limits below ar
 
 ## Install
 
-1. Build `waggle` from a clean clone of a pushed commit, checked out at `<commit-sha>`: `go build -o <path outside the clone>/waggle ./cmd/waggle`. Run `init` and `upgrade` from that build. Tagged releases carry `waggle_<version>_<os>_<arch>` archives and a `SHA256SUMS` file; check a download against its `SHA256SUMS` line.
+1. Get `waggle`. The [Quick start](#quick-start) script installs a release: tagged releases carry `waggle_<version>_<os>_<arch>` archives and a `SHA256SUMS` file, and the script checks the download against its `SHA256SUMS` line. To build from source instead, use a clean clone of a pushed commit, checked out at `<commit-sha>`: `go build -o <path outside the clone>/waggle ./cmd/waggle`. Run `init` and `upgrade` from that build. `waggle version` prints the version you have.
 2. In your repo, run `waggle init --gate-only`. It writes `.github/workflows/waggle-gate.yml`, `.waggle/control/config.yaml` and `.waggle/hive/DECISIONS.md`, and refuses a forge other than GitHub.
 3. Commit those files. The install PR changes the workflow and `.waggle/`, so it fails its own gate. If a rule already requires the check, it needs an admin merge.
 4. Require the check `verify-leases-and-tiers`, and PRs, on your default branch.
@@ -54,7 +78,7 @@ These are the usage lines `waggle claim -h` and `waggle release -h` print (`cmd/
 
 ## Recipes
 
-How to run the gate under the agent you already use, in [docs/recipes](docs/recipes/README.md): [Claude Code agent teams](docs/recipes/claude-code-agent-teams.md), [GitHub Copilot cloud agent](docs/recipes/copilot-cloud-agent.md), and the requirements for Gas Town.
+How to run the gate under the agent you already use, in [docs/recipes](docs/recipes/README.md): [Claude Code agent teams](docs/recipes/claude-code-agent-teams.md), and [GitHub Copilot cloud agent](docs/recipes/copilot-cloud-agent.md).
 
 ## Status
 

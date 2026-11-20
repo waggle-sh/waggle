@@ -7096,3 +7096,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper in writing on 2026-11-05: "Vision looks good" and "we need to bring those things back." Multi-Keeper is restored in full: each Keeper runs their own agents on their own plan for their own work, so there is no token donation and no third-party terms question. Waggle ships open source and drops into any repo, public or private, greenfield or brownfield. Nectar, Quorum, and multi-Keeper (including the 1-to-many Keepers story) are restored as core. Gate still ships public first; Nectar and Quorum follow after, because the gate's claim and merge records are what Nectar measures. Any later proposal that cuts or narrows those core items must be marked CUT and needs a typed Head Keeper reason. D-231 Cells cut stays unless reversed on its own card. Plain user-facing vocabulary (D-236) and gate-led marketing (D-287) stay.
 
 **Rationale:** The Oct 23 prior-art review was right that the per-task merge gate is the sharp near-term product, and wrong to treat Nectar, Quorum, and multi-Keeper as disposable. Those are the reason Waggle exists for open source and for Level 19's own many-teams-on-one-repo problem. Approving a bundled "cut list" without a typed reason for each core cut was a process miss. Gate-first sequencing still holds; restore is not a rewrite of the G1..G5 path. The vision guard lives in .waggle/hive/VISION.md; the follow-ups T-050 to T-055 are on .waggle/hive/ROADMAP.md. Supersedes D-229 only for the Keeper choice and rationale behind the Nectar cut, the Quorum cut and the Multi-Keeper freeze taken from repositioning.md section 4; D-229's gate-first and dispatch-second sequencing stays. Also supersedes the Nectar and Quorum "Cut" rows and the Multi-Keeper "Freeze" row in docs/rfc-notes/repositioning.md section 4, and the Nectar and Quorum entries under "Cut or frozen" in CONTRIBUTING.md (written under T-037 / D-236 after D-229). Does not supersede D-231 (Cells), D-232 to D-236 (lease store, approvers, ticket binding, public-at-G5, plain user vocabulary), or D-287 (marketing may still lead with the gate while the long vision stays multi-Keeper and honey). Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-367: T-041: the docs site uses Astro Starlight
+
+- **Date:** 2026-11-18
+- **Kind:** technical
+- **Tickets:** T-041
+- **Supersedes:** D-310, D-311
+
+**Question:** D-310 chose plain Astro with static output, no JavaScript and no docs framework, and D-311 chose plain CSS from the copied tokens; the Head Keeper reviewed the T-041 site and wants to keep Astro Starlight. Which framework and styling approach does the docs site use?
+
+**Options considered:**
+1. Keep Astro Starlight; this supersedes D-310 and D-311
+2. Keep D-310 and D-311: plain Astro, no JavaScript, plain CSS, Starlight rejected
+
+**Hive recommendation:** Not recorded
+
+**Keeper choice:** Option 1, decided by the Head Keeper on 2026-11-18: the docs site uses Astro Starlight. This supersedes D-310 (plain Astro, no JavaScript, Starlight rejected) and D-311 (plain CSS).
+
+**Rationale:** Docs readers expect search, sidebar navigation and dark mode. Starlight is the standard Astro docs framework and ships only a small amount of JavaScript, for search, theme switching and the table of contents. The landing page can remain mostly static. Decided by the Head Keeper in writing; the log edit needs Head Keeper approval before it counts as recorded (queen.md: the queen never edits DECISIONS.md).

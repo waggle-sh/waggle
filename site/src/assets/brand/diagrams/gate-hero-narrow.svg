@@ -21,7 +21,7 @@
 <path d="M44 90H36V150H44M316 90H324V150H316" fill="none" class="s-ink" stroke-width="2" stroke-linecap="square"/>
 <text x="52" y="115" class="mono f-ink">internal/comb/</text>
 <text x="52" y="137" class="mono f-ink">cmd/waggle/</text>
-<text x="36" y="166" class="sm f-muted">Written before the agent starts.</text>
+<text x="36" y="166" class="sm f-muted">The queen writes it. Never the worker.</text>
 <text x="20" y="212" class="sm b f-muted">2. The agent opens a PR</text>
 <text x="20" y="234" class="b f-ink">PR #1042, 4 commits, from any agent</text>
 <circle cx="24" cy="262" r="5" class="f-page s-ink" stroke-width="1.5"/>
