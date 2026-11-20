@@ -41,6 +41,9 @@ type rules struct {
 	docsPrefixes  []string
 	lockfiles     []string // base names
 	generatedAttr string
+	// excludeKeepers is the nectar.exclude_keepers default, empty until the
+	// config block lands (T-051 planned cut B).
+	excludeKeepers []string
 }
 
 var rulesV1 = rules{

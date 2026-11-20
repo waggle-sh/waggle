@@ -64,7 +64,6 @@ type Config struct {
 	Forge   ForgeConfig
 	Leases  LeasesConfig
 	Gate    GateConfig
-	Nectar  NectarConfig
 }
 
 // GateConfig is the gate: section.
@@ -134,7 +133,6 @@ func Parse(data []byte) (*Config, error) {
 			MaxDirectoriesPerClaim: DefaultMaxDirectoriesPerClaim,
 		},
 	}
-	c.Nectar = defaultNectar()
 	lines := map[string]int{}
 
 	v, ok := tree["version"]
@@ -222,12 +220,6 @@ func Parse(data []byte) (*Config, error) {
 			if err != nil {
 				return nil, err
 			}
-		}
-	}
-
-	if nn, ok := tree["nectar"]; ok {
-		if c.Nectar, err = parseNectar(nn); err != nil {
-			return nil, err
 		}
 	}
 

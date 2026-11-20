@@ -93,7 +93,6 @@ func TestDefaults(t *testing.T) {
 		Version: 1,
 		Forge:   ForgeConfig{Provider: "github", CombMode: "direct", Remote: "", MergeStrategy: "up_to_date"},
 		Leases:  LeasesConfig{DefaultTTLMinutes: 120, MaxDirectoriesPerClaim: 5},
-		Nectar:  NectarConfig{DailyCapMilli: 12000, SelfMergeFactorMilli: 500, ReciprocityDiscountMilli: 500},
 	}
 	if !reflect.DeepEqual(c, want) {
 		t.Fatalf("got %+v, want %+v", *c, *want)
