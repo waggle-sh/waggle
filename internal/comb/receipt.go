@@ -423,6 +423,11 @@ func (b *GitBackend) ReadReceipts(ctx context.Context) ([]ReceiptEntry, error) {
 			return nil, err
 		}
 	}
+	return b.readReceiptChain(ctx)
+}
+
+// readReceiptChain decodes the local receipt chain, without syncing.
+func (b *GitBackend) readReceiptChain(ctx context.Context) ([]ReceiptEntry, error) {
 	zero, err := b.zeroOID(ctx)
 	if err != nil {
 		return nil, err
