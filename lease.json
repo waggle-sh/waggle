@@ -10,10 +10,10 @@
     "internal/dispatch",
     "internal/forge"
   ],
-  "claimed_at": "2026-11-20T16:48:26Z",
-  "expires_at": "2026-11-22T16:48:26Z",
+  "claimed_at": "2026-11-20T18:33:06Z",
+  "expires_at": "2026-11-22T18:33:06Z",
   "branches": [
-    "t-051a",
-    "t-051a2"
+    "t-051a3",
+    "t-051b"
   ]
 }
