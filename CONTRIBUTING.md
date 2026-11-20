@@ -34,7 +34,7 @@ These are not part of Waggle's schema.
 
 ## 4. Words in this repo's records
 
-Our hive's records (briefs, decisions, reviews) use bee words. The README, the gate spec and the recipes use plain terms (D-236): task, claim, lease, protected path, approver, reviewer, maintainer, merge gate, required check. Keeping this section current:
+Our hive's records (briefs, decisions, reviews) use bee words. The docs site uses them too, each with a short plain gloss, as [the hive page](/docs/hive/) does. Where a plain term exists (task, claim, lease, protected path, approver, reviewer, maintainer, merge gate, required check), the gloss uses it. Keeping this section current:
 
 - Any brief that introduces a role or term updates this section in the same PR. The guard checks this: a new capitalized or code-formatted term in a brief with no entry here is a must-fix.
 - Each entry is one or two plain sentences. No decision IDs in an entry; sources stay in the brief that adds it.
@@ -70,10 +70,13 @@ No em dashes or en dashes in code, docs, or commits.
 - **Capability level.** `frontier`, `standard`, or `fast`. Roles declare a minimum level, never a model name, and hive config maps levels to concrete models.
 - **Own honey.** Building Waggle with Waggle: the Waggle repo is itself a hive that runs a pinned, known-good Waggle build.
 
+### Coming soon and roadmap
+
+- **Nectar.** Coming soon (restored, D-366): reputation from merged commits that survive 30 days on main without revert. `waggle nectar backfill` is on main; the scorer is not merged yet.
+- **Quorum.** Roadmap (restored, D-366): hive voting weighted by sqrt(Nectar), with a veto for the project owner (the Head Keeper today). Design only, no code.
+
 ### Cut or frozen
 
-- **Nectar.** Restored (D-366), planned v0.2: reputation from merged commits that survive 30 days on main without revert.
-- **Quorum.** Restored (D-366), planned v0.2: hive voting weighted by sqrt(Nectar), Head Keeper veto.
 - **weaver, nurse, studio, assembly.** Cut: the unspecified v0.2 roles.
 - **Lane.** Frozen: an integration branch (`int-<release>-<n>`) where several Light-gate tasks share one guard pass. Not used.
 - **relay.** The stub job of the old gate workflow, removed from the template.
