@@ -72,6 +72,8 @@ func bindTask(subject, trailer string) string {
 	if len(trailer) > 256 || strings.Count(trailer, ",")+1 > 8 {
 		return ""
 	}
+	// A trailer naming more than one ticket binds to none, on purpose: the gate
+	// rejects such a commit, so no one task can be credited with it.
 	for _, v := range strings.Split(trailer, ",") {
 		v = strings.Trim(v, " \t")
 		t, err := comb.ParseTicketID(v)
@@ -205,9 +207,10 @@ func commitFacts(ctx context.Context, pg *Git, oid string) (base string, at time
 	return cs[0].parents[0], cs[0].when, nil
 }
 
-// firstClaimed is when the claim chain at claimOID began: a renewal resets
-// claimed_at, so the binding step looks back to the oldest claim commit.
-// since is the fallback.
+// firstClaimed is when the claim chain at claimOID began. A renewal or takeover
+// is an AcquireLease that chains to the previous claim commit and, unless the
+// caller passes ClaimedAt, sets claimed_at to now, so the binding step looks
+// back to the oldest commit of the chain. since is the fallback.
 func firstClaimed(ctx context.Context, pg *Git, claimOID string, since time.Time) time.Time {
 	out, err := pg.Run(ctx, "log", "--format=%ct", claimOID)
 	if err != nil {

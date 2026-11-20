@@ -8,13 +8,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/waggle-sh/waggle/internal/comb"
 	"github.com/waggle-sh/waggle/internal/config"
+	"github.com/waggle-sh/waggle/internal/forge"
 )
 
 // fakeForge answers MergedPRByHead from a fixed answer, as the adapter would
@@ -233,16 +237,33 @@ func TestReceiptBindingAfterRenewal(t *testing.T) {
 
 // A3: a forge failure releases, writes an incomplete receipt and warns once.
 func TestReceiptForgeFailure(t *testing.T) {
+	// The failures come from the real GitHub adapter reading an httptest server.
+	adapter := func(h http.HandlerFunc, timeout time.Duration) func(*testing.T) PRLookup {
+		return func(t *testing.T) PRLookup {
+			srv := httptest.NewServer(h)
+			t.Cleanup(srv.Close)
+			pf, err := forge.NewTokenPRFinder("o/r", "tok", srv.URL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return forgeLookup{finder: pf, timeout: timeout}
+		}
+	}
 	for _, c := range []struct {
-		name  string
-		err   error
-		warns int
-	}{{"HTTP 500", errors.New("GitHub answered 500"), 1}, {"timeout", context.DeadlineExceeded, 1}, {"no forge", ErrNoForge, 0}} {
+		name   string
+		lookup func(*testing.T) PRLookup
+		warns  int
+	}{
+		{"HTTP 500", adapter(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500) }, time.Minute), 1},
+		{"timeout", adapter(func(w http.ResponseWriter, r *http.Request) { <-r.Context().Done() }, 100*time.Millisecond), 1},
+		{"provider none", func(*testing.T) PRLookup { return forgeLookup{provider: "none", opt: forge.Options{RepoDir: "."}} }, 0},
+		{"no forge", func(*testing.T) PRLookup { return &fakeForge{err: ErrNoForge} }, 0},
+	} {
 		t.Run(c.name, func(t *testing.T) {
 			f := newFixture(t, false, false)
 			claimFor(t, f, "alice", "t-023")
 			want := squashOnMain(f, "internal/x/s.go", "T-023: squash")
-			res, err := ReleaseTask(context.Background(), ReleaseRequest{RepoDir: f.repo, Ticket: "23", Unmerged: true, Forge: &fakeForge{err: c.err}})
+			res, err := ReleaseTask(context.Background(), ReleaseRequest{RepoDir: f.repo, Ticket: "23", Unmerged: true, Forge: c.lookup(t)})
 			if err != nil || len(res.Warnings) != c.warns || res.Outcome != "released" || claimKept(t, f) {
 				t.Fatalf("res %+v err %v", res, err)
 			}
