@@ -209,6 +209,44 @@ func TestReleaseWithReceiptLocalAtomic(t *testing.T) {
 	}
 }
 
+// A4, local: a receipt appended by another release between read and write is
+// retried; both receipts land in order and both claims are gone.
+func TestReleaseWithReceiptLocalRetry(t *testing.T) {
+	requireGit(t)
+	dir := newRepo(t, false)
+	clock := newClock()
+	a, b := newBackend(t, dir, "", clock), newBackend(t, dir, "", clock)
+	ctx := context.Background()
+	if err := a.AcquireLease(ctx, mkLease("T-082", "alice", "d/82")); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.AcquireLease(ctx, mkLease("T-083", "bob", "d/83")); err != nil {
+		t.Fatal(err)
+	}
+	fired, retries := false, 0
+	a.hookBeforeRetry = func(int) { retries++ }
+	a.hookBeforeWrite = func() {
+		if fired {
+			return
+		}
+		fired = true
+		if _, err := b.ReleaseWithReceipt(ctx, "T-083", "bob", unmergedRec("bob")); err != nil {
+			panic(err)
+		}
+	}
+	oid, err := a.ReleaseWithReceipt(ctx, "T-082", "alice", mergedRec("alice"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := receiptChain(t, dir)
+	if len(c) != 2 || c[1] != oid || readReceipt(t, dir, c[0]).TicketID != "T-083" || readReceipt(t, dir, c[1]).TicketID != "T-082" {
+		t.Errorf("chain = %v (second %s)", c, oid)
+	}
+	if retries != 1 || claimRefs(t, dir) != "" {
+		t.Errorf("retries %d, claims left %q", retries, claimRefs(t, dir))
+	}
+}
+
 func TestReleaseWithReceiptRemote(t *testing.T) {
 	requireGit(t)
 	origin, dirA, dirB := remoteSetup(t)

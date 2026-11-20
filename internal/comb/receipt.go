@@ -207,7 +207,7 @@ func (b *GitBackend) syncReceipts(ctx context.Context) error {
 		receiptRefPrefix+"*:"+receiptRefPrefix+"*")
 	var ge *gitError
 	if errors.As(err, &ge) && (strings.Contains(ge.stderr, "non-fast-forward") || strings.Contains(ge.stderr, "rejected")) {
-		return fmt.Errorf("%s: %w", ReceiptRef, ErrReceiptsRewound)
+		return fmt.Errorf("%s: %w; the remote's receipt history was rewritten: ask the Head Keeper to restore it, or delete the local %s only once they confirm the remote is right, then release again", ReceiptRef, ErrReceiptsRewound, ReceiptRef)
 	}
 	return err
 }

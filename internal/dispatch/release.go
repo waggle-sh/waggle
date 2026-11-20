@@ -15,6 +15,7 @@ import (
 
 	"github.com/waggle-sh/waggle/internal/comb"
 	"github.com/waggle-sh/waggle/internal/config"
+	"github.com/waggle-sh/waggle/internal/forge"
 	"github.com/waggle-sh/waggle/internal/layout"
 )
 
@@ -26,7 +27,7 @@ type ReleaseRequest struct {
 	Owner                   string       // default keeper_id from .waggle/local.yaml
 	Backend                 ClaimBackend // nil: built from config
 	CoKeepers               []string     // credited with the owner in the receipt (T-051): at most 4, not the owner
-	Forge                   PRLookup     // read once for the receipt's PR fields; nil: none (the receipt is incomplete)
+	Forge                   PRLookup     // read once for the receipt's PR fields; nil: built from config
 }
 
 // ReleaseTaskResult is what ReleaseTask did.
@@ -202,7 +203,11 @@ func ReleaseTask(ctx context.Context, r ReleaseRequest) (res ReleaseTaskResult, 
 	if err != nil {
 		return res, releaseError(err)
 	}
-	facts := resolveMerge(ctx, pg, main, lease, firstClaimed(ctx, pg, oid, lease.ClaimedAt), r.Forge, mergeCommit)
+	lookup := r.Forge
+	if lookup == nil {
+		lookup = forgeLookup{provider: cfg.Forge.Provider, opt: forge.Options{RepoDir: repo, Remote: cfg.Forge.Remote}}
+	}
+	facts := resolveMerge(ctx, pg, main, lease, firstClaimed(ctx, pg, oid, lease.ClaimedAt), lookup, mergeCommit)
 	if facts.ForgeWarning {
 		res.Warnings = append(res.Warnings, "could not read the forge for "+id+"; the receipt is marked incomplete")
 	}
