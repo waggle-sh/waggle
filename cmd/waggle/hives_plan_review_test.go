@@ -331,3 +331,42 @@ func TestPlanRemoteOnlyEntryIsStale(t *testing.T) {
 		t.Errorf("s2: %+v / %+v", c.Steps[1], c.Violations)
 	}
 }
+
+// A path that reaches a hive by another spelling (here a symlink, standing in
+// for a case variant on a case-insensitive file system) is refused with the
+// hive named, not with the git work tree fallback.
+func TestInsideHiveOrRepoNamesHiveForAliasedPath(t *testing.T) {
+	requireGit(t)
+	e := newPlanEnv(t)
+	alias := filepath.Join(t.TempDir(), "Alias")
+	if err := os.Symlink(e.lib, alias); err != nil {
+		t.Skip("symlinks unavailable")
+	}
+	reg, err := readRegistry(e.registry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	where, err := insideHiveOrRepo(filepath.Join(alias, "plans"), e.lib, reg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(where, "inside hive") || strings.Contains(where, "git work tree") {
+		t.Errorf("where = %q, want it to name the hive", where)
+	}
+}
+
+// doneWords is built from droppedWords, so every dropped word is also done.
+func TestDroppedWordsAreDoneWords(t *testing.T) {
+	for _, w := range droppedWords {
+		task, ok := ParseTask("T-001.md", []byte("- **Status:** "+w+"\n"))
+		if !ok || !task.Done || !task.Dropped {
+			t.Errorf("status %q: done=%v dropped=%v", w, task.Done, task.Dropped)
+		}
+	}
+	for _, w := range []string{"done", "merged", "closed"} {
+		task, _ := ParseTask("T-001.md", []byte("- **Status:** "+w+"\n"))
+		if !task.Done || task.Dropped {
+			t.Errorf("status %q: done=%v dropped=%v", w, task.Done, task.Dropped)
+		}
+	}
+}

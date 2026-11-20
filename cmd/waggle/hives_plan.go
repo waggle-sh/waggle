@@ -412,11 +412,32 @@ func insideHiveOrRepo(target, dir string, reg []RegistryEntry) (string, error) {
 		if rel, err := filepath.Rel(root, target); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 			return fmt.Sprintf("inside hive %q", e.Name), nil
 		}
+		if hasAncestorSameFile(target, root) {
+			return fmt.Sprintf("inside hive %q", e.Name), nil
+		}
 	}
 	if _, err := repoRoot(dir); err == nil {
 		return "inside a git work tree", nil
 	}
 	return "", nil
+}
+
+// hasAncestorSameFile reports whether target or any of its parents is the same
+// file as root. It catches a case-variant path on a case-insensitive file
+// system, which a string comparison of the paths misses.
+func hasAncestorSameFile(target, root string) bool {
+	rfi, err := os.Stat(root)
+	if err != nil {
+		return false
+	}
+	for p := target; ; p = filepath.Dir(p) {
+		if fi, err := os.Stat(p); err == nil && os.SameFile(fi, rfi) {
+			return true
+		}
+		if filepath.Dir(p) == p {
+			return false
+		}
+	}
 }
 
 // plansDirOutside refuses a plans directory that is a symlink, or that is

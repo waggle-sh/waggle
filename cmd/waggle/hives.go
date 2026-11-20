@@ -180,10 +180,11 @@ func readHive(e RegistryEntry) (HiveInput, error) {
 var (
 	taskFileRe   = regexp.MustCompile(`^(T-\d+)\.md$`)
 	ticketTextRe = regexp.MustCompile(`T-\d+`)
-	doneWords    = []string{"done", "merged", "cancel", "superseded", "dropped", "closed", "rejected", "obsolete"}
-	// droppedWords are the doneWords that mean the work will not happen. They
-	// count as done for the view, but a plan reports them as their own state.
+	// droppedWords are the Status words that mean the work will not happen. They
+	// count as finished for `hives status`, but a plan reports them as their own
+	// state. doneWords is built from them, so there is one source.
 	droppedWords = []string{"cancel", "superseded", "dropped", "rejected", "obsolete"}
+	doneWords    = append([]string{"done", "merged", "closed"}, droppedWords...)
 )
 
 // readTasks reads the briefs under dir. A missing directory is no tasks; a
