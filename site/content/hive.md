@@ -7,6 +7,11 @@ Waggle is for many people, each running their own agent team, working on one rep
 
 ## The idea in one picture
 
+<p>
+  <img class="light-only" src="/images/hive-task-journey-light.webp" width="800" height="494" alt="One ticket, start to merge. Keeper and Queen agree the task, Scout writes the brief, Queen writes the claim, Forager maps dirs and a failing test, Builder implements in the claim, Guard reviews, then the work is merged to main on a pass, or returns to the Builder on a must-fix." />
+  <img class="dark-only" src="/images/hive-task-journey-dark.webp" width="800" height="494" alt="One ticket, start to merge. Keeper and Queen agree the task, Scout writes the brief, Queen writes the claim, Forager maps dirs and a failing test, Builder implements in the claim, Guard reviews, then the work is merged to main on a pass, or returns to the Builder on a must-fix." />
+</p>
+
 The **hive** (the shared repository and the rules every agent works under) has people and agents in clear roles:
 
 - **Keepers** are the humans. Each keeper owns a plan and the agents that carry it out. One keeper is the **Head Keeper** (the person who owns the product direction and can approve changes to the hive's own steering files).
