@@ -223,11 +223,18 @@ func (s *scorer) build(ctx context.Context, rep *Report) (map[string]*bu, []*Uni
 			u := newUnit(Bind(c.subject, c.trailer, ""), KindRevert, c.oid, c.at)
 			u.reverts = targets
 			known[c.oid] = true
+			for _, sc := range sides {
+				known[sc.oid] = true
+			}
 			extra = append(extra, u)
 			continue
 		}
 		task := s.bindCommit(c, sides)
 		if task == "" {
+			known[c.oid] = true
+			for _, sc := range sides {
+				known[sc.oid] = true
+			}
 			u := newUnit("", KindUnit, c.oid, c.at)
 			u.State = StateUnbound
 			u.Reasons = append(u.Reasons, "no_binding")
@@ -535,7 +542,7 @@ func (s *scorer) lifecycle(u *bu) {
 	last := u.merges[len(u.merges)-1]
 	mergedAt := last.at
 	start := mergedAt
-	if u.restored.IsZero() {
+	if !u.restored.After(last.at) {
 		direct := true
 		var seen *time.Time
 		seenIdx := int(^uint(0) >> 1)

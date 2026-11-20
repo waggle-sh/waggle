@@ -69,7 +69,26 @@ func TestRevertScope(t *testing.T) {
 			t.Fatalf("%+v %+v", u, rep.Summary.Keepers)
 		}
 	})
-	t.Run("a restore after a revert before the completing merge restores the unit", func(t *testing.T) {
+	t.Run("a restore before the completing merge does not shorten the window", func(t *testing.T) {
+		f := newFx(t)
+		big := f.squash("T-001", map[string]string{"src/big.txt": lines(20, "big")})
+		f.addReceipt(f.receipt("T-001", "alice", big), "")
+		f.tick(day)
+		r1 := f.commit("Revert big\n\nThis reverts commit "+big+".", map[string]string{"src/big.txt": del})
+		f.tick(day)
+		f.commit("Revert Revert\n\nThis reverts commit "+r1+".", map[string]string{"src/big.txt": lines(20, "big")})
+		f.tick(25 * day)
+		small := f.squash("T-001", map[string]string{"src/small.txt": "s\n"})
+		f.addReceipt(f.receipt("T-001", "alice", small), "")
+		done := f.clock
+		if u := unitFor(t, f.score(done.Add(10*day)), "T-001"); u.State != StatePending {
+			t.Fatalf("%+v", u)
+		}
+		if u := unitFor(t, f.score(done.Add(30*day)), "T-001"); u.State != StateMatured {
+			t.Fatalf("%+v", u)
+		}
+	})
+	t.Run("a restore after the completing merge restores the unit", func(t *testing.T) {
 		f := newFx(t)
 		big := f.squash("T-001", map[string]string{"src/big.txt": lines(20, "big")})
 		f.addReceipt(f.receipt("T-001", "alice", big), "")
@@ -80,6 +99,23 @@ func TestRevertScope(t *testing.T) {
 		rep := f.score(f.clock.Add(40 * day))
 		if u := unitFor(t, rep, "T-001"); u.State != StateMatured {
 			t.Fatalf("%+v", u)
+		}
+	})
+	t.Run("a revert of an unbound main commit is a revert entry, not a unit", func(t *testing.T) {
+		f := newFx(t)
+		chore := f.commit("chore: unbound", map[string]string{"src/chore.txt": lines(5, "c")})
+		f.tick(day)
+		sha := f.commit("T-009: undo\n\nThis reverts commit "+chore+".\n\nWaggle-Ticket: T-009", map[string]string{"src/chore.txt": del})
+		f.addReceipt(f.receipt("T-009", "bob", sha), "")
+		rep := f.score(f.clock.Add(40 * day))
+		n := 0
+		for _, u := range rep.Units {
+			if u.Kind == KindRevert && u.Weight == 0 {
+				n++
+			}
+		}
+		if n != 1 || keeper(rep, "bob") != nil && keeper(rep, "bob").Nectar != 0 {
+			t.Fatalf("%+v %+v", rep.Units, rep.Summary.Keepers)
 		}
 	})
 }
