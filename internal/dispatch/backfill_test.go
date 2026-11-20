@@ -7,6 +7,9 @@ package dispatch
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +17,7 @@ import (
 
 	"github.com/waggle-sh/waggle/internal/comb"
 	"github.com/waggle-sh/waggle/internal/decisions"
+	"github.com/waggle-sh/waggle/internal/forge"
 	"github.com/waggle-sh/waggle/internal/layout"
 )
 
@@ -313,5 +317,54 @@ func TestBackfillApplyNeedsKeeper(t *testing.T) {
 	backfill(t, f, apply, func(r *BackfillRequest) { r.ReleasedBy = "dave" })
 	if r, _ := lastReceipt(t, f); r.ReleasedBy != "dave" {
 		t.Errorf("released_by %q", r.ReleasedBy)
+	}
+}
+
+// The forge is read over HTTP through the real GitHub adapter and the config
+// lookup: the PR fields and the forge proof come from the server's answer.
+func TestBackfillHTTPForge(t *testing.T) {
+	f := newFixture(t, false, false)
+	claimFor(t, f, "bob", "t-023")
+	squash := squashOnMain(f, "internal/x/s.go", "T-023: squash")
+	head := strings.Repeat("a", 40)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method + " " + r.URL.Path {
+		case "GET /repos/o/r/pulls":
+			fmt.Fprintf(w, `[{"number":9,"merged_at":"2026-10-23T11:00:00Z","merge_commit_sha":%q,"user":{"login":"bob"},"head":{"sha":%q}}]`, squash, head)
+		case "POST /graphql":
+			fmt.Fprintf(w, `{"data":{"repository":{"pullRequest":{"timelineItems":{"nodes":[]},"reviews":{"pageInfo":{"hasNextPage":false,"endCursor":null},"nodes":[{"fullDatabaseId":"1","state":"APPROVED","submittedAt":"2026-10-23T10:00:00Z","commit":{"oid":%q},"author":{"login":"alice"}}]}}}}}`, head)
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	pf, err := forge.NewTokenPRFinder("o/r", "test-token", srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := backfill(t, f, apply, func(r *BackfillRequest) { r.Forge = forgeLookup{finder: pf} })
+	if len(res.Warnings) != 0 {
+		t.Errorf("warnings %v", res.Warnings)
+	}
+	r, _ := lastReceipt(t, f)
+	if r.MergeProof != "forge" || r.Incomplete || r.PRNumber == nil || *r.PRNumber != 9 || len(r.Approvers) != 1 || r.Approvers[0] != "alice" {
+		t.Errorf("receipt = %+v", r)
+	}
+}
+
+// Provider none is ErrNoForge: backfill still works, with the binding proof
+// and no warning.
+func TestBackfillNoForge(t *testing.T) {
+	f := newFixture(t, false, false)
+	claimFor(t, f, "bob", "t-023")
+	squashOnMain(f, "internal/x/s.go", "T-023: squash")
+	res := backfill(t, f, apply, func(r *BackfillRequest) {
+		r.Forge = forgeLookup{provider: "none", opt: forge.Options{RepoDir: f.repo}}
+	})
+	if len(res.Warnings) != 0 {
+		t.Errorf("warnings %v", res.Warnings)
+	}
+	if r, _ := lastReceipt(t, f); r.MergeProof != "binding" {
+		t.Errorf("receipt = %+v", r)
 	}
 }
