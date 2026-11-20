@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <svg xmlns="http://www.w3.org/2000/svg" class="wg" viewBox="0 0 360 830" width="360" height="830" role="img" aria-labelledby="wg-exn-t wg-exn-d">
 <title id="wg-exn-t">Example: a forager's PR through the Waggle Gate</title>
-<desc id="wg-exn-d">Example. The ticket Add Apple Pay to checkout has a lease written by the queen before work starts: src/checkout/ and src/payments/. The forager opens a PR with four commits. The guard, Waggle Gate, checks each commit against the lease. 3f9a1c changes src/checkout/ApplePayButton.tsx, 8b27e4 changes src/payments/applePay.ts and 5ce6a9 changes src/checkout/checkout.test.ts; all three are inside the lease and pass. d41f07 changes infra/prod/database.tf, outside the lease, so it is must-fix and the PR is blocked. The PR merges only when every commit passes.</desc>
+<desc id="wg-exn-d">Example. The ticket Add Apple Pay to checkout has a lease written by the queen before work starts: src/checkout/ and src/payments/. The forager opens a PR with four commits. The gate, Waggle Gate, checks each commit against the lease. 3f9a1c changes src/checkout/ApplePayButton.tsx, 8b27e4 changes src/payments/applePay.ts and 5ce6a9 changes src/checkout/checkout.test.ts; all three are inside the lease and pass. d41f07 changes infra/prod/database.tf, outside the lease, so it is must-fix and the PR is blocked. The PR merges only when every commit passes.</desc>
 <style>.wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
 @media (prefers-color-scheme:dark){.wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}}
 [data-theme="light"] .wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
@@ -40,7 +40,7 @@
 <text x="40" y="442" class="mono f-ink">src/checkout/checkout.test.ts</text>
 <line x1="24" y1="267" x2="24" y2="413" class="s-ink" stroke-width="1.5"/>
 <line x1="20" y1="486" x2="340" y2="486" class="s-ink" stroke-width="3" stroke-linecap="square"/>
-<text x="20" y="510" class="sm b f-muted">3. The guard (Waggle Gate) checks every commit</text>
+<text x="20" y="510" class="sm b f-muted">3. The gate (Waggle Gate) checks every commit</text>
 <text x="20" y="528" class="sm f-muted">against the lease, read from its claim</text>
 <text x="20" y="562" class="mono f-muted">3f9a1c</text>
 <text x="84" y="562" class="f-muted">inside the lease</text>
