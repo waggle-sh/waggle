@@ -28,6 +28,11 @@ type Input struct {
 
 var revertRe = regexp.MustCompile(`(?m)^This reverts commit ([0-9a-f]{40}|[0-9a-f]{64})[.,]`)
 
+// permuteReceipts is a test seam: it reorders the receipt slice in place after it
+// is read, to prove the score depends on each receipt's chain index (rc.idx) and
+// not on slice order (T-051 B11).
+var permuteReceipts func([]receipt)
+
 // act is one revert commit applied to a unit.
 type act struct {
 	oid string
@@ -73,6 +78,9 @@ func Score(ctx context.Context, in Input) (Report, error) {
 	var err error
 	if s.rcs, err = g.readReceipts(ctx, in.Receipts, s.oidLen); err != nil {
 		return Report{}, err
+	}
+	if permuteReceipts != nil {
+		permuteReceipts(s.rcs)
 	}
 	if s.hist, err = g.log(ctx, "--first-parent", "--reverse", in.Main); err != nil {
 		return Report{}, err
@@ -199,6 +207,9 @@ func newUnit(task, kind, sha string, at time.Time) *Unit {
 func (s *scorer) build(ctx context.Context, rep *Report) (map[string]*bu, []*Unit, error) {
 	units := map[string]*bu{}
 	var extra []*Unit
+	// known holds the commits a revert may name: those of units and revert entries
+	// already walked on main's line, never the sides of the merge being read.
+	known := map[string]bool{}
 	for i := range s.hist {
 		c := &s.hist[i]
 		var sides []commit
@@ -208,9 +219,10 @@ func (s *scorer) build(ctx context.Context, rep *Report) (map[string]*bu, []*Uni
 				return nil, nil, err
 			}
 		}
-		if targets := s.revertTargets(c, sides); len(targets) > 0 {
+		if targets := s.revertTargets(c, sides, known); len(targets) > 0 {
 			u := newUnit(Bind(c.subject, c.trailer, ""), KindRevert, c.oid, c.at)
 			u.reverts = targets
+			known[c.oid] = true
 			extra = append(extra, u)
 			continue
 		}
@@ -236,6 +248,9 @@ func (s *scorer) build(ctx context.Context, rep *Report) (map[string]*bu, []*Uni
 		for _, sc := range sides {
 			u.all[sc.oid] = true
 		}
+		for o := range u.all {
+			known[o] = true
+		}
 	}
 	for _, u := range units {
 		if err := s.weigh(ctx, u); err != nil {
@@ -246,12 +261,14 @@ func (s *scorer) build(ctx context.Context, rep *Report) (map[string]*bu, []*Uni
 }
 
 // revertTargets reads the commits named by "This reverts commit <sha>." (or "<sha>, reversing", as git revert -m writes it) in a
-// main commit or, for a merge, in the commits it brought in.
-func (s *scorer) revertTargets(c *commit, sides []commit) []string {
+// main commit or, for a merge, in the commits it brought in. Only a target in
+// known counts; a sha on a branch only or off main is dropped, and a commit left
+// with no target is an ordinary commit.
+func (s *scorer) revertTargets(c *commit, sides []commit, known map[string]bool) []string {
 	var out []string
 	for _, body := range append([]string{c.body}, sideBodies(sides)...) {
 		for _, m := range revertRe.FindAllStringSubmatch(body, -1) {
-			if len(m[1]) == s.oidLen && !slices.Contains(out, m[1]) {
+			if len(m[1]) == s.oidLen && known[m[1]] && !slices.Contains(out, m[1]) {
 				out = append(out, m[1])
 			}
 		}
@@ -297,7 +314,8 @@ func (s *scorer) bindCommit(c *commit, sides []commit) string {
 	var best *receipt
 	for i := range s.rcs {
 		rc := &s.rcs[i]
-		if rc.r.MergedSHA != nil && *rc.r.MergedSHA == c.oid && branchOK(rc) && rc.r.HeadBranch != nil {
+		if rc.r.MergedSHA != nil && *rc.r.MergedSHA == c.oid && branchOK(rc) && rc.r.HeadBranch != nil &&
+			rc.r.TicketID == BranchTask(*rc.r.HeadBranch) && (best == nil || rc.idx > best.idx) {
 			best = rc
 		}
 	}
@@ -351,7 +369,6 @@ func (s *scorer) weigh(ctx context.Context, u *bu) error {
 
 // applyReverts replays revert commits in history order. A revert of a revert
 // restores the units it undid; a later revert of that restore reverts them again.
-// A revert that lands before its unit's completing merge does not apply.
 func (s *scorer) applyReverts(extra []*Unit, byCommit map[string]*bu) {
 	type eff struct{ reverts, undoes []*bu }
 	effects := map[string]*eff{}
@@ -377,7 +394,7 @@ func (s *scorer) applyReverts(extra []*Unit, byCommit map[string]*bu) {
 				for _, u := range prev.undoes {
 					hit(u)
 				}
-			case u != nil && s.onLine[u.merges[len(u.merges)-1].oid] < s.onLine[x.MergedSHA]:
+			case u != nil:
 				hit(u)
 			}
 		}
@@ -395,7 +412,9 @@ func (s *scorer) orphan(task string, u *bu) (*Unit, bool) {
 			continue
 		}
 		if _, on := s.onLine[*rc.r.MergedSHA]; !on {
-			orphan = rc
+			if orphan == nil || rc.idx > orphan.idx {
+				orphan = rc
+			}
 		} else if u != nil && u.mergeSet[*rc.r.MergedSHA] {
 			maxValid = max(maxValid, rc.idx)
 		}
@@ -519,6 +538,7 @@ func (s *scorer) lifecycle(u *bu) {
 	if u.restored.IsZero() {
 		direct := true
 		var seen *time.Time
+		seenIdx := int(^uint(0) >> 1)
 		for _, rc := range s.byTask[u.Task] {
 			if rc.r.MergedSHA == nil || !u.mergeSet[*rc.r.MergedSHA] || !branchOK(rc) {
 				continue
@@ -526,9 +546,9 @@ func (s *scorer) lifecycle(u *bu) {
 			if rc.r.PRNumber != nil {
 				direct = false
 			}
-			if *rc.r.MergedSHA == last.oid && seen == nil {
+			if *rc.r.MergedSHA == last.oid && rc.idx < seenIdx {
 				t := rc.commit.at
-				seen = &t
+				seen, seenIdx = &t, rc.idx
 			}
 		}
 		if direct {
