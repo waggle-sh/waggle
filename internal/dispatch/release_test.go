@@ -145,6 +145,9 @@ func TestReleaseClaimRefusals(t *testing.T) {
 			if !claimKept(t, f) {
 				t.Fatal("the claim ref was deleted")
 			}
+			if hasReceipts(f) {
+				t.Fatal("a refused release wrote a receipt")
+			}
 		})
 	}
 }
