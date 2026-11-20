@@ -7,9 +7,9 @@
   "directories": [
     "docs/RFC-0006-quorum.md"
   ],
-  "claimed_at": "2026-11-20T06:04:06Z",
-  "expires_at": "2026-11-22T06:04:06Z",
+  "claimed_at": "2026-11-20T06:47:03Z",
+  "expires_at": "2026-11-22T06:47:03Z",
   "branches": [
-    "t-053-quorum-brief"
+    "docs-head-keeper-rulings"
   ]
 }
