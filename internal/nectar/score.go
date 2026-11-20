@@ -77,11 +77,14 @@ func Score(ctx context.Context, in Input) (Report, error) {
 	if s.hist, err = g.log(ctx, "--first-parent", "--reverse", in.Main); err != nil {
 		return Report{}, err
 	}
-	var excluded, approvers []string
+	// The nectar: config block is cut from phase B (T-051 section 9, planned cut B):
+	// exclude_keepers is the rules table's empty default until t-051b2.
+	excluded := rulesV1.excludeKeepers
+	var approvers []string
 	if cfg, err := g.configAt(ctx, in.Main); err != nil {
 		return Report{}, err
 	} else if cfg != nil {
-		excluded, approvers = cfg.Nectar.ExcludeKeepers, cfg.Gate.Approvers
+		approvers = cfg.Gate.Approvers
 	}
 	for i := range s.hist {
 		s.onLine[s.hist[i].oid] = i

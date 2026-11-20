@@ -219,9 +219,11 @@ func TestAttribution(t *testing.T) {
 			t.Fatalf("T-004 %+v %+v", u4, rep.Counts)
 		}
 	})
-	t.Run("exclude_keepers drops a keeper and lists its weight", func(t *testing.T) {
+	t.Run("an excluded keeper is dropped and listed with its weight", func(t *testing.T) {
+		old := rulesV1.excludeKeepers
+		rulesV1.excludeKeepers = []string{"bot"}
+		defer func() { rulesV1.excludeKeepers = old }()
 		f := newFx(t)
-		f.commit("base", map[string]string{".waggle/control/config.yaml": "version: 1\nnectar:\n  exclude_keepers: bot\n"})
 		a := f.squash("T-001", nil)
 		b := f.squash("T-002", nil)
 		f.addReceipt(f.receipt("T-001", "bot", a), "")
@@ -233,19 +235,22 @@ func TestAttribution(t *testing.T) {
 		if len(rep.Counts.Excluded) != 1 || rep.Counts.Excluded[0] != (ExcludedKeep{"bot", w10}) {
 			t.Fatalf("%+v", rep.Counts.Excluded)
 		}
+		if rep.Summary.Keepers[0].Units != 1 {
+			t.Fatalf("%+v", rep.Summary.Keepers)
+		}
 	})
 	t.Run("the config is read from Main, not the worktree", func(t *testing.T) {
 		f := newFx(t)
-		a := f.commit("T-001: x", map[string]string{"s.txt": lines(10, "s"), ".waggle/control/config.yaml": "version: 1\n"})
-		f.addReceipt(f.receipt("T-001", "bot", a), "")
-		f.write(map[string]string{".waggle/control/config.yaml": "version: 1\nnectar:\n  exclude_keepers: bot\n"})
-		if keeper(f.score(late), "bot") == nil {
+		a := f.commit("T-001: x", map[string]string{"s.txt": lines(10, "s"), ".waggle/control/config.yaml": "version: 1\ngate:\n  approvers: maint\n"})
+		f.addReceipt(f.receipt("T-001", "alice", a, func(r *comb.Receipt) { r.ReleasedBy = "maint" }), "")
+		f.write(map[string]string{".waggle/control/config.yaml": "version: 1\n"})
+		if u := unitFor(t, f.score(late), "T-001"); !u.Maintainer {
 			t.Fatal("the worktree config was read")
 		}
 	})
 	t.Run("a bad config at Main is an error", func(t *testing.T) {
 		f := newFx(t)
-		f.commit("base", map[string]string{".waggle/control/config.yaml": "version: 1\nnectar:\n  nope: 1\n"})
+		f.commit("base", map[string]string{".waggle/control/config.yaml": "version: 1\ngate:\n  nope: 1\n"})
 		if _, err := Score(context.Background(), f.in(late)); err == nil {
 			t.Fatal("want an error")
 		}
