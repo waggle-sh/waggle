@@ -6,15 +6,15 @@
   "gate": "full",
   "directories": [
     "cmd/waggle",
-    "internal/comb",
-    "internal/config",
-    "internal/dispatch",
+    "docs/recipes",
+    "internal/forge",
     "internal/nectar"
   ],
-  "claimed_at": "2026-11-20T21:41:58Z",
-  "expires_at": "2026-11-22T21:41:58Z",
+  "claimed_at": "2026-11-20T23:47:26Z",
+  "expires_at": "2026-11-22T23:47:26Z",
   "branches": [
     "t-051b",
-    "t-051b-clean"
+    "t-051b-clean",
+    "t-051d"
   ]
 }
