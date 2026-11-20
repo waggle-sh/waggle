@@ -8,9 +8,9 @@
     "docs/multi-keeper.md",
     "docs/rfc-notes/relay.md"
   ],
-  "claimed_at": "2026-11-20T06:04:09Z",
-  "expires_at": "2026-11-22T06:04:09Z",
+  "claimed_at": "2026-11-20T06:47:06Z",
+  "expires_at": "2026-11-22T06:47:06Z",
   "branches": [
-    "t-055-multi-keeper"
+    "docs-head-keeper-rulings"
   ]
 }
