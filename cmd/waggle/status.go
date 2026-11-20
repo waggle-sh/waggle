@@ -70,44 +70,14 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return exit(3, "failed: %v", err)
 	}
-	cfgPath := filepath.Join(root, layout.Config)
-	if _, err := os.Stat(cfgPath); err != nil {
-		for _, legacy := range []string{layout.Root + "/config.yaml", layout.Root + "/roles"} {
-			if _, err := os.Stat(filepath.Join(root, legacy)); err == nil {
-				return exit(1, "refused: found %s: %v", legacy, scaffold.ErrLegacyLayout)
-			}
-		}
-		return exit(1, "refused: not a Waggle repo: %s not found; run waggle init", layout.Config)
+	d, fault := loadStatus(root, false)
+	if fault != nil {
+		return exit(fault.code, "%s", fault.msg)
 	}
-	cfg, err := config.Load(cfgPath)
-	if err != nil {
-		return exit(1, "refused: %v", err)
+	if len(d.BadUsage) > 0 {
+		fmt.Fprintf(stderr, "warning: %d unreadable ledger lines (first: line %d: %v)\n", len(d.BadUsage), d.BadUsage[0].Line, d.BadUsage[0].Err)
 	}
-	opts, err := cfg.CombOptions(root)
-	if err != nil {
-		return exit(1, "refused: %v", err)
-	}
-	opts.Now = statusClock
-	backend, err := comb.NewGitBackend(opts)
-	if err != nil {
-		return exit(1, "refused: %v", err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	leases, err := backend.ListActiveLeases(ctx)
-	var malformed *comb.MalformedClaimsError
-	if err != nil && !errors.As(err, &malformed) {
-		return exit(3, "failed: %v", err)
-	}
-
-	recs, bad, err := usage.Read(filepath.Join(root, layout.Usage))
-	if err != nil {
-		return exit(3, "failed: %v", err)
-	}
-	if len(bad) > 0 {
-		fmt.Fprintf(stderr, "warning: %d unreadable ledger lines (first: line %d: %v)\n", len(bad), bad[0].Line, bad[0].Err)
-	}
+	root, cfg, cfgPath, leases, malformed, recs := d.Root, d.Cfg, d.CfgPath, d.Leases, d.Malformed, d.Usage
 	h := header{
 		Name: filepath.Base(root), Pin: readPin(cfgPath),
 		Mode: cfg.Forge.CombMode, Remote: cfg.Forge.Remote,
@@ -121,6 +91,71 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 	block := usage.Render(usage.Summarize(recs), layout.Usage)
 	stdout.Write(renderStatus(h, leases, malformed, block, statusClock()))
 	return 0
+}
+
+// statusData is everything `waggle status` reads from one hive.
+type statusData struct {
+	Root, CfgPath string
+	Cfg           *config.Config
+	Leases        []comb.Lease
+	Malformed     *comb.MalformedClaimsError
+	Usage         []usage.Record
+	BadUsage      []usage.BadLine
+}
+
+// statusFault is a refusal or failure of loadStatus: the exit code and the
+// message that follows "waggle status ".
+type statusFault struct {
+	code int
+	msg  string
+}
+
+// loadStatus reads the claims and the usage ledger of the hive at root. With
+// noFetch it never syncs claim refs from the remote, so it writes nothing to
+// the repository at all; `waggle hives status` uses that. Plain status keeps
+// the sync, as it always did.
+func loadStatus(root string, noFetch bool) (*statusData, *statusFault) {
+	fault := func(code int, format string, a ...any) (*statusData, *statusFault) {
+		return nil, &statusFault{code, fmt.Sprintf(format, a...)}
+	}
+	cfgPath := filepath.Join(root, layout.Config)
+	if _, err := os.Stat(cfgPath); err != nil {
+		for _, legacy := range []string{layout.Root + "/config.yaml", layout.Root + "/roles"} {
+			if _, err := os.Stat(filepath.Join(root, legacy)); err == nil {
+				return fault(1, "refused: found %s: %v", legacy, scaffold.ErrLegacyLayout)
+			}
+		}
+		return fault(1, "refused: not a Waggle repo: %s not found; run waggle init", layout.Config)
+	}
+	cfg, err := config.Load(cfgPath)
+	if err != nil {
+		return fault(1, "refused: %v", err)
+	}
+	opts, err := cfg.CombOptions(root)
+	if err != nil {
+		return fault(1, "refused: %v", err)
+	}
+	if noFetch {
+		opts.Remote = ""
+	}
+	opts.Now = statusClock
+	backend, err := comb.NewGitBackend(opts)
+	if err != nil {
+		return fault(1, "refused: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	leases, err := backend.ListActiveLeases(ctx)
+	var malformed *comb.MalformedClaimsError
+	if err != nil && !errors.As(err, &malformed) {
+		return fault(3, "failed: %v", err)
+	}
+	recs, bad, err := usage.Read(filepath.Join(root, layout.Usage))
+	if err != nil {
+		return fault(3, "failed: %v", err)
+	}
+	return &statusData{Root: root, CfgPath: cfgPath, Cfg: cfg, Leases: leases, Malformed: malformed, Usage: recs, BadUsage: bad}, nil
 }
 
 // repoRoot resolves the work tree root of dir ("" means the current
