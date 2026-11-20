@@ -14,6 +14,7 @@ import (
 	"github.com/waggle-sh/waggle/internal/comb"
 	"github.com/waggle-sh/waggle/internal/config"
 	"github.com/waggle-sh/waggle/internal/decisions"
+	"github.com/waggle-sh/waggle/internal/forge"
 	"github.com/waggle-sh/waggle/internal/layout"
 )
 
@@ -46,7 +47,7 @@ type BackfillRequest struct {
 	Owner           string          // keeper_id credited for a task only DECISIONS.md names; "" leaves those unattributed
 	ReleasedBy      string          // default keeper_id from .waggle/local.yaml (needed with Apply only)
 	Backend         BackfillBackend // nil: built from config
-	Forge           PRLookup        // read once per task with a claim; nil: none (those receipts are incomplete)
+	Forge           PRLookup        // read once per task with a claim; nil: built from config
 }
 
 // BackfillItem is one task of the plan.
@@ -120,6 +121,10 @@ func Backfill(ctx context.Context, r BackfillRequest) (res BackfillResult, err e
 	}
 	g := &Git{Bin: r.GitBin, Dir: repo, Remote: cfg.Forge.Remote}
 	pg := g.pinned()
+	lookup := r.Forge
+	if lookup == nil {
+		lookup = forgeLookup{provider: cfg.Forge.Provider, opt: forge.Options{RepoDir: repo, Remote: cfg.Forge.Remote}}
+	}
 	main, err := ResolveBase(ctx, g, g.Remote, "")
 	if err != nil {
 		return res, err
@@ -157,7 +162,7 @@ func Backfill(ctx context.Context, r BackfillRequest) (res BackfillResult, err e
 		built := false
 		if cr, ok := pickClaim(records, task); ok {
 			since := firstClaimed(ctx, pg, cr.OID, cr.Lease.ClaimedAt)
-			facts := resolveMerge(ctx, pg, main, cr.Lease, since, r.Forge, "")
+			facts := resolveMerge(ctx, pg, main, cr.Lease, since, lookup, "")
 			if facts.ForgeWarning {
 				forgeFailed++
 			}
