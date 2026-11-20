@@ -61,7 +61,7 @@ var rules = []rule{
 	{[]string{".waggle/hive/**"}, notChecked, ""},
 	{[]string{"internal/scaffold/templates/**"}, checked, "MIT-0"},
 	{[]string{"cmd/**", "internal/**"}, checked, "Apache-2.0"},
-	{[]string{"docs/**", "README.md", "CONTRIBUTING.md", "SECURITY.md"}, checked, "Apache-2.0"},
+	{[]string{"docs/**", "README.md", "CONTRIBUTING.md", "SECURITY.md", "install.sh"}, checked, "Apache-2.0"},
 	{[]string{"CODE_OF_CONDUCT.md"}, checked, "CC-BY-4.0"},
 	{[]string{".github/workflows/waggle-gate.yml"}, checked, "MIT-0"},
 	{[]string{".github/**"}, checked, "Apache-2.0"},
