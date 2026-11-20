@@ -9,10 +9,10 @@
     "internal/comb",
     "internal/dispatch"
   ],
-  "claimed_at": "2026-11-20T14:15:44Z",
-  "expires_at": "2026-11-22T14:15:44Z",
+  "claimed_at": "2026-11-20T14:38:24Z",
+  "expires_at": "2026-11-22T14:38:24Z",
   "branches": [
-    "hive-tasks-t051-t065",
-    "t-051a"
+    "t-051a",
+    "t-051a2"
   ]
 }
