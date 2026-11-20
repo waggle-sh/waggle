@@ -79,6 +79,7 @@ type releaseOKJSON struct {
 	OID      string   `json:"oid"`
 	Merged   bool     `json:"merged"`
 	Branch   string   `json:"branch"`
+	Receipt  string   `json:"receipt"`
 	Warnings []string `json:"warnings"`
 }
 
@@ -242,9 +243,11 @@ func runTaskRelease(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("release", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
-		fmt.Fprintln(stderr, "Usage: waggle release <task> [--branch <name>] [--unmerged] [--owner <id>] [--repo <dir>] [--json]")
+		fmt.Fprintln(stderr, "Usage: waggle release <task> [--branch <name>] [--unmerged] [--co <id>]... [--owner <id>] [--repo <dir>] [--json]")
 		fs.PrintDefaults()
 	}
+	var co repeatFlag
+	fs.Var(&co, "co", "another keeper who shares the credit with you in the release record; repeatable, up to 4")
 	branch, repo := fs.String("branch", "", "branch, t-<nnn> or waggle/T-<nnn> with an optional suffix"), fs.String("repo", ".", "repository")
 	unmerged, owner := fs.Bool("unmerged", false, "release without the merged check (a task that makes no PR)"), fs.String("owner", "", "claim owner, usually your GitHub login; required without .waggle/local.yaml, else defaults to its keeper_id")
 	asJSON := fs.Bool("json", false, "print one JSON object")
@@ -259,13 +262,13 @@ func runTaskRelease(args []string, stdout, stderr io.Writer) int {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), stopSignals...)
 	defer stop()
-	res, err := dispatch.ReleaseTask(ctx, dispatch.ReleaseRequest{RepoDir: *repo, Ticket: task, Branch: *branch, Unmerged: *unmerged, Owner: *owner})
+	res, err := dispatch.ReleaseTask(ctx, dispatch.ReleaseRequest{RepoDir: *repo, Ticket: task, Branch: *branch, Unmerged: *unmerged, Owner: *owner, CoKeepers: co})
 	o.warn(res.Warnings)
 	if err != nil {
 		return o.fail(res.Task, err)
 	}
 	if *asJSON {
-		o.json(releaseOKJSON{jsonVersion, "release", true, res.Task, res.Outcome, res.OID, res.Merged, res.Branch, nonNil(res.Warnings)})
+		o.json(releaseOKJSON{jsonVersion, "release", true, res.Task, res.Outcome, res.OID, res.Merged, res.Branch, res.Receipt, nonNil(res.Warnings)})
 		return 0
 	}
 	fmt.Fprintln(stdout, clean(dispatch.ReleaseLine(res)))
