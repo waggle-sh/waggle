@@ -3,6 +3,14 @@
 
 This file is for people building Waggle itself. If you use Waggle in your own repo, the [README](README.md) and the [gate spec](docs/gate.md) are what you need; nothing here applies to your repo.
 
+## Contributing
+
+- **Build and test:** `go build ./... && go test -race ./...`; also `go vet ./...` and `gofmt -l .` (empty output means clean).
+- **Sign off every commit** with `git commit -s`. The DCO check fails a PR whose commits lack `Signed-off-by` (section 6).
+- New files start with an SPDX header; no em dashes or en dashes.
+- **Where work comes from.** Work items normally come from keepers' queens, who open issues and write claims for them. Humans can also open issues: use the bug or feature template, and report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). A maintainer may need to write a claim naming your branch before the repo's gate passes on your PR.
+- Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## 1. Two layers in this repo
 
 - **Product:** Waggle itself. `cmd/`, `internal/` (including `internal/scaffold/templates/`, which is what every other hive receives), `go.mod`, `LICENSE`, `README.md`, `docs/` (the gate spec `docs/gate.md`, the recipes in `docs/recipes/`, the design history `docs/RFC-0003.md`), and the product CI workflow. This is what ships.
@@ -46,7 +54,7 @@ No em dashes or en dashes in code, docs, or commits.
 - **scout.** Planning role: breaks goals into task briefs under 400 lines, sets each task's lease and gate, and owns the roadmap, specs, and this section, but never writes feature code.
 - **forager.** Triage role: reproduces bugs, writes failing tests, maps the lease a ticket needs, and estimates size; it never writes implementation code.
 - **builder.** Implementation role: reads only its brief and leased files, runs tests and a self-review, then reports done, and never touches paths outside its lease.
-- **guard.** Review role: checks every acceptance criterion, saves evidence, and returns a verdict (`pass` or `must-fix`), a Risk Tier, and an Intent Packet. Runs on a different model at or above the builder's capability level and never fixes what it finds.
+- **guard.** The review bee, run with `waggle dispatch --role guard`. It is never the merge check, which is called the gate. Review role: checks every acceptance criterion, saves evidence, and returns a verdict (`pass` or `must-fix`), a Risk Tier, and an Intent Packet. Runs on a different model at or above the builder's capability level and never fixes what it finds.
 
 ### Terms
 
@@ -55,7 +63,7 @@ No em dashes or en dashes in code, docs, or commits.
 - **Swarm.** All the agents working in one hive at a time. An informal word, not a setting.
 - **Claim.** A hold on one ticket, stored as the ref `refs/waggle/claims/ticket-<n>`. It records the owner, expiry, gate level, leased directories and the PR branches it accepts (a list, up to 4). Renewals and takeovers add commits to the claim; releasing it deletes the ref.
 - **Lease.** The directories a claim may change, checked when claimed and again, authoritatively, at merge. A lease can never include `.waggle/` or any Tier 3 path.
-- **Gate.** The review a task passes before it merges. A **Light gate** covers small, isolated Tier 0 or 1 work; a **Full gate** is its own guard review, required for Tier 2 and above and for anything over about 150 lines or touching schemas, auth, shared modules, dependencies, or steering files.
+- **Gate.** The required merge check `verify-leases-and-tiers`, which verifies leases and risk tiers on every PR. It is always called the gate, never the guard (the guard is the review bee, see Roles). Also the review a task passes before it merges. A **Light gate** covers small, isolated Tier 0 or 1 work; a **Full gate** is its own guard review, required for Tier 2 and above and for anything over about 150 lines or touching schemas, auth, shared modules, dependencies, or steering files.
 - **Risk Tier.** How much review a change needs, set by what it touches: Tier 0 comments and typos, Tier 1 small isolated changes with tests, Tier 2 normal logic and every steering file, Tier 3 control plane, CI, sandbox, and dependencies (Full gate plus Head Keeper approval). Hardcoded floors can be raised by config, never lowered.
 - **Intent Packet.** The guard's short account of what changed, why, and the blast radius. Its trailers for ticket, risk tier and verdict are read from the PR description, not the merge commit (`cmd/waggle/gate_trailers.go:27`).
 - **Decision card.** A structured question the queen puts to a Keeper: at most four options, recommendation first, cost and reversibility stated. Approved answers go into the hive's `DECISIONS.md`.
