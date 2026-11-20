@@ -43,9 +43,19 @@ fetch() {
 	if have curl; then
 		curl -fsSL --proto "$PROTO" -o "$2" "$1"
 	elif have wget; then
+		# Same scheme rule as curl's --proto: https only, and http and file
+		# only under a WAGGLE_BASE_URL override.
 		case "$1" in
-		file://*) cp "${1#file://}" "$2" ;;
-		*) wget -q -O "$2" "$1" ;;
+		https://*) wget -q -O "$2" "$1" ;;
+		file://*)
+			[ -n "${WAGGLE_BASE_URL:-}" ] || die "refusing non-https URL: $1"
+			cp "${1#file://}" "$2"
+			;;
+		http://*)
+			[ -n "${WAGGLE_BASE_URL:-}" ] || die "refusing non-https URL: $1"
+			wget -q -O "$2" "$1"
+			;;
+		*) die "refusing URL with unsupported scheme: $1" ;;
 		esac
 	else
 		die "need curl or wget"
@@ -114,7 +124,13 @@ main() {
 	trap 'exit 130' INT TERM
 
 	say "fetching $base/SHA256SUMS"
-	fetch "$base/SHA256SUMS" "$tmp/SHA256SUMS" || die "could not download $base/SHA256SUMS"
+	if ! fetch "$base/SHA256SUMS" "$tmp/SHA256SUMS"; then
+		if [ -z "${WAGGLE_BASE_URL:-}" ] && [ -z "$version" ]; then
+			say "a 404 from releases/latest/download usually means no release is published yet"
+			say "set WAGGLE_VERSION (e.g. WAGGLE_VERSION=0.1.0) to pick one, or see https://github.com/$REPO/releases"
+		fi
+		die "could not download $base/SHA256SUMS"
+	fi
 
 	# A SHA256SUMS line is "<hex>  <file>". Pick this platform's archive,
 	# pinned to WAGGLE_VERSION when it is set.
