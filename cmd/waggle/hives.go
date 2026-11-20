@@ -181,6 +181,9 @@ var (
 	taskFileRe   = regexp.MustCompile(`^(T-\d+)\.md$`)
 	ticketTextRe = regexp.MustCompile(`T-\d+`)
 	doneWords    = []string{"done", "merged", "cancel", "superseded", "dropped", "closed", "rejected", "obsolete"}
+	// droppedWords are the doneWords that mean the work will not happen. They
+	// count as done for the view, but a plan reports them as their own state.
+	droppedWords = []string{"cancel", "superseded", "dropped", "rejected", "obsolete"}
 )
 
 // readTasks reads the briefs under dir. A missing directory is no tasks; a
@@ -232,6 +235,11 @@ func ParseTask(name string, data []byte) (Task, bool) {
 			for _, w := range doneWords {
 				if strings.HasPrefix(status, w) {
 					t.Done = true
+				}
+			}
+			for _, w := range droppedWords {
+				if strings.HasPrefix(status, w) {
+					t.Dropped = true
 				}
 			}
 		case strings.HasPrefix(line, "- **Depends on:**"):

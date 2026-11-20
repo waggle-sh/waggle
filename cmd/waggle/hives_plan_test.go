@@ -228,7 +228,7 @@ func TestPlanUnreachableHiveIsStaleNotGuessed(t *testing.T) {
 	if c.Steps[1].State != stateClaimed || len(c.Steps[1].Unverified) != 1 || len(c.Violations) != 0 {
 		t.Errorf("s2 must be unverified, not a violation: %+v / %+v", c.Steps[1], c.Violations)
 	}
-	if text := e.mustRun(t, "check", "feat"); !strings.Contains(text, "stale since") {
+	if text := e.mustRun(t, "check", "feat"); !strings.Contains(text, "stale (unreachable at 2026-10-17T12:00:00Z)") {
 		t.Errorf("text lacks stale marker:\n%s", text)
 	}
 }
@@ -285,6 +285,9 @@ func TestPlansDirResolution(t *testing.T) {
 	fixClock(t)
 	e := newPlanEnv(t)
 	env := t.TempDir()
+	if err := os.Chmod(env, 0o700); err != nil {
+		t.Fatal(err)
+	}
 	get := func(k string) string {
 		if k == plansEnv {
 			return env
@@ -396,6 +399,23 @@ func TestPlanCommandsChangeNothingInAnyHive(t *testing.T) {
 	e := newPlanEnv(t)
 	before := e.snapshots(t)
 	out := filepath.Join(t.TempDir(), "brief.md")
+	// A plans directory inside a hive is refused by every subcommand, reads
+	// included, and leaves the hive untouched.
+	for _, hive := range []string{e.lib, e.cli, e.site} {
+		inside := filepath.Join(hive, ".waggle", "plans")
+		for _, c := range [][]string{{"new", "x"}, {"add", "x", "--hive", "lib", "--task", "T-020"}, {"show", "x"}, {"list"}, {"check", "x"}, {"brief", "x", "s1"}, {"rm", "x"}} {
+			full := append([]string{"plan"}, c...)
+			full = append(full, "--registry", e.registry, "--plans-dir", inside)
+			if code, _, _ := runHivesT(t, full...); code != 1 {
+				t.Errorf("%v with plans dir in %s: exit %d, want 1", c, hive, code)
+			}
+		}
+	}
+	for i, s := range e.snapshots(t) {
+		if s != before[i] {
+			t.Fatalf("a plans dir inside a hive changed hive %d", i)
+		}
+	}
 	cmds := [][]string{
 		{"new", "feat"},
 		{"add", "feat", "--hive", "lib", "--task", "T-020"},

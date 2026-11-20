@@ -65,7 +65,7 @@ A plan is an ordered list of per-hive tasks with the dependencies between them, 
 
 ### Where plans live
 
-One JSON file per plan, `<plans dir>/<plan-name>.json`, mode 0600, written atomically. The plans directory is, in order: `--plans-dir <dir>`, the `WAGGLE_HIVES_PLANS` environment variable, else `plans/` next to the registry (on Linux, `~/.config/waggle/plans/`). It must be an absolute path. The registry is resolved as in the view (`--registry`, `WAGGLE_HIVES_REGISTRY`).
+One JSON file per plan, `<plans dir>/<plan-name>.json`, mode 0600, written atomically. The plans directory is, in order: `--plans-dir <dir>`, the `WAGGLE_HIVES_PLANS` environment variable, else `plans/` next to the registry (on Linux, `~/.config/waggle/plans/`). It must be an absolute path. Every `plan` command, reads included, refuses a plans directory that is inside any registered hive or any git work tree (symlinks are resolved on the nearest existing parent, so a path that does not exist yet cannot hide one), so a repository cannot ship a plan the hub then loads. This covers `--plans-dir`, `WAGGLE_HIVES_PLANS`, and the default `plans/` next to a `--registry` that sits inside a repo. It also refuses a plans directory that is a symlink, and an existing one that group or others can access (use mode 0700; the command creates it that way). The registry is resolved as in the view (`--registry`, `WAGGLE_HIVES_REGISTRY`).
 
 ```json
 {
@@ -96,11 +96,12 @@ waggle hives plan rm    <plan> [--step <id>]
 
 Every command also takes `--registry` and `--plans-dir`.
 
-- `check` rebuilds each step from its hive's current state, read as `hives status` reads it: `done`, `claimed`, `open`, `blocked` (by the hive's own tasks or by an unfinished plan step), `draft` (no task yet), `missing` (the hive has no such task) or `refused`. It flags an **ordering violation** when a step is claimed or done while a step it depends on is known not to be done. A hive that cannot be read makes its steps `stale`; nothing is guessed, and a dependency on a stale step is listed as unverified, not as a violation. Plans keep no history, so a stale step is reported as stale as of this check, not since a recorded time.
+- `check` rebuilds each step from its hive's current state, read as `hives status` reads it: `done`, `claimed`, `open`, `blocked` (by the hive's own tasks or by an unfinished plan step), `draft` (no task yet), `missing` (the hive has no such task), `dropped` (the hive marks the task cancelled, rejected, superseded, dropped or obsolete) or `refused`. It flags an **ordering violation** when a step is claimed or done while a step it depends on is known not to be done. A hive that cannot be read makes its steps `stale`; nothing is guessed, and a dependency on a stale, `missing` or `refused` step is listed as unverified, not as a violation. Plans keep no history, so text output says `stale (unreachable at <check time>)`: the hive could not be read at that check, and no earlier time is claimed. A dependency on a `dropped` step is not done and is never treated as done: the step lists it under `dropped_deps` (text: `depends on s1, which the hive dropped`), it is neither waited on nor a violation, and you decide whether the dependency still makes sense. (`hives status` still counts such tasks as done, as in phase 1.) In `--json`, `title` is always your own words from the plan; the hive's flattened title for an open or blocked task, when you gave none, is in the separate `hive_title` field.
 - `brief` drafts a per-hive brief on stdout, or in `--out`. `--out` must be an absolute path, outside every registered hive and outside any git work tree, in a directory that exists, and must not already exist. You edit the draft and land it in that hive through its normal path (a branch, a pull request, its gate). The draft is built from the plan and validated fields only; hive text is never copied into it.
-- `rm` removes a whole plan, or one step with `--step` (refused while another step depends on it).
+- `add --depends-on` takes comma-separated step ids; spaces around each id are ignored (`s1, s2`).
+- `rm` removes a whole plan, or one step with `--step` (refused while another step depends on it). Removing a whole plan works even when its file is corrupt; `--step` needs a valid plan.
 
-Exit codes match the view: 0 done (a check with violations still exits 0, and the violations are in the report), 1 refused (registry or plan missing or invalid, a `view` or unknown hive, a bad `--out`), 2 usage.
+Exit codes match the view: 0 done (a check with violations still exits 0, and the violations are in the report), 1 refused (registry or plan missing or invalid, a `view` or unknown hive, a bad `--out`, a plans directory inside a hive or git work tree), 2 usage.
 
 Hive text is data here too: titles shown by `check` are flattened to one line and cut to 100 characters, and nothing in a hive is treated as an instruction.
 
@@ -115,7 +116,7 @@ $ waggle hives plan add feat --hive cli --title "use the new API" --depends-on s
 $ waggle hives plan check feat
 Plan feat, checked at 2026-11-20T09:00:00Z. Read only: nothing is written to any hive; ordering is reported, not enforced.
   s1  lib  T-020  library change  [open]
-  s2  cli  (no task yet)  use the new API  [draft]
+  s2  cli  (no task yet)  use the new API  [draft]  (waiting on s1)
 Ordering violations (0):
 $ waggle hives plan brief feat s2 --out ~/briefs/cli-new-api.md
 ```
