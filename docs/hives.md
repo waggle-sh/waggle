@@ -45,8 +45,10 @@ waggle hives status [--registry <file>] [--json]
 For each hive, in registry order:
 
 - **claimed:** the active claims, as `waggle status` lists them. The view reads them with the same code, so the two agree.
-- **open:** tasks in the hive's task briefs that are not done, not claimed and not waiting on another task.
-- **blocked:** tasks that depend on another task of the same hive that is not done.
+- **open:** tasks in the hive's task briefs that are not finished, not claimed and not waiting on another task.
+- **blocked:** tasks that depend on another task of the same hive that is not finished.
+
+Here "finished" means the brief's Status line starts with a closing word: `done`, `merged` or `closed`, or a word for work that will not happen (`cancel`, `superseded`, `dropped`, `rejected`, `obsolete`). `hives status` does not tell the two apart, so a dropped task is not open and does not block its dependents. A plan does tell them apart and reports a dropped task as `dropped`, not `done`.
 - **waiting on the Keeper:** decisions whose Keeper choice is still "Not decided" or "Pending".
 
 Then one list of all those cards, each tagged with its hive. A hive that cannot be read (path missing, not a hive, no checkout) is named as unreachable; the view does not guess its state.
