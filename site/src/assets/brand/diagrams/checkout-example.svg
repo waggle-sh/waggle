@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <svg xmlns="http://www.w3.org/2000/svg" class="wg" viewBox="0 0 1120 490" width="1120" height="490" role="img" aria-labelledby="wg-ex-t wg-ex-d">
 <title id="wg-ex-t">Example: a forager's PR through the Waggle Gate</title>
-<desc id="wg-ex-d">Example. The ticket Add Apple Pay to checkout has a lease written by the queen before work starts: src/checkout/ and src/payments/. The forager opens a PR with four commits. The guard, Waggle Gate, checks each commit against the lease. 3f9a1c changes src/checkout/ApplePayButton.tsx, 8b27e4 changes src/payments/applePay.ts and 5ce6a9 changes src/checkout/checkout.test.ts; all three are inside the lease and pass. d41f07 changes infra/prod/database.tf, outside the lease, so it is must-fix and the PR is blocked. The PR merges only when every commit passes.</desc>
+<desc id="wg-ex-d">Example. The ticket Add Apple Pay to checkout has a lease written by the queen before work starts: src/checkout/ and src/payments/. The forager opens a PR with four commits. The gate, Waggle Gate, checks each commit against the lease. 3f9a1c changes src/checkout/ApplePayButton.tsx, 8b27e4 changes src/payments/applePay.ts and 5ce6a9 changes src/checkout/checkout.test.ts; all three are inside the lease and pass. d41f07 changes infra/prod/database.tf, outside the lease, so it is must-fix and the PR is blocked. The PR merges only when every commit passes.</desc>
 <style>.wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
 @media (prefers-color-scheme:dark){.wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}}
 [data-theme="light"] .wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
@@ -30,7 +30,7 @@
 <text x="304" y="72" class="b f-ink">PR #1042, 4 commits</text>
 <text x="304" y="90" class="sm f-muted">From the coding agent, or a person with a branch.</text>
 <line x1="308" y1="140" x2="308" y2="332" class="s-ink" stroke-width="1.5"/>
-<text x="689" y="36" class="sm b f-muted">3. The guard (Waggle Gate) checks every commit</text>
+<text x="689" y="36" class="sm b f-muted">3. The gate (Waggle Gate) checks every commit</text>
 <path d="M264 116L669 116L669 124" fill="none" class="s-muted" stroke-width="1.5"/>
 <text x="304" y="110" class="sm f-muted">reads the lease from the claim, kept in a git ref</text>
 <line x1="669" y1="124" x2="669" y2="360" class="s-ink" stroke-width="3" stroke-linecap="square"/>
