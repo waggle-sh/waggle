@@ -117,4 +117,4 @@ The maintainer writes the claim: `waggle claim T-123 --dirs internal/pricing --b
 
 **Hive recommendation:** Option 1.
 
-**Keeper choice:** Not decided.
+**Keeper choice:** Fork contributor claims: maintainer claims on contributor's behalf now; v0.2 builds /waggle claim comment relay with maintainer approval on by default. Head Keeper decision, Paul Cleary, 2026-11-19.
