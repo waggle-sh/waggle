@@ -1,0 +1,127 @@
+{
+  "version": "1.0.0-walt",
+  "mascot": {
+    "name": "Walt",
+    "full": "Walt, the Waggle bee"
+  },
+  "provenance": "Normalized from selected original bee artwork and exact [W] SVG colors. Not official historic tokens.",
+  "color": {
+    "ink": {
+      "hex": "#181B1E",
+      "rgb": [
+        24,
+        27,
+        30
+      ],
+      "role": "Primary text, mark stroke (light), stripes"
+    },
+    "offwhite": {
+      "hex": "#ECEFF1",
+      "rgb": [
+        236,
+        239,
+        241
+      ],
+      "role": "Mark stroke on dark; soft light ink"
+    },
+    "paper": {
+      "hex": "#F5F5F4",
+      "rgb": [
+        245,
+        245,
+        244
+      ],
+      "role": "Page / light surface"
+    },
+    "blue": {
+      "hex": "#506AFD",
+      "rgb": [
+        80,
+        106,
+        253
+      ],
+      "role": "Primary panels and accents (sampled)"
+    },
+    "apricot": {
+      "hex": "#FFA161",
+      "rgb": [
+        255,
+        161,
+        97
+      ],
+      "role": "Walt body / warm CTA (sampled)"
+    },
+    "deep": {
+      "hex": "#0F1724",
+      "rgb": [
+        15,
+        23,
+        36
+      ],
+      "role": "Dark surface / README chrome"
+    },
+    "slate": {
+      "hex": "#5A6270",
+      "rgb": [
+        90,
+        98,
+        112
+      ],
+      "role": "Secondary text"
+    },
+    "wing": {
+      "hex": "#F7F5F0",
+      "rgb": [
+        247,
+        245,
+        240
+      ],
+      "role": "Wing fill"
+    },
+    "pass": {
+      "hex": "#1F9D6C",
+      "rgb": [
+        31,
+        157,
+        108
+      ],
+      "role": "Guard pass / success"
+    },
+    "mustfix": {
+      "hex": "#C4553B",
+      "rgb": [
+        196,
+        85,
+        59
+      ],
+      "role": "Must-fix / danger"
+    }
+  },
+  "typography": {
+    "sans": {
+      "family": "Inter",
+      "license": "SIL OFL 1.1",
+      "source": "https://github.com/rsms/inter",
+      "bundled": "assets/fonts/Inter-Variable.ttf"
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "license": "SIL OFL 1.1",
+      "source": "https://github.com/JetBrains/JetBrainsMono",
+      "bundled": "assets/fonts/JetBrainsMono-Variable.ttf"
+    }
+  },
+  "logo": {
+    "mark": "[W] mark",
+    "geometry": "Exact 16-grid favicon SVG preserved",
+    "meaning": "Brackets = claimed work boundary; W = waggle run (D-290)"
+  },
+  "contrast": {
+    "ink_on_paper": "15.85:1 AAA",
+    "offwhite_on_ink": "14.97:1 AAA",
+    "ink_on_apricot": "8.67:1 AAA",
+    "apricot_on_paper": "1.83:1 FAIL \u2014 do not use for text",
+    "paper_on_blue": "3.99:1 AA-large only",
+    "blue_on_paper": "3.99:1 AA-large only \u2014 prefer ink for body text"
+  }
+}
