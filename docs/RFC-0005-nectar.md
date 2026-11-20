@@ -328,4 +328,4 @@ The Head Keeper is asked to rule on the design of Nectar.
 
 **Hive recommendation:** Option 1, with the receipt ref (T-051a) built first so owners are recorded from the public gate onward. The open questions are tuned on this repo's history before v0.2 ships.
 
-**Keeper choice:** Not decided.
+**Keeper choice:** Accepted pending fix; starting values to be tuned on this repo's history before v0.2. Head Keeper decision, Paul Cleary, 2026-11-19.
