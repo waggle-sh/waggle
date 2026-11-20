@@ -1,0 +1,48 @@
+---
+// SPDX-License-Identifier: Apache-2.0
+
+import '../assets/brand/tokens.css';
+import '../styles/site.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page not found | Waggle</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/brand/logo/w-mark-favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/brand/logo/w-mark-favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body class="lp">
+    <div class="lp-wrap">
+      <nav class="lp-nav" aria-label="Main">
+        <a class="mark" href="/">
+          <img class="mark-img light-only" src="/brand/logo/w-mark-light.svg" alt="" width="24" height="24" />
+          <img class="mark-img dark-only" src="/brand/logo/w-mark-dark.svg" alt="" width="24" height="24" />
+          Waggle
+        </a>
+        <a href="/docs/">Docs</a>
+      </nav>
+      <main class="lp-hero">
+        <img
+          class="walt"
+          src="/brand/mascot/walt-vector-normalized.svg"
+          width="200"
+          height="160"
+          alt="Walt the bee, looking for the page."
+        />
+        <div class="lp-hero-copy">
+          <h1>That page is not here.</h1>
+          <p class="lede">Walt looked and could not find it. The link may be old, or the address may have a typo.</p>
+          <div class="lp-actions">
+            <a class="lp-btn primary" href="/docs/">Go to the docs</a>
+            <a class="lp-btn" href="/">Back to the start</a>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

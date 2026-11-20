@@ -55,7 +55,7 @@ Required. Must be `1`.
 | `protected_paths` | comma separated repo-relative paths, up to 64 | Paths whose change fails the check unless a listed approver's approval and a re-run pass it, or an admin bypasses. No wildcards, no absolute paths, no `..`. Raise-only: it adds to the hardcoded control paths and never removes one. |
 | `approvers` | comma separated GitHub logins without `@`, up to 32 | Who may approve a change to a protected path. The first entry is the Head Keeper, the only approver who can pass a change under `.waggle/hive/`. Compared with ASCII case folding. |
 
-The gate spec has the full rules: [protected paths](/gate/#5-risk-tiers-and-protected-paths) and [approvers](/gate/#6-approvers).
+The gate spec has the full rules: [protected paths](/docs/gate/#5-risk-tiers-and-protected-paths) and [approvers](/docs/gate/#6-approvers).
 
 ## Full install keys
 

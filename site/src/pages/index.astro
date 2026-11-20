@@ -3,12 +3,12 @@
 
 import '../assets/brand/tokens.css';
 import '../styles/site.css';
-import heroWide from '../assets/brand/diagrams/gate-hero.svg?raw';
-import heroNarrow from '../assets/brand/diagrams/gate-hero-narrow.svg?raw';
+import heroWide from '../assets/brand/diagrams/checkout-example.svg?raw';
+import heroNarrow from '../assets/brand/diagrams/checkout-example-narrow.svg?raw';
 
-const title = 'Waggle Gate: task claims and a merge gate for AI coding agents';
+const title = 'Waggle: when contributors run agents, the agents collide';
 const description =
-  'Waggle Gate is a GitHub merge check. It fails a pull request whose commits change paths outside the claim of the task each commit names.';
+  'Several people, each running an AI coding agent, means overlapping edits, duplicated work, and conflicting pull requests. Waggle is a hive for them: each keeper and their queen get a claim for every task, and a guard on GitHub blocks any merge outside it.';
 const site = import.meta.env.SITE;
 const canonical = site ? new URL('/', site).href : undefined;
 ---
@@ -22,66 +22,174 @@ const canonical = site ? new URL('/', site).href : undefined;
     <meta name="description" content={description} />
     {canonical && <link rel="canonical" href={canonical} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/brand/logo/w-mark-favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/brand/logo/w-mark-favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
   <body class="lp">
     <div class="lp-wrap">
       <nav class="lp-nav" aria-label="Main">
-        <a class="mark" href="/">Waggle</a>
-        <a href="/quick-start/">Quick start</a>
-        <a href="/gate/">Gate</a>
-        <a href="/claims-and-leases/">Claims</a>
-        <a href="/config/">Config</a>
-        <a href="/cli/">CLI</a>
-        <a href="/recipes/">Recipes</a>
+        <a class="mark" href="/">
+          <img class="mark-img light-only" src="/brand/logo/w-mark-light.svg" alt="" width="24" height="24" />
+          <img class="mark-img dark-only" src="/brand/logo/w-mark-dark.svg" alt="" width="24" height="24" />
+          Waggle
+        </a>
+        <a href="/docs/">Docs</a>
+        <a href="/docs/quick-start/">Quick start</a>
+        <a href="/docs/gate/">Gate</a>
+        <a href="/docs/claims-and-leases/">Claims</a>
+        <a href="/docs/config/">Config</a>
+        <a href="/docs/cli/">CLI</a>
+        <a href="/docs/recipes/">Recipes</a>
       </nav>
 
       <header class="lp-hero">
-        <h1>Agents work inside the lines you draw.</h1>
+        <img
+          class="walt"
+          src="/brand/mascot/walt-vector-normalized.svg"
+          width="200"
+          height="160"
+          alt="Walt, the Waggle mascot: a round apricot bee with two dark stripes, soft wings and a small smile."
+        />
+        <div class="lp-hero-copy">
+        <h1>When contributors run agents, the agents collide.</h1>
         <p class="lede">
-          Waggle Gate is a GitHub merge check for repos where AI agents write code. Give each task a claim: the directories
-          it may change and the branches its PR may come from. The gate fails a PR whose commits step outside it.
+          Overlapping edits, the same work done twice, pull requests that conflict, and nobody who can say who is on what.
+          Waggle is a hive for many people and their agent teams on one repository. Each keeper (a human in charge) talks with a
+          queen (an agent that plans the work). She writes each task a lane, called a claim, and the guard fails a merge that leaves it.
         </p>
+        <p class="lp-note">The guard works today. The rest of the hive is on the roadmap, and each part says which it is.</p>
         <div class="lp-actions">
-          <a class="lp-btn primary" href="/quick-start/">Quick start</a>
-          <a class="lp-btn" href="/gate/">Read the gate spec</a>
+          <a class="lp-btn primary" href="/docs/">Read the docs</a>
+          <a class="lp-btn" href="/docs/quick-start/">Quick start</a>
+          <a class="lp-btn" href="/docs/hive/">Meet the hive</a>
+        </div>
         </div>
       </header>
 
+      <section aria-labelledby="how">
+        <h2 id="how">How it works, with an example</h2>
+        <p>
+          A forager (the coding agent doing the work) opens a pull request. The guard, our merge check, reads the lease (the
+          directories the task may change) and tests every commit against it. One commit outside the lease blocks the merge.
+        </p>
+      </section>
       <figure class="lp-diagram" style="margin-inline: 0">
         <div class="wide" set:html={heroWide} />
         <div class="narrow" set:html={heroNarrow} />
       </figure>
 
-      <section class="lp-grid" aria-label="How it works">
-        <div>
-          <h3>A claim before the work</h3>
-          <p>
-            A person or the orchestrator writes a claim, a git ref, with the task's directories and PR branches. Not the
-            agent. <a href="/claims-and-leases/">Claims and leases</a>
-          </p>
+      <section aria-labelledby="hive">
+        <h2 id="hive">Meet the hive</h2>
+        <p>
+          Waggle talks in bees on purpose. Every role is a plain job underneath, so here is each one in a line. Most of the work
+          comes from the agent team: keepers talk with their queens, and the queens open the GitHub issues and write the claims.
+          A person can also write an issue.
+        </p>
+        <div class="lp-roles-grid">
+          <article class="lp-role">
+            <h3>Keeper</h3>
+            <p>A human in charge. You own a plan and the agents that carry it out, and you stay the one who decides.</p>
+          </article>
+          <article class="lp-role">
+            <h3>Queen</h3>
+            <p>An agent you talk with. She plans the work, opens the issue and writes the claim. She does not write feature code.</p>
+          </article>
+          <article class="lp-role">
+            <h3>Forager</h3>
+            <p>The coding agent doing the work. It goes out, changes the files and brings a pull request back. It never writes its own claim.</p>
+          </article>
+          <article class="lp-role">
+            <h3>Guard</h3>
+            <p>The gate that checks the lease. It reads every commit and says pass or must-fix. <span class="lp-tag live">Built</span></p>
+          </article>
+          <article class="lp-role">
+            <h3>Builder</h3>
+            <p>A worker that implements a task inside its claim. <code>waggle dispatch</code> runs one today. <span class="lp-tag live">Built</span></p>
+          </article>
+          <article class="lp-role">
+            <h3>Scout</h3>
+            <p>A planner that searches ahead and writes the task brief. The instructions ship, but Waggle does not run scouts for you yet. <span class="lp-tag soon">Coming soon</span></p>
+          </article>
         </div>
-        <div>
-          <h3>Every commit, not the final diff</h3>
-          <p>
-            Each commit names its task, and each is checked against that task's lease, so a stray path fails even if a
-            later commit reverts it. <a href="/gate/#4-the-per-commit-lease-check">The lease check</a>
-          </p>
+        <p>
+          <a href="/docs/hive/">The whole hive, built and coming</a> &middot; <a href="/docs/glossary/">Glossary of every bee word</a>
+        </p>
+      </section>
+
+      <section aria-labelledby="pains">
+        <h2 id="pains">What goes wrong without a hive</h2>
+        <div class="lp-grid">
+          <div>
+            <h3>Overlapping edits</h3>
+            <p>Two foragers change the same files. One overwrites the other, or the pull requests will not merge.</p>
+          </div>
+          <div>
+            <h3>The same work, twice</h3>
+            <p>Nothing records that a task is already taken, so a second agent starts it and the effort is wasted.</p>
+          </div>
+          <div>
+            <h3>Nobody can see who is on what</h3>
+            <p>Branches pile up. A keeper has to reconstruct the plan from the diff.</p>
+          </div>
         </div>
-        <div>
-          <h3>Protected paths need a person</h3>
-          <p>
-            Control paths such as <code>.github/workflows/</code> fail whatever the claim says. Paths you list pass only
-            with a listed approver's approval. <a href="/gate/#5-risk-tiers-and-protected-paths">Protected paths</a>
-          </p>
+      </section>
+
+      <section aria-labelledby="fix">
+        <h2 id="fix">The first piece you can use today: the gate</h2>
+        <div class="lp-grid">
+          <div>
+            <h3>A claim</h3>
+            <p>
+              A record of one task: the directories it may change and the branches its pull request may come from. You talk
+              with your queen and she writes the claim. The forager doing the work never writes its own. A queen opening
+              issues straight from your conversation is <span class="lp-tag soon">Coming soon</span>; a person can also write an issue.
+              <a href="/docs/claims-and-leases/">Claims and leases</a>
+            </p>
+          </div>
+          <div>
+            <h3>A lease</h3>
+            <p>Those directories. That is the lane the forager is supposed to stay inside, like a bee on its own comb.</p>
+          </div>
+          <div>
+            <h3>The gate, run by the guard</h3>
+            <p>
+              A GitHub merge check, <code>verify-leases-and-tiers</code>. It fails a pull request whose commits change a path outside the lease, or whose claim
+              does not name that pull request's branch. It checks every commit, not only the final diff.
+              <a href="/docs/gate/">The gate spec</a>
+            </p>
+          </div>
+          <div>
+            <h3>A keeper stays in control</h3>
+            <p>
+              A keeper is the person who works with the queen. Paths you list as protected still need an approver's approval.
+              Control files such as workflows fail no matter what the claim says. Waggle does not run your foragers; it guards the hive they work in.
+              <a href="/docs/gate/#5-risk-tiers-and-protected-paths">Protected paths</a>
+            </p>
+          </div>
         </div>
-        <div>
-          <h3>Any agent that opens a PR</h3>
-          <p>
-            The gate reads git and the PR, not the tool. Recipes cover
-            <a href="/recipes/claude-code-agent-teams/">Claude Code agent teams</a> and the
-            <a href="/recipes/copilot-cloud-agent/">Copilot cloud agent</a>.
-          </p>
+      </section>
+
+      <section aria-labelledby="who">
+        <div class="lp-who">
+          <img
+            class="walt-small"
+            src="/brand/mascot/walt-vector-normalized.svg"
+            width="100"
+            height="80"
+            alt="Walt the bee."
+            loading="lazy"
+          />
+          <div>
+            <h2 id="who">Who it's for</h2>
+            <p>
+              Teams, and open-source projects, where more than one keeper runs an agent team on the same repository. Today
+              the gate holds the line for all of them. Next come guidance for many keepers on one repo, then
+              <strong>honey</strong>: a contributor's standing, earned from merged work that lasts, with Nectar (reputation)
+              and Quorum (voting on priorities). Honey is <span class="lp-tag soon">Roadmap</span>.
+              If that sounds like your hive, the <a href="/docs/quick-start/">quick start</a> is the place to begin.
+            </p>
+          </div>
         </div>
       </section>
     </div>
@@ -90,10 +198,10 @@ const canonical = site ? new URL('/', site).href : undefined;
       <div class="lp-wrap">
         <h2>What it does not do</h2>
         <p>
-          It does not schedule or run agents, and it is not a sandbox. It binds only on PRs that must pass the check, an
+          It does not schedule or run foragers, and it is not a sandbox. It binds only on PRs that must pass the check, an
           admin bypass merges without it, and the required check can be forged by a workflow or token with the right
           permissions. The limits are written down, with the tests that show them, in
-          <a href="/gate/#10-limits-and-known-bypasses">the gate spec</a>.
+          <a href="/docs/gate/#10-limits-and-known-bypasses">the gate spec</a>.
         </p>
         <p>
           Waggle is pre-1.0 and supports GitHub only. The spec describes what the code does today, and the recipes have not
@@ -103,6 +211,7 @@ const canonical = site ? new URL('/', site).href : undefined;
     </section>
 
     <footer class="lp-wrap lp-foot">
+      <p><a href="/docs/why-waggle/">Why Waggle: questions from teams</a></p>
       <p>The <code>waggle</code> CLI is Apache-2.0. The templates <code>waggle init</code> writes into your repo are MIT-0.</p>
       <p>Copyright 2026 Level 19 Enterprises, LLC.</p>
     </footer>

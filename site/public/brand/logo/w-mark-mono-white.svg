@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="Waggle [W] mark">
+<!-- Authentic Waggle [W] mark. Exact approved favicon geometry (16-grid).
+     Brackets = claimed work boundary; W = waggle run (D-290).
+     Provenance: original SVG from brand archive. Mono white. -->
+<g fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter">
+  <path d="M4.75 2.75H2.75V13.25H4.75M11.25 2.75H13.25V13.25H11.25"/>
+  <path d="M5 5.5L6.5 10.5L8 7.25L9.5 10.5L11 5.5"/>
+</g>
+</svg>

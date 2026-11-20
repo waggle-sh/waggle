@@ -3,9 +3,14 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// The public URL. SITE_URL overrides it (see .env.example), e.g. for preview deploys.
+// The public URL. SITE_URL overrides it (see .env.example); the deploy workflow sets
+// https://getwaggle.dev, which is also the default so canonical URLs and the sitemap always build.
 const site = process.env.SITE_URL || 'https://getwaggle.dev';
 
+// Starlight serves src/content/docs/ from the site root and has no docs-only base.
+// Astro's base would also move the landing page (src/pages/index.astro) and the
+// root 404. sync-docs.mjs writes the pages under src/content/docs/docs/, so the
+// catch-all route serves them at /docs/ and the sidebar slugs include that prefix.
 export default defineConfig({
   site,
   integrations: [
@@ -13,29 +18,43 @@ export default defineConfig({
       title: 'Waggle',
       description: 'Task claims and a merge gate for AI coding agents on Git.',
       favicon: '/favicon.svg',
+      logo: {
+        light: './src/assets/brand/mark/w-mark-light.svg',
+        dark: './src/assets/brand/mark/w-mark-dark.svg',
+        alt: 'Waggle [W] mark',
+      },
+      head: [
+        { tag: 'link', attrs: { rel: 'icon', href: '/brand/logo/w-mark-favicon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' } },
+        { tag: 'link', attrs: { rel: 'icon', href: '/brand/logo/w-mark-favicon-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' } },
+      ],
+      disable404Route: true,
       customCss: ['./src/assets/brand/tokens.css', './src/styles/site.css'],
       sidebar: [
-        { label: 'Quick start', slug: 'quick-start' },
+        { label: 'Overview', slug: 'docs' },
+        { label: 'Why Waggle', slug: 'docs/why-waggle' },
+        { label: 'The hive', slug: 'docs/hive' },
+        { label: 'Glossary', slug: 'docs/glossary' },
+        { label: 'Quick start', slug: 'docs/quick-start' },
         {
           label: 'Concepts',
           items: [
-            { label: 'The gate', slug: 'gate' },
-            { label: 'Claims and leases', slug: 'claims-and-leases' },
+            { label: 'The gate', slug: 'docs/gate' },
+            { label: 'Claims and leases', slug: 'docs/claims-and-leases' },
           ],
         },
         {
           label: 'Reference',
           items: [
-            { label: 'Configuration', slug: 'config' },
-            { label: 'CLI', slug: 'cli' },
+            { label: 'Configuration', slug: 'docs/config' },
+            { label: 'CLI', slug: 'docs/cli' },
           ],
         },
         {
           label: 'Recipes',
           items: [
-            { label: 'Overview', slug: 'recipes' },
-            { label: 'Claude Code agent teams', slug: 'recipes/claude-code-agent-teams' },
-            { label: 'Copilot cloud agent', slug: 'recipes/copilot-cloud-agent' },
+            { label: 'Overview', slug: 'docs/recipes' },
+            { label: 'Claude Code agent teams', slug: 'docs/recipes/claude-code-agent-teams' },
+            { label: 'Copilot cloud agent', slug: 'docs/recipes/copilot-cloud-agent' },
           ],
         },
       ],

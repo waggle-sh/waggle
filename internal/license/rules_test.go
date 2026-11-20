@@ -34,6 +34,11 @@ func TestWantRows(t *testing.T) {
 		{"docs/gate.md", "Apache-2.0", HTML, true},
 		{"README.md", "Apache-2.0", HTML, true},
 		{"CONTRIBUTING.md", "Apache-2.0", HTML, true},
+		{"SECURITY.md", "Apache-2.0", HTML, true},
+		{"CODE_OF_CONDUCT.md", "CC-BY-4.0", HTML, true},
+		{"LICENSES/CC-BY-4.0.txt", "", 0, false},
+		{".github/PULL_REQUEST_TEMPLATE.md", "Apache-2.0", HTML, true},
+		{".github/ISSUE_TEMPLATE/bug_report.md", "Apache-2.0", Hash, true},
 		{".github/workflows/waggle-gate.yml", "MIT-0", Hash, true},
 		{".github/workflows/ci.yml", "Apache-2.0", Hash, true},
 		{".github/CODEOWNERS", "Apache-2.0", Hash, true},
@@ -141,6 +146,10 @@ func TestCheck(t *testing.T) {
 		{"astro header on line 1", "site/a.astro", "// SPDX-License-Identifier: Apache-2.0\n---\n", "after a --- fence on line 1"},
 		{"astro wrong id", "site/a.astro", "---\n// SPDX-License-Identifier: MIT-0\n\n---\n", "wrong SPDX header"},
 		{"astro no blank line", "site/a.astro", "---\n// SPDX-License-Identifier: Apache-2.0\n---\n", "blank line"},
+		{"issue template ok", ".github/ISSUE_TEMPLATE/a.md", "---\n# SPDX-License-Identifier: Apache-2.0\nname: A\n---\n\nBody\n", ""},
+		{"issue template header on line 1", ".github/ISSUE_TEMPLATE/a.md", "<!-- SPDX-License-Identifier: Apache-2.0 -->\n---\nname: A\n---\n", "after a --- fence on line 1"},
+		{"issue template html form", ".github/ISSUE_TEMPLATE/a.md", "---\n<!-- SPDX-License-Identifier: Apache-2.0 -->\nname: A\n---\n", "wrong SPDX header"},
+		{"pr template ok", ".github/PULL_REQUEST_TEMPLATE.md", "<!-- SPDX-License-Identifier: Apache-2.0 -->\n## What\n", ""},
 		{"ts no blank line", "site/a.ts", "// SPDX-License-Identifier: Apache-2.0\nexport {}\n", "blank line"},
 	}
 	for _, tt := range tests {

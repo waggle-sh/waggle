@@ -1,0 +1,21 @@
+/* Waggle brand tokens v1 — Walt kit.
+   Ink values #181B1E / #ECEFF1 are exact from approved [W] SVG.
+   Blue / Apricot sampled from the selected original bee artwork (not historic design-system tokens). */
+:root {
+  --waggle-ink: #181B1E;
+  --waggle-ink-rgb: 24, 27, 30;
+  --waggle-offwhite: #ECEFF1;
+  --waggle-paper: #F5F5F4;
+  --waggle-blue: #506AFD;
+  --waggle-blue-rgb: 80, 106, 253;
+  --waggle-apricot: #FFA161;
+  --waggle-apricot-rgb: 255, 161, 97;
+  --waggle-deep: #0F1724;
+  --waggle-slate: #5A6270;
+  --waggle-wing: #F7F5F0;
+  --waggle-pass: #1F9D6C;
+  --waggle-mustfix: #C4553B;
+
+  --waggle-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --waggle-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
