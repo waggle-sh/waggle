@@ -291,4 +291,4 @@ This is the text proposed for the hive's decision log. It is **not** in `.waggle
 
 **Hive recommendation:** Option 1. Ballots stay valid without Nectar, the tally is reproducible from git, and identity rests on signatures, so the same design works for one Keeper, many teams and fork contributors.
 
-**Keeper choice:** Not decided.
+**Keeper choice:** Accepted as written. Head Keeper decision, Paul Cleary, 2026-11-19.

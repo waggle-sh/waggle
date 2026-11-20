@@ -133,7 +133,7 @@ Commands (v0.1 Bootstrap):
   release   Give back your claim for a task once its branch has merged [--json]
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, daemon state and per-ticket token use
-  hives     Read-only view across your hives from a registry file: waggle hives status [--registry <file>] [--json]
+  hives     Read-only view across your hives from a registry file: waggle hives status [--registry <file>] [--json]; cross-repo plans: waggle hives plan
   pace      Show the agent pace set for this repo and how to apply it in each agent tool [--tool]
   upgrade   Print the plan to re-render managed files from this build and move waggle.pin; --apply executes it
   doctor    Check that claim refs can be pushed and the gate is a required check [--no-write]
