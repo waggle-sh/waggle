@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Recipes: running Waggle Gate under the agent you already use
 
-Each recipe says how one agent tool's output meets the gate. The gate itself is specified in [the gate spec](../gate.md). Every claim about another tool links the public page that says it; where a page does not say something, the recipe says it is an inference or leaves it out. Waggle has not tested these recipes end to end with each tool.
+Waggle is for many **keepers** (the humans who own work on a repo) and their agent teams on one repo. The gate is the piece you can use today. Each recipe says how one agent tool's output meets the gate. The gate itself is specified in [the gate spec](../gate.md). Every claim about another tool links the public page that says it; where a page does not say something, the recipe says it is an inference or leaves it out. Waggle has not tested these recipes end to end with each tool.
 
 - [Claude Code agent teams](claude-code-agent-teams.md)
 - [GitHub Copilot cloud agent](copilot-cloud-agent.md)
@@ -17,7 +17,7 @@ Each recipe says how one agent tool's output meets the gate. The gate itself is 
 
 ## Who writes the claim
 
-A person, or the orchestrator that assigns the work, writes the claim and its branch list. Never the agent that does the task, and never from credentials the agent holds: anyone who can push `refs/waggle/claims/*` can write a lease and a branch list, so an agent with your git credentials can write its own (L3). Keep approver credentials and `waggle claim` away from agents, and credentials that hold the Workflows, Actions or Commit statuses permission, or a classic `repo` token (L11). A narrower token can still push claim refs (L3).
+The keeper's **queen** (the coordinating agent a keeper talks to), or another trusted coordinator, writes the claim and its branch list, with the keeper in control; a person writing it is the fallback when there is no queen. Never the worker (a **forager** or **builder**) that does the task, and never from credentials the agent holds: anyone who can push `refs/waggle/claims/*` can write a lease and a branch list, so an agent with your git credentials can write its own (L3). Keep approver credentials and `waggle claim` away from agents, and credentials that hold the Workflows, Actions or Commit statuses permission, or a classic `repo` token (L11). A narrower token can still push claim refs (L3).
 
 Write the claim before the work and before the PR's first gate run:
 

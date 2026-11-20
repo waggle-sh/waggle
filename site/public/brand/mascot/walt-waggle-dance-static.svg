@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 200" width="480" height="200" role="img" aria-label="Walt waggle dance static diagram">
+<!-- Reduced-motion / static waggle-dance diagram: central waggle run with return loops. Walt mark at center. -->
+  <rect width="480" height="200" fill="#F5F5F4"/>
+  <path d="M120 100 C120 40, 200 40, 240 100 C280 160, 360 160, 360 100 C360 40, 280 40, 240 100 C200 160, 120 160, 120 100"
+        fill="none" stroke="#506AFD" stroke-width="2.5" stroke-dasharray="6 6" opacity="0.85"/>
+  <line x1="180" y1="100" x2="300" y2="100" stroke="#181B1E" stroke-width="3" stroke-linecap="round"/>
+  <text x="240" y="28" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#181B1E" font-weight="600">Waggle run (static / reduced-motion)</text>
+  <text x="240" y="185" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#5A6270">Return loop · central waggle · return loop</text>
+  <ellipse cx="240" cy="100" rx="22" ry="16" fill="#FFA161"/>
+  <rect x="222" y="94" width="36" height="5" fill="#181B1E"/>
+  <rect x="224" y="102" width="32" height="4" fill="#181B1E"/>
+  <circle cx="248" cy="92" r="1.8" fill="#181B1E"/>
+  <circle cx="254" cy="92" r="1.8" fill="#181B1E"/>
+</svg>

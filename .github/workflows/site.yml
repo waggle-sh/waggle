@@ -1,0 +1,109 @@
+# SPDX-License-Identifier: Apache-2.0
+# Publish the docs site (T-061).
+# The role, bucket, distribution, and allowed OIDC subjects are variables on
+# the site environment. Do not pass --acl: the bucket owner is enforced.
+name: site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: site-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: site
+      url: https://getwaggle.dev
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      SITE_BUCKET: ${{ vars.SITE_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      OIDC_ALLOWED_SUBJECTS: ${{ vars.OIDC_ALLOWED_SUBJECTS }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: site/package.json
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Build the site
+        working-directory: site
+        env:
+          SITE_URL: https://getwaggle.dev
+          ASTRO_TELEMETRY_DISABLED: "1"
+        run: npm ci && npm run build
+
+      - name: Require deploy settings
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in AWS_ROLE_ARN SITE_BUCKET CLOUDFRONT_DISTRIBUTION_ID OIDC_ALLOWED_SUBJECTS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not set on the site environment"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Read the GitHub OIDC subject
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request, base64
+          req = urllib.request.Request(
+              os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=sts.amazonaws.com",
+              headers={"Authorization": "bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]},
+          )
+          with urllib.request.urlopen(req) as res:
+              token = json.load(res)["value"]
+          payload = token.split(".")[1]
+          payload += "=" * (-len(payload) % 4)
+          data = json.loads(base64.urlsafe_b64decode(payload))
+          # The token itself is not printed. sub is what the role trust compares.
+          raw = os.environ.get("OIDC_ALLOWED_SUBJECTS", "")
+          allowed = {part.strip() for part in raw.replace("\n", ",").split(",") if part.strip()}
+          sub = data.get("sub", "")
+          print(f"sub={sub}")
+          print(f"aud={data.get('aud', '')}")
+          print(f"ref={data.get('ref', '')}")
+          if sub not in allowed:
+              print("::error::OIDC sub is not one of OIDC_ALLOWED_SUBJECTS")
+              raise SystemExit(1)
+          PY
+
+      - name: Get AWS credentials by OIDC
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-session-name: waggle-site-deploy
+          role-duration-seconds: 900
+          aws-region: us-west-2
+          audience: sts.amazonaws.com
+
+      - name: Sync
+        run: aws s3 sync site/dist/ "s3://${SITE_BUCKET}/" --delete --only-show-errors
+
+      - name: Invalidate
+        run: aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" width="420" height="96" role="img" aria-label="Waggle lockup">
+  <!-- Editable lockup: authentic [W] mark geometry + typeset wordmark. -->
+  
+  <g transform="translate(16,16) scale(4)" fill="none" stroke="#ECEFF1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M4.75 2.75H2.75V13.25H4.75M11.25 2.75H13.25V13.25H11.25"/>
+    <path d="M5 5.5L6.5 10.5L8 7.25L9.5 10.5L11 5.5"/>
+  </g>
+  <text x="100" y="62" font-family="Inter, system-ui, sans-serif" font-size="42" font-weight="700" fill="#ECEFF1">Waggle</text>
+</svg>
