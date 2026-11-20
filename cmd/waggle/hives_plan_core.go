@@ -30,6 +30,7 @@ const (
 // Step states reported by check.
 const (
 	stateDone    = "done"
+	stateDropped = "dropped" // the hive marks the task cancelled, rejected, superseded or dropped: it will not be done
 	stateClaimed = "claimed"
 	stateOpen    = "open"
 	stateBlocked = "blocked"
@@ -235,12 +236,14 @@ type StepStatus struct {
 	Hive       string   `json:"hive"`
 	Level      string   `json:"level,omitempty"`
 	Task       string   `json:"task,omitempty"`
-	Title      string   `json:"title,omitempty"`
+	Title      string   `json:"title,omitempty"`      // the Keeper's own words, from the plan
+	HiveTitle  string   `json:"hive_title,omitempty"` // the hive's title for an open or blocked task: hive text, data only
 	DependsOn  []string `json:"depends_on"`
 	State      string   `json:"state"`
 	Reason     string   `json:"reason,omitempty"`
-	BlockedBy  []string `json:"blocked_by,omitempty"` // plan steps not yet done
-	Unverified []string `json:"unverified,omitempty"` // dependency steps whose state could not be read
+	BlockedBy  []string `json:"blocked_by,omitempty"`   // plan steps not yet done
+	Unverified []string `json:"unverified,omitempty"`   // dependency steps whose state could not be read
+	Dropped    []string `json:"dropped_deps,omitempty"` // dependency steps the hive cancelled, rejected or dropped: not done, not waited on
 }
 
 // Violation is an ordering violation: step is claimed or done while a step it
@@ -283,9 +286,9 @@ func CheckPlan(p Plan, reg []RegistryEntry, views map[string]HiveView, now time.
 					st.Reason = "unreachable: " + v.Error
 				}
 			default:
-				st.State, st.Title = hiveStepState(s, v)
-				if st.Title == "" {
-					st.Title = s.Title
+				st.State, st.HiveTitle = hiveStepState(s, v)
+				if s.Title != "" {
+					st.HiveTitle = "" // the Keeper's words stand; hive text is only a fallback
 				}
 			}
 		}
@@ -299,6 +302,10 @@ func CheckPlan(p Plan, reg []RegistryEntry, views map[string]HiveView, now time.
 			case stateDone:
 			case stateStale, stateRefused, stateMissing:
 				st.Unverified = append(st.Unverified, d)
+			case stateDropped:
+				// Cancelled work never becomes done, so it does not satisfy the
+				// dependency; it is reported by name, not as a wait or a violation.
+				st.Dropped = append(st.Dropped, d)
 			default:
 				st.BlockedBy = append(st.BlockedBy, d)
 				if st.State == stateClaimed || st.State == stateDone {
@@ -317,10 +324,15 @@ func CheckPlan(p Plan, reg []RegistryEntry, views map[string]HiveView, now time.
 }
 
 // hiveStepState classifies one step against its hive's view and returns the
-// hive's own (flattened) title for a task step when the Keeper gave none.
+// hive's own (flattened) title for an open or blocked task step.
 func hiveStepState(s PlanStep, v HiveView) (string, string) {
 	if s.Task == "" {
 		return stateDraft, ""
+	}
+	for _, d := range v.Dropped {
+		if d == s.Task {
+			return stateDropped, ""
+		}
 	}
 	for _, d := range v.Done {
 		if d == s.Task {
@@ -383,15 +395,22 @@ func RenderCheckText(c PlanCheck) []byte {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "Plan %s, checked at %s. Read only: nothing is written to any hive; ordering is reported, not enforced.\n", c.Plan, c.CheckedAt)
 	for _, s := range c.Steps {
-		fmt.Fprintf(&b, "  %s  %s  %s  [%s]", s.ID, s.Hive, stepLabel(s.Task, s.Title), s.State)
+		title := s.Title
+		if title == "" {
+			title = s.HiveTitle
+		}
+		fmt.Fprintf(&b, "  %s  %s  %s  [%s]", s.ID, s.Hive, stepLabel(s.Task, title), s.State)
 		switch s.State {
 		case stateStale:
-			fmt.Fprintf(&b, "  stale since %s: %s", c.CheckedAt, s.Reason)
+			fmt.Fprintf(&b, "  stale (unreachable at %s): %s", c.CheckedAt, s.Reason)
 		case stateRefused:
 			fmt.Fprintf(&b, "  %s", s.Reason)
 		}
 		if len(s.BlockedBy) > 0 {
 			fmt.Fprintf(&b, "  (waiting on %s)", strings.Join(s.BlockedBy, ", "))
+		}
+		if len(s.Dropped) > 0 {
+			fmt.Fprintf(&b, "  (depends on %s, which the hive dropped)", strings.Join(s.Dropped, ", "))
 		}
 		if len(s.Unverified) > 0 {
 			fmt.Fprintf(&b, "  (cannot read %s)", strings.Join(s.Unverified, ", "))

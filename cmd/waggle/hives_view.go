@@ -103,6 +103,7 @@ type Task struct {
 	ID        string
 	Title     string
 	Done      bool
+	Dropped   bool // done by a word that means the work will not happen (cancelled, rejected, dropped...)
 	DependsOn []string
 }
 
@@ -158,6 +159,7 @@ type HiveView struct {
 	Waiting        []Card      `json:"waiting_on_keeper"`
 	DecisionError  string      `json:"decision_log_error,omitempty"`
 	Done           []string    `json:"-"` // tasks the hive's briefs mark done; used by plans, not in the status report
+	Dropped        []string    `json:"-"` // the subset of Done that was cancelled, rejected or dropped; used by plans
 }
 
 // HivesReport is the whole answer: one view per registry entry, in registry
@@ -205,6 +207,9 @@ func BuildHiveView(e RegistryEntry, in HiveInput, now time.Time) HiveView {
 	for _, t := range tasks {
 		if t.Done {
 			v.Done = append(v.Done, t.ID)
+			if t.Dropped {
+				v.Dropped = append(v.Dropped, t.ID)
+			}
 		}
 		if t.Done || claimed[t.ID] {
 			continue

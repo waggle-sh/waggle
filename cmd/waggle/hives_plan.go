@@ -118,6 +118,19 @@ func runHivesPlan(args []string, stdout, stderr io.Writer, getenv func(string) s
 	if !filepath.IsAbs(dir) {
 		return refuse(errors.New("the plans directory must be an absolute path"))
 	}
+	// Plans are held outside the hives, and reads come from the same directory
+	// as writes, so every subcommand checks it first. A registry that cannot
+	// be read leaves only the git work tree check; the commands that need the
+	// registry refuse for it below.
+	earlyReg, _ := readRegistry(regPath)
+	if err := plansDirOutside(dir, earlyReg); err != nil {
+		return refuse(err)
+	}
+	if _, err := os.Lstat(dir); err == nil {
+		if err := checkPlansDirMode(dir); err != nil {
+			return refuse(err)
+		}
+	}
 
 	if sub == "list" {
 		names, err := listPlans(dir)
@@ -147,16 +160,27 @@ func runHivesPlan(args []string, stdout, stderr io.Writer, getenv func(string) s
 		fmt.Fprintf(stdout, "Created plan %s at %s\n", plan, file)
 		return 0
 	case "rm":
-		p, err := readPlan(file, plan)
-		if err != nil {
-			return refuse(err)
-		}
 		if o.step == "" {
+			// A whole plan can be removed even when its file is corrupt.
+			fi, err := os.Lstat(file)
+			if errors.Is(err, os.ErrNotExist) {
+				return refuse(fmt.Errorf("no plan %q at %s", plan, file))
+			}
+			if err != nil {
+				return refuse(err)
+			}
+			if fi.IsDir() {
+				return refuse(fmt.Errorf("%s is a directory", file))
+			}
 			if err := os.Remove(file); err != nil {
 				return refuse(err)
 			}
 			fmt.Fprintf(stdout, "Removed plan %s\n", plan)
 			return 0
+		}
+		p, err := readPlan(file, plan)
+		if err != nil {
+			return refuse(err)
 		}
 		p, err = RemoveStep(p, o.step)
 		if err != nil {
@@ -190,7 +214,9 @@ func runHivesPlan(args []string, stdout, stderr io.Writer, getenv func(string) s
 	case "add":
 		var deps []string
 		if o.deps != "" {
-			deps = strings.Split(o.deps, ",")
+			for _, d := range strings.Split(o.deps, ",") {
+				deps = append(deps, strings.TrimSpace(d))
+			}
 		}
 		np, step, err := AddStep(p, reg, o.hive, o.task, o.title, deps)
 		if err != nil {
@@ -315,6 +341,9 @@ func writePlan(dir, file string, p Plan, create bool) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
+	if err := checkPlansDirMode(dir); err != nil {
+		return err
+	}
 	tmp, err := os.CreateTemp(dir, ".plan-*.tmp")
 	if err != nil {
 		return err
@@ -357,7 +386,21 @@ func outsideEveryHive(out string, reg []RegistryEntry) error {
 	if err != nil {
 		return fmt.Errorf("--out directory: %v", err)
 	}
-	target := filepath.Join(dir, filepath.Base(out))
+	where, err := insideHiveOrRepo(filepath.Join(dir, filepath.Base(out)), dir, reg)
+	if err != nil {
+		return err
+	}
+	if where != "" {
+		return fmt.Errorf("--out is %s; a draft brief must be written outside every hive", where)
+	}
+	return nil
+}
+
+// insideHiveOrRepo reports, as a phrase, where target (symlinks already
+// resolved) sits when it is inside a registered hive or, judged from the
+// existing directory dir, inside a git work tree. The empty string means it is
+// outside all of them.
+func insideHiveOrRepo(target, dir string, reg []RegistryEntry) (string, error) {
 	for _, e := range reg {
 		if e.Path == "" {
 			continue
@@ -367,11 +410,62 @@ func outsideEveryHive(out string, reg []RegistryEntry) error {
 			root = e.Path
 		}
 		if rel, err := filepath.Rel(root, target); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-			return fmt.Errorf("--out is inside hive %q; a draft brief must be written outside every hive", e.Name)
+			return fmt.Sprintf("inside hive %q", e.Name), nil
 		}
 	}
 	if _, err := repoRoot(dir); err == nil {
-		return errors.New("--out is inside a git work tree; a draft brief must be written outside every hive")
+		return "inside a git work tree", nil
+	}
+	return "", nil
+}
+
+// plansDirOutside refuses a plans directory that is a symlink, or that is
+// inside any registered hive or any git work tree. The directory need not
+// exist yet: the nearest existing parent is resolved through symlinks and the
+// rest of the path is appended, so a path that does not exist yet cannot hide
+// a hive.
+func plansDirOutside(dir string, reg []RegistryEntry) error {
+	if fi, err := os.Lstat(dir); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("the plans directory %s is a symlink", dir)
+	}
+	existing, rest := dir, ""
+	for {
+		if _, err := os.Lstat(existing); err == nil {
+			break
+		}
+		parent := filepath.Dir(existing)
+		if parent == existing {
+			return fmt.Errorf("the plans directory %s has no existing parent", dir)
+		}
+		rest = filepath.Join(filepath.Base(existing), rest)
+		existing = parent
+	}
+	resolved, err := filepath.EvalSymlinks(existing)
+	if err != nil {
+		return fmt.Errorf("the plans directory: %v", err)
+	}
+	where, err := insideHiveOrRepo(filepath.Join(resolved, rest), resolved, reg)
+	if err != nil {
+		return err
+	}
+	if where != "" {
+		return fmt.Errorf("the plans directory %s is %s; plans are held outside every hive", dir, where)
+	}
+	return nil
+}
+
+// checkPlansDirMode refuses an existing plans directory that is not a real
+// directory or that others can read or write.
+func checkPlansDirMode(dir string) error {
+	fi, err := os.Lstat(dir)
+	if err != nil {
+		return err
+	}
+	if !fi.IsDir() {
+		return fmt.Errorf("the plans directory %s is a symlink or not a directory", dir)
+	}
+	if fi.Mode().Perm()&0o077 != 0 {
+		return fmt.Errorf("the plans directory %s has mode %04o; it must not be accessible by group or others (chmod 700)", dir, fi.Mode().Perm())
 	}
 	return nil
 }
