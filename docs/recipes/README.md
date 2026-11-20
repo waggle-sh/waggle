@@ -5,6 +5,7 @@ Waggle is for many **keepers** (the humans who own work on a repo) and their age
 
 - [Claude Code agent teams](claude-code-agent-teams.md)
 - [GitHub Copilot cloud agent](copilot-cloud-agent.md)
+- [Gate-run receipts after a merge](gate-run-receipts.md)
 
 ## What every recipe assumes
 
