@@ -25,6 +25,8 @@ type ReleaseRequest struct {
 	Unmerged                bool         // release without the merged check: the ticket makes no PR
 	Owner                   string       // default keeper_id from .waggle/local.yaml
 	Backend                 ClaimBackend // nil: built from config
+	CoKeepers               []string     // credited with the owner in the receipt (T-051): at most 4, not the owner
+	Forge                   PRLookup     // read once for the receipt's PR fields; nil: none (the receipt is incomplete)
 }
 
 // ReleaseTaskResult is what ReleaseTask did.
@@ -34,7 +36,14 @@ type ReleaseTaskResult struct {
 	OID      string // the claim commit that was released; empty for no_claim
 	Merged   bool   // the merged check passed; false with Unmerged
 	Branch   string // the head that passed the merged check, or ""
+	Receipt  string // the receipt commit written with the release; "" when the backend writes none
 	Warnings []string
+}
+
+// receiptBackend is a ClaimBackend that records a receipt with the release.
+type receiptBackend interface {
+	ClaimBackend
+	ReleaseWithReceipt(ctx context.Context, ticketID, keeperID string, rec comb.Receipt) (string, error)
 }
 
 // errNotMerged and errTaskBusy tag the two refusals ErrorCode names. They are
@@ -71,7 +80,12 @@ func ReleaseLine(res ReleaseTaskResult) string {
 // is absent no dispatch run can be there, so it takes no lock and creates
 // nothing. The delete goes through ReleaseLease, so the owner check and the
 // remote compare-and-swap stay the Comb's. A claim that is not there is not an
-// error. Refusals are ExitClaim, a held lock or git trouble is ExitEnv. The
+// error. A backend that can record one (the Comb) also appends a receipt to
+// refs/waggle/receipts/main in the same transaction (RFC-0005 6.2): merged_sha
+// is found by the forge, then by the task binding on main, then by the merged
+// tip, else the receipt is unmerged; a forge failure marks the receipt
+// incomplete with one warning and never fails the release. Unmerged skips the
+// merged check, not the receipt. Refusals are ExitClaim, a held lock or git trouble is ExitEnv. The
 // result is filled as far as it got, also on error. A cancelled ctx turns an
 // ExitEnv failure into ExitFailed (interrupted).
 func ReleaseTask(ctx context.Context, r ReleaseRequest) (res ReleaseTaskResult, err error) {
@@ -115,6 +129,9 @@ func ReleaseTask(ctx context.Context, r ReleaseRequest) (res ReleaseTaskResult, 
 			return res, failf(ExitUsage, "%w; or pass --owner <id>", err)
 		}
 	}
+	if err = checkCoKeepers(r.CoKeepers, owner); err != nil {
+		return res, err
+	}
 	if dir != "" {
 		c := &cleaner{repo: repo, common: common}
 		for _, role := range []string{"builder", "forager", "guard"} {
@@ -147,25 +164,80 @@ func ReleaseTask(ctx context.Context, r ReleaseRequest) (res ReleaseTaskResult, 
 	} else if err != nil {
 		return res, releaseError(err)
 	}
+	g := &Git{Bin: r.GitBin, Dir: repo, Remote: cfg.Forge.Remote}
+	main, mergeCommit := "", ""
 	if !r.Unmerged {
 		branches := []string{r.Branch}
 		if r.Branch == "" {
 			branches = []string{"t-" + strings.TrimPrefix(id, "T-"), "waggle/" + id}
 		}
-		head, err := branchMerged(ctx, &Git{Bin: r.GitBin, Dir: repo, Remote: cfg.Forge.Remote}, pg, branches)
+		if main, err = ResolveBase(ctx, g, g.Remote, ""); err != nil {
+			return res, err
+		}
+		head, merge, err := branchMerged(ctx, g, pg, main, branches)
 		if err != nil {
 			return res, err
 		}
 		if head == "" {
 			return res, failf(ExitClaim, "%w", taggedError{fmt.Sprintf("branch %s is not merged into main (or is absent); the claim stays until it is; if the task merged by squash or rebase, or makes no PR, release it with --unmerged", branches[0]), errNotMerged})
 		}
-		res.Merged, res.Branch = true, head
+		res.Merged, res.Branch, mergeCommit = true, head, merge
 	}
-	if err = cb.ReleaseLease(ctx, id, owner); err != nil {
+	rb, ok := cb.(receiptBackend)
+	if !ok {
+		if err = cb.ReleaseLease(ctx, id, owner); err != nil {
+			return res, releaseError(err)
+		}
+		res.Outcome, res.OID = "released", oid
+		return res, nil
+	}
+	if r.Unmerged {
+		// The receipt still looks for the merge (forge, then binding); main
+		// failing to resolve is not a refusal, the receipt is then unmerged.
+		if m, merr := ResolveBase(ctx, g, g.Remote, ""); merr == nil {
+			main = m
+		}
+	}
+	lease, err := rb.ReadClaim(ctx, id)
+	if err != nil {
+		return res, releaseError(err)
+	}
+	facts := resolveMerge(ctx, pg, main, lease, firstClaimed(ctx, pg, oid, lease.ClaimedAt), r.Forge, mergeCommit)
+	if facts.ForgeWarning {
+		res.Warnings = append(res.Warnings, "could not read the forge for "+id+"; the receipt is marked incomplete")
+	}
+	res.Receipt, err = rb.ReleaseWithReceipt(ctx, id, owner, facts.receipt(owner, r.CoKeepers))
+	if errors.Is(err, comb.ErrInvalidReceipt) && facts.PR != nil {
+		// A forge answer the receipt rules refuse is dropped: it is no reason to keep the claim.
+		facts.PR, facts.Incomplete = nil, true
+		res.Warnings = append(res.Warnings, "the forge answer for "+id+" was not usable; the receipt is marked incomplete")
+		res.Receipt, err = rb.ReleaseWithReceipt(ctx, id, owner, facts.receipt(owner, r.CoKeepers))
+	}
+	if err != nil {
+		res.Receipt = ""
 		return res, releaseError(err)
 	}
 	res.Outcome, res.OID = "released", oid
 	return res, nil
+}
+
+// checkCoKeepers applies the receipt's co-keeper rules before anything is
+// written: at most 4, well-formed ids, no repeat, never the owner (RFC-0005 6.3).
+func checkCoKeepers(co []string, owner string) error {
+	if len(co) > 4 {
+		return failf(ExitUsage, "--co names %d keepers; at most 4", len(co))
+	}
+	for i, c := range co {
+		switch {
+		case !comb.ValidKeeperID(c):
+			return failf(ExitUsage, "--co %q is not a keeper id", c)
+		case c == owner:
+			return failf(ExitUsage, "--co names the owner %s, who is always credited", owner)
+		case slices.Index(co, c) != i:
+			return failf(ExitUsage, "--co names %s twice", c)
+		}
+	}
+	return nil
 }
 
 // checkReleaseBranch accepts the branch forms of checkBranch plus
@@ -181,8 +253,9 @@ func checkReleaseBranch(branch, ticket string) error {
 	return nil
 }
 
-// branchMerged fetches the remote (host side, with the Keeper's git auth) and
-// checks the first of branches that exists: it returns that branch's name when
+// branchMerged checks the first of branches that exists against main (the
+// commit the caller resolved after fetching the remote host side, with the
+// Keeper's git auth): it returns that branch's name and the merge commit when
 // its head is the second or a later parent of a merge commit on main's
 // first-parent history, else "". Only that proves the head itself merged: a head
 // whose tip is just a first parent has no commits of its own in main, and a
@@ -190,14 +263,9 @@ func checkReleaseBranch(branch, ticket string) error {
 // the first existing head is checked, so a branch someone pushes at another PR's
 // merged head cannot stand in for one that exists unmerged. The head is the
 // remote's branch when it exists, else the local one; it is never read from a
-// run record. The fetch and ResolveBase's rev-parse of main run on g, as Run
-// resolves its base; the head and merge reads run pinned.
-func branchMerged(ctx context.Context, g, pg *Git, branches []string) (string, error) {
-	main, err := ResolveBase(ctx, g, g.Remote, "")
-	if err != nil {
-		return "", err
-	}
-	branch, head := "", ""
+// run record. The head and merge reads run pinned.
+func branchMerged(ctx context.Context, g, pg *Git, main string, branches []string) (branch, merge string, err error) {
+	head := ""
 	for _, b := range branches {
 		refs := []string{"refs/heads/" + b}
 		if g.Remote != "" {
@@ -214,18 +282,18 @@ func branchMerged(ctx context.Context, g, pg *Git, branches []string) (string, e
 		}
 	}
 	if head == "" {
-		return "", nil
+		return "", "", nil
 	}
 	out, err := pg.Run(ctx, "rev-list", "--first-parent", "--parents", "--merges", head+".."+main)
 	if err != nil {
-		return "", failf(ExitEnv, "%w", err)
+		return "", "", failf(ExitEnv, "%w", err)
 	}
 	for _, line := range strings.Split(string(out), "\n") {
 		if f := strings.Fields(line); len(f) > 2 && slices.Contains(f[2:], head) {
-			return branch, nil
+			return branch, f[0], nil
 		}
 	}
-	return "", nil
+	return "", "", nil
 }
 
 // releaseError maps a Comb error from the release to its dispatch exit code.
