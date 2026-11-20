@@ -93,6 +93,9 @@ func main() {
 	case "release":
 		os.Exit(runTaskRelease(os.Args[2:], os.Stdout, os.Stderr))
 
+	case "nectar":
+		os.Exit(runNectar(os.Args[2:], os.Stdout, os.Stderr))
+
 	case "status":
 		os.Exit(runStatus(os.Args[2:], os.Stdout, os.Stderr))
 
@@ -131,6 +134,7 @@ Commands (v0.1 Bootstrap):
   dispatch  Claim a ticket, run a worker in a worktree, check its changes against the claim (waggle dispatch <ticket> --help)
   claim     Lease directories for a task: waggle claim <task> --dirs <a,b> --gate light|full [--json]
   release   Give back your claim for a task once its branch has merged [--json]
+  nectar    Add release records for merged tasks that have none: waggle nectar backfill [--apply] [--json]
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, daemon state and per-ticket token use
   hives     Read-only view across your hives from a registry file: waggle hives status [--registry <file>] [--json]; cross-repo plans: waggle hives plan
