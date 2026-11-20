@@ -1,9 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # RFC-0005: Nectar
 
-> **ROADMAP ONLY. NOT IMPLEMENTED.** Nothing in this RFC exists in the code today. No command, ref, field or score described here ships in any Waggle build. It is a design proposal for the Head Keeper to rule on. The decision in "Decision requested" is not recorded.
+> **ACCEPTED DESIGN, BEING BUILT.** The Head Keeper accepted this design pending fix on 2026-11-19 (D-368). T-051 builds it in phases; the receipt ref lands first (T-051 phase A). Anything not yet merged under T-051 or T-052 does not exist in a Waggle build.
 
-- **Status:** Proposed. Ticket T-050. Not ruled.
+- **Status:** Accepted pending fix by the Head Keeper, Paul Cleary, on 2026-11-19 (D-368). Ticket T-050.
 - **Release target:** v0.2 (honey), after the public gate (D-366, D-287).
 - **Builds on:** RFC-0003 (origin of Nectar and Quorum), `docs/gate.md`, D-232 (lease store stays claim refs), D-233 (listed approvers), D-234 (commit binds to a task), D-366 (Nectar restored as core).
 - **Vocabulary (D-236):** "Nectar" is a hive and RFC term. User-facing docs written later say "reputation score".
