@@ -43,13 +43,13 @@ We ship the gate first because its records are what the rest is built on. A clai
 
 ## Honey: Nectar and Quorum
 
-**Honey** has two halves. Both are roadmap, not shipped.
+**Honey** has two halves. Neither half scores or votes yet. Nectar is coming soon: the `waggle nectar backfill` command is on `main`, and the scorer is not merged. Quorum is roadmap.
 
 **Nectar** is reputation earned from merged work that lasts. A commit counts only if it survives 30 days on `main` without being reverted. Nectar is attributed through the claim, so the record of who held the task is what credits them. If the work is reverted, the credit goes with it.
 
 **Quorum** is how the project decides what gets picked up next. Roadmap and issue priority are set by quadratic voting: each person's weight is the square root of their Nectar, so a long record counts for more without letting one big contributor drown out everyone else. It exists so that people who have shipped work that sticks get a say in what the project builds next.
 
-The **Master Keeper veto** sits on top of Quorum. The Master Keeper (the project owner, who is the Head Keeper today) can veto a result. Voting sets priority; it does not remove the owner's last word.
+The **Master Keeper veto** is planned to sit on top of Quorum. The Master Keeper is a role, not a person: the project owner (the Head Keeper today), holding the veto over Quorum results. It is roadmap. The owner would be able to veto a result. Voting sets priority; it does not remove the owner's last word.
 
 ## Built today and coming
 
@@ -64,9 +64,9 @@ The **Master Keeper veto** sits on top of Quorum. The Master Keeper (the project
 | Contributors without push access claiming for themselves | Today a maintainer writes the claim for a fork | Coming soon |
 | Guidance for many keepers on one repo | Contention, identity and how keepers' agents share claims | Coming soon |
 | Queens opening issues from keeper conversations | Today a queen can do this with the GitHub tools she already has; Waggle does not do it itself | Roadmap |
-| Nectar | Reputation from merged work that survives 30 days on `main` | Roadmap |
+| Nectar | Reputation from merged work that survives 30 days on `main`. `waggle nectar backfill` is on `main`; the scorer is not | Coming soon |
 | Quorum | Quadratic voting on roadmap and issue priority, weight is the square root of Nectar | Roadmap |
-| Master Keeper veto | A final veto over Quorum results | Roadmap, ships with Quorum |
+| Master Keeper veto | A final veto over Quorum results, held by the project owner (the Head Keeper today) | Roadmap, with Quorum |
 
 "Roadmap" means designed on paper, with a plan and no code. "Coming soon" means the next steps on a part that already works in a smaller form. Dates are not promised.
 
