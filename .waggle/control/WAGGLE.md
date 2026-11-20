@@ -18,7 +18,10 @@ Define the top-level modules Builders may lease:
 - `internal/forge/`: `Forge` interface, `none` and GitHub adapters, `waggle doctor` probes (T-018)
 - `internal/license/`: SPDX header rules and repo check (T-025)
 - `internal/layout/`: Repo-relative Waggle path constants (T-011)
+- `internal/nectar/`: Nectar scorer: units, 30-day survival, revert clawback, derived from `main` and receipts (T-051, T-052)
 - `internal/pace/`: Agent pace profiles, load reading and per-tool render (T-043)
+- `internal/quorum/`: Quorum rounds, signed ballots, `sqrt(Nectar)` tally and Head Keeper veto records (T-054)
+- `internal/relay/`: `/waggle` comment relay: request parser, policy and approval for claims by contributors without push access (T-065)
 - `internal/runtime/`: `AgentRuntime` adapters and token cap monitors
 - `internal/scaffold/`: `waggle init` embedded templates
 - `internal/usage/`: Token and cost ledger reader behind `waggle status` (T-022)
