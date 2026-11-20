@@ -65,7 +65,7 @@ weight(task) = tier_factor * size_factor * review_factor
 ```
 
 - `tier_factor`: highest Risk Tier of any path the task changed, using the gate's tier rules (`internal/comb`). Proposed: Tier 0 = 1, Tier 1 = 2, Tier 2 = 3, Tier 3 = 4.
-- `size_factor`: `1 + log2(1 + min(changed_lines, 400) / 25)`, 3 decimals. Range 1 to 5.17. The cap stops size farming. `changed_lines = code_lines + docs_factor * docs_lines`. **Docs count**: `docs_factor` is proposed at 0.5 and is never 0. A docs-only task (this RFC is one) earns credit. Generated files and lockfiles are not authored work and are left out of the line count; the report lists them per unit, and open question 10 asks whether that is right.
+- `size_factor`: `1 + log2(1 + min(changed_lines, 400) / 25)`, 3 decimals. Range 1 to 5.087 (at the 400-line cap, 1 + log2(17)). The cap stops size farming. `changed_lines = code_lines + docs_factor * docs_lines`. **Docs count**: `docs_factor` is proposed at 0.5 and is never 0. A docs-only task (this RFC is one) earns credit. Generated files and lockfiles are not authored work and are left out of the line count; the report lists them per unit, and open question 10 asks whether that is right.
 - `review_factor`: 1, or `nectar.self_merge_factor` (0.5) for a self-merge in a repo with more than one Keeper (section 8). Never 0.
 - A `light` and a `full` claim weigh the same. The gate level is a safety setting, not merit.
 
@@ -223,11 +223,11 @@ Prior art (repositioning.md section 4 and the Oct 23 review): **Wasteland stamps
 | Risk | Control |
 | :--- | :--- |
 | **Trivial-commit farming** | Unit is a task; log size factor with a 400-line cap; a per-Keeper **daily cap** on weight that **matures** per UTC day (`nectar.daily_cap`, default 12). Excess is **carried forward**, not dropped: it matures on the next days with spare room, in `(merged_at, sha)` order. Total credit is unchanged, only delayed. `nectar.min_changed_lines` defaults to 0 (off). |
-| **Self-merge** | The `approvers` list (6.2) has no login equal to `keeper_id` and the repo has more than one Keeper: weight is multiplied by `nectar.self_merge_factor` (0.5), reported. **A single-Keeper repo is the default solo case:** self-merge counts at full weight with no opt-in. "Single-Keeper" means the configured approver list has at most one login. |
+| **Self-merge** | The `approvers` list (6.2) has no approving login other than `keeper_id` and the repo has more than one Keeper: weight is multiplied by `nectar.self_merge_factor` (0.5), reported. **A single-Keeper repo is the default solo case:** self-merge counts at full weight with no opt-in. "Single-Keeper" means the configured approver list has at most one login. |
 | **Collusion** | Reciprocal approvals are tracked from `approvers`. When more than 60% of a pair's units are approved by each other, the pair's units weigh 50% (`nectar.reciprocity_discount`). Pairs are shown in the report, not banned. |
 | **Churn** | Survival rule 2 (4.2) and unlimited late clawback (5.2). Moves and formatting do not count. |
 | **Revert-and-reapply** | 4.4: restored at original weight, clock restarts at the re-landing commit; a new task re-adding the lines does not undo the clawback. |
-| **Sybil** | Per `keeper_id`; a new id starts at 0. Quorum weight is `sqrt(Nectar)` (T-053), so splitting loses weight. Claims need push rights or a maintainer. |
+| **Sybil** | Per `keeper_id`; a new id starts at 0. Quorum weight is `sqrt(Nectar)` (RFC-0006), and because `sqrt` is concave, splitting one person's Nectar across several ids gains total weight. The defenses are claim and push rights (claims need push rights or a maintainer), the 30-day window, and Quorum's alias merge, which sums one person's ids before `sqrt` (RFC-0006 section 7). |
 | **Forged receipts** | 6.2 trust note: must match `main` and the PR. `third_party` shown. |
 | **Time gaming** | 4.1: later of committer time and first-seen (receipt commit time). Weak, since the receipt writer sets its own clock; the main control is that `main` is first-parent and the forge sets squash time. |
 | **Fork mismatch** | `explain` shows `pr_author` beside `keeper_id`; a mismatch is reported, not blocked. |
