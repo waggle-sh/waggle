@@ -45,7 +45,8 @@ type rule struct {
 // rules is the ordered table of the T-025 brief, section 4. The first match
 // wins. Row 5 (CLAUDE.md) was folded into the exempt row by D-334. The two
 // site/ rows are T-041: copied and fetched assets are exempt, the rest of
-// site/ is checked.
+// site/ is checked. T-062 adds SECURITY.md to the Apache-2.0 docs row and
+// gives CODE_OF_CONDUCT.md (Contributor Covenant text) its own CC-BY-4.0 row.
 var rules = []rule{
 	{[]string{"**/testdata/**"}, exempt, ""},
 	{[]string{"**/*.json", "internal/scaffold/templates/**/*.json.tmpl"}, exempt, ""},
@@ -60,7 +61,8 @@ var rules = []rule{
 	{[]string{".waggle/hive/**"}, notChecked, ""},
 	{[]string{"internal/scaffold/templates/**"}, checked, "MIT-0"},
 	{[]string{"cmd/**", "internal/**"}, checked, "Apache-2.0"},
-	{[]string{"docs/**", "README.md", "CONTRIBUTING.md"}, checked, "Apache-2.0"},
+	{[]string{"docs/**", "README.md", "CONTRIBUTING.md", "SECURITY.md"}, checked, "Apache-2.0"},
+	{[]string{"CODE_OF_CONDUCT.md"}, checked, "CC-BY-4.0"},
 	{[]string{".github/workflows/waggle-gate.yml"}, checked, "MIT-0"},
 	{[]string{".github/**"}, checked, "Apache-2.0"},
 	{[]string{"gate/**"}, checked, "Apache-2.0"},
@@ -94,6 +96,9 @@ func Want(p string) (id string, form Form, ok bool, err error) {
 // formOf picks the comment syntax from the extension, ignoring a trailing
 // ".tmpl" because a template is written out in its rendered file's syntax.
 func formOf(p string) (Form, error) {
+	if issueTemplate(p) {
+		return Hash, nil
+	}
 	base := path.Base(p)
 	switch base {
 	case "CODEOWNERS", ".gitignore", ".env.example":
@@ -113,6 +118,19 @@ func formOf(p string) (Form, error) {
 		return HTML, nil
 	}
 	return 0, fmt.Errorf("unknown extension: %s: no comment form for this file kind", p)
+}
+
+// issueTemplate reports whether p is a GitHub issue template in Markdown.
+// GitHub needs its YAML front matter to open on line 1, so the header is a
+// YAML comment on line 2, inside the front matter.
+func issueTemplate(p string) bool {
+	return matchSegs(strings.Split(".github/ISSUE_TEMPLATE/*.md", "/"), strings.Split(p, "/"))
+}
+
+// fenced reports whether p opens with a "---" fence on line 1 and carries its
+// header on line 2: Astro components and GitHub issue templates.
+func fenced(p string) bool {
+	return strings.HasSuffix(p, ".astro") || issueTemplate(p)
 }
 
 // matchSegs matches pattern segments against path segments. "*" and the other
@@ -153,7 +171,8 @@ func Line(id string, form Form) string {
 }
 
 // Check verifies the header of one file. It reads only the header line:
-// line 1, or line 2 when line 1 starts with "#!". Go files must also have a
+// line 1, or line 2 when line 1 starts with "#!" or the file opens with a
+// "---" fence (Astro components, GitHub issue templates). Go files must also have a
 // blank line after it.
 func Check(p string, content []byte) error {
 	id, form, ok, err := Want(p)
@@ -166,7 +185,7 @@ func Check(p string, content []byte) error {
 	if len(lines) > 0 && bytes.HasPrefix(lines[0], []byte("#!")) {
 		n = 1
 	}
-	if strings.HasSuffix(p, ".astro") {
+	if fenced(p) {
 		if len(lines) == 0 || string(lines[0]) != "---" {
 			return fmt.Errorf("missing SPDX header: %s: want line 2 %q after a --- fence on line 1", p, want)
 		}

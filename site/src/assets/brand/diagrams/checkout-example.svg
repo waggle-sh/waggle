@@ -1,0 +1,69 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" class="wg" viewBox="0 0 1120 490" width="1120" height="490" role="img" aria-labelledby="wg-ex-t wg-ex-d">
+<title id="wg-ex-t">Example: a forager's PR through the Waggle Gate</title>
+<desc id="wg-ex-d">Example. The ticket Add Apple Pay to checkout has a lease written by the queen before work starts: src/checkout/ and src/payments/. The forager opens a PR with four commits. The guard, Waggle Gate, checks each commit against the lease. 3f9a1c changes src/checkout/ApplePayButton.tsx, 8b27e4 changes src/payments/applePay.ts and 5ce6a9 changes src/checkout/checkout.test.ts; all three are inside the lease and pass. d41f07 changes infra/prod/database.tf, outside the lease, so it is must-fix and the PR is blocked. The PR merges only when every commit passes.</desc>
+<style>.wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
+@media (prefers-color-scheme:dark){.wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}}
+[data-theme="light"] .wg{--wg-page:#FFFFFF;--wg-surface:#F4F5F7;--wg-ink:#181B1E;--wg-muted:#575B60;--wg-rule:#D5D8DB;--wg-pass:#1A7F37;--wg-block:#CF222E;--wg-wait:#9A6700}
+[data-theme="dark"] .wg{--wg-page:#101214;--wg-surface:#181B1E;--wg-ink:#ECEFF1;--wg-muted:#A0A5AB;--wg-rule:#323639;--wg-pass:#3FB950;--wg-block:#F85149;--wg-wait:#D29922}
+.wg .bg{fill:var(--wg-page)}.wg .sf{fill:var(--wg-surface)}
+.wg .s-ink{stroke:var(--wg-ink)}.wg .s-muted{stroke:var(--wg-muted)}.wg .s-rule{stroke:var(--wg-rule)}
+.wg .s-pass{stroke:var(--wg-pass)}.wg .s-block{stroke:var(--wg-block)}.wg .s-wait{stroke:var(--wg-wait)}
+.wg .f-ink{fill:var(--wg-ink)}.wg .f-muted{fill:var(--wg-muted)}.wg .f-page{fill:var(--wg-page)}
+.wg .f-pass{fill:var(--wg-pass)}.wg .f-block{fill:var(--wg-block)}.wg .f-wait{fill:var(--wg-wait)}
+.wg text{font-family:'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;font-size:13px}
+.wg .mono{font-family:'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;font-stretch:87.5%;font-size:12px}
+.wg .sm{font-size:12px}.wg .b{font-weight:600}.wg .mono.b{font-weight:500}.wg .title{font-size:15px;font-weight:600}</style>
+<rect class="bg" width="1120" height="490"/>
+<rect x="1030" y="14" width="74" height="24" class="f-page s-muted" stroke-width="1.5"/><text x="1067" y="30" text-anchor="middle" class="sm b f-muted">Example</text>
+<text x="32" y="36" class="sm b f-muted">1. The lease, written first</text>
+<rect x="32" y="56" width="232" height="172" class="f-page s-ink" stroke-width="1.5"/>
+<text x="52" y="88" class="b f-ink">Add Apple Pay to checkout</text>
+<path d="M60 108H52V172H60M236 108H244V172H236" fill="none" class="s-ink" stroke-width="2" stroke-linecap="square"/>
+<text x="68" y="134" class="mono f-ink">src/checkout/</text>
+<text x="68" y="156" class="mono f-ink">src/payments/</text>
+<text x="52" y="200" class="sm f-muted">May change only these paths.</text>
+<text x="32" y="252" class="sm b f-ink">The queen writes it.</text>
+<text x="32" y="270" class="sm b f-ink">Never the forager.</text>
+<text x="32" y="292" class="sm f-muted">It exists before the work starts.</text>
+<text x="304" y="36" class="sm b f-muted">2. The forager opens a PR</text>
+<text x="304" y="72" class="b f-ink">PR #1042, 4 commits</text>
+<text x="304" y="90" class="sm f-muted">From the coding agent, or a person with a branch.</text>
+<line x1="308" y1="140" x2="308" y2="332" class="s-ink" stroke-width="1.5"/>
+<text x="689" y="36" class="sm b f-muted">3. The guard (Waggle Gate) checks every commit</text>
+<path d="M264 116L669 116L669 124" fill="none" class="s-muted" stroke-width="1.5"/>
+<text x="304" y="110" class="sm f-muted">reads the lease from the claim, kept in a git ref</text>
+<line x1="669" y1="124" x2="669" y2="360" class="s-ink" stroke-width="3" stroke-linecap="square"/>
+<circle cx="308" cy="140" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="328" y="144" class="mono f-muted">3f9a1c</text>
+<text x="392" y="144" class="mono f-ink">src/checkout/ApplePayButton.tsx</text>
+<path d="M642 140L663 140" fill="none" class="s-rule" stroke-width="1.5"/>
+<text x="689" y="144" class="f-muted">inside the lease</text>
+<rect x="884" y="128" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="911" y="144" text-anchor="middle" class="mono b f-pass">pass</text>
+<circle cx="308" cy="204" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="328" y="208" class="mono f-muted">8b27e4</text>
+<text x="392" y="208" class="mono f-ink">src/payments/applePay.ts</text>
+<path d="M642 204L663 204" fill="none" class="s-rule" stroke-width="1.5"/>
+<text x="689" y="208" class="f-muted">inside the lease</text>
+<rect x="884" y="192" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="911" y="208" text-anchor="middle" class="mono b f-pass">pass</text>
+<rect x="382" y="253" width="258" height="30" class="f-page s-block" stroke-width="2"/>
+<circle cx="308" cy="268" r="5" class="f-page s-block" stroke-width="1.5"/>
+<text x="328" y="272" class="mono b f-block">d41f07</text>
+<text x="392" y="272" class="mono b f-block">infra/prod/database.tf</text>
+<path d="M642 268L663 268" fill="none" class="s-block" stroke-width="1.5"/>
+<text x="689" y="272" class="b f-block">outside the lease</text>
+<text x="689" y="290" class="sm f-muted">infra/ is not in this claim</text>
+<rect x="884" y="256" width="87" height="24" class="f-page s-block" stroke-width="1.5"/><text x="927.5" y="272" text-anchor="middle" class="mono b f-block">must-fix</text>
+<circle cx="308" cy="332" r="5" class="f-page s-ink" stroke-width="1.5"/>
+<text x="328" y="336" class="mono f-muted">5ce6a9</text>
+<text x="392" y="336" class="mono f-ink">src/checkout/checkout.test.ts</text>
+<path d="M642 332L663 332" fill="none" class="s-rule" stroke-width="1.5"/>
+<text x="689" y="336" class="f-muted">inside the lease</text>
+<rect x="884" y="320" width="54" height="24" class="f-page s-pass" stroke-width="1.5"/><text x="911" y="336" text-anchor="middle" class="mono b f-pass">pass</text>
+<path d="M669 360L669 416L687 416" fill="none" class="s-block" stroke-width="1.5"/><path d="M682.05 412.61L687 416L682.05 419.39" fill="none" class="s-block" stroke-width="1.5" stroke-linejoin="miter"/>
+<rect x="689" y="396" width="250" height="40" class="f-page s-block" stroke-width="1.5"/>
+<text x="705" y="421" class="b f-block">Blocked: d41f07 left the lease.</text>
+<text x="689" y="456" class="sm f-muted">Fix the commit or widen the lease.</text>
+<text x="689" y="473" class="sm f-muted">It merges when every commit passes.</text>
+<text x="32" y="421" class="sm b f-muted">4. One must-fix blocks the PR</text>
+</svg>

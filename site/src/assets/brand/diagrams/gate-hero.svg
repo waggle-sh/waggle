@@ -22,8 +22,8 @@
 <text x="68" y="134" class="mono f-ink">internal/comb/</text>
 <text x="68" y="156" class="mono f-ink">cmd/waggle/</text>
 <text x="52" y="200" class="sm f-muted">May change only these paths.</text>
-<text x="32" y="252" class="sm f-muted">Written by a human or the orchestrator,</text>
-<text x="32" y="270" class="sm f-muted">before the agent starts. Never by the agent.</text>
+<text x="32" y="252" class="sm f-muted">The queen writes it, before work starts.</text>
+<text x="32" y="270" class="sm f-muted">Never the agent doing the work.</text>
 <text x="304" y="36" class="sm b f-muted">2. The agent opens a PR</text>
 <text x="304" y="72" class="b f-ink">PR #1042, 4 commits</text>
 <text x="304" y="90" class="sm f-muted">From any agent, or a person with a branch.</text>

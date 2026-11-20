@@ -19,7 +19,7 @@
         line/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false
     zz_probe2_test.go:97: "tab\there" reuse: err=<nil> reused=true
     zz_probe2_test.go:97: "quo\"te" reuse: err=<nil> reused=true
-    zz_probe2_test.go:112: case-different repo path: err=/VAR/FOLDERS/8Y/XSQ0G8LS1G5BQFDZJSL9M0P00000GN/T/TESTPROBE2PATHSHAPES1440275028/005/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false
+    zz_probe2_test.go:112: case-different repo path: err=/VAR/FOLDERS/<TMP>/T/TESTPROBE2PATHSHAPES1440275028/005/.waggle/worktrees/T-023-builder exists but is not a worktree on branch t-023; run waggle dispatch clean or remove it reused=false
     zz_probe2_test.go:121: /private-prefixed repo path: err=<nil> reused=true
     zz_probe2_test.go:129: locked entry reuse: err=<nil> reused=true
     zz_probe2_test.go:135: locked missing entry: exit=3 err=git worktree: exit status 128: Preparing worktree (checking out 't-023')
