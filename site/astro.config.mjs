@@ -3,9 +3,9 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// Public URL comes from SITE_URL (see .env.example). The deploy workflow sets
-// https://getwaggle.dev. Unset, the build still works and emits no canonical URLs or sitemap.
-const site = process.env.SITE_URL || undefined;
+// The public URL. SITE_URL overrides it (see .env.example); the deploy workflow sets
+// https://getwaggle.dev, which is also the default so canonical URLs and the sitemap always build.
+const site = process.env.SITE_URL || 'https://getwaggle.dev';
 
 // Starlight serves src/content/docs/ from the site root and has no docs-only base.
 // Astro's base would also move the landing page (src/pages/index.astro) and the

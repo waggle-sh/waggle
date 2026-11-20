@@ -10,6 +10,7 @@
     "sync": "node scripts/sync-docs.mjs",
     "dev": "npm run sync && astro dev",
     "build": "npm run sync && astro build && node scripts/legacy-redirects.mjs",
+    "check-links": "node scripts/check-links.mjs",
     "preview": "astro preview"
   },
   "dependencies": {
