@@ -34,6 +34,15 @@ type Round struct {
 	ClosesAt  string   `json:"closes_at"`
 	Items     []string `json:"items"`
 	NectarAt  NectarAt `json:"nectar_at"`
+	// Depends records each item's task dependencies read at open (Q-T054-4).
+	// Items without dependencies are left out.
+	Depends []Dependency `json:"depends,omitempty"`
+}
+
+// Dependency lists the tasks an item waits for.
+type Dependency struct {
+	Item string   `json:"item"`
+	On   []string `json:"on"`
 }
 
 // Vote is one item and its whole vote count.
@@ -93,6 +102,17 @@ type TallyRecord struct {
 	Vetoes    []Veto            `json:"vetoes"`
 	Rejected  bool              `json:"rejected"`
 	Malformed []Malformed       `json:"malformed"`
+	// CloseCommit is the commit whose DECISIONS.md the close read (phase C).
+	CloseCommit string `json:"close_commit,omitempty"`
+	// Ignored lists vetoes that were not applied, with a fixed reason code.
+	Ignored []IgnoredVeto `json:"ignored_vetoes,omitempty"`
+}
+
+// IgnoredVeto is a veto record that close did not apply.
+type IgnoredVeto struct {
+	Item     string `json:"item"`
+	Decision string `json:"decision"`
+	Reason   string `json:"reason"`
 }
 
 // Encode returns the canonical bytes of a record: two-space indent, a
@@ -126,6 +146,16 @@ func canonRound(r Round) Round {
 	items := append([]string{}, r.Items...)
 	sort.SliceStable(items, func(i, j int) bool { return itemLess(items[i], items[j]) })
 	r.Items = items
+	if len(r.Depends) > 0 {
+		deps := make([]Dependency, len(r.Depends))
+		for i, d := range r.Depends {
+			on := append([]string{}, d.On...)
+			sort.SliceStable(on, func(a, b int) bool { return itemLess(on[a], on[b]) })
+			deps[i] = Dependency{Item: d.Item, On: on}
+		}
+		sort.SliceStable(deps, func(i, j int) bool { return itemLess(deps[i].Item, deps[j].Item) })
+		r.Depends = deps
+	}
 	return r
 }
 
@@ -155,6 +185,17 @@ func canonTally(t TallyRecord) TallyRecord {
 			return t.Malformed[i].Ref < t.Malformed[j].Ref
 		}
 		return t.Malformed[i].Reason < t.Malformed[j].Reason
+	})
+	t.Ignored = append([]IgnoredVeto(nil), t.Ignored...)
+	sort.SliceStable(t.Ignored, func(i, j int) bool {
+		a, b := t.Ignored[i], t.Ignored[j]
+		if a.Item != b.Item {
+			return a.Item < b.Item
+		}
+		if a.Decision != b.Decision {
+			return a.Decision < b.Decision
+		}
+		return a.Reason < b.Reason
 	})
 	if t.Nectar == nil {
 		t.Nectar = map[string]uint64{}
