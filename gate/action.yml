@@ -1,16 +1,25 @@
 # SPDX-License-Identifier: Apache-2.0
 name: Waggle gate
-description: Build waggle from this Action's own pinned tree and run waggle gate verify on a pull request.
+description: Build waggle from this Action's own pinned tree, then run waggle gate verify on a pull request (mode verify) or write gate-run receipts after a push to the default branch (mode gate-receipt).
 
 inputs:
+  mode:
+    description: "verify runs waggle gate verify on a pull request. gate-receipt runs waggle nectar gate-receipt on a push to the default branch."
+    default: verify
   base-sha:
     description: Base commit of the pull request.
     default: ${{ github.event.pull_request.base.sha }}
   head-sha:
     description: Head commit of the pull request.
     default: ${{ github.event.pull_request.head.sha }}
+  before:
+    description: Mode gate-receipt only. Commit the default branch pointed at before the push.
+    default: ${{ github.event.before }}
+  after:
+    description: Mode gate-receipt only. Commit the default branch points at after the push.
+    default: ${{ github.event.after }}
   token:
-    description: Token the gate uses to read pull request reviews.
+    description: Token the gate uses to read pull request reviews. In mode gate-receipt it also reads the merged pull request for each commit.
     default: ${{ github.token }}
 
 runs:
@@ -43,9 +52,23 @@ runs:
     - name: Run the gate
       shell: bash
       env:
+        MODE: ${{ inputs.mode }}
         BASE_SHA: ${{ inputs.base-sha }}
         HEAD_SHA: ${{ inputs.head-sha }}
+        BEFORE_SHA: ${{ inputs.before }}
+        AFTER_SHA: ${{ inputs.after }}
         GITHUB_TOKEN: ${{ inputs.token }}
       run: |
         set -euo pipefail
-        "$RUNNER_TEMP/waggle-gate/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA"
+        case "$MODE" in
+          verify)
+            "$RUNNER_TEMP/waggle-gate/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA"
+            ;;
+          gate-receipt)
+            "$RUNNER_TEMP/waggle-gate/waggle" nectar gate-receipt --before "$BEFORE_SHA" --after "$AFTER_SHA" --actor "$GITHUB_ACTOR"
+            ;;
+          *)
+            echo "::error::unknown mode '$MODE'; use verify or gate-receipt"
+            exit 2
+            ;;
+        esac
