@@ -85,7 +85,7 @@ Checks that claim refs can be pushed and the gate is a required check. It report
 
 ## Hive commands
 
-These serve the full Waggle hive workflow: roles (a **forager** triages and maps leases, a **builder** implements, a **guard** reviews, a **scout** writes briefs), worktrees and a decisions log. You do not need them to run the gate. There is no command for Nectar or Quorum yet; both are on the roadmap.
+These serve the full Waggle hive workflow: roles (a **forager** triages and maps leases, a **builder** implements, a **guard** reviews, a **scout** writes briefs), worktrees and a decisions log. You do not need them to run the gate. The only Nectar command is `waggle nectar backfill`; there is no scoring command yet, and Quorum has no code (roadmap).
 
 | Command | Usage | Purpose |
 | :--- | :--- | :--- |

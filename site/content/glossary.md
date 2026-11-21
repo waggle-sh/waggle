@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Glossary
 
-Waggle uses bee words on purpose. Each one stands for something plain, and this page says what. The big picture is on [the hive](/docs/hive/). Terms for things that are not built yet are marked **roadmap**.
+Waggle uses bee words on purpose. Each one stands for something plain, and this page says what. The big picture is on [the hive](/docs/hive/). Terms for things that are not built yet are marked **roadmap** (designed, no code) or **coming soon** (a part that already works in a smaller form).
 
 ## People and agents
 
@@ -9,7 +9,7 @@ Waggle uses bee words on purpose. Each one stands for something plain, and this 
 
 **Head Keeper.** The keeper who owns the project's direction. The first login in `gate.approvers`. Only their approval passes a change to the hive's steering files.
 
-**Master Keeper.** The project owner, today the Head Keeper, in their role as holder of the veto over Quorum results. **Roadmap**, with Quorum.
+**Master Keeper.** The project owner, today the Head Keeper, in their role as holder of the veto over Quorum results. **Roadmap**, with Quorum. Not a current title: today that person is the Head Keeper.
 
 **Queen.** A coordinating agent a keeper talks to. She does not write feature code. She agrees the task with the keeper, opens the issue, writes the claim and starts the workers.
 
@@ -41,10 +41,10 @@ Waggle uses bee words on purpose. Each one stands for something plain, and this 
 
 ## Honey
 
-**Honey.** A contributor's standing in the project, built from real merged work. It has two halves, Nectar and Quorum. **Roadmap.**
+**Honey.** A contributor's standing in the project, built from real merged work. It has two halves, Nectar and Quorum. **Coming soon** for Nectar, **roadmap** for Quorum.
 
-**Nectar.** Reputation from merged commits that survive 30 days on `main` without a revert, credited through the claim. **Roadmap.**
+**Nectar.** Reputation from merged commits that survive 30 days on `main` without a revert, credited through the claim. **Coming soon**: `waggle nectar backfill` is on `main`, the scorer is not.
 
-**Quorum.** Quadratic voting on roadmap and issue priority, where each person's weight is the square root of their Nectar. The Master Keeper can veto the result. **Roadmap.**
+**Quorum.** Quadratic voting on roadmap and issue priority, where each person's weight is the square root of their Nectar. The project owner, in the Master Keeper role, can veto the result. **Roadmap.**
 
 See [the hive](/docs/hive/#built-today-and-coming) for what is built and what is coming.
