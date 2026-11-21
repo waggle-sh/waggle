@@ -52,6 +52,9 @@ func runNectar(args []string, stdout, stderr io.Writer) int {
 	if len(args) > 0 && args[0] == "gate-receipt" {
 		return runNectarGateReceipt(args[1:], stdout, stderr)
 	}
+	if len(args) > 0 && args[0] == "explain" {
+		return runNectarExplain(args[1:], stdout, stderr)
+	}
 	if len(args) > 0 && args[0] == "backfill" {
 		return runNectarBackfill(args[1:], stdout, stderr)
 	}
