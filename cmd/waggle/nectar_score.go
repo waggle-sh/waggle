@@ -25,7 +25,7 @@ import (
 	"github.com/waggle-sh/waggle/internal/nectar"
 )
 
-const summaryUsage = "Usage: waggle nectar [--repo <dir>] [--keeper <id>] [--now <rfc3339>] [--main <oid>] [--receipts <oid>] [--no-fetch] [--recompute] [--json]"
+const summaryUsage = "Usage: waggle nectar [--repo <dir>] [--keeper <id>] [--now <rfc3339>] [--main <oid>] [--receipts <oid>] [--no-fetch] [--recompute] [--json]\n       waggle nectar explain <task> [--repo <dir>] [--now <rfc3339>] [--main <oid>] [--receipts <oid>] [--no-fetch] [--json]"
 
 const summaryHelp = "Prints every keeper's reputation score from merged tasks that last 30 days on main without a revert, every count of a rule that gave less than full credit, and the exact inputs it was scored at. It fetches release records, then main, unless --no-fetch is given."
 

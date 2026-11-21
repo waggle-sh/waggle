@@ -109,7 +109,7 @@ func TestNectarRepoName(t *testing.T) {
 	}
 }
 
-// A12: help is plain, the main.go line has no dash and no explain.
+// A12: help is plain and the main.go line has no dash.
 func TestNectarSummaryHelp(t *testing.T) {
 	_, errb, exit := nectarCLI(t, "-h")
 	if exit != 0 {
@@ -123,9 +123,6 @@ func TestNectarSummaryHelp(t *testing.T) {
 	for _, line := range strings.Split(string(src), "\n") {
 		if strings.HasPrefix(strings.TrimSpace(line), "nectar ") {
 			checkPlain(t, "main.go nectar line", line, "Reputation score")
-			if strings.Contains(line, "explain") {
-				t.Errorf("line names explain: %s", line)
-			}
 		}
 	}
 	if !strings.HasPrefix(nectarUsage, backfillUsage) {

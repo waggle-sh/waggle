@@ -134,7 +134,7 @@ Commands (v0.1 Bootstrap):
   dispatch  Claim a ticket, run a worker in a worktree, check its changes against the claim (waggle dispatch <ticket> --help)
   claim     Lease directories for a task: waggle claim <task> --dirs <a,b> --gate light|full [--json]
   release   Give back your claim for a task once its branch has merged [--json]
-  nectar    Reputation score from merged tasks that last 30 days on main without a revert: waggle nectar [--json]; backfill adds missing release records
+  nectar    Reputation score from merged tasks that last 30 days on main without a revert: waggle nectar [--json] [explain <task>]; backfill adds missing release records
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, daemon state and per-ticket token use
   hives     Read-only view across your hives from a registry file: waggle hives status [--registry <file>] [--json]; cross-repo plans: waggle hives plan
