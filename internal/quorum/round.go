@@ -49,6 +49,7 @@ var (
 	ErrBadRound         = errors.New("quorum: round record is invalid")
 	ErrBadRequest       = errors.New("quorum: invalid request")
 	ErrTallyMismatch    = errors.New("quorum: tally does not match a recomputation")
+	ErrUnknownVersion   = errors.New("quorum: unknown record version")
 )
 
 const (
@@ -466,8 +467,25 @@ func decodeStrict(data []byte, v any) error {
 	return nil
 }
 
+// checkVersion reads only the version field of a record and refuses any
+// version this build does not know, before the strict decode can fail on
+// fields a newer version added. what names the record in the message.
+func checkVersion(data []byte, what string) error {
+	var v struct {
+		Version *int `json:"version"`
+	}
+	if json.Unmarshal(data, &v) != nil || v.Version == nil || *v.Version == Version {
+		return nil // a malformed record is the strict decoder's to report
+	}
+	return fmt.Errorf("%w: %s version %d, this build reads version %d", ErrUnknownVersion, what, *v.Version, Version)
+}
+
 // DecodeRound decodes round.json, refusing unknown fields and trailing data.
+// A version other than Version is ErrUnknownVersion.
 func DecodeRound(data []byte) (Round, error) {
+	if err := checkVersion(data, "round.json"); err != nil {
+		return Round{}, err
+	}
 	var r Round
 	if err := decodeStrict(data, &r); err != nil {
 		return Round{}, fmt.Errorf("%w: %v", ErrBadRound, err)
@@ -476,7 +494,11 @@ func DecodeRound(data []byte) (Round, error) {
 }
 
 // DecodeTally decodes tally.json, refusing unknown fields and trailing data.
+// A version other than Version is ErrUnknownVersion.
 func DecodeTally(data []byte) (TallyRecord, error) {
+	if err := checkVersion(data, "tally.json"); err != nil {
+		return TallyRecord{}, err
+	}
 	var t TallyRecord
 	if err := decodeStrict(data, &t); err != nil {
 		return TallyRecord{}, fmt.Errorf("%w: tally: %v", ErrTallyMismatch, err)
@@ -588,6 +610,9 @@ func (l Lifecycle) loadChain(ctx context.Context, n int) (*chain, error) {
 		if rec, _, ok, err := l.readRecord(ctx, oids[i], TallyFile, TallySigFile); err != nil {
 			return nil, err
 		} else if ok {
+			if err := checkVersion(rec.Data, "tally.json"); err != nil {
+				return nil, err
+			}
 			ch.TallyRec = &rec
 			break
 		}

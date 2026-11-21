@@ -586,10 +586,17 @@ func TestVerifyReceipt(t *testing.T) {
 			t.Errorf("receipt %s = %q, %v; want %q", oid, res.Receipt, err, want)
 		}
 	}
-	// A ballot cast after close is not counted and not superseded.
-	late := f.cast(o.l, o.round, "bob", "keybob", "T-101", 1)
+	// A recast of a counted ballot after close is not counted and not
+	// superseded, and the tally still verifies.
+	late := f.cast(o.l, o.round, "alice", "keyalice", "T-101", 1)
 	if res, err := o.l.Verify(ctx, 1, late); err != nil || res.Receipt != ReceiptMissing {
 		t.Errorf("late receipt = %q, %v", res.Receipt, err)
+	}
+	// A first ballot after close cannot be told from one an approver left out
+	// (ballot commits carry no time), so verify reports it.
+	f.cast(o.l, o.round, "bob", "keybob", "T-101", 1)
+	if _, err := o.l.Verify(ctx, 1, ""); !errors.Is(err, ErrTallyMismatch) {
+		t.Errorf("late first ballot: %v", err)
 	}
 }
 
@@ -755,5 +762,96 @@ func TestScanQuorumBlock(t *testing.T) {
 		if (err != nil) != c.bad || (!c.bad && (cr != c.credits || d != c.days)) {
 			t.Errorf("%q = %d, %d, %v", c.in, cr, d, err)
 		}
+	}
+}
+
+// A tally rebuilt consistently without one valid ballot, or with it relabeled
+// as malformed, fails verify against the ballot refs.
+func TestC4VerifyOmittedBallot(t *testing.T) {
+	ctx := context.Background()
+	f := newFixture(t)
+	o, _, n := f.closedRound(t, false)
+	ch, err := o.l.loadChain(ctx, n)
+	if err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := (Store{Comb: o.l.Comb}).LoadBallots(ctx, ch.Round, ch.Info.verifier)
+	if err != nil || len(loaded.Counted) != 2 {
+		t.Fatalf("loaded %+v, %v", loaded, err)
+	}
+	var kept Loaded
+	for _, c := range loaded.Counted {
+		if c.Ballot.KeeperID == "alice" {
+			kept.Counted = append(kept.Counted, c)
+		}
+	}
+	omit := func(name string, l Loaded) {
+		t.Helper()
+		want, err := o.l.compute(ctx, ch, l, f.base)
+		if err != nil {
+			t.Fatal(err)
+		}
+		replaceTally(t, f, o, n, Encode(want), nil, "alice")
+		// The forged tally is internally consistent: only the refs expose it.
+		if _, err := o.l.Verify(ctx, n, ""); !errors.Is(err, ErrTallyMismatch) {
+			t.Fatalf("%s: %v", name, err)
+		}
+	}
+	omit("omitted", kept)
+	var bob CountedBallot
+	for _, c := range loaded.Counted {
+		if c.Ballot.KeeperID == "bob" {
+			bob = c
+		}
+	}
+	kept.Malformed = []Malformed{{Ref: bob.Ref, Reason: ReasonSignature}}
+	omit("relabeled", kept)
+}
+
+// A round or tally record of another version is refused with
+// ErrUnknownVersion by load, close, verify and status, not "tally differs".
+func TestUnknownVersion(t *testing.T) {
+	ctx := context.Background()
+	f := newFixture(t)
+
+	o, tl, n := f.closedRound(t, false)
+	v2 := bytes.Replace(Encode(tl), []byte(`"version": 1`), []byte(`"version": 2`), 1)
+	if bytes.Equal(v2, Encode(tl)) {
+		t.Fatal("test edit did not apply")
+	}
+	replaceTally(t, f, o, n, v2, nil, "alice")
+	if _, err := o.l.Verify(ctx, n, ""); !errors.Is(err, ErrUnknownVersion) {
+		t.Fatalf("verify, version 2 tally: %v", err)
+	}
+	if _, err := o.l.Status(ctx, n, f.base); !errors.Is(err, ErrUnknownVersion) {
+		t.Fatalf("status, version 2 tally: %v", err)
+	}
+	if _, err := DecodeTally(v2); !errors.Is(err, ErrUnknownVersion) {
+		t.Fatalf("decode, version 2 tally: %v", err)
+	}
+
+	// A version 2 round root, signed by an approver, under its own number.
+	r := o.round
+	r.Round, r.Version = 9, 2
+	data := Encode(r)
+	sig, err := fakeSigner(t, "keyalice").Sign(ctx, NamespaceRound, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	when, _ := ballotTime(r)
+	if _, err := o.l.appendRecord(ctx, 9, "", recordFiles(RoundFile, data, RoundSigFile, sig, "alice"), "open", when); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := o.l.LoadRound(ctx, 9); !errors.Is(err, ErrUnknownVersion) {
+		t.Fatalf("load, version 2 round: %v", err)
+	}
+	if _, _, err := o.l.Close(ctx, 9, f.base, f.actor("alice", "keyalice")); !errors.Is(err, ErrUnknownVersion) {
+		t.Fatalf("close, version 2 round: %v", err)
+	}
+	if _, err := o.l.Verify(ctx, 9, ""); !errors.Is(err, ErrUnknownVersion) {
+		t.Fatalf("verify, version 2 round: %v", err)
+	}
+	if _, err := o.l.Status(ctx, 9, f.base); !errors.Is(err, ErrUnknownVersion) {
+		t.Fatalf("status, version 2 round: %v", err)
 	}
 }

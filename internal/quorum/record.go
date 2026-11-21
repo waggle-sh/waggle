@@ -91,17 +91,19 @@ type Malformed struct {
 // TallyRecord is tally.json. Nectar is the parsed keeper_id to milli-Nectar map
 // (Q-T054-2), not the raw report. Order lists the ready order after vetoes.
 type TallyRecord struct {
-	Version   int               `json:"version"`
-	Round     int               `json:"round"`
-	Credits   uint64            `json:"credits"`
-	NectarAt  NectarAt          `json:"nectar_at"`
-	Nectar    map[string]uint64 `json:"nectar_milli"`
-	Counted   []string          `json:"counted"`
-	Items     []ItemScore       `json:"items"`
-	Order     []string          `json:"order"`
-	Vetoes    []Veto            `json:"vetoes"`
-	Rejected  bool              `json:"rejected"`
-	Malformed []Malformed       `json:"malformed"`
+	Version  int               `json:"version"`
+	Round    int               `json:"round"`
+	Credits  uint64            `json:"credits"`
+	NectarAt NectarAt          `json:"nectar_at"`
+	Nectar   map[string]uint64 `json:"nectar_milli"`
+	// Counted lists the commit OIDs of the counted ballots, one per Keeper
+	// (the chain tip at close), sorted. They are not keeper_ids.
+	Counted   []string    `json:"counted"`
+	Items     []ItemScore `json:"items"`
+	Order     []string    `json:"order"`
+	Vetoes    []Veto      `json:"vetoes"`
+	Rejected  bool        `json:"rejected"`
+	Malformed []Malformed `json:"malformed"`
 	// CloseCommit is the commit whose DECISIONS.md the close read (phase C).
 	CloseCommit string `json:"close_commit,omitempty"`
 	// Ignored lists vetoes that were not applied, with a fixed reason code.
