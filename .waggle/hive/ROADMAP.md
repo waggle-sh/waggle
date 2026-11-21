@@ -25,8 +25,11 @@ T-050 · Nectar design brief (scoring rules, revert window, attribution from cla
 T-051 · Nectar scorer (git history + claim owners, 30-day survival, revert clawback) · M · proposed · v0.2 · product
 T-052 · Nectar status surfaces (CLI / derived view; no public dashboard required) · M · proposed · v0.2 · product
 T-053 · Quorum design brief (ballot store, sqrt weight, Head Keeper veto, Sybil notes) · S · proposed · v0.2 · design
-T-054 · Quorum voting MVP (roadmap/issue priority ballots) · M · proposed · v0.2 · product
+T-054 · Quorum voting MVP (roadmap/issue priority ballots; four phases, nothing cut) · L · proposed · v0.2 · product
+T-071 · Signed Head Keeper approval for protected paths (T-054 Quorum family; verify-leases-and-tiers accepts it so gate/, .github/workflows and control path PRs merge without an admin bypass) · M · proposed · v0.1 (public gate; a gate change, sequenced after T-054 phase A) · product
 T-055 · Multi-Keeper story restore (RFC + README/CONTRIBUTING cut-list unwind; relay design spike) · S · proposed · v0.2 · docs+design
+T-069 · Quorum RFC phase 3 (area rounds, alias merge, collusion flags, commit-reveal) · TBD · proposed · follow-on release (named by the Head Keeper, not v0.2) · product
+T-070 · Quorum RFC phase 2 (fork contributor export and import, relay transport with T-055) · TBD · proposed · v0.2 · product
 
 ## Still deferred (not honey)
 

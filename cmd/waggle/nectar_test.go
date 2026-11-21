@@ -25,7 +25,7 @@ func TestNectarBackfillHelpAndUsage(t *testing.T) {
 		t.Errorf("-h exit %d", exit)
 	}
 	checkPlain(t, "nectar backfill -h", errb.String(), "-apply", "-owner", "Without --apply it prints the plan and writes nothing.")
-	for _, args := range [][]string{nil, {"score"}, {"backfill", "extra"}, {"backfill", "--bogus"}} {
+	for _, args := range [][]string{{"score"}, {"backfill", "extra"}, {"backfill", "--bogus"}} {
 		out.Reset()
 		errb.Reset()
 		if exit := runNectar(args, &out, &errb); exit != 2 {

@@ -20,6 +20,7 @@ import (
 type lineCount struct {
 	code, docs int64    // added plus deleted, counted
 	added      int64    // counted added lines, for the pure-deletion rule
+	paths      []string // counted paths that gained lines, for the survival blame
 	excluded   []string // binary, lockfile and linguist-generated paths, sorted
 	tier       comb.RiskTier
 }
@@ -28,12 +29,15 @@ type lineCount struct {
 // empty tree for a root commit): added, deleted and path, with renames off. A
 // binary file has "-" counts.
 func (g repo) numstat(ctx context.Context, c *commit) ([]numRow, error) {
-	args := []string{"diff-tree", "-r", "-z", "--no-renames", "--numstat", "--no-commit-id"}
 	if len(c.parents) == 0 {
-		args = append(args, "--root", c.oid)
-	} else {
-		args = append(args, c.parents[0], c.oid)
+		return g.numstatRange(ctx, "--root", c.oid)
 	}
+	return g.numstatRange(ctx, c.parents[0], c.oid)
+}
+
+// numstatRange reads git diff-tree --numstat with renames off for args.
+func (g repo) numstatRange(ctx context.Context, args ...string) ([]numRow, error) {
+	args = append([]string{"diff-tree", "-r", "-z", "--no-renames", "--numstat", "--no-commit-id"}, args...)
 	out, err := g.run(ctx, nil, args...)
 	if err != nil {
 		return nil, err
@@ -89,19 +93,38 @@ func (r *rules) countLines(ctx context.Context, g repo, c *commit, policy comb.T
 			lc.code += row.added + row.deleted
 			lc.added += row.added
 		}
+		if row.added > 0 && !row.binary && !r.isLockfile(row.path) && !gen[row.path] {
+			lc.paths = append(lc.paths, row.path)
+		}
 	}
 	return nil
 }
 
-// tierPolicyAt reads gate.protected_paths from the config at commit oid. A
-// missing, oversized or unparsable file at an old base means no extra paths, as
-// an absent file does for the gate.
-func (g repo) tierPolicyAt(ctx context.Context, oid string) (comb.TierPolicy, error) {
-	cfg, err := g.configAt(ctx, oid)
-	if err != nil || cfg == nil {
-		return comb.TierPolicy{}, nil
+// crow is one counted row of a commit's diff, with its weight class.
+type crow struct {
+	added, deleted int64
+	docs           bool
+}
+
+// countedRows reads the rows of commit c that count toward a unit (not binary,
+// lockfile or generated), by path.
+func (r *rules) countedRows(ctx context.Context, g repo, c *commit) (map[string]crow, error) {
+	rows, err := g.numstat(ctx, c)
+	if err != nil {
+		return nil, err
 	}
-	return comb.TierPolicy{ExtraTier3: cfg.Gate.ProtectedPaths}, nil
+	gen, err := g.generated(ctx, c.oid, rows, r.generatedAttr)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]crow{}
+	for _, row := range rows {
+		if row.binary || r.isLockfile(row.path) || gen[row.path] {
+			continue
+		}
+		out[row.path] = crow{row.added, row.deleted, r.isDocs(row.path)}
+	}
+	return out, nil
 }
 
 // configAt parses the hive config as committed at oid; nil means no file.

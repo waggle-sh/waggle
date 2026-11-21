@@ -64,7 +64,9 @@ func TestRevertScope(t *testing.T) {
 		f.addReceipt(f.receipt("T-001", "alice", small), "")
 		rep := f.score(f.clock.Add(40 * day))
 		u := unitFor(t, rep, "T-001")
-		if u.State != StateDropped || !slices.Contains(u.Reasons, "revert_before_maturity") ||
+		// The revert undoes 300 of the unit's 301 lines: a partial revert (phase C,
+		// RFC 4.3), and the lines are gone, so rule 2 drops it.
+		if u.State != StateDropped || !slices.Contains(u.Reasons, "alive_below_ratio") ||
 			(keeper(rep, "alice") != nil && keeper(rep, "alice").Nectar != 0) {
 			t.Fatalf("%+v %+v", u, rep.Summary.Keepers)
 		}

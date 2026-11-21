@@ -18,11 +18,26 @@ var oidPattern = regexp.MustCompile(`^[0-9a-f]{40}([0-9a-f]{24})?$`)
 
 // repo runs the git binary against one directory. The environment drops every
 // source of state that could differ between clones: user and system config,
-// replace refs and grafts, optional locks.
+// replace refs and grafts, optional locks. The repository's own config stays
+// readable, so pinned has every key in it that changes what log -p, patch-id
+// or blame print back to git's default.
 type repo struct{ dir string }
 
+var pinned = []string{
+	"log.showSignature=false", "log.showRoot=true", "core.quotepath=false", "i18n.logOutputEncoding=UTF-8",
+	// blame.ignoreRevsFile is cleared by blameCount's --ignore-revs-file= instead.
+	"blame.markIgnoredLines=false", "blame.markUnblamableLines=false",
+	"diff.algorithm=myers", "diff.indentHeuristic=true", "diff.context=3", "diff.interHunkContext=0",
+	"diff.noprefix=false", "diff.mnemonicPrefix=false", "diff.relative=false", "diff.suppressBlankEmpty=false",
+	"diff.renames=false", // diff.orderFile only reorders files, and patch-id --stable ignores order.
+}
+
 func (g repo) run(ctx context.Context, stdin []byte, args ...string) ([]byte, error) {
-	full := append([]string{"-C", g.dir, "-c", "log.showSignature=false", "-c", "core.quotepath=false"}, args...)
+	full := []string{"-C", g.dir}
+	for _, kv := range pinned {
+		full = append(full, "-c", kv)
+	}
+	full = append(full, args...)
 	cmd := exec.CommandContext(ctx, "git", full...)
 	cmd.Env = append(os.Environ(), "LC_ALL=C", "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null",
 		"GIT_NO_REPLACE_OBJECTS=1", "GIT_OPTIONAL_LOCKS=0")

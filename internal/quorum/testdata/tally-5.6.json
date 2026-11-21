@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "round": 1,
+  "credits": 100,
+  "nectar_at": {
+    "main_sha": "0123456789abcdef0123456789abcdef01234567",
+    "now": "2026-11-20T12:00:00Z",
+    "receipts_sha": "0000000000000000000000000000000000000000",
+    "rules_version": 1
+  },
+  "nectar_milli": {
+    "A": 400000,
+    "B": 100000,
+    "C": 25000,
+    "E": 14250
+  },
+  "counted": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E"
+  ],
+  "items": [
+    {
+      "item": "T-102",
+      "score_milli": 220000,
+      "raw_votes": 16,
+      "vetoed": false
+    },
+    {
+      "item": "T-101",
+      "score_milli": 175000,
+      "raw_votes": 11,
+      "vetoed": false
+    },
+    {
+      "item": "T-103",
+      "score_milli": 63870,
+      "raw_votes": 24,
+      "vetoed": false
+    }
+  ],
+  "order": [
+    "T-102",
+    "T-101",
+    "T-103"
+  ],
+  "vetoes": [],
+  "rejected": false,
+  "malformed": []
+}

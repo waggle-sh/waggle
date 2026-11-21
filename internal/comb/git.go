@@ -26,7 +26,9 @@ import (
 const (
 	// CombModeDirect pushes claim refs directly (the default).
 	CombModeDirect = "direct"
-	// CombModeRelay routes claims through the Forge Action Relay (not implemented in v0.1).
+	// CombModeRelay behaves as direct mode for every Backend method. It marks a
+	// repo where the Forge Action Relay (internal/relay) may also write claims
+	// for contributors without push access.
 	CombModeRelay = "relay"
 )
 
@@ -88,7 +90,6 @@ type Options struct {
 type GitBackend struct {
 	repoDir  string
 	remote   string
-	relay    bool
 	maxDirs  int
 	ttl      time.Duration
 	now      func() time.Time
@@ -128,9 +129,7 @@ func NewGitBackend(opts Options) (*GitBackend, error) {
 		protected:  opts.Protected,
 	}
 	switch opts.CombMode {
-	case "", CombModeDirect:
-	case CombModeRelay:
-		b.relay = true
+	case "", CombModeDirect, CombModeRelay:
 	default:
 		return nil, fmt.Errorf("comb: unknown comb mode %q", opts.CombMode)
 	}
@@ -521,8 +520,16 @@ func isActive(l Lease, now time.Time) bool { return l.ExpiresAt.After(now) }
 // exception is Options.Protected, which applies only here, when a lease is
 // written: a config change never turns a stored claim malformed.
 func (b *GitBackend) AcquireLease(ctx context.Context, lease Lease) error {
-	if b.relay {
-		return ErrRelayNotImplemented
+	return b.AcquireLeaseWithTrailers(ctx, lease, nil)
+}
+
+// AcquireLeaseWithTrailers is AcquireLease with validated Key: value lines
+// appended to the claim commit message (see Trailer). With no trailers the
+// commit message is byte-identical to AcquireLease's.
+func (b *GitBackend) AcquireLeaseWithTrailers(ctx context.Context, lease Lease, trailers []Trailer) error {
+	suffix, err := formatTrailers(trailers)
+	if err != nil {
+		return err
 	}
 	now := b.now()
 	l, err := b.prepareLease(lease, now)
@@ -581,7 +588,7 @@ func (b *GitBackend) AcquireLease(ctx context.Context, lease Lease) error {
 	}
 
 	msg := fmt.Sprintf("waggle: %s %s by %s (%s, %s)", verb, l.TicketID, l.KeeperID, l.Role, l.Gate)
-	newOID, err := b.buildCommit(ctx, l, parent, msg, now)
+	newOID, err := b.buildCommit(ctx, l, parent, msg+suffix, now)
 	if err != nil {
 		return err
 	}
@@ -751,6 +758,15 @@ func pushRejected(out []byte, ref string) bool {
 
 // pushClaim writes ref on the remote with push --atomic --force-with-lease.
 func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero, ticket string) error {
+	return b.pushRef(ctx, ref, newOID, expected, zero, ticket, "claim", ErrAlreadyClaimed, b.sync)
+}
+
+// pushRef is the CAS push shared by claims and the object-ref writer. label
+// and what only shape error text; lost is wrapped into every lost-race error;
+// resync mirrors the remote namespace of ref after a rejected push. The claim
+// error strings pushClaim produces through it are pinned by tests
+// (TestPushRefClaimTextPinned), so keep label, what and the format strings.
+func (b *GitBackend) pushRef(ctx context.Context, ref, newOID, expected, zero, label, what string, lost error, resync func(context.Context) error) error {
 	leaseArg := "--force-with-lease=" + ref + ":"
 	if expected != zero {
 		leaseArg += expected
@@ -765,19 +781,19 @@ func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero,
 		if ctx.Err() != nil || !pushRejected(out, ref) {
 			return err
 		}
-		if serr := b.sync(ctx); serr != nil {
-			return fmt.Errorf("%s: push rejected (%v), resync failed (%v): %w", ticket, err, serr, ErrAlreadyClaimed)
+		if serr := resync(ctx); serr != nil {
+			return fmt.Errorf("%s: push rejected (%v), resync failed (%v): %w", label, err, serr, lost)
 		}
 		cur, rerr := b.readRefOID(ctx, ref, zero)
 		if rerr != nil {
-			return fmt.Errorf("%s: push rejected (%v): %w", ticket, err, ErrAlreadyClaimed)
+			return fmt.Errorf("%s: push rejected (%v): %w", label, err, lost)
 		}
 		if cur != expected {
-			return fmt.Errorf("%s: lost claim race: %w", ticket, ErrAlreadyClaimed)
+			return fmt.Errorf("%s: lost %s race: %w", label, what, lost)
 		}
 		if attempt >= maxCASRetries {
 			return fmt.Errorf("comb: %s: push rejected %d times with remote ref unchanged: %w",
-				ticket, attempt+1, err)
+				label, attempt+1, err)
 		}
 		if b.hookBeforeRetry != nil {
 			b.hookBeforeRetry(attempt)
@@ -795,9 +811,6 @@ func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero,
 // the ref changed between read and delete. In local mode transient lock
 // contention is retried like AcquireLease does.
 func (b *GitBackend) ReleaseLease(ctx context.Context, ticketID string, keeperID string) error {
-	if b.relay {
-		return ErrRelayNotImplemented
-	}
 	ref, err := RefName(ticketID)
 	if err != nil {
 		return err
@@ -866,9 +879,6 @@ func (b *GitBackend) ReleaseLease(ctx context.Context, ticketID string, keeperID
 // rules, so a rule change can report an existing claim as malformed. Returned
 // leases carry canonical ticket IDs and normalized directories only.
 func (b *GitBackend) ListActiveLeases(ctx context.Context) ([]Lease, error) {
-	if b.relay {
-		return nil, ErrRelayNotImplemented
-	}
 	if b.remote != "" {
 		if err := b.sync(ctx); err != nil {
 			return nil, err
@@ -903,9 +913,6 @@ func (b *GitBackend) ListActiveLeases(ctx context.Context) ([]Lease, error) {
 // ClaimOID returns the commit OID of the ticket's claim ref, or ErrNotFound.
 // In remote mode it syncs first. It exists mainly for tests and diagnostics.
 func (b *GitBackend) ClaimOID(ctx context.Context, ticketID string) (string, error) {
-	if b.relay {
-		return "", ErrRelayNotImplemented
-	}
 	ref, err := RefName(ticketID)
 	if err != nil {
 		return "", err
