@@ -35,7 +35,7 @@ func TestNectarGateReceiptForgeFields(t *testing.T) {
 		warnings   int
 	}{
 		{"found", fakeCommitForge{pr: forge.MergedPull{Number: 12, Author: "carol", HeadBranch: "t-023", Approvers: []string{"dave"}}, ok: true}, float64(12), false, 0},
-		{"branch not in claim", fakeCommitForge{pr: forge.MergedPull{Number: 12, Author: "carol", HeadBranch: "other"}, ok: true}, nil, false, 0},
+		{"branch not in claim", fakeCommitForge{pr: forge.MergedPull{Number: 12, Author: "carol", HeadBranch: "other"}, ok: true}, nil, true, 0},
 		{"no pull request", fakeCommitForge{}, nil, false, 0},
 		{"no forge", fakeCommitForge{err: nectar.ErrNoForge}, nil, true, 0},
 		{"failed read", fakeCommitForge{err: errors.New("boom")}, nil, true, 1},

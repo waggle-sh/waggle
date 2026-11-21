@@ -139,7 +139,8 @@ func GateReceipt(ctx context.Context, r GateReceiptRequest) (res GateReceiptResu
 	if !zeroBefore && !shaArg.MatchString(r.Before) {
 		return res, usagef("--before %q is not a full commit id", r.Before)
 	}
-	if !comb.ValidKeeperID(r.Actor) {
+	actor := ReleasedBy(r.Actor)
+	if !comb.ValidKeeperID(actor) {
 		return res, usagef("actor %q is not a valid keeper id (released_by)", r.Actor)
 	}
 	repo, err := filepath.Abs(r.RepoDir)
@@ -256,7 +257,7 @@ func GateReceipt(ctx context.Context, r GateReceiptRequest) (res GateReceiptResu
 			KeeperID: l.KeeperID, CoKeepers: []string{}, Role: l.Role, Gate: l.Gate,
 			ClaimedAt: &claimed, Branches: append([]string{}, l.Branches...),
 			BaseSHA: &base, MergedSHA: &sha, MergedAt: &at,
-			Approvers: []string{}, ReleasedBy: r.Actor,
+			Approvers: []string{}, ReleasedBy: actor,
 			Status: comb.ReceiptMerged, MergeProof: comb.ProofBinding, Incomplete: true,
 		}
 		if base == "" {
@@ -269,14 +270,18 @@ func GateReceipt(ctx context.Context, r GateReceiptRequest) (res GateReceiptResu
 		case errors.Is(ferr, ErrNoForge):
 		case ferr != nil:
 			forgeFailed++
-		default:
+		case !ok:
+			// No merged pull request: a direct push, recorded as complete.
 			rec.Incomplete = false
-			if ok && slices.Contains(l.Branches, pr.HeadBranch) {
-				n, author, head := pr.Number, pr.Author, pr.HeadBranch
-				rec.PRNumber, rec.PRAuthor, rec.HeadBranch = &n, &author, &head
-				rec.Approvers = append([]string{}, pr.Approvers...)
-				item.PR = n
-			}
+		case slices.Contains(l.Branches, pr.HeadBranch):
+			rec.Incomplete = false
+			n, author, head := pr.Number, pr.Author, pr.HeadBranch
+			rec.PRNumber, rec.PRAuthor, rec.HeadBranch = &n, &author, &head
+			rec.Approvers = append([]string{}, pr.Approvers...)
+			item.PR = n
+		default:
+			// A pull request from a branch the claim does not name: its fields
+			// are not the claim's, so they stay null and the receipt is incomplete.
 		}
 		if err := rec.Validate(len(sha)); err != nil && rec.PRNumber != nil {
 			// A forge answer the receipt rules refuse is dropped, as a release does.
@@ -315,6 +320,18 @@ func GateReceipt(ctx context.Context, r GateReceiptRequest) (res GateReceiptResu
 		}
 	}
 	return res, nil
+}
+
+// ReleasedBy maps a push actor to the keeper id recorded as released_by. A
+// GitHub App actor ends in "[bot]" (github-merge-queue[bot], dependabot[bot],
+// github-actions[bot]), which a keeper id cannot hold, so that suffix becomes
+// "-bot": github-merge-queue[bot] is recorded as github-merge-queue-bot. Any
+// other actor is returned as is.
+func ReleasedBy(actor string) string {
+	if name, ok := strings.CutSuffix(actor, "[bot]"); ok && name != "" {
+		return name + "-bot"
+	}
+	return actor
 }
 
 // lastOf returns the oid of the commit that precedes oid in commits ("" for the first).

@@ -184,6 +184,26 @@ func TestNectarGateReceiptNothingToWrite(t *testing.T) {
 	}
 }
 
+// A GitHub App actor such as github-merge-queue[bot] is recorded with a "-bot"
+// suffix instead of being refused.
+func TestNectarGateReceiptBotActor(t *testing.T) {
+	repo, origin, before := gateReceiptRepo(t)
+	t.Setenv("GITHUB_TOKEN", "")
+	after := commitGateFile(t, repo, "internal/x/s.go", "T-023: squash")
+	git(t, repo, "push", "-q", "origin", "main")
+	res, exit, stderr := runGateReceipt(t, repo, before, after, "--actor", "github-merge-queue[bot]")
+	if exit != 0 || res.Written != 1 {
+		t.Fatalf("exit %d res %+v stderr %q", exit, res, stderr)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal([]byte(gitStdout(t, origin, "show", "refs/waggle/receipts/main:receipt.json")), &raw); err != nil {
+		t.Fatal(err)
+	}
+	if raw["released_by"] != "github-merge-queue-bot" {
+		t.Errorf("released_by %v, want github-merge-queue-bot", raw["released_by"])
+	}
+}
+
 func TestNectarGateReceiptUsage(t *testing.T) {
 	var out, errb bytes.Buffer
 	sha := strings.Repeat("a", 40)
@@ -192,7 +212,8 @@ func TestNectarGateReceiptUsage(t *testing.T) {
 		{"gate-receipt", "--before", sha},
 		{"gate-receipt", "--before", "main", "--after", sha, "--actor", "x"},
 		{"gate-receipt", "--before", sha, "--after", "HEAD", "--actor", "x"},
-		{"gate-receipt", "--before", sha, "--after", sha, "--actor", "bad[bot]"},
+		{"gate-receipt", "--before", sha, "--after", sha, "--actor", "bad name[bot]"},
+		{"gate-receipt", "--before", sha, "--after", sha, "--actor", "[bot]"},
 		{"gate-receipt", "--before", sha, "--after", sha, "--actor", "x", "extra"},
 	} {
 		out.Reset()

@@ -9,16 +9,18 @@ Read [what every recipe assumes](README.md) first. This one is about Nectar, not
 waggle nectar gate-receipt --before <sha> --after <sha> [--actor <id>] [--repo <dir>] [--json]
 ```
 
-`--before` and `--after` are main before and after a push (the `before` and `after` of a GitHub `push` event; an all-zero `before` looks at `after` only). `--actor` is who ran the push and is recorded as `released_by`; it defaults to `$GITHUB_ACTOR`, and must be a valid keeper id, so an actor such as `name[bot]` is refused with exit 2.
+`--before` and `--after` are main before and after a push (the `before` and `after` of a GitHub `push` event; an all-zero `before` looks at `after` only). `--actor` is who ran the push and is recorded as `released_by`; it defaults to `$GITHUB_ACTOR`. A GitHub App actor ends in `[bot]`, which a keeper id cannot hold, so that suffix is recorded as `-bot` (`github-merge-queue[bot]` becomes `github-merge-queue-bot`). An actor that is still not a valid keeper id after that is refused with exit 2.
 
 For each commit on the first-parent line of `before..after` that binds to a task (a `T-<id>: ` subject or a `Waggle-Ticket:` trailer), it writes one receipt with source `gate_run` and merge proof `binding` when:
 
 - the task still has a live claim, and
 - no receipt names that commit, and the task has no receipt yet.
 
+The skip is per task, not per commit, because the receipts backend keeps one receipt per ticket: a later merge of a ticket that already has a receipt gets none.
+
 Commits of one task that land one after the other (a rebase merge) count as one merge, named by the last commit. A task with no live claim gets no receipt and stays unattributed. The command never releases or changes a claim.
 
-The forge is asked once per merge, for the pull request whose merge commit is that commit, and its number, author, head branch and approvers are recorded. With no `gh` or `GITHUB_TOKEN`, or on an API error (one warning), those fields stay null and the receipt is marked `incomplete`; the merge itself is still recorded.
+The forge is asked once per merge, for the pull request whose merge commit is that commit, and its number, author, head branch and approvers are recorded. With no `gh` or `GITHUB_TOKEN`, or on an API error (one warning), those fields stay null and the receipt is marked `incomplete`; the merge itself is still recorded. If the forge finds a pull request whose head branch is not one of the claim's branches, its fields are not recorded and the receipt is marked `incomplete` too. If the forge answers that no pull request merged as that commit (a direct push), the forge fields stay null and the receipt is not marked `incomplete`.
 
 Running it again over the same range writes nothing. If a `waggle release` lands first, that receipt stands. All receipts of one run go in one atomic append.
 
