@@ -19,6 +19,12 @@ After the gate is public and claim/merge history exists in real repos:
 
 Gate-first is sequencing, not a cut.
 
+### v0.3 Quorum phase 3
+
+RFC-0006 phase 3 on top of the v0.2 Quorum rounds. Sequencing, not a cut: every RFC phase 3 item stays in T-069. Phase A waits for T-054 phases A to D and one real round replayed (D-377).
+
+T-069 · Quorum RFC phase 3 (area rounds, alias merge, collusion flags, commit-reveal) · L (four phases) · proposed · v0.3 (named by the Head Keeper, D-378) · product
+
 ## Backlog (honey and multi-Keeper)
 
 T-050 · Nectar design brief (scoring rules, revert window, attribution from claims) · S · proposed · v0.2 · design
@@ -28,8 +34,11 @@ T-053 · Quorum design brief (ballot store, sqrt weight, Head Keeper veto, Sybil
 T-054 · Quorum voting MVP (roadmap/issue priority ballots; four phases, nothing cut) · L · proposed · v0.2 · product
 T-071 · Signed Head Keeper approval for protected paths (T-054 Quorum family; verify-leases-and-tiers accepts it so gate/, .github/workflows and control path PRs merge without an admin bypass) · M · proposed · v0.1 (public gate; a gate change, sequenced after T-054 phase A) · product
 T-055 · Multi-Keeper story restore (RFC + README/CONTRIBUTING cut-list unwind; relay design spike) · S · proposed · v0.2 · docs+design
-T-069 · Quorum RFC phase 3 (area rounds, alias merge, collusion flags, commit-reveal) · TBD · proposed · follow-on release (named by the Head Keeper, not v0.2) · product
 T-070 · Quorum RFC phase 2 (fork contributor export and import, relay transport with T-055) · TBD · proposed · v0.2 · product
+T-072 · waggle force-release (the Head Keeper clears a stuck or malformed claim, with an audit trail) · M · proposed · v0.1 · product
+T-073 · Case-folded claim overlap checks (carries out D-038; opened by T-072 Q-T072-5) · S to M · proposed · v0.1 · product
+T-074 · Gate head tree collision check: Unicode normalization variants (T-073 Q-T073-8) · TBD · proposed · v0.1 · product
+T-075 · Doctor claims finding: collision count (T-073 Q-T073-5; after T-072 phase B and T-073 phase A) · S · proposed · v0.1 · product
 
 ## Still deferred (not honey)
 
