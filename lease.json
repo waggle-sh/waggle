@@ -7,9 +7,10 @@
   "directories": [
     "internal/quorum"
   ],
-  "claimed_at": "2026-11-21T16:16:56Z",
-  "expires_at": "2026-11-23T16:16:56Z",
+  "claimed_at": "2026-11-21T22:25:34Z",
+  "expires_at": "2026-11-23T22:25:34Z",
   "branches": [
-    "t-054c"
+    "t-054c",
+    "t-054c2"
   ]
 }
