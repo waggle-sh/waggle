@@ -427,7 +427,7 @@ func TestC3Determinism(t *testing.T) {
 	}
 	check := func(l Lifecycle, what string) {
 		t.Helper()
-		res, err := l.Verify(ctx, 1)
+		res, err := l.Verify(ctx, 1, "")
 		if err != nil {
 			t.Fatalf("%s: %v", what, err)
 		}
@@ -466,7 +466,7 @@ func (f *fixture) closedRound(t *testing.T, veto bool) (openRound, TallyRecord, 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := o.l.Verify(ctx, o.round.Round); err != nil {
+	if _, err := o.l.Verify(ctx, o.round.Round, ""); err != nil {
 		t.Fatalf("honest tally does not verify: %v", err)
 	}
 	return o, tl, o.round.Round
@@ -507,23 +507,23 @@ func TestC4VerifyFails(t *testing.T) {
 		t.Fatal("test edit did not apply")
 	}
 	replaceTally(t, f, o, n, edited, nil, "alice")
-	if _, err := o.l.Verify(ctx, n); !errors.Is(err, ErrTallyMismatch) {
+	if _, err := o.l.Verify(ctx, n, ""); !errors.Is(err, ErrTallyMismatch) {
 		t.Fatalf("one byte edit, re-signed: %v", err)
 	}
 	// The same edit under the old signature fails the signature check.
 	ch, _ := o.l.loadChain(ctx, n)
 	oldSig := ch.TallyRec.Sig
 	replaceTally(t, f, o, n, good, nil, "alice")
-	if _, err := o.l.Verify(ctx, n); err != nil {
+	if _, err := o.l.Verify(ctx, n, ""); err != nil {
 		t.Fatal(err)
 	}
 	replaceTally(t, f, o, n, edited, oldSig, "alice")
-	if _, err := o.l.Verify(ctx, n); !errors.Is(err, ErrTallyMismatch) {
+	if _, err := o.l.Verify(ctx, n, ""); !errors.Is(err, ErrTallyMismatch) {
 		t.Fatalf("one byte edit, old signature: %v", err)
 	}
 	// A tally signed by a non-approver is refused.
 	replaceTally(t, f, o, n, good, nil, "carol")
-	if _, err := o.l.Verify(ctx, n); !errors.Is(err, ErrTallyMismatch) {
+	if _, err := o.l.Verify(ctx, n, ""); !errors.Is(err, ErrTallyMismatch) {
 		t.Fatalf("non-approver tally: %v", err)
 	}
 
@@ -532,7 +532,7 @@ func TestC4VerifyFails(t *testing.T) {
 	drop := tl
 	drop.Counted = tl.Counted[1:]
 	replaceTally(t, f, o, n, Encode(drop), nil, "alice")
-	if _, err := o.l.Verify(ctx, n); !errors.Is(err, ErrTallyMismatch) {
+	if _, err := o.l.Verify(ctx, n, ""); !errors.Is(err, ErrTallyMismatch) {
 		t.Fatalf("dropped ballot: %v", err)
 	}
 
@@ -551,35 +551,51 @@ func TestC4VerifyFails(t *testing.T) {
 		rest.Order = append(rest.Order, s.Item)
 	}
 	replaceTally(t, f, o, n, Encode(rest), nil, "alice")
-	if _, err := o.l.Verify(ctx, n); !errors.Is(err, ErrTallyMismatch) {
+	if _, err := o.l.Verify(ctx, n, ""); !errors.Is(err, ErrTallyMismatch) {
 		t.Fatalf("restored veto: %v", err)
 	}
 }
 
-// An open round does not verify, a recast after close leaves the tally
-// verifying, and a first ballot after close does not.
-func TestVerifyOpenAndLate(t *testing.T) {
+// Verify with a receipt names counted, superseded, missing and foreign
+// ballots; an open round does not verify.
+func TestVerifyReceipt(t *testing.T) {
 	ctx := context.Background()
 	f := newFixture(t)
 	alice := f.actor("alice", "keyalice")
 	o := f.open("T-101", "T-102")
-	if _, err := o.l.Verify(ctx, 1); !errors.Is(err, ErrNotClosed) {
+	if _, err := o.l.Verify(ctx, 1, ""); !errors.Is(err, ErrNotClosed) {
 		t.Fatalf("open round: %v", err)
 	}
-	f.cast(o.l, o.round, "alice", "keyalice", "T-101", 2)
+	first := f.cast(o.l, o.round, "alice", "keyalice", "T-101", 2)
+	second := f.cast(o.l, o.round, "alice", "keyalice", "T-102", 2)
 	if _, _, err := o.l.Close(ctx, 1, f.base, alice); err != nil {
 		t.Fatal(err)
 	}
-	// A recast of a counted ballot after close is not counted, and the tally
-	// still verifies.
-	f.cast(o.l, o.round, "alice", "keyalice", "T-101", 1)
-	if _, err := o.l.Verify(ctx, 1); err != nil {
-		t.Errorf("late recast: %v", err)
+	other := f.open("T-101")
+	foreign := f.cast(other.l, other.round, "bob", "keybob", "T-101", 1)
+	cases := map[string]string{
+		second:                  ReceiptCounted,
+		first:                   ReceiptSuperseded(second),
+		foreign:                 ReceiptNotBallot,
+		f.base:                  ReceiptNotBallot,
+		strings.Repeat("a", 40): ReceiptMissing,
+	}
+	for oid, want := range cases {
+		res, err := o.l.Verify(ctx, 1, oid)
+		if err != nil || res.Receipt != want {
+			t.Errorf("receipt %s = %q, %v; want %q", oid, res.Receipt, err, want)
+		}
+	}
+	// A recast of a counted ballot after close is not counted and not
+	// superseded, and the tally still verifies.
+	late := f.cast(o.l, o.round, "alice", "keyalice", "T-101", 1)
+	if res, err := o.l.Verify(ctx, 1, late); err != nil || res.Receipt != ReceiptMissing {
+		t.Errorf("late receipt = %q, %v", res.Receipt, err)
 	}
 	// A first ballot after close cannot be told from one an approver left out
 	// (ballot commits carry no time), so verify reports it.
 	f.cast(o.l, o.round, "bob", "keybob", "T-101", 1)
-	if _, err := o.l.Verify(ctx, 1); !errors.Is(err, ErrTallyMismatch) {
+	if _, err := o.l.Verify(ctx, 1, ""); !errors.Is(err, ErrTallyMismatch) {
 		t.Errorf("late first ballot: %v", err)
 	}
 }
@@ -623,6 +639,68 @@ func TestStatus(t *testing.T) {
 	}
 }
 
+// C5: the ready list skips a vetoed item, a claimed item and an item with an
+// unmet dependency; an expired claim holds nothing.
+func TestC5Ready(t *testing.T) {
+	ctx := context.Background()
+	f := newFixture(t)
+	alice := f.actor("alice", "keyalice")
+	o := f.open("T-101", "T-102", "T-103", "T-104", "T-105", "issue-7")
+	f.cast(o.l, o.round, "alice", "keyalice", "T-105", 5, "T-104", 3, "T-103", 2, "T-101", 1)
+	if _, err := o.l.Veto(ctx, 1, "T-103", "D-001", alice); err != nil {
+		t.Fatal(err)
+	}
+	tl, _, err := o.l.Close(ctx, 1, f.base, alice)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	claim := func(b *comb.GitBackend, id string, expires time.Time, dir string) {
+		t.Helper()
+		err := b.AcquireLease(ctx, comb.Lease{Version: comb.LeaseVersion, TicketID: id, KeeperID: "bob", Role: "builder", Gate: "full",
+			Directories: []string{dir}, ClaimedAt: expires.Add(-time.Hour), ExpiresAt: expires})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	live := backend(t, f.dir, "", "")
+	claim(live, "T-101", testNow().Add(time.Hour), "internal/a")
+	claim(live, "T-102", testNow().Add(time.Hour), "internal/b")
+	past := testNow().Add(-48 * time.Hour)
+	old, err := comb.NewGitBackend(comb.Options{RepoDir: f.dir, Now: func() time.Time { return past }, ExtraEnv: isoEnv})
+	if err != nil {
+		t.Fatal(err)
+	}
+	claim(old, "T-105", past.Add(time.Hour), "internal/c")
+
+	merged := func(task string) bool { return task == "T-060" || task == "T-061" }
+	got, err := Ready(ctx, live, o.round, tl, merged)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// T-103 vetoed, T-101 and T-102 claimed (T-102 also waits on T-050),
+	// T-105's claim expired, T-104's dependencies are merged.
+	if want := []string{"T-105", "T-104", "issue-7"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("ready = %v, want %v", got, want)
+	}
+	// An unmet dependency holds the item; a claimed dependency does too.
+	got, _ = Ready(ctx, live, o.round, tl, func(task string) bool { return task == "T-060" })
+	if want := []string{"T-105", "issue-7"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("ready with T-061 unmerged = %v, want %v", got, want)
+	}
+	claim(live, "T-060", testNow().Add(time.Hour), "internal/d")
+	got, _ = Ready(ctx, live, o.round, tl, merged)
+	if want := []string{"T-105", "issue-7"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("ready with T-060 claimed = %v, want %v", got, want)
+	}
+	// A rejected round has no ready items.
+	rej := tl
+	rej.Rejected, rej.Order = true, nil
+	if got, _ := Ready(ctx, live, o.round, rej, merged); len(got) != 0 {
+		t.Fatalf("rejected round ready = %v", got)
+	}
+}
+
 // C6: a second close is refused; an unknown round is a library error.
 func TestC6CloseRefusals(t *testing.T) {
 	ctx := context.Background()
@@ -653,7 +731,7 @@ func TestC6CloseRefusals(t *testing.T) {
 			t.Fatalf("close of round %d: %v", n, err)
 		}
 	}
-	if _, err := o.l.Verify(ctx, 42); !errors.Is(err, ErrNoRound) {
+	if _, err := o.l.Verify(ctx, 42, ""); !errors.Is(err, ErrNoRound) {
 		t.Fatalf("verify of an unknown round: %v", err)
 	}
 }
@@ -715,7 +793,7 @@ func TestC4VerifyOmittedBallot(t *testing.T) {
 		}
 		replaceTally(t, f, o, n, Encode(want), nil, "alice")
 		// The forged tally is internally consistent: only the refs expose it.
-		if _, err := o.l.Verify(ctx, n); !errors.Is(err, ErrTallyMismatch) {
+		if _, err := o.l.Verify(ctx, n, ""); !errors.Is(err, ErrTallyMismatch) {
 			t.Fatalf("%s: %v", name, err)
 		}
 	}
@@ -742,7 +820,7 @@ func TestUnknownVersion(t *testing.T) {
 		t.Fatal("test edit did not apply")
 	}
 	replaceTally(t, f, o, n, v2, nil, "alice")
-	if _, err := o.l.Verify(ctx, n); !errors.Is(err, ErrUnknownVersion) {
+	if _, err := o.l.Verify(ctx, n, ""); !errors.Is(err, ErrUnknownVersion) {
 		t.Fatalf("verify, version 2 tally: %v", err)
 	}
 	if _, err := o.l.Status(ctx, n, f.base); !errors.Is(err, ErrUnknownVersion) {
@@ -770,7 +848,7 @@ func TestUnknownVersion(t *testing.T) {
 	if _, _, err := o.l.Close(ctx, 9, f.base, f.actor("alice", "keyalice")); !errors.Is(err, ErrUnknownVersion) {
 		t.Fatalf("close, version 2 round: %v", err)
 	}
-	if _, err := o.l.Verify(ctx, 9); !errors.Is(err, ErrUnknownVersion) {
+	if _, err := o.l.Verify(ctx, 9, ""); !errors.Is(err, ErrUnknownVersion) {
 		t.Fatalf("verify, version 2 round: %v", err)
 	}
 	if _, err := o.l.Status(ctx, 9, f.base); !errors.Is(err, ErrUnknownVersion) {
