@@ -5,11 +5,12 @@
   "role": "builder",
   "gate": "full",
   "directories": [
-    "cmd/waggle"
+    "cmd/waggle",
+    "docs/nectar.md"
   ],
-  "claimed_at": "2026-11-21T02:01:24Z",
-  "expires_at": "2026-11-23T02:01:24Z",
+  "claimed_at": "2026-11-21T04:44:38Z",
+  "expires_at": "2026-11-23T04:44:38Z",
   "branches": [
-    "t-052a"
+    "t-052b"
   ]
 }
