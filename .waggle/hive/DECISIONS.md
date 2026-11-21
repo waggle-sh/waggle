@@ -7233,3 +7233,23 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-20. Each T-065.md section 12 recommendation is adopted as written. HK-1: GITHUB_TOKEN by default, optional App token input. HK-2: treat relay as a repo-writer credential, say so in docs, queen runs the scratch repo check before HK-7. HK-3: contents and issues write. HK-4: yes, release on PR close in phase C. HK-5: base gate.approvers only. HK-6: add relay/ to protected paths before phase B. HK-7: on after phase B, pins, HK-2 check and docs, then AC7. HK-8: approve reply wording at phase B review. HK-9: accept the Actions cost. HK-10: Nectar auto-approval in phase D, off by default. HK-11: HK-4 yes, RFC 6.2 receipt stays on T-051. No ruleset, protected_paths or workflow changes here.
 
 **Rationale:** HK-1 and HK-3 detail: the job token needs no stored secret, and issues write lets the relay reply to outsiders. HK-5 trusts a git-held list a PR cannot change. HK-4 and HK-11 keep Nectar attribution for fork contributors, so core item 5 is not narrowed, and HK-10 is sequencing, not a cut. HK-2, HK-6 and HK-7 happen later in their own steps. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-374: Until T-071 ships, protected-path PRs go to Paul case by case
+
+- **Date:** 2026-11-21
+- **Kind:** policy
+- **Tickets:** T-071
+- **Supersedes:** none
+
+**Question:** Until T-071 ships, how should PRs that touch listed protected paths (gate/, .github/workflows, control paths) merge?
+
+**Options considered:**
+1. Case by case: each such PR goes to Paul; each admin bypass merge gets a one-line decision-log entry naming the PR, the reviewer, and the reason
+2. Standing bypass for Head Keeper-reviewed PRs
+3. Block all protected-path merges until T-071 ships
+
+**Hive recommendation:** Option 1: until T-071 ships, protected-path PRs go to Paul case by case. Each admin bypass merge gets a one-line decision-log entry (PR, reviewer, reason)
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-20 at 6:49 PM Pacific Time. Until T-071 ships, protected-path PRs go to Paul case by case. Each admin bypass merge gets a one-line decision-log entry (PR, reviewer, reason). T-071 is opened now: the gate's verify-leases-and-tiers accepts a signed Head Keeper approval for listed protected paths, verified with ssh-keygen -Y verify (D-372, Q-T054-1), so those PRs merge without an admin bypass.
+
+**Rationale:** Context: protected-path PRs (gate/, .github/workflows, control paths) still need an admin bypass until T-071 ships. Choice: option 1, each such PR goes to Paul case by case, and each admin bypass merge gets a one-line decision-log entry naming the PR, the reviewer and the reason. Rejected: a standing bypass for Head Keeper-reviewed PRs, because it weakens the public gate story. Revisit if T-071 ships. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
