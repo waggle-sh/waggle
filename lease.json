@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-052",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle"
+  ],
+  "claimed_at": "2026-11-21T02:01:24Z",
+  "expires_at": "2026-11-23T02:01:24Z",
+  "branches": [
+    "t-052a"
+  ]
+}
