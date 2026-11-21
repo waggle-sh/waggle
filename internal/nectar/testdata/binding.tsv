@@ -1,0 +1,29 @@
+# name	subject	trailer	branch	want
+subject only	T-001: add a thing			T-001
+subject six digits	T-123456: add a thing			T-123456
+subject too short	T-12: add a thing			
+subject no space	T-001:add a thing			
+subject not at start	fix T-001: add a thing			
+trailer only	add a thing	T-002		T-002
+trailer with spaces	add a thing	 T-002 		T-002
+subject and trailer agree	T-003: x	T-003		T-003
+subject and trailer conflict	T-003: x	T-004		
+trailer repeats one task	x	T-005, T-005		T-005
+trailer names two tasks	x	T-005,T-006		
+trailer malformed	x	TASK-5		
+trailer value too long	x	T-0000000000000001		
+trailer nine values	x	T-001,T-001,T-001,T-001,T-001,T-001,T-001,T-001,T-001		
+trailer field too long	x	T-001,T-001,T-001,T-001,T-001,T-001,T-001,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx		
+maintainer subject	Head Keeper: T-001: pin			
+maintainer with trailer	Head Keeper: pin	T-001		
+maintainer prefix lowercase	head keeper: T-001: pin			
+branch waggle form	wip		waggle/T-007	T-007
+branch t form	wip		t-007	T-007
+branch t form with suffix	wip		t-007-nectar-b	T-007
+branch too short	wip		t-07-x	
+branch other prefix	wip		feature/t-007	
+branch agrees with subject	T-007: x		t-007-x	T-007
+branch conflicts with subject	T-007: x		t-008-x	
+branch conflicts with trailer	x	T-007	waggle/T-008	
+all three agree	T-009: x	T-009	t-009	T-009
+no source	just a commit			
