@@ -29,12 +29,15 @@ type lineCount struct {
 // empty tree for a root commit): added, deleted and path, with renames off. A
 // binary file has "-" counts.
 func (g repo) numstat(ctx context.Context, c *commit) ([]numRow, error) {
-	args := []string{"diff-tree", "-r", "-z", "--no-renames", "--numstat", "--no-commit-id"}
 	if len(c.parents) == 0 {
-		args = append(args, "--root", c.oid)
-	} else {
-		args = append(args, c.parents[0], c.oid)
+		return g.numstatRange(ctx, "--root", c.oid)
 	}
+	return g.numstatRange(ctx, c.parents[0], c.oid)
+}
+
+// numstatRange reads git diff-tree --numstat with renames off for args.
+func (g repo) numstatRange(ctx context.Context, args ...string) ([]numRow, error) {
+	args = append([]string{"diff-tree", "-r", "-z", "--no-renames", "--numstat", "--no-commit-id"}, args...)
 	out, err := g.run(ctx, nil, args...)
 	if err != nil {
 		return nil, err

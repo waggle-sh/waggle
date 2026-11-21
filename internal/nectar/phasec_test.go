@@ -110,6 +110,35 @@ func TestSurvival(t *testing.T) {
 			t.Fatalf("with the file: %+v", u)
 		}
 	})
+	t.Run("lines in generated and binary files do not count as alive", func(t *testing.T) {
+		f := newFx(t)
+		f.commit("base", map[string]string{".gitattributes": "gen/** linguist-generated\n"})
+		one(f, map[string]string{"src/T-001.txt": lines(10, "T-001"), "gen/out.txt": lines(50, "g"), "bin/b.dat": "\x00" + lines(50, "b")})
+		f.tick(day)
+		f.commit("T-002: rewrite", map[string]string{"src/T-001.txt": lines(10, "new"), "gen/out.txt": lines(51, "g"),
+			"bin/b.dat": "\x00" + lines(51, "b")})
+		if u := unitFor(t, f.score(late), "T-001"); u.State != StateDropped || u.AliveRatio == nil || *u.AliveRatio != 0 {
+			t.Fatalf("%+v", u)
+		}
+	})
+	t.Run("the clone's own git config does not change survival", func(t *testing.T) {
+		f := newFx(t)
+		one(f, nil)
+		f.tick(day)
+		r := f.commit("T-002: format", map[string]string{"src/T-001.txt": strings.ReplaceAll(lines(10, "T-001"), "\n", " ;\n")})
+		ign := filepath.Join(f.dir, ".git", "local-ignore-revs")
+		if err := os.WriteFile(ign, []byte(r+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		f.git("config", "blame.ignoreRevsFile", ign)
+		f.git("config", "blame.markIgnoredLines", "true")
+		f.git("config", "diff.algorithm", "patience")
+		f.git("config", "diff.noprefix", "true")
+		f.git("config", "diff.context", "0")
+		if u := unitFor(t, f.score(late), "T-001"); u.State != StateDropped || *u.AliveRatio != 0 {
+			t.Fatalf("%+v", u)
+		}
+	})
 	t.Run("docs lines count in the ratio", func(t *testing.T) {
 		files := map[string]string{"src/T-001.txt": lines(2, "c"), "docs/a.md": lines(10, "d")}
 		f := newFx(t)
@@ -248,6 +277,25 @@ func TestPartialAndManualReverts(t *testing.T) {
 			t.Fatalf("%+v", k)
 		}
 	})
+	for _, to := range []string{"src/renamed.txt", "lib/moved/T-001.txt"} {
+		t.Run("a trailer revert after a rename or move to "+to+" claws back in full", func(t *testing.T) {
+			build := func(gap time.Duration) Unit {
+				f := newFx(t)
+				sha := one(f, nil)
+				f.tick(day)
+				f.commit("T-002: move", map[string]string{"src/T-001.txt": del, to: lines(10, "T-001")})
+				f.tick(gap)
+				f.commit("Revert T-001\n\nThis reverts commit "+sha+".", map[string]string{to: del})
+				return unitFor(t, f.score(late), "T-001")
+			}
+			if u := build(40 * day); u.State != StateClawedBack || u.ClawedBack != w10 {
+				t.Fatalf("after the window: %+v", u)
+			}
+			if u := build(0); u.State != StateDropped {
+				t.Fatalf("inside the window: %+v", u)
+			}
+		})
+	}
 	t.Run("a rebase run reverted one commit at a time claws back its share by line", func(t *testing.T) {
 		f := newFx(t)
 		c1 := f.squash("T-003", map[string]string{"src/p.txt": lines(5, "p")})

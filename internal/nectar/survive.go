@@ -91,14 +91,19 @@ func (s *scorer) aliveLines(ctx context.Context, u *bu, last, e *commit) (int64,
 		set[p] = true
 	}
 	if last.oid != e.oid {
-		b, err := s.g.run(ctx, nil, "diff-tree", "-r", "-z", "--no-renames", "--name-only", "--diff-filter=AM",
-			"--no-commit-id", last.oid, e.oid)
+		// Binary, lockfile and generated files at e are left out, as countedRows
+		// leaves them out of the unit's added lines.
+		rows, err := s.g.numstatRange(ctx, "--diff-filter=AM", last.oid, e.oid)
 		if err != nil {
 			return 0, err
 		}
-		for _, p := range strings.Split(strings.TrimSuffix(string(b), "\x00"), "\x00") {
-			if p != "" && !rulesV1.isLockfile(p) {
-				set[p] = true
+		gen, err := s.g.generated(ctx, e.oid, rows, rulesV1.generatedAttr)
+		if err != nil {
+			return 0, err
+		}
+		for _, row := range rows {
+			if !row.binary && !rulesV1.isLockfile(row.path) && !gen[row.path] {
+				set[row.path] = true
 			}
 		}
 	}
@@ -188,9 +193,10 @@ func (g repo) renames(ctx context.Context, from, to string) (map[string]string, 
 }
 
 // blameCount counts the lines of path at oid per credited commit. ignore is a
-// blame ignore-revs file or "".
+// blame ignore-revs file or "". The empty --ignore-revs-file= first clears any
+// list the clone's own blame.ignoreRevsFile set.
 func (g repo) blameCount(ctx context.Context, oid, path, ignore string) (map[string]int64, error) {
-	args := []string{"blame", "-w", "-M", "-C", "--porcelain"}
+	args := []string{"blame", "-w", "-M", "-C", "--porcelain", "--ignore-revs-file="}
 	if ignore != "" {
 		args = append(args, "--ignore-revs-file", ignore)
 	}

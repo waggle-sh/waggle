@@ -57,7 +57,9 @@ func (g *github) Probe(ctx context.Context, opt ProbeOptions) (Report, error) {
 	}
 	read := g.readRules(ctx, branch, gate)
 	if read.why == "" && !read.matched {
+		nonFF := read.nonFF
 		read = g.readClassic(ctx, branch, gate)
+		read.nonFF = nonFF // a ruleset still blocks force-pushes when classic protection holds the check
 	}
 	claims := "refs/waggle/claims/* in this repository only"
 	if g.remote != "" {

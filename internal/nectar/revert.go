@@ -17,7 +17,7 @@ func (s *scorer) patchIDs(ctx context.Context, main string) error {
 	}
 	read := func(reverse bool, add func(pid, oid string)) error {
 		args := []string{"log", "--first-parent", "--reverse", "--diff-merges=first-parent", "--no-renames",
-			"--no-ext-diff", "--no-color", "--no-prefix", "-p"}
+			"--no-ext-diff", "--no-textconv", "--no-color", "--no-prefix", "-p"}
 		if reverse {
 			args = append(args, "-R")
 		}
@@ -94,6 +94,10 @@ func (s *scorer) revertShare(ctx context.Context, x *Unit, t string, u *bu) (Mil
 	if err != nil {
 		return 0, err
 	}
+	moved, err := s.renamedSince(ctx, tc, xc)
+	if err != nil {
+		return 0, err
+	}
 	var undone int64
 	for p, a := range rt {
 		w := int64(1000)
@@ -101,7 +105,43 @@ func (s *scorer) revertShare(ctx context.Context, x *Unit, t string, u *bu) (Mil
 			w = int64(rulesV1.docsFactor)
 		}
 		b := rx[p]
+		if to, ok := moved[p]; ok {
+			b = rx[to]
+		}
 		undone += w * (min(b.deleted, a.added) + min(b.added, a.deleted))
 	}
 	return min(1000, Milli((undone*1000+int64(total)/2)/int64(total))), nil
+}
+
+// renamedSince maps each path of target t renamed before revert x to its path
+// at x's first parent, so a revert of a moved file still undoes t's lines. A
+// target on main's line is followed commit by commit, as survival is; a target
+// on a merged side is diffed against x's parent once.
+func (s *scorer) renamedSince(ctx context.Context, t, x *commit) (map[string]string, error) {
+	if len(x.parents) == 0 {
+		return nil, nil
+	}
+	ti, on := s.onLine[t.oid]
+	xi, xon := s.onLine[x.oid]
+	if !on || !xon {
+		return s.g.renames(ctx, t.oid, x.parents[0])
+	}
+	out := map[string]string{}
+	for j := ti + 1; j < xi; j++ {
+		m, err := s.stepRenames(ctx, j)
+		if err != nil {
+			return nil, err
+		}
+		for from, to := range out {
+			if next, ok := m[to]; ok {
+				out[from] = next
+			}
+		}
+		for from, to := range m {
+			if _, ok := out[from]; !ok {
+				out[from] = to
+			}
+		}
+	}
+	return out, nil
 }
