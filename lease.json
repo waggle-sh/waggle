@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-071",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "internal/license"
+  ],
+  "claimed_at": "2026-11-21T02:54:35Z",
+  "expires_at": "2026-11-23T02:54:35Z",
+  "branches": [
+    "records-t071-protected-paths-2026-11-20"
+  ]
+}
