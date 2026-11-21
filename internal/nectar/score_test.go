@@ -486,9 +486,9 @@ func TestReverts(t *testing.T) {
 		f := newFx(t)
 		sha := f.squash("T-001", nil)
 		f.addReceipt(f.receipt("T-001", "alice", sha), "")
-		f.commit("Revert \"T-001: work\"", map[string]string{"src/T-001.txt": del})
+		f.commit("Revert \"T-001: work\"", map[string]string{"src/other.txt": lines(3, "o")})
 		rep := f.score(late)
-		if unitFor(t, rep, "T-001").State != StateMatured || rep.Counts.Unbound != 1 {
+		if unitFor(t, rep, "T-001").State != StateMatured || rep.Counts.Unbound != 1 || rep.Counts.UnconfirmedRevert != 1 {
 			t.Fatalf("%+v", rep.Counts)
 		}
 	})

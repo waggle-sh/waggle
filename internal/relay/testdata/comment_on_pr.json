@@ -1,0 +1,12 @@
+{
+  "action": "created",
+  "issue": {"number": 41, "pull_request": {"url": "https://api.github.com/repos/acme/shop/pulls/41"}},
+  "comment": {
+    "id": 1002,
+    "html_url": "https://github.com/acme/shop/pull/41#issuecomment-1002",
+    "body": "/waggle release T-123",
+    "author_association": "CONTRIBUTOR",
+    "user": {"login": "Alice", "type": "User"}
+  },
+  "repository": {"full_name": "acme/shop"}
+}

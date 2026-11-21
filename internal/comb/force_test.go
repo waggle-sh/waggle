@@ -844,21 +844,6 @@ func TestForceReleaseRemoteRejectedUnchanged(t *testing.T) {
 	}
 }
 
-// Test 12: relay mode.
-func TestForceReleaseRelay(t *testing.T) {
-	b, err := NewGitBackend(Options{RepoDir: t.TempDir(), CombMode: CombModeRelay, HeadKeeper: StaticHeadKeepers{headKeeper}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx := context.Background()
-	if err := b.ForceRelease(ctx, forceReq("refs/waggle/claims/ticket-1", strings.Repeat("a", 40))); !errors.Is(err, ErrRelayNotImplemented) {
-		t.Errorf("ForceRelease: %v", err)
-	}
-	if _, err := b.RefOID(ctx, "refs/waggle/claims/ticket-1"); !errors.Is(err, ErrRelayNotImplemented) {
-		t.Errorf("RefOID: %v", err)
-	}
-}
-
 // Test 13: Backend is unchanged. A type with exactly the three T-002 methods
 // still satisfies it, and force-release lives on *GitBackend only.
 type threeMethodBackend struct{}

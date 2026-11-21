@@ -16,6 +16,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -64,6 +65,7 @@ type Config struct {
 	Forge   ForgeConfig
 	Leases  LeasesConfig
 	Gate    GateConfig
+	Relay   RelayConfig
 }
 
 // GateConfig is the gate: section.
@@ -83,6 +85,40 @@ const (
 )
 
 var approverPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9-]{0,38}$`)
+
+// RelayConfig is the relay: section (T-065). It only matters when
+// forge.comb_mode is "relay". An older build ignores the whole section.
+type RelayConfig struct {
+	// AutoApproveAssociations are GitHub author associations whose claim
+	// requests skip maintainer approval. Default empty: every request needs
+	// approval. Values come from RelayAssociations.
+	AutoApproveAssociations []string
+	// MaxActiveClaimsPerLogin caps the relay claims one login holds at once.
+	MaxActiveClaimsPerLogin int
+	// MaxTTLMinutes caps the lease length a relay request may ask for.
+	MaxTTLMinutes int
+	// AllowedDirectories limits the directories a relay request may lease to
+	// these prefixes. Empty means no extra limit.
+	AllowedDirectories []string
+	// ReleaseOnClose releases a relay claim when its pull request closes
+	// (HK-4, used by a later phase).
+	ReleaseOnClose bool
+}
+
+// Defaults and bounds for the relay: section.
+const (
+	DefaultRelayMaxActiveClaimsPerLogin = 2
+	DefaultRelayMaxTTLMinutes           = 1440
+	MinRelayMaxActiveClaimsPerLogin     = 1
+	MaxRelayMaxActiveClaimsPerLogin     = 20
+	maxRelayAllowedDirectories          = 64
+	maxRelayAssociations                = 4
+)
+
+// RelayAssociations are the author associations relay.auto_approve_associations
+// accepts. FIRST_TIME_CONTRIBUTOR and NONE are refused: a throwaway account
+// can hold either.
+var RelayAssociations = []string{"OWNER", "MEMBER", "COLLABORATOR", "CONTRIBUTOR"}
 
 // ForgeConfig is the forge: section.
 type ForgeConfig struct {
@@ -131,6 +167,11 @@ func Parse(data []byte) (*Config, error) {
 		Leases: LeasesConfig{
 			DefaultTTLMinutes:      DefaultTTLMinutes,
 			MaxDirectoriesPerClaim: DefaultMaxDirectoriesPerClaim,
+		},
+		Relay: RelayConfig{
+			MaxActiveClaimsPerLogin: DefaultRelayMaxActiveClaimsPerLogin,
+			MaxTTLMinutes:           DefaultRelayMaxTTLMinutes,
+			ReleaseOnClose:          true,
 		},
 	}
 	lines := map[string]int{}
@@ -214,6 +255,33 @@ func Parse(data []byte) (*Config, error) {
 						c.Gate.Approvers[i] = strings.Trim(e, " ")
 					}
 				}
+			default:
+				err = invalid(n.line, p, "unknown key")
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if r, ok := tree["relay"]; ok {
+		if !r.isMapping() {
+			return nil, invalid(r.line, "relay", "must be a mapping")
+		}
+		for _, k := range sortedKeys(r.children) {
+			n, p := r.children[k], "relay."+k
+			lines[p] = n.line
+			switch k {
+			case "auto_approve_associations":
+				c.Relay.AutoApproveAssociations, err = listValue(p, n)
+			case "max_active_claims_per_login":
+				c.Relay.MaxActiveClaimsPerLogin, err = intValue(p, n)
+			case "max_ttl_minutes":
+				c.Relay.MaxTTLMinutes, err = intValue(p, n)
+			case "allowed_directories":
+				c.Relay.AllowedDirectories, err = listValue(p, n)
+			case "release_on_close":
+				c.Relay.ReleaseOnClose, err = boolValue(p, n)
 			default:
 				err = invalid(n.line, p, "unknown key")
 			}
@@ -318,7 +386,68 @@ func validate(c *Config, lines map[string]int) error {
 			return invalid(lines["gate.approvers"], "gate.approvers", "entries must be GitHub logins of 1 to 39 letters, digits or hyphens, not starting with a hyphen, without @")
 		}
 	}
+	return validateRelay(c.Relay, lines)
+}
+
+// validateRelay checks the relay: section.
+func validateRelay(r RelayConfig, lines map[string]int) error {
+	if len(r.AutoApproveAssociations) > maxRelayAssociations {
+		return invalid(lines["relay.auto_approve_associations"], "relay.auto_approve_associations", "at most %d entries", maxRelayAssociations)
+	}
+	for _, a := range r.AutoApproveAssociations {
+		switch {
+		case a == "FIRST_TIME_CONTRIBUTOR" || a == "NONE":
+			return invalid(lines["relay.auto_approve_associations"], "relay.auto_approve_associations", "%s is refused: a throwaway account can hold it", a)
+		case !slices.Contains(RelayAssociations, a):
+			return invalid(lines["relay.auto_approve_associations"], "relay.auto_approve_associations", "entries must be from %s", strings.Join(RelayAssociations, ", "))
+		}
+	}
+	if m := r.MaxActiveClaimsPerLogin; m < MinRelayMaxActiveClaimsPerLogin || m > MaxRelayMaxActiveClaimsPerLogin {
+		return invalid(lines["relay.max_active_claims_per_login"], "relay.max_active_claims_per_login", "must be an integer in %d..%d, got %d", MinRelayMaxActiveClaimsPerLogin, MaxRelayMaxActiveClaimsPerLogin, m)
+	}
+	if t := r.MaxTTLMinutes; t < MinTTLMinutes || t > MaxTTLMinutes {
+		return invalid(lines["relay.max_ttl_minutes"], "relay.max_ttl_minutes", "must be an integer in %d..%d, got %d", MinTTLMinutes, MaxTTLMinutes, t)
+	}
+	if len(r.AllowedDirectories) > maxRelayAllowedDirectories {
+		return invalid(lines["relay.allowed_directories"], "relay.allowed_directories", "at most %d entries", maxRelayAllowedDirectories)
+	}
+	for _, e := range r.AllowedDirectories {
+		if why := validProtectedPath(e); why != "" {
+			return invalid(lines["relay.allowed_directories"], "relay.allowed_directories", "%s", why)
+		}
+	}
 	return nil
+}
+
+// listValue returns a comma separated scalar as trimmed entries. An empty
+// scalar is an empty list.
+func listValue(path string, n *node) ([]string, error) {
+	s, err := stringValue(path, n)
+	if err != nil || strings.TrimSpace(s) == "" {
+		return nil, err
+	}
+	list := strings.Split(s, ",")
+	for i, e := range list {
+		list[i] = strings.Trim(e, " ")
+	}
+	return list, nil
+}
+
+// boolValue returns a plain true or false scalar. Quoted scalars and other
+// spellings (yes, on, 1) are errors.
+func boolValue(path string, n *node) (bool, error) {
+	if n.isMapping() {
+		return false, invalid(n.line, path, "must be true or false, not a mapping")
+	}
+	if !n.quoted {
+		switch n.scalar {
+		case "true":
+			return true, nil
+		case "false":
+			return false, nil
+		}
+	}
+	return false, invalid(n.line, path, "must be plain true or false, got %q", n.scalar)
 }
 
 // stringValue returns a scalar node's text, quoted or plain.
