@@ -3,7 +3,7 @@
 
 Waggle lets many **keepers** (the humans who own work on a repo), each with their own team of AI agents, work on one repository without stepping on each other. One person with one agent can keep the plan in their head. Five people with five agents cannot.
 
-The full vision has three parts. **Claims and leases** say who is working on what. The **gate** is a merge check that holds every pull request to its claim. **Honey** is how contributors earn a say: **Nectar** (reputation from merged work that survives on `main`) and **Quorum** (weighted voting on what gets picked up next, with a Master Keeper veto). The gate is the first piece you can use today. Nectar, Quorum and the multi-keeper parts are on the roadmap. They are not built yet, and this page marks each one as it comes up.
+The full vision has three parts. **Claims and leases** say who is working on what. The **gate** is a merge check that holds every pull request to its claim. **Honey** is how contributors earn a say: **Nectar** (reputation from merged work that survives on `main`) and **Quorum** (weighted voting on what gets picked up next, with a veto for the project owner). The gate is the first piece you can use today. Nectar is coming soon, Quorum is roadmap, and the multi-keeper parts are partly coming soon. This page marks each one as it comes up.
 
 ## The problem
 
@@ -25,7 +25,7 @@ Waggle borrows its vocabulary from a beehive. Each term means one plain thing:
 - **Queen:** the coordinating agent a keeper talks to. She does not write code. She writes claims, and will open issues from the conversation (coming soon).
 - **Forager, builder, scout:** worker agents. A forager does triage, repro and lease mapping, a builder implements a task, and a scout writes briefs and specs.
 - **Guard:** a reviewer agent that checks a builder's work, on a different model than the builder's.
-- **Honey:** Nectar plus Quorum (roadmap).
+- **Honey:** Nectar (coming soon) plus Quorum (roadmap).
 - **Walt:** our bee mascot.
 
 ## How is this different from branch protection or CODEOWNERS?
@@ -96,14 +96,14 @@ A few limits to know: Waggle supports GitHub only, the gate does not run in GitH
 
 Outside contributors, including anyone opening a pull request from a fork, cannot write claim refs to your repo. Today a maintainer writes the claim for them, naming the fork's branch as `<owner>/<repo>:<branch>`. The gate always reads claims from your repo, never from the fork.
 
-**Coming soon:** a way for contributors without push access to request and hold their own claims, and guidance for many keepers sharing one repo. These multi-keeper parts are on the roadmap and not built yet.
+**Coming soon:** a way for contributors without push access to request and hold their own claims, and guidance for many keepers sharing one repo. Neither is built yet.
 
 ## What are Nectar and Quorum?
 
-**Coming soon.** Nectar and Quorum are designed but not built. They are the other half of the vision, and they follow the gate.
+Nectar is **coming soon**: `waggle nectar backfill` is on `main`, and the scorer is not merged. Quorum is **roadmap**: designed on paper, no code. Neither scores or votes today. They are the other half of the vision, and they follow the gate.
 
 - **Nectar** is reputation earned from merged work that survives on `main`. The claim and merge records the gate keeps are what Nectar will score.
-- **Quorum** is weighted voting on what gets picked up next. A contributor's weight grows with their Nectar, and the Master Keeper holds a veto.
+- **Quorum** is weighted voting on what gets picked up next. A contributor's weight grows with their Nectar, and the project owner (the Head Keeper today) will hold a veto. That veto role is called the Master Keeper, on the roadmap with Quorum.
 
 Together they are **honey**: the way a contributor, human or agent team, earns a say by shipping work that sticks. It matters most for open-source maintainers and for companies with many teams on one repo.
 
