@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Quick start
 
-Waggle lets many **keepers** (humans who own work on a repo) and their agent teams share one repo without colliding. Its first usable piece is the gate, a GitHub merge check for repos where AI agents write code; Nectar, Quorum and the multi-keeper parts are roadmap, not built yet. This page takes a repo from nothing to a required check in about ten minutes. Waggle is pre-1.0: the [gate spec](/docs/gate/) describes what the code does today, and the [recipes](/docs/recipes/) have not been run end to end with each agent tool.
+Waggle lets many **keepers** (humans who own work on a repo) and their agent teams share one repo without colliding. Its first usable piece is the gate, a GitHub merge check for repos where AI agents write code; Nectar is coming soon (`waggle nectar backfill` exists, scoring does not), Quorum is roadmap, and the multi-keeper parts are partly coming soon. This page takes a repo from nothing to a required check in about ten minutes. Waggle is pre-1.0: the [gate spec](/docs/gate/) describes what the code does today, and the [recipes](/docs/recipes/) have not been run end to end with each agent tool.
 
 ## What you get
 
