@@ -148,7 +148,10 @@ func closeTime(r Round) (time.Time, error) {
 // Close fetches, loads the ballots, tallies and appends a signed tally.json to
 // the round chain (RFC-0006 6.4, 8). commit is the full commit id whose
 // DECISIONS.md the close reads; it is stored in the tally. Only a registered
-// key of a gate.approvers entry may sign. A second close is ErrClosed and an
+// key of a gate.approvers entry may sign. Close has no clock: it does not
+// check that the round's closes_at has passed, and the caller (phase D) must
+// before calling it. It also accepts any full commit id for commit; phase D
+// pins it to the main head. A second close is ErrClosed and an
 // unknown round is ErrNoRound. It returns the tally and the commit OID.
 func (l Lifecycle) Close(ctx context.Context, n int, commit string, actor Actor) (TallyRecord, string, error) {
 	if !baseOIDPattern.MatchString(commit) {
@@ -275,8 +278,19 @@ func (l Lifecycle) Verify(ctx context.Context, n int, receipt string) (VerifyRes
 		}
 		loaded.Counted = append(loaded.Counted, cb)
 	}
-	// Refs that were not ballots at close are carried over as stored: what a
-	// pusher does to refs after close is not part of the recomputation.
+	// Compare with the ballot refs as they are now. Every valid ballot tip
+	// must be a counted commit or a later recast of one (close does not see
+	// recasts), so an approver cannot leave a ballot out of a re-signed tally.
+	now, err := (Store{Comb: l.Comb}).LoadBallots(ctx, ch.Round, ch.Info.verifier)
+	if err != nil {
+		return VerifyResult{}, err
+	}
+	if err := l.checkRefs(ctx, stored, now); err != nil {
+		return VerifyResult{}, err
+	}
+	// Refs that were not ballots at close are carried over as stored, now
+	// revalidated by checkRefs: what a pusher does to a bad ref after close
+	// is not part of the recomputation.
 	for _, m := range stored.Malformed {
 		if len(m.Ref) >= len(RefPrefix) && m.Ref[:len(RefPrefix)] == RefPrefix {
 			loaded.Malformed = append(loaded.Malformed, m)
@@ -296,6 +310,45 @@ func (l Lifecycle) Verify(ctx context.Context, n int, receipt string) (VerifyRes
 		}
 	}
 	return res, nil
+}
+
+// checkRefs requires that no valid ballot ref tip is missing from the stored
+// tally: each is a counted commit or has one among its ancestors. A stored
+// malformed entry must not name a ref that is a valid ballot now, which
+// catches a ballot relabeled as malformed.
+func (l Lifecycle) checkRefs(ctx context.Context, stored TallyRecord, now Loaded) error {
+	counted := make(map[string]bool, len(stored.Counted))
+	for _, oid := range stored.Counted {
+		counted[oid] = true
+	}
+	valid := make(map[string]bool, len(now.Counted))
+	for _, c := range now.Counted {
+		valid[c.Ref] = true
+		found := counted[c.OID]
+		for cur, i := c.OID, 0; !found && cur != "" && i < maxChain; i++ {
+			k, err := l.Comb.ReadObjectCommit(ctx, cur, maxBallotBytes)
+			if err != nil {
+				if errors.Is(err, comb.ErrBadObject) {
+					break
+				}
+				return err
+			}
+			if len(k.Parents) != 1 {
+				break
+			}
+			cur = k.Parents[0]
+			found = counted[cur]
+		}
+		if !found {
+			return fmt.Errorf("%w: ballot %s on %s is valid but not counted", ErrTallyMismatch, c.OID, c.Ref)
+		}
+	}
+	for _, m := range stored.Malformed {
+		if valid[m.Ref] {
+			return fmt.Errorf("%w: %s is stored as malformed (%s) but is a valid ballot", ErrTallyMismatch, m.Ref, m.Reason)
+		}
+	}
+	return nil
 }
 
 func (l Lifecycle) receiptStatus(ctx context.Context, ch *chain, counted []CountedBallot, receipt string) (string, error) {
