@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-070",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "internal/license"
+  ],
+  "claimed_at": "2026-11-21T16:07:20Z",
+  "expires_at": "2026-11-21T18:07:20Z",
+  "branches": [
+    "t-070-records-q-t070-1-2026-11-21"
+  ]
+}
