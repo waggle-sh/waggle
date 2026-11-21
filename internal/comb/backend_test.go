@@ -3,7 +3,6 @@
 package comb
 
 import (
-	"context"
 	"errors"
 	"reflect"
 	"strings"
@@ -295,25 +294,6 @@ func TestMalformedClaimsError(t *testing.T) {
 	}
 	if err.Error() == "" {
 		t.Error("empty error message")
-	}
-}
-
-// Test 16: relay mode.
-func TestRelayMode(t *testing.T) {
-	b, err := NewGitBackend(Options{RepoDir: t.TempDir(), CombMode: CombModeRelay})
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx := context.Background()
-	l := Lease{TicketID: "T-001", KeeperID: "k", Role: "builder", Gate: "full", Directories: []string{"x"}}
-	if err := b.AcquireLease(ctx, l); !errors.Is(err, ErrRelayNotImplemented) {
-		t.Errorf("AcquireLease: %v", err)
-	}
-	if err := b.ReleaseLease(ctx, "T-001", "k"); !errors.Is(err, ErrRelayNotImplemented) {
-		t.Errorf("ReleaseLease: %v", err)
-	}
-	if _, err := b.ListActiveLeases(ctx); !errors.Is(err, ErrRelayNotImplemented) {
-		t.Errorf("ListActiveLeases: %v", err)
 	}
 }
 

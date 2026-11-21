@@ -292,9 +292,6 @@ func (b *GitBackend) writeReceiptRefs(ctx context.Context, claimRef, claimOID, o
 // ErrReceiptsRewound). A lost race on the receipt ref alone is retried up to
 // maxCASRetries times; a lost race on the claim is ErrConcurrentUpdate.
 func (b *GitBackend) ReleaseWithReceipt(ctx context.Context, ticketID, keeperID string, rec Receipt) (string, error) {
-	if b.relay {
-		return "", ErrRelayNotImplemented
-	}
 	ref, err := RefName(ticketID)
 	if err != nil {
 		return "", err
@@ -415,9 +412,6 @@ func (b *GitBackend) ownedClaim(ctx context.Context, ref, keeperID string) (clai
 // whose receipt.json does not decode or validate are skipped. No chain is an
 // empty result.
 func (b *GitBackend) ReadReceipts(ctx context.Context) ([]ReceiptEntry, error) {
-	if b.relay {
-		return nil, ErrRelayNotImplemented
-	}
 	if b.remote != "" {
 		if err := b.syncReceipts(ctx); err != nil {
 			return nil, err

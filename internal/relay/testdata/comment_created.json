@@ -1,0 +1,12 @@
+{
+  "action": "created",
+  "issue": {"number": 40, "title": "$(id) `x`"},
+  "comment": {
+    "id": 1001,
+    "html_url": "https://github.com/acme/shop/issues/40#issuecomment-1001",
+    "body": "/waggle claim T-123 --dirs internal/pricing --branch alice/shop:t-123",
+    "author_association": "NONE",
+    "user": {"login": "alice", "type": "User"}
+  },
+  "repository": {"full_name": "acme/shop"}
+}
