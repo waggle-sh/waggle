@@ -7254,4 +7254,21 @@
 
 **Rationale:** Context: protected-path PRs (gate/, .github/workflows, control paths) still need an admin bypass until T-071 ships. Choice: option 1, each such PR goes to Paul case by case, and each admin bypass merge gets a one-line decision-log entry naming the PR, the reviewer and the reason. Rejected: a standing bypass for Head Keeper-reviewed PRs, because it weakens the public gate story. Revisit if T-071 ships. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
 
-## D-375: Admin bypass used once to merge #259 (hive-only records adding T-071; lease check cannot cover hive paths until T-071 ships). Approved by Paul 2026-11-20.
+## D-375: Admin bypass used once to merge #259
+
+- **Date:** 2026-11-21
+- **Kind:** policy
+- **Tickets:** T-071
+- **Supersedes:** none
+
+**Question:** May #259, a hive-only records PR that adds T-071, merge with one logged admin bypass?
+
+**Options considered:**
+1. Merge #259 with one admin bypass, logged in this entry
+2. Leave #259 open until T-071 ships
+
+**Hive recommendation:** Merge #259 with one admin bypass, logged in this entry
+
+**Keeper choice:** Admin bypass used once to merge #259 (hive-only records adding T-071; lease check cannot cover hive paths until T-071 ships). Approved by Paul 2026-11-20.
+
+**Rationale:** Hive-only records adding T-071; lease check cannot cover hive paths until T-071 ships. Approved by Paul on 2026-11-20. This entry is the D-374 decision-log line for that one bypass.
