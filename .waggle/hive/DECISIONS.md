@@ -7272,3 +7272,23 @@
 **Keeper choice:** Admin bypass used once to merge #259 (hive-only records adding T-071; lease check cannot cover hive paths until T-071 ships). Approved by Paul 2026-11-20.
 
 **Rationale:** Hive-only records adding T-071; lease check cannot cover hive paths until T-071 ships. Approved by Paul on 2026-11-20. This entry is the D-374 decision-log line for that one bypass.
+
+## D-376: Q-T070-1: ballot commits use a fixed message and opens_at so the receipt OID is deterministic
+
+- **Date:** 2026-11-21
+- **Kind:** technical
+- **Tickets:** T-054, T-070
+- **Supersedes:** none
+
+**Question:** How should the T-054 phase B ballot commit OID be made a pure function of ballot.json, ballot.sig and the parent, so a voter can hold a receipt before transport?
+
+**Options considered:**
+1. (a) Amend T-054 B: ballot commits use the fixed message quorum: round <r> ballot and the round's opens_at as both author and committer dates, so the OID is a pure function of ballot.json, ballot.sig and the parent.
+2. (b) The envelope carries a commit time chosen at export; import rebuilds with it and checks the receipt.
+3. (c) The receipt is whatever the importer writes; the voter learns it from the reply or a fetch.
+
+**Hive recommendation:** Option (a). The voter holds a receipt before any transport, every importer writes the same object, and a duplicate post is detectable. Commit dates on ballots prove nothing (RFC 6.4, cast_at is author text).
+
+**Keeper choice:** Option (a), approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 7:57 AM Pacific Time. Amend T-054 phase B (PR 261) so ballot commits use the fixed message quorum: round <r> ballot and the round's opens_at as both author and committer date, then merge. The OID is a pure function of ballot.json, ballot.sig and the parent.
+
+**Rationale:** Context: as T-054 B was first written, commitTree dated both author and committer from the clock, so a contributor could not know the receipt the importer would write, and two importers of the same envelope would write different commits (T-070 brief F1, Q-T070-1). Choice: option (a), amend T-054 B (open PR 261) with the fixed message and the round's opens_at as both dates, then merge. Rejected: (b), which works after B has dispatched but adds an unsigned envelope field that changes the OID; (c), which leaves a voter who posted through the relay unable to check verify --receipt until the reply arrives. The same records batch amends T-054 brief 2.2 items 1, 5 and 6 (fixed message and date, the sign and write split, and the prev_mismatch loader check). Q-T070-2 to Q-T070-7 stay open. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
