@@ -75,6 +75,11 @@ func runNectarExplain(args []string, stdout, stderr io.Writer) int {
 		if fs.NArg() == 0 {
 			break
 		}
+		// After a "--" every argument is positional; do not reparse it.
+		if i := len(args) - fs.NArg() - 1; i >= 0 && args[i] == "--" {
+			rest = append(rest, fs.Args()...)
+			break
+		}
 		rest = append(rest, fs.Arg(0))
 		args = fs.Args()[1:]
 	}
@@ -137,6 +142,9 @@ func runNectarExplain(args []string, stdout, stderr io.Writer) int {
 		return exit
 	}
 	renderExplain(stdout, task, units)
+	if run.Rewound {
+		fmt.Fprintln(stdout, "receipts rewound: the remote release record chain does not hold this clone's records, so the local records were scored")
+	}
 	return exit
 }
 
@@ -156,7 +164,7 @@ func strOrNone(s *string) string {
 }
 
 // renderExplain writes the labeled lines for the task's unit and then its
-// revert entries. With no unit it says so.
+// revert entries. With no unit it says so before the revert entries.
 func renderExplain(w io.Writer, task string, units []nectar.Unit) {
 	shown := false
 	for _, u := range units {
@@ -168,7 +176,6 @@ func renderExplain(w io.Writer, task string, units []nectar.Unit) {
 	}
 	if !shown {
 		fmt.Fprintf(w, "no merged unit for %s\n", task)
-		return
 	}
 	for _, u := range units {
 		if u.Kind == nectar.KindRevert {
@@ -196,7 +203,9 @@ func explainUnit(w io.Writer, u nectar.Unit) {
 	line("first_seen: %s", strOrNone(u.FirstSeen))
 	line("matures_at: %s", strOrNone(u.MaturesAt))
 	f := u.Factors
-	line("weight: %s = tier %d x size %s x review %s", milli(u.Weight), f.Tier, milli(f.Size), milli(f.Review))
+	// Factors.Tier is the risk tier, not its factor, so the line lists the
+	// factors rather than writing a product.
+	line("weight: %s, tier %d, size %s, review %s", milli(u.Weight), f.Tier, milli(f.Size), milli(f.Review))
 	line("changed_lines: %s", milli(f.ChangedLines))
 	line("code_lines: %d", f.CodeLines)
 	line("docs_lines: %d", f.DocsLines)
@@ -212,6 +221,7 @@ func explainUnit(w io.Writer, u nectar.Unit) {
 		author = strOrNone(u.Receipt.PRAuthor)
 	}
 	line("keeper_id: %s, pr_author %s", strOrNone(u.KeeperID), author)
+	line("keeper_share: %s", milli(u.KeeperShare))
 	if len(u.CoKeepers) == 0 {
 		line("co_keepers: none")
 	}

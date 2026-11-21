@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Reputation score
 
-`waggle nectar` prints a reputation score for each keeper, computed from the merge history of `main` and the release records. Anyone with a clone can run it. It calls no hosted service and no forge API, and it changes no file and no ref except the release record ref that a fetch updates. The design is in [RFC-0005](RFC-0005-nectar.md).
+`waggle nectar` prints a reputation score for each keeper, computed from the merge history of `main` and the release records. Anyone with a clone can run it. It calls no hosted service and no forge API, and it changes no tracked file. A fetch updates the release record ref and `refs/remotes/<remote>/main`, and each run writes a cache file at `<git common dir>/waggle/nectar/1.json`. The design is in [RFC-0005](RFC-0005-nectar.md).
 
 Two commands read the score:
 
@@ -52,7 +52,7 @@ Nothing is excluded silently. The `counts:` line prints every count, zeros inclu
 | `carried` | units whose weight carries past the daily cap |
 | `unconfirmed_revert` | commits that look like reverts but name no reverted commit |
 
-The `excluded:` line lists keepers dropped by `nectar.exclude_keepers` with their weight, and `reciprocal pairs:` lists keeper pairs that approve each other's work with their share. Both print `none` when empty.
+The `excluded:` line lists keepers dropped by `nectar.exclude_keepers` with their weight. That setting is not read from `config.yaml` yet, so the line prints `none` until it ships. The `reciprocal pairs:` line lists keeper pairs that approve each other's work with their share. Both print `none` when empty.
 
 The `scored:` line names the inputs: `main` and `receipts` object ids in full (`receipts none` when there are no records), `rules_version`, the time it was scored at, the repo, and `local only` when this clone was scored without a fetch or a fetch failed, or `receipts rewound` when the remote record chain was rewound. The same inputs always give the same score.
 
@@ -70,7 +70,7 @@ waggle nectar [--repo <dir>] [--keeper <id>] [--now <rfc3339>] [--main <oid>] [-
 | `--main <oid>` | score at this `main` commit, a full hex id |
 | `--receipts <oid>` | score with the release records up to this commit, or all zeros for none |
 | `--no-fetch` | do not fetch; score what this clone holds |
-| `--recompute` | ignore any cached result |
+| `--recompute` | ignore the cache file at `<git common dir>/waggle/nectar/1.json` and score from scratch |
 | `--json` | print the summary object and nothing else |
 
 By default it fetches release records first and `main` second, so a record is never read without the merge it names. A failed fetch warns once on stderr and scores local state. Git does not fetch `refs/waggle/*` on its own, so a fresh clone that never ran this command has no records and shows tasks as `unattributed`.
@@ -92,16 +92,18 @@ It reads the same inputs as `waggle nectar` with the same flags (there is no `--
 
 - `task`, `kind` and `state`: `pending`, `matured`, `clawed_back`, `dropped`, `orphaned` (with `rewritten` or `missing`) or `unattributed`.
 - `commits`, `merged_sha`, `base_sha`, `merged_at`, `first_seen` and `matures_at`.
-- `weight` as `tier x size x review`, then `changed_lines`, `code_lines`, `docs_lines` and each excluded file.
-- `keeper_id` with `pr_author` beside it, each `co_keepers` share, `alive_ratio`, `clawed_back` and `carried`.
+- `weight` with its risk `tier`, `size` factor and `review` factor, then `changed_lines`, `code_lines`, `docs_lines` and each excluded file.
+- `keeper_id` with `pr_author` beside it, the keeper's `keeper_share`, each `co_keepers` share, `alive_ratio`, `clawed_back` and `carried`. `keeper_share` and the `co_keepers` shares sum to the weight.
 - The chosen release record: `oid`, `source`, `status`, `merge_proof`, `incomplete`, `released_by`, `pr_number`, `head_branch` and `approvers`.
 - Each flag that is set: `third_party` (with `released by a maintainer` when the releaser is a configured approver), `relay`, `fork_mismatch`, `direct_push` and `self_merge`.
 - Each reason code with one sentence. A code with no sentence prints bare.
-- Each revert entry that names the task: its commit, `merged_at` and `clawed_back`.
+- Each revert entry that names the task: its commit, `merged_at` and `clawed_back`. A revert entry lists under the task its own commit names, which is not always the task it reverts.
 
 A value that is not set prints `none`. `pr_author` is `none` for a record written offline or for a direct push; `git show -s --format=%an <merged_sha>` gives the commit author.
 
-A task with no merged unit on `main`, including one whose only commits name no task, prints `no merged unit for T-<id>` and exits 0.
+A task with no merged unit on `main`, including one whose only commits name no task, prints `no merged unit for T-<id>` and exits 0. Its revert entries, if any, follow that line.
+
+When the remote record chain was rewound, the last line is `receipts rewound:` with a short reason, and the exit code is 1.
 
 With `--json` it prints the detail object `{"detail_version": 1, "counts": {...}, "units": [...]}`, with `units` narrowed to the task and `counts` whole.
 
@@ -116,7 +118,7 @@ Exit codes:
 
 `waggle nectar --json` prints the summary object of RFC-0005 section 9.2 and one newline, and nothing else on stdout. Warnings go to stderr. Pin `--now`, `--main` and `--receipts` to replay a score: the same three values give the same bytes in any clone that holds those commits. The `repo` field is `owner/repo` for a GitHub remote and empty otherwise, so two clones may differ there only.
 
-`waggle nectar --json` and `explain --json` differ from `waggle status` and `waggle nectar backfill`, whose failures with `--json` print an object with `ok` set to false. With these two commands a failure with `--json` prints nothing on stdout, so `waggle nectar --json > score.json` never holds anything but the summary. Read the exit code to tell a finding (`1`) from a refusal (`2` or `3`).
+`waggle nectar --json` and `explain --json` differ from `waggle claim` and `waggle nectar backfill`, whose failures with `--json` print an object with `ok` set to false. With these two commands a failure with `--json` prints nothing on stdout, so `waggle nectar --json > score.json` never holds anything but the summary. Read the exit code to tell a finding (`1`) from a refusal (`2` or `3`).
 
 ## Limits
 
