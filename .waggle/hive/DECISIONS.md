@@ -7175,3 +7175,61 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-20. Item 2.1.6 stays in T-051 scope and is not cut. It lands in a T-051 docs PR after T-066 releases docs/gate.md and T-062 releases README.md. The Head Keeper approves the docs/gate.md receipts entry at that merge.
 
 **Rationale:** Leases do not widen silently, and phase A merged without its docs. Recording the follow-up keeps the work on the roadmap. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-371: T-051: confirm D-369 (Q-T051-1 option (a), Q-T051-4 option (a))
+
+- **Date:** 2026-11-21
+- **Kind:** technical
+- **Tickets:** T-051
+- **Supersedes:** none
+
+**Question:** Does the Head Keeper confirm D-369 (Q-T051-1 option (a) and Q-T051-4 option (a))?
+
+**Options considered:**
+1. Confirm D-369 as recorded
+2. Change the answers
+
+**Hive recommendation:** Confirm D-369 as recorded, including the receipt version 1 fields and the backfill --owner rule already written in D-369
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-20. D-369 stands as recorded, including the receipt version 1 fields (status, incomplete and merge_proof) and the waggle nectar backfill --owner rule for tasks whose only source is DECISIONS.md. D-369 is not edited and not superseded.
+
+**Rationale:** D-369 was recorded from the Head Keeper's written answers; this entry only confirms it, so the log shows the ruling was reviewed and kept. Nothing in VISION core item 5 is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-372: T-054: adopt RFC-0006 (Quorum) and answer Q-T054-1 to Q-T054-8
+
+- **Date:** 2026-11-21
+- **Kind:** strategy
+- **Tickets:** T-054
+- **Supersedes:** none
+
+**Question:** Should the hive adopt docs/RFC-0006-quorum.md, and how are Q-T054-1 to Q-T054-8 answered?
+
+**Options considered:**
+1. Adopt RFC-0006 as written and take the brief's recommended answer on each question (option (a) where options are given)
+2. Adopt RFC-0006 with changes
+3. Do not adopt RFC-0006
+
+**Hive recommendation:** Option 1: adopt RFC-0006 as written and take the brief's recommended answer, option (a) where options are given, on each of Q-T054-1 to Q-T054-8
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-20. RFC-0006 is adopted as written and every question takes the brief's option (a) answer. Q-T054-1: shell out to ssh-keygen -Y, no go.mod change. Q-T054-2: tally.json stores the parsed keeper_id to milli-Nectar map plus nectar_at. Q-T054-3: keeper_id equals a gate.approvers entry, case-insensitive. Q-T054-4: dependencies recorded in round.json from the Depends on line. Q-T054-5: --key, default git user.signingkey when gpg.format is ssh. Q-T054-6: forced fetch with --prune. Q-T054-7: T- before issue-, two-space indent, trailing newline, sorted lists. Q-T054-8: alias merge and collusion flags stay in the RFC phase 3 ticket, opened now, recommended release a named follow-on release. The RFC phase 2 ticket (fork contributor export and import, relay transport with T-055) is also opened now, recommended release v0.2. T-054 goes from M to L, four phases.
+
+**Rationale:** The recommendations keep Waggle's habit of running git and other tools as binaries, keep every ballot replayable from recorded inputs, and keep Quorum whole in this ticket. Opening the phase 2 and phase 3 tickets with releases gives each deferred item a home, so nothing in VISION core items 3, 4 or 6 is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-373: T-065: relay Head Keeper decisions HK-1 to HK-11
+
+- **Date:** 2026-11-21
+- **Kind:** policy
+- **Tickets:** T-065
+- **Supersedes:** none
+
+**Question:** How are HK-1 to HK-11 in T-065.md section 12 answered?
+
+**Options considered:**
+1. Adopt the brief's recommendations
+2. Adopt the brief's recommendations with changes
+
+**Hive recommendation:** Option 1: adopt the brief's recommendation on each of HK-1 to HK-11
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-20. Each T-065.md section 12 recommendation is adopted as written. HK-1: GITHUB_TOKEN by default, optional App token input. HK-2: treat relay as a repo-writer credential, say so in docs, queen runs the scratch repo check before HK-7. HK-3: contents and issues write. HK-4: yes, release on PR close in phase C. HK-5: base gate.approvers only. HK-6: add relay/ to protected paths before phase B. HK-7: on after phase B, pins, HK-2 check and docs, then AC7. HK-8: approve reply wording at phase B review. HK-9: accept the Actions cost. HK-10: Nectar auto-approval in phase D, off by default. HK-11: HK-4 yes, RFC 6.2 receipt stays on T-051. No ruleset, protected_paths or workflow changes here.
+
+**Rationale:** HK-1 and HK-3 detail: the job token needs no stored secret, and issues write lets the relay reply to outsiders. HK-5 trusts a git-held list a PR cannot change. HK-4 and HK-11 keep Nectar attribution for fork contributors, so core item 5 is not narrowed, and HK-10 is sequencing, not a cut. HK-2, HK-6 and HK-7 happen later in their own steps. Decided by the Head Keeper in writing; recorded by the queen.
