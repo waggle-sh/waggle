@@ -13,7 +13,18 @@
     "carried": 0,
     "unconfirmed_revert": 0,
     "excluded": [],
-    "reciprocal_pairs": []
+    "reciprocal_pairs": [
+      {
+        "a": "alice",
+        "b": "bob",
+        "share": 0.500
+      },
+      {
+        "a": "bob",
+        "b": "carol",
+        "share": 0.500
+      }
+    ]
   },
   "units": [
     {
@@ -41,7 +52,7 @@
         "docs_lines": 0,
         "excluded_files": []
       },
-      "alive_ratio": null,
+      "alive_ratio": 1.000,
       "clawed_back": 0.000,
       "carried": 0.000,
       "receipt": {
@@ -98,7 +109,7 @@
         "docs_lines": 4,
         "excluded_files": []
       },
-      "alive_ratio": null,
+      "alive_ratio": 1.000,
       "clawed_back": 0.000,
       "carried": 0.000,
       "receipt": {

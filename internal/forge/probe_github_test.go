@@ -123,6 +123,11 @@ func TestGitHubProbeRulePages(t *testing.T) {
 				w.Write([]byte(mainBody))
 				return
 			}
+			if !strings.Contains(r.URL.Path, "/rules/") {
+				w.WriteHeader(404)
+				w.Write([]byte(`{"message":"Branch not protected"}`))
+				return
+			}
 			pages = append(pages, r.URL.Query().Get("page"))
 			w.Write([]byte(rulesPage(r.URL.Query().Get("page"))))
 		}))
@@ -184,5 +189,48 @@ func TestGitHubProbeEscapesBranch(t *testing.T) {
 	r, err := g.Probe(context.Background(), ProbeOptions{GateCheck: gateName})
 	if err != nil || statuses(r)["required-gate"] != StatusOK {
 		t.Fatalf("got %v %v (%+v)", statuses(r), err, *log)
+	}
+}
+
+func TestGitHubProbeForcePush(t *testing.T) {
+	protKey := "GET /repos/o/r/branches/main/protection"
+	gateRule := `[` + ruleBody(true, gateName) + `]`
+	tests := []struct {
+		name    string
+		replies map[string]reply
+		want    Status
+	}{
+		{"ruleset blocks non fast forward", map[string]reply{repoKey: {200, mainBody},
+			rulesKey: {200, `[` + ruleBody(true, gateName) + `,{"type":"non_fast_forward"}]`}}, StatusOK},
+		{"classic blocks", map[string]reply{repoKey: {200, mainBody}, rulesKey: {200, gateRule},
+			protKey: {200, `{"allow_force_pushes":{"enabled":false}}`}}, StatusOK},
+		{"classic allows", map[string]reply{repoKey: {200, mainBody}, rulesKey: {200, gateRule},
+			protKey: {200, `{"allow_force_pushes":{"enabled":true}}`}}, StatusMissing},
+		{"no protection at all", map[string]reply{repoKey: {200, mainBody}, rulesKey: {200, gateRule},
+			protKey: {404, `{"message":"Branch not protected"}`}}, StatusMissing},
+		{"protection needs admin", map[string]reply{repoKey: {200, mainBody}, rulesKey: {200, gateRule},
+			protKey: {403, `{"message":"SECRET-TEXT"}`}}, StatusUnknown},
+		{"rules unreadable", map[string]reply{repoKey: {200, mainBody},
+			rulesKey: {500, `{"message":"SECRET-TEXT"}`}}, StatusUnknown},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			r, err := probeWith(t, tc.replies, "up_to_date")
+			if err != nil {
+				t.Fatal(err)
+			}
+			var got *Finding
+			for i := range r.Findings {
+				if r.Findings[i].ID == "force-push" {
+					got = &r.Findings[i]
+				}
+			}
+			if got == nil || got.Status != tc.want || got.Required {
+				t.Fatalf("force-push finding %+v, want %s and not required", got, tc.want)
+			}
+			if tc.want == StatusMissing && !strings.Contains(got.NotEnforced, "the reputation score can be rewritten") {
+				t.Errorf("wording: %q", got.NotEnforced)
+			}
+		})
 	}
 }
