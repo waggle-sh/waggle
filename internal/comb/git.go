@@ -763,7 +763,9 @@ func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero,
 
 // pushRef is the CAS push shared by claims and the object-ref writer. label
 // and what only shape error text; lost is wrapped into every lost-race error;
-// resync mirrors the remote namespace of ref after a rejected push.
+// resync mirrors the remote namespace of ref after a rejected push. The claim
+// error strings pushClaim produces through it are pinned by tests
+// (TestPushRefClaimTextPinned), so keep label, what and the format strings.
 func (b *GitBackend) pushRef(ctx context.Context, ref, newOID, expected, zero, label, what string, lost error, resync func(context.Context) error) error {
 	leaseArg := "--force-with-lease=" + ref + ":"
 	if expected != zero {

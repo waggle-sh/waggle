@@ -29,7 +29,9 @@ const maxSigBytes = 8 << 10
 
 // Errors from signing and verification.
 var (
-	// ErrNoSSHKeygen reports that the ssh-keygen binary is missing.
+	// ErrNoSSHKeygen reports that the ssh-keygen binary is missing, or that it
+	// runs but does not support the -Y form Quorum calls (an OpenSSH before
+	// 8.0 answers with usage text or an unknown option).
 	ErrNoSSHKeygen = errors.New("quorum: ssh-keygen not found; Quorum signs and verifies through OpenSSH ssh-keygen with -Y support")
 	// ErrBadSignature reports a signature that does not verify.
 	ErrBadSignature = errors.New("quorum: signature does not verify")
@@ -82,6 +84,9 @@ func (s Signer) Sign(ctx context.Context, namespace string, data []byte) ([]byte
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	if err := cmd.Run(); err != nil {
+		if toolUnsupported(errb.Bytes()) {
+			return nil, fmt.Errorf("%w (sign: %v)", ErrNoSSHKeygen, err)
+		}
 		return nil, fmt.Errorf("quorum: ssh-keygen sign: %v: %s", err, strings.TrimSpace(errb.String()))
 	}
 	if out.Len() == 0 || out.Len() > maxSigBytes {
@@ -103,8 +108,10 @@ type Verifier struct {
 // NewVerifier parses registry (the file read from the round's base commit).
 // Only a line that names one keeper_id and carries namespaces= limited to the
 // three Quorum namespaces is kept; every other line is dropped and listed in
-// Rejected, so a line without namespaces= never signs a Quorum record. The
-// binary is looked up at verify time; sshKeygen "" means ssh-keygen on PATH.
+// Rejected, so a line without namespaces= never signs a Quorum record. One
+// keeper_id may have several lines (key rotation); a signature by any of that
+// Keeper's listed keys verifies. The binary is looked up at verify time;
+// sshKeygen "" means ssh-keygen on PATH.
 func NewVerifier(registry []byte, sshKeygen string) (*Verifier, error) {
 	if len(registry) > MaxRegistryBytes {
 		return nil, fmt.Errorf("%w: over %d bytes", ErrRegistry, MaxRegistryBytes)
@@ -156,12 +163,32 @@ func registryLineOK(line string) bool {
 			return false
 		}
 	}
-	// A key type and a key must follow the options.
-	kt := rest[0]
-	if !(strings.HasPrefix(kt, "ssh-") || strings.HasPrefix(kt, "ecdsa-") || strings.HasPrefix(kt, "sk-")) || len(rest) < 2 {
-		return false
+	// A plain (non-certificate) key type and a key must follow the options.
+	return len(rest) >= 2 && keyTypeOK(rest[0])
+}
+
+// keyTypeOK allows the plain public key types ssh-keygen -Y signs with. A
+// certificate type (a -cert-v01@openssh.com name) or anything else is refused.
+func keyTypeOK(kt string) bool {
+	switch kt {
+	case "ssh-ed25519", "ssh-rsa", "sk-ssh-ed25519@openssh.com", "sk-ecdsa-sha2-nistp256@openssh.com",
+		"ecdsa-sha2-nistp256", "ecdsa-sha2-nistp384", "ecdsa-sha2-nistp521":
+		return true
 	}
-	return true
+	return false
+}
+
+// toolUnsupported reports whether ssh-keygen's stderr shows it could not run
+// the requested -Y form at all: usage text, an unknown or illegal option, or
+// an unsupported -Y operation. A failed verification prints none of these.
+func toolUnsupported(stderr []byte) bool {
+	e := strings.ToLower(string(stderr))
+	for _, m := range []string{"usage: ssh-keygen", "unknown option", "illegal option", "invalid option", "unsupported operation"} {
+		if strings.Contains(e, m) {
+			return true
+		}
+	}
+	return false
 }
 
 // splitQuoted splits on spaces and tabs, keeping a double-quoted run whole.
@@ -194,7 +221,10 @@ func splitQuoted(s string) []string {
 
 // Verify checks that sig is a valid signature over data in namespace by a key
 // registered for keeperID. It returns ErrBadSignature when the check fails,
-// and a different error when it could not run.
+// ErrNoSSHKeygen when ssh-keygen is missing or lacks -Y verify, and another
+// error when it could not run. A tool failure is never reported as a bad
+// signature, so two Keepers with different OpenSSH builds cannot silently
+// count different ballots.
 func (v *Verifier) Verify(ctx context.Context, namespace, keeperID string, data, sig []byte) error {
 	if !validNamespace(namespace) {
 		return ErrNamespace
@@ -229,6 +259,9 @@ func (v *Verifier) Verify(ctx context.Context, namespace, keeperID string, data,
 	if err := cmd.Run(); err != nil {
 		var ee *exec.ExitError
 		if errors.As(err, &ee) && ctx.Err() == nil {
+			if toolUnsupported(errb.Bytes()) {
+				return fmt.Errorf("%w (verify: %v)", ErrNoSSHKeygen, err)
+			}
 			return ErrBadSignature
 		}
 		return fmt.Errorf("quorum: ssh-keygen verify: %v", err)

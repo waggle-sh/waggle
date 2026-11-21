@@ -396,6 +396,80 @@ func TestStoreRegistryAtBase(t *testing.T) {
 	if _, err := LoadVerifier(ctx, g, "0000000000000000000000000000000000000000", ""); err == nil {
 		t.Fatal("unknown base commit accepted")
 	}
+	// A moving ref, a short id or an uppercase id is never a round base,
+	// even though git would resolve it.
+	for _, rev := range []string{"HEAD", "master", "main", base[:12], strings.ToUpper(base), base + "^{commit}"} {
+		if _, err := LoadVerifier(ctx, g, rev, fakeKeygenBin(t)); err == nil {
+			t.Fatalf("base %q accepted", rev)
+		}
+	}
+}
+
+// Cast loses a race when another writer moves the ballot ref between its read
+// and its write; it re-reads and chains to the new tip. When every attempt
+// loses, it stops after maxCastAttempts with ErrRefLost.
+func TestStoreCastLostRace(t *testing.T) {
+	ctx := context.Background()
+	dir, base := newRepoWith(t, twoKeeperRegistry())
+	g := backend(t, dir, "", "")
+	round := storeRound(base, "T-101", "T-102")
+	rival := Store{Comb: g, Signer: fakeSigner(t, "keyalice"), Now: testNow}
+	alice := Store{Comb: g, Signer: fakeSigner(t, "keyalice"), Now: testNow}
+
+	var rivalOID string
+	var attempts []int
+	alice.hookBeforeWrite = func(attempt int) {
+		attempts = append(attempts, attempt)
+		if attempt == 0 {
+			oid, err := rival.Cast(ctx, round, "alice", votes("T-102", 2))
+			if err != nil {
+				panic(err)
+			}
+			rivalOID = oid
+		}
+	}
+	oid, err := alice.Cast(ctx, round, "alice", votes("T-101", 3))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(attempts) != 2 {
+		t.Fatalf("attempts = %v, want [0 1]", attempts)
+	}
+	if ps := strings.Fields(git(t, dir, "", nil, "rev-list", "--parents", "-n", "1", oid)); len(ps) != 2 || ps[1] != rivalOID {
+		t.Fatalf("retry parents = %v, want [%s]", ps, rivalOID)
+	}
+	v, err := LoadVerifier(ctx, g, base, fakeKeygenBin(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	l, err := alice.LoadBallots(ctx, round, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(l.Counted) != 1 || l.Counted[0].OID != oid || l.Counted[0].Ballot.Prev != rivalOID {
+		t.Fatalf("loaded = %+v", l)
+	}
+
+	// Exhaustion: the rival wins every time.
+	attempts = nil
+	alice.hookBeforeWrite = func(attempt int) {
+		attempts = append(attempts, attempt)
+		if _, err := rival.Cast(ctx, round, "alice", votes("T-102", attempt+1)); err != nil {
+			panic(err)
+		}
+	}
+	before := git(t, dir, "", nil, "rev-parse", BallotRef(1, "alice"))
+	_, err = alice.Cast(ctx, round, "alice", votes("T-101", 1))
+	if !errors.Is(err, comb.ErrRefLost) {
+		t.Fatalf("exhausted cast: %v, want ErrRefLost", err)
+	}
+	if len(attempts) != maxCastAttempts {
+		t.Fatalf("attempts = %v, want %d", attempts, maxCastAttempts)
+	}
+	tip := git(t, dir, "", nil, "rev-parse", BallotRef(1, "alice"))
+	if n := git(t, dir, "", nil, "rev-list", "--count", before+".."+tip); n != fmt.Sprint(maxCastAttempts) {
+		t.Fatalf("rival commits after %s = %s, want %d (alice wrote nothing)", before, n, maxCastAttempts)
+	}
 }
 
 // B1: registry rules. A line without namespaces=, with another namespace, a
@@ -413,6 +487,10 @@ func TestRegistryRules(t *testing.T) {
 		`alice namespaces="waggle-quorum-ballot"` + "\n",
 		`alice namespaces="waggle-quorum-ballot" nonsense k9` + "\n",
 		`!alice namespaces="waggle-quorum-ballot" ssh-ed25519 k10` + "\n",
+		`alice namespaces="waggle-quorum-ballot" ssh-ed25519-cert-v01@openssh.com k11` + "\n",
+		`alice namespaces="waggle-quorum-ballot" ssh-dss k12` + "\n",
+		`alice namespaces="waggle-quorum-ballot" ecdsa-sha2-nistp999 k13` + "\n",
+		`alice namespaces="waggle-quorum-ballot" sk-ssh-foo k14` + "\n",
 	}
 	v, err := NewVerifier([]byte("# comment\n\n"+good+strings.Join(bad, "")), "")
 	if err != nil {
@@ -429,6 +507,41 @@ func TestRegistryRules(t *testing.T) {
 	}
 	if _, err := NewVerifier(bytes.Repeat([]byte("#"), MaxRegistryBytes+1), ""); !errors.Is(err, ErrRegistry) {
 		t.Fatalf("oversize registry: %v", err)
+	}
+	for _, kt := range []string{"ssh-ed25519", "ssh-rsa", "ecdsa-sha2-nistp256", "ecdsa-sha2-nistp384",
+		"ecdsa-sha2-nistp521", "sk-ssh-ed25519@openssh.com", "sk-ecdsa-sha2-nistp256@openssh.com"} {
+		v, err := NewVerifier([]byte(`alice namespaces="waggle-quorum-ballot" `+kt+" k\n"), "")
+		if err != nil || len(v.Rejected) != 0 {
+			t.Errorf("key type %s refused: %v %v", kt, err, v)
+		}
+	}
+}
+
+// One keeper_id may list several keys (rotation); a signature by either
+// verifies, and a key listed for another Keeper does not.
+func TestRegistryRotation(t *testing.T) {
+	ctx := context.Background()
+	reg := regLine("alice", "keyold", NamespaceBallot) + regLine("alice", "keynew", NamespaceBallot) + regLine("bob", "keybob", NamespaceBallot)
+	v, err := NewVerifier([]byte(reg), fakeKeygenBin(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := []byte("ballot bytes")
+	for _, tok := range []string{"keyold", "keynew"} {
+		sig, err := fakeSigner(t, tok).Sign(ctx, NamespaceBallot, data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := v.Verify(ctx, NamespaceBallot, "alice", data, sig); err != nil {
+			t.Errorf("%s: %v", tok, err)
+		}
+	}
+	sig, err := fakeSigner(t, "keybob").Sign(ctx, NamespaceBallot, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.Verify(ctx, NamespaceBallot, "alice", data, sig); !errors.Is(err, ErrBadSignature) {
+		t.Errorf("bob's key verified for alice: %v", err)
 	}
 }
 
@@ -517,6 +630,50 @@ func TestMissingKeygenIsClear(t *testing.T) {
 	}
 	if err := v.Verify(context.Background(), NamespaceBallot, "alice", []byte("x"), []byte("sig")); !errors.Is(err, ErrNoSSHKeygen) {
 		t.Fatalf("verify: %v", err)
+	}
+}
+
+// An ssh-keygen that runs but has no -Y form (exit 1 with usage text, as an
+// OpenSSH before 8.0 does) is a tool error, never a bad signature.
+func TestKeygenWithoutYIsToolError(t *testing.T) {
+	dir := t.TempDir()
+	cases := map[string]string{
+		"usage":   "echo 'usage: ssh-keygen [-q] [-b bits] [-C comment] [-f output_keyfile]' >&2\nexit 1\n",
+		"illegal": "echo 'ssh-keygen: illegal option -- Y' >&2\necho 'usage: ssh-keygen [-q]' >&2\nexit 1\n",
+		"unknown": "echo 'Unsupported operation for -Y: \"verify\"' >&2\nexit 1\n",
+	}
+	for name, body := range cases {
+		fake := filepath.Join(dir, "keygen-"+name)
+		if err := os.WriteFile(fake, []byte("#!/bin/sh\ncat >/dev/null\n"+body), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		v, err := NewVerifier([]byte(regLine("alice", "k", NamespaceBallot)), fake)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = v.Verify(context.Background(), NamespaceBallot, "alice", []byte("x"), []byte("sig"))
+		if !errors.Is(err, ErrNoSSHKeygen) || errors.Is(err, ErrBadSignature) {
+			t.Errorf("%s: verify err = %v, want ErrNoSSHKeygen", name, err)
+		}
+		key := filepath.Join(dir, "key")
+		if err := os.WriteFile(key, []byte("k\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := (Signer{KeyPath: key, SSHKeygen: fake}).Sign(context.Background(), NamespaceBallot, []byte("x")); !errors.Is(err, ErrNoSSHKeygen) {
+			t.Errorf("%s: sign err = %v, want ErrNoSSHKeygen", name, err)
+		}
+	}
+	// A plain verification failure (exit 255, no usage text) stays a bad signature.
+	fake := filepath.Join(dir, "keygen-fail")
+	if err := os.WriteFile(fake, []byte("#!/bin/sh\ncat >/dev/null\necho 'Signature verification failed: incorrect signature' >&2\necho 'Could not verify signature.' >&2\nexit 255\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	v, err := NewVerifier([]byte(regLine("alice", "k", NamespaceBallot)), fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.Verify(context.Background(), NamespaceBallot, "alice", []byte("x"), []byte("sig")); !errors.Is(err, ErrBadSignature) {
+		t.Errorf("verification failure: %v, want ErrBadSignature", err)
 	}
 }
 

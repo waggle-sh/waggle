@@ -45,6 +45,9 @@ const maxBallotBytes = 64 << 10
 // maxCastAttempts bounds how often Cast re-reads and retries a lost race.
 const maxCastAttempts = 5
 
+// baseOIDPattern is a full SHA-1 or SHA-256 object id, lowercase hex.
+var baseOIDPattern = regexp.MustCompile(`^[0-9a-f]{40}([0-9a-f]{24})?$`)
+
 var refPattern = regexp.MustCompile(`^refs/waggle/quorum/round-([1-9][0-9]{0,8})/(record|k-([0-9a-f]{64}))$`)
 
 // RecordRef is the round commit chain ref of round r.
@@ -111,6 +114,10 @@ type Store struct {
 	Signer Signer
 	// Now supplies commit times. Quorum never reads the wall clock itself.
 	Now func() time.Time
+
+	// hookBeforeWrite, when set by tests, runs after Cast reads the tip and
+	// before it writes, with the 0-based attempt number.
+	hookBeforeWrite func(attempt int)
 }
 
 // ballotCredits returns sum of v^2 for the votes, or false when it cannot
@@ -166,6 +173,9 @@ func (s Store) Cast(ctx context.Context, round Round, keeperID string, votes []V
 		if err != nil {
 			return "", err
 		}
+		if s.hookBeforeWrite != nil {
+			s.hookBeforeWrite(attempt)
+		}
 		oid, err := s.Comb.WriteObjectRef(ctx, ref, []comb.ObjectFile{
 			{Name: BallotFile, Data: data}, {Name: BallotSigFile, Data: sig},
 		}, tip, tip, fmt.Sprintf("waggle: quorum ballot round-%d", round.Round), s.Now())
@@ -179,8 +189,13 @@ func (s Store) Cast(ctx context.Context, round Round, keeperID string, votes []V
 }
 
 // LoadVerifier reads the Keeper registry from the round's base commit, never
-// from the worktree, and returns a Verifier over it.
+// from the worktree, and returns a Verifier over it. base must be a full 40
+// or 64 hex commit id; a ref name such as HEAD or a branch would move and is
+// refused.
 func LoadVerifier(ctx context.Context, g *comb.GitBackend, base, sshKeygen string) (*Verifier, error) {
+	if !baseOIDPattern.MatchString(base) {
+		return nil, errors.New("quorum: round base is not a full commit id")
+	}
 	data, err := g.ReadBlobAt(ctx, base, layout.Keepers, MaxRegistryBytes)
 	if err != nil {
 		return nil, fmt.Errorf("quorum: read keeper registry at base: %w", err)

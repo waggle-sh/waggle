@@ -200,6 +200,12 @@ func TestReadObjectCommitAndBlob(t *testing.T) {
 	if _, err := b.ReadBlobAt(ctx, oid, "a.sig", 2); !errors.Is(err, ErrBadObject) {
 		t.Fatalf("blob size cap: %v", err)
 	}
+	// Only a full object id names the commit; a ref name is refused unread.
+	for _, rev := range []string{"HEAD", "main", oid[:12], "-" + oid[1:], strings.ToUpper(oid)} {
+		if _, err := b.ReadBlobAt(ctx, rev, "a.sig", 1024); !errors.Is(err, ErrBadObject) {
+			t.Fatalf("rev %q: %v", rev, err)
+		}
+	}
 	// A commit with a subtree is refused.
 	blob := runGit(t, dir, "one", nil, "hash-object", "-w", "--stdin")
 	sub := runGit(t, dir, "100644 blob "+blob+"\tx\n", nil, "mktree")
@@ -208,5 +214,28 @@ func TestReadObjectCommitAndBlob(t *testing.T) {
 	bad := runGit(t, dir, "", env, "commit-tree", tree, "-m", "x")
 	if _, err := b.ReadObjectCommit(ctx, bad, 1024); !errors.Is(err, ErrBadObject) {
 		t.Fatalf("subtree: %v", err)
+	}
+}
+
+// The claim error text pushClaim builds through pushRef is pinned here, so a
+// later cleanup of pushRef's label and what parameters cannot change it.
+func TestPushRefClaimTextPinned(t *testing.T) {
+	requireGit(t)
+	_, dirA, dirB := remoteSetup(t)
+	clock := newClock()
+	ba := newBackend(t, dirA, "origin", clock)
+	bb := newBackend(t, dirB, "origin", clock)
+	ctx := context.Background()
+	ba.hookBeforeWrite = func() {
+		if err := bb.AcquireLease(ctx, mkLease("T-041", "bob", "pkg")); err != nil {
+			panic(err)
+		}
+	}
+	err := ba.AcquireLease(ctx, mkLease("T-041", "alice", "pkg"))
+	if !errors.Is(err, ErrAlreadyClaimed) {
+		t.Fatalf("got %v; want ErrAlreadyClaimed", err)
+	}
+	if want := "T-041: lost claim race: " + ErrAlreadyClaimed.Error(); err.Error() != want {
+		t.Fatalf("claim error text = %q, want %q", err, want)
 	}
 }

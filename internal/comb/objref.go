@@ -235,15 +235,18 @@ func (b *GitBackend) ReadObjectRef(ctx context.Context, ref string) (string, err
 	return oid, nil
 }
 
-// ReadBlobAt returns the blob at path in the tree of commit rev (a commit
-// OID or ref). A size above max, or a non-blob, is ErrBadObject. It reads the
-// object database, never the worktree.
-func (b *GitBackend) ReadBlobAt(ctx context.Context, rev, path string, max int64) ([]byte, error) {
-	if rev == "" || strings.HasPrefix(rev, "-") || strings.ContainsAny(rev, ":\n\x00") ||
-		path == "" || strings.HasPrefix(path, "-") || strings.ContainsAny(path, ":\n\x00") {
-		return nil, fmt.Errorf("%w: bad revision or path", ErrBadObject)
+// ReadBlobAt returns the blob at path in the tree of commit oid. oid must be
+// a full 40 or 64 hex object id, never a ref name such as HEAD or a branch, so
+// the read is pinned to one commit. A size above maxBytes, or a non-blob, is
+// ErrBadObject. It reads the object database, never the worktree.
+func (b *GitBackend) ReadBlobAt(ctx context.Context, oid, path string, maxBytes int64) ([]byte, error) {
+	if !oidPattern.MatchString(oid) {
+		return nil, fmt.Errorf("%w: bad object id", ErrBadObject)
 	}
-	spec := rev + ":" + path
+	if path == "" || strings.HasPrefix(path, "-") || strings.ContainsAny(path, ":\n\x00") {
+		return nil, fmt.Errorf("%w: bad path", ErrBadObject)
+	}
+	spec := oid + ":" + path
 	typ, err := b.git(ctx, nil, nil, "cat-file", "-t", spec)
 	if err != nil {
 		return nil, err
@@ -251,17 +254,17 @@ func (b *GitBackend) ReadBlobAt(ctx context.Context, rev, path string, max int64
 	if strings.TrimSpace(string(typ)) != "blob" {
 		return nil, fmt.Errorf("%w: %s is not a blob", ErrBadObject, path)
 	}
-	return b.readCapped(ctx, spec, max)
+	return b.readCapped(ctx, spec, maxBytes)
 }
 
-func (b *GitBackend) readCapped(ctx context.Context, spec string, max int64) ([]byte, error) {
+func (b *GitBackend) readCapped(ctx context.Context, spec string, maxBytes int64) ([]byte, error) {
 	sz, err := b.git(ctx, nil, nil, "cat-file", "-s", spec)
 	if err != nil {
 		return nil, err
 	}
 	n, err := strconv.ParseInt(strings.TrimSpace(string(sz)), 10, 64)
-	if err != nil || n < 0 || n > max {
-		return nil, fmt.Errorf("%w: %s is over %d bytes", ErrBadObject, spec, max)
+	if err != nil || n < 0 || n > maxBytes {
+		return nil, fmt.Errorf("%w: %s is over %d bytes", ErrBadObject, spec, maxBytes)
 	}
 	return b.git(ctx, nil, nil, "cat-file", "blob", spec)
 }
