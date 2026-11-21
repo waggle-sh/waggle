@@ -33,10 +33,12 @@ var revertRe = regexp.MustCompile(`(?m)^This reverts commit ([0-9a-f]{40}|[0-9a-
 // not on slice order (T-051 B11).
 var permuteReceipts func([]receipt)
 
-// act is one revert commit applied to a unit.
+// act is one revert commit applied to a unit; share is the part of the unit's
+// weighted lines it undoes, 1000 for a full revert (RFC-0005 4.3).
 type act struct {
-	oid string
-	at  time.Time
+	oid   string
+	at    time.Time
+	share Milli
 }
 
 // bu is a unit under construction.
@@ -49,6 +51,14 @@ type bu struct {
 	restored time.Time
 	weight   Milli
 	rc       *receipt
+
+	lc            lineCount
+	base, rev     Milli // tier * size, and the review factor (self-merge, reciprocity)
+	baseApprovers []string
+	clawShare     Milli            // share of the weight reverted, 0 to 1000
+	carryBy       map[string]Milli // per Keeper, weight held back by the daily cap
+	recip         bool
+	key           string // cache key: the task and its credited merges
 }
 
 type scorer struct {
@@ -60,8 +70,24 @@ type scorer struct {
 	onLine map[string]int
 	rcs    []receipt
 	byTask map[string][]*receipt
-	cfgAt  map[string]comb.TierPolicy
+	cfgAt  map[string]baseCfg
 	counts *Counts
+
+	byOID    map[string]*commit // main's line and the sides of its merges
+	credited map[string]bool    // first-parent commits bound to a unit
+	supers   map[string]int     // task -> newest history index of a commit that names it in Waggle-Supersedes
+	rpid     map[string]string  // commit -> patch-id of its reversed diff
+	pidIdx   map[string][]string
+	cache    *nectarCache
+	ignore   map[string]string         // survival commit -> blame ignore-revs file, "" for none
+	steps    map[int]map[string]string // history index -> renames that commit made
+	blames   map[string]map[string]int64
+}
+
+// baseCfg is the config read at a unit's base commit.
+type baseCfg struct {
+	policy    comb.TierPolicy
+	approvers []string
 }
 
 // Score computes the report for the given pinned input.
@@ -74,7 +100,9 @@ func Score(ctx context.Context, in Input) (Report, error) {
 		return Report{}, err
 	}
 	s := &scorer{ctx: ctx, g: g, now: in.Now.UTC(), oidLen: len(in.Main), onLine: map[string]int{},
-		byTask: map[string][]*receipt{}, cfgAt: map[string]comb.TierPolicy{}}
+		byTask: map[string][]*receipt{}, cfgAt: map[string]baseCfg{}, byOID: map[string]*commit{},
+		credited: map[string]bool{}, supers: map[string]int{}, ignore: map[string]string{}, steps: map[int]map[string]string{}, blames: map[string]map[string]int64{}}
+	defer s.cleanup()
 	var err error
 	if s.rcs, err = g.readReceipts(ctx, in.Receipts, s.oidLen); err != nil {
 		return Report{}, err
@@ -96,6 +124,11 @@ func Score(ctx context.Context, in Input) (Report, error) {
 	}
 	for i := range s.hist {
 		s.onLine[s.hist[i].oid] = i
+		s.byOID[s.hist[i].oid] = &s.hist[i]
+	}
+	s.cache = loadCache(ctx, g, in)
+	if err := s.patchIDs(ctx, in.Main); err != nil {
+		return Report{}, err
 	}
 	for i := range s.rcs {
 		rc := &s.rcs[i]
@@ -126,9 +159,10 @@ func Score(ctx context.Context, in Input) (Report, error) {
 			byCommit[o] = u
 		}
 	}
-	s.applyReverts(extra, byCommit)
-	keep := map[string]*KeeperScore{}
-	excl := map[string]Milli{}
+	if err := s.applyReverts(ctx, extra, byCommit); err != nil {
+		return Report{}, err
+	}
+	var live []*bu
 	for _, t := range tasks {
 		u := units[t]
 		if o, own := s.orphan(t, u); o != nil {
@@ -143,12 +177,24 @@ func Score(ctx context.Context, in Input) (Report, error) {
 			continue
 		}
 		s.attribute(u, approvers, &rep.Counts)
-		s.lifecycle(u)
+		if err := s.lifecycle(ctx, u); err != nil {
+			return Report{}, err
+		}
 		if u.KeeperID == nil {
 			rep.Counts.Unattributed++
 			rep.Summary.Unattributed++
 			continue
 		}
+		live = append(live, u)
+	}
+	s.reciprocity(live)
+	for _, u := range live {
+		s.finalize(u)
+	}
+	s.dailyCap(live)
+	keep := map[string]*KeeperScore{}
+	excl := map[string]Milli{}
+	for _, u := range live {
 		shares := append([]Share{{*u.KeeperID, u.KeeperShare}}, u.CoKeepers...)
 		for _, sh := range shares {
 			if slices.Contains(excluded, sh.KeeperID) {
@@ -161,15 +207,7 @@ func Score(ctx context.Context, in Input) (Report, error) {
 				keep[sh.KeeperID] = k
 			}
 			k.Units++
-			switch u.State {
-			case StatePending:
-				k.Pending += sh.Share
-			case StateMatured:
-				k.Matured += sh.Share
-			case StateClawedBack:
-				k.Matured += sh.Share
-				k.ClawedBack += sh.Share
-			}
+			s.credit(u, sh, k)
 		}
 	}
 	for _, k := range keep {
@@ -194,6 +232,7 @@ func Score(ctx context.Context, in Input) (Report, error) {
 		}
 		return a.MergedSHA < b.MergedSHA
 	})
+	s.saveCache(in)
 	return rep, nil
 }
 
@@ -219,7 +258,14 @@ func (s *scorer) build(ctx context.Context, rep *Report) (map[string]*bu, []*Uni
 				return nil, nil, err
 			}
 		}
-		if targets := s.revertTargets(c, sides, known); len(targets) > 0 {
+		for j := range sides {
+			s.byOID[sides[j].oid] = &sides[j]
+		}
+		targets := s.revertTargets(c, sides, known)
+		if len(targets) == 0 {
+			targets = s.manualRevert(c)
+		}
+		if len(targets) > 0 {
 			u := newUnit(Bind(c.subject, c.trailer, ""), KindRevert, c.oid, c.at)
 			u.reverts = targets
 			known[c.oid] = true
@@ -230,6 +276,10 @@ func (s *scorer) build(ctx context.Context, rep *Report) (map[string]*bu, []*Uni
 			continue
 		}
 		task := s.bindCommit(c, sides)
+		unconfirmed := unconfirmedRevert(c, sides)
+		if unconfirmed {
+			rep.Counts.UnconfirmedRevert++
+		}
 		if task == "" {
 			known[c.oid] = true
 			for _, sc := range sides {
@@ -238,6 +288,9 @@ func (s *scorer) build(ctx context.Context, rep *Report) (map[string]*bu, []*Uni
 			u := newUnit("", KindUnit, c.oid, c.at)
 			u.State = StateUnbound
 			u.Reasons = append(u.Reasons, "no_binding")
+			if unconfirmed {
+				u.Reasons = append(u.Reasons, "unconfirmed_revert")
+			}
 			rep.Counts.Unbound++
 			extra = append(extra, u)
 			continue
@@ -248,6 +301,11 @@ func (s *scorer) build(ctx context.Context, rep *Report) (map[string]*bu, []*Uni
 			u.Commits = nil
 			units[task] = u
 		}
+		if unconfirmed {
+			u.Reasons = append(u.Reasons, "unconfirmed_revert")
+		}
+		s.credited[c.oid] = true
+		s.noteSupersedes(i, c, sides)
 		u.merges = append(u.merges, c)
 		u.MergedSHA, u.at, u.MergedAt = c.oid, c.at, rfc3339(c.at)
 		u.Commits = append(u.Commits, c.oid)
@@ -345,29 +403,42 @@ func (s *scorer) weigh(ctx context.Context, u *bu) error {
 	var policy comb.TierPolicy
 	if len(first.parents) > 0 {
 		u.BaseSHA = strp(first.parents[0])
-		p, ok := s.cfgAt[first.parents[0]]
+		bc, ok := s.cfgAt[first.parents[0]]
 		if !ok {
-			var err error
-			if p, err = s.g.tierPolicyAt(ctx, first.parents[0]); err != nil {
+			// A missing, oversized or unparsable file at an old base means no extra
+			// paths and no approvers, as an absent file does for the gate.
+			if cfg, err := s.g.configAt(ctx, first.parents[0]); err == nil && cfg != nil {
+				bc = baseCfg{comb.TierPolicy{ExtraTier3: cfg.Gate.ProtectedPaths}, cfg.Gate.Approvers}
+			}
+			s.cfgAt[first.parents[0]] = bc
+		}
+		policy, u.baseApprovers = bc.policy, bc.approvers
+	}
+	u.key = unitKey(u)
+	lc, hit := s.cache.lines(u.key)
+	if !hit {
+		for _, m := range u.merges {
+			if err := r.countLines(ctx, s.g, m, policy, &lc); err != nil {
 				return err
 			}
-			s.cfgAt[first.parents[0]] = p
 		}
-		policy = p
+		slices.Sort(lc.excluded)
+		slices.Sort(lc.paths)
+		lc.paths = slices.Compact(lc.paths)
+		s.cache.putLines(u.key, lc)
 	}
-	var lc lineCount
-	for _, m := range u.merges {
-		if err := r.countLines(ctx, s.g, m, policy, &lc); err != nil {
-			return err
-		}
-	}
+	u.lc = lc
 	changed := lc.code*1000 + lc.docs*int64(r.docsFactor)
 	size := r.sizeFactor(changed)
-	if lc.added == 0 {
+	switch {
+	case lc.added == 0:
 		size = 1000 // a pure deletion weighs as a minimal unit
+	case r.minChangedLines > 0 && changed < r.minChangedLines*1000:
+		size = 1000 // under nectar.min_changed_lines: minimal, never zero
+		u.Reasons = append(u.Reasons, "min_changed_lines")
 	}
-	slices.Sort(lc.excluded)
-	u.weight = mulMilli(r.tierFactor[lc.tier], size)
+	u.base, u.rev = mulMilli(r.tierFactor[lc.tier], size), 1000
+	u.weight = u.base
 	u.Weight = u.weight
 	u.Factors = Factors{Tier: int(lc.tier), Size: size, Review: 1000, ChangedLines: Milli(changed),
 		CodeLines: lc.code, DocsLines: lc.docs, ExcludedFiles: slices.Compact(append([]string{}, lc.excluded...))}
@@ -375,9 +446,14 @@ func (s *scorer) weigh(ctx context.Context, u *bu) error {
 }
 
 // applyReverts replays revert commits in history order. A revert of a revert
-// restores the units it undid; a later revert of that restore reverts them again.
-func (s *scorer) applyReverts(extra []*Unit, byCommit map[string]*bu) {
-	type eff struct{ reverts, undoes []*bu }
+// restores the units it undid, each at the share it had; a later revert of that
+// restore reverts them again.
+func (s *scorer) applyReverts(ctx context.Context, extra []*Unit, byCommit map[string]*bu) error {
+	type hit struct {
+		u     *bu
+		share Milli
+	}
+	type eff struct{ reverts, undoes []hit }
 	effects := map[string]*eff{}
 	for _, x := range extra {
 		if x.Kind != KindRevert {
@@ -385,27 +461,43 @@ func (s *scorer) applyReverts(extra []*Unit, byCommit map[string]*bu) {
 		}
 		e := &eff{}
 		effects[x.MergedSHA] = e
-		hit := func(u *bu) {
-			u.active = append(u.active, act{x.MergedSHA, x.at})
-			e.reverts = append(e.reverts, u)
+		apply := func(u *bu, share Milli) {
+			u.active = append(u.active, act{x.MergedSHA, x.at, share})
+			e.reverts = append(e.reverts, hit{u, share})
 		}
+		// A rebase run is reverted commit by commit; each target claws back its
+		// share by line, so the shares of one revert on one unit add up.
+		shares := map[*bu]Milli{}
+		var order []*bu
 		for _, t := range x.reverts {
 			prev := effects[t]
 			switch u := byCommit[t]; {
 			case prev != nil:
-				for _, u := range prev.reverts {
-					u.active = slices.DeleteFunc(u.active, func(a act) bool { return a.oid == t })
-					u.restored = x.at
-					e.undoes = append(e.undoes, u)
+				for _, h := range prev.reverts {
+					h.u.active = slices.DeleteFunc(h.u.active, func(a act) bool { return a.oid == t })
+					h.u.restored = x.at
+					h.u.all[x.MergedSHA] = true // the re-landing commit owns the restored lines
+					e.undoes = append(e.undoes, h)
 				}
-				for _, u := range prev.undoes {
-					hit(u)
+				for _, h := range prev.undoes {
+					apply(h.u, h.share)
 				}
 			case u != nil:
-				hit(u)
+				sh, err := s.revertShare(ctx, x, t, u)
+				if err != nil {
+					return err
+				}
+				if _, seen := shares[u]; !seen {
+					order = append(order, u)
+				}
+				shares[u] += sh
 			}
 		}
+		for _, u := range order {
+			apply(u, min(shares[u], 1000))
+		}
 	}
+	return nil
 }
 
 // orphan finds the task's orphaned record: its newest well-formed merged receipt
@@ -501,12 +593,6 @@ func (s *scorer) attribute(u *bu, approvers []string, counts *Counts) {
 	r := best.r
 	u.Receipt = receiptInfo(best)
 	u.KeeperID = strp(r.KeeperID)
-	n := Milli(1 + len(r.CoKeepers))
-	each := u.weight / n
-	u.KeeperShare = u.weight - each*Milli(len(r.CoKeepers))
-	for _, c := range r.CoKeepers {
-		u.CoKeepers = append(u.CoKeepers, Share{c, each})
-	}
 	if best.thirdParty() {
 		u.ThirdParty = true
 		counts.ThirdParty++
@@ -526,18 +612,42 @@ func (s *scorer) attribute(u *bu, approvers []string, counts *Counts) {
 		u.Reasons = append(u.Reasons, "fork_mismatch")
 	}
 	if r.Incomplete {
+		// Approval is unknown, so the review factor stays 1 (Q-T051-2 (a)); the
+		// unit is counted and listed.
 		counts.Incomplete++
 		u.Reasons = append(u.Reasons, "receipt_incomplete")
+	} else if selfMerge(r) && multiKeeper(u.baseApprovers) {
+		u.SelfMerge = true
+		u.rev = mulMilli(u.rev, rulesV1.selfMergeFactor)
+		counts.SelfMerge++
+		u.Reasons = append(u.Reasons, "self_merge_multi_keeper")
 	}
+}
+
+// selfMerge reports whether the receipt's approvers hold no login other than its
+// keeper_id (RFC-0005 8, T-051 finding F7).
+func selfMerge(r comb.Receipt) bool {
+	return !slices.ContainsFunc(r.Approvers, func(a string) bool { return !strings.EqualFold(a, r.KeeperID) })
+}
+
+// multiKeeper reports whether the approver list at the unit's base has more than
+// one distinct login; at most one is the default solo case, which counts a
+// self-merge at full weight.
+func multiKeeper(approvers []string) bool {
+	seen := map[string]bool{}
+	for _, a := range approvers {
+		seen[strings.ToLower(a)] = true
+	}
+	return len(seen) > 1
 }
 
 // lifecycle sets the window and the state (RFC-0005 4.1, 5.2). An orphaned or
 // unattributed unit keeps its state; a unit is direct-push unless a valid
 // receipt for it carries a pr_number.
-func (s *scorer) lifecycle(u *bu) {
+func (s *scorer) lifecycle(ctx context.Context, u *bu) error {
 	r := &rulesV1
 	if u.State == StateOrphaned || u.State == StateUnattributed {
-		return
+		return nil
 	}
 	last := u.merges[len(u.merges)-1]
 	mergedAt := last.at
@@ -577,17 +687,38 @@ func (s *scorer) lifecycle(u *bu) {
 	u.at = mergedAt
 	matures := start.Add(r.window)
 	u.MaturesAt = strp(rfc3339(matures))
+	var before, after Milli
+	for _, a := range u.active {
+		if a.at.Before(matures) {
+			before += a.share
+		} else {
+			after += a.share
+		}
+	}
+	before = min(before, 1000)
+	after = min(after, 1000-before)
+	partial := before + after
+	u.clawShare = partial
 	switch {
-	case len(u.active) > 0 && u.active[0].at.Before(matures):
+	case before >= 1000:
 		u.State = StateDropped
+		u.clawShare = 0
 		u.Reasons = append(u.Reasons, "revert_before_maturity")
-	case len(u.active) > 0:
-		u.State = StateClawedBack
-		u.ClawedBack = u.weight
-		u.Reasons = append(u.Reasons, "revert_after_maturity")
+		return nil
 	case s.now.Before(matures):
 		u.State = StatePending
+	case partial >= 1000:
+		u.State = StateClawedBack
 	default:
 		u.State = StateMatured
 	}
+	if partial >= 1000 && u.State == StateClawedBack {
+		u.Reasons = append(u.Reasons, "revert_after_maturity")
+	} else if partial > 0 {
+		u.Reasons = append(u.Reasons, "partial_revert")
+	}
+	if u.State == StatePending {
+		return nil
+	}
+	return s.survive(ctx, u, matures)
 }
