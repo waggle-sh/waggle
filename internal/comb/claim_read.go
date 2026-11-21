@@ -16,9 +16,6 @@ import (
 // a claim that fails decoding or validation returns ErrMalformedClaim with the
 // reason. An invalid ticket ID returns ErrInvalidTicketID.
 func (b *GitBackend) ReadClaim(ctx context.Context, ticketID string) (Lease, error) {
-	if b.relay {
-		return Lease{}, ErrRelayNotImplemented
-	}
 	ref, err := RefName(ticketID)
 	if err != nil {
 		return Lease{}, err

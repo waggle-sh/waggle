@@ -41,6 +41,14 @@ type rules struct {
 	docsPrefixes  []string
 	lockfiles     []string // base names
 	generatedAttr string
+	// Phase C constants (RFC-0005 4.2, 8). They move to the nectar: config
+	// block with t-051b2; until then they are the RFC's starting values.
+	surviveRatio        Milli // share of added lines alive at maturity, at or above which a unit survives
+	selfMergeFactor     Milli
+	dailyCap            Milli // weight that may mature per Keeper per UTC day
+	reciprocityDiscount Milli
+	reciprocityOver     int64 // pair approval share, in thousandths, that is exceeded to apply the discount
+	minChangedLines     int64 // 0 is off
 	// excludeKeepers is the nectar.exclude_keepers default, empty until the
 	// config block lands (T-051 planned cut B).
 	excludeKeepers []string
@@ -60,6 +68,12 @@ var rulesV1 = rules{
 		"composer.lock", "uv.lock", "bun.lockb",
 	},
 	generatedAttr: "linguist-generated",
+
+	surviveRatio:        500,
+	selfMergeFactor:     500,
+	dailyCap:            12_000,
+	reciprocityDiscount: 500,
+	reciprocityOver:     600,
 }
 
 // isDocs reports whether a path counts at the docs factor.

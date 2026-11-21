@@ -41,9 +41,6 @@ type ReceiptAppend struct {
 // mode it syncs the claim, audit and receipt namespaces first (the receipt
 // chain without +: a rewound chain is ErrReceiptsRewound).
 func (b *GitBackend) ReadClaimRecords(ctx context.Context) ([]ClaimRecord, error) {
-	if b.relay {
-		return nil, ErrRelayNotImplemented
-	}
 	if b.remote != "" {
 		if err := b.syncWithAudit(ctx); err != nil {
 			return nil, err
@@ -164,9 +161,6 @@ func (b *GitBackend) readLeasesAt(ctx context.Context, oids []string) ([]*Lease,
 // ErrInvalidReceipt before anything is written. In remote mode the receipt
 // chain is synced first, without +.
 func (b *GitBackend) AppendReceipts(ctx context.Context, recs []ReceiptAppend) ([]string, error) {
-	if b.relay {
-		return nil, ErrRelayNotImplemented
-	}
 	zero, err := b.zeroOID(ctx)
 	if err != nil {
 		return nil, err

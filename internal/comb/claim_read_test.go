@@ -89,14 +89,3 @@ func TestReadClaimMalformed(t *testing.T) {
 		}
 	}
 }
-
-// ReadClaim is unavailable in relay comb mode, like every Backend method.
-func TestReadClaimRelay(t *testing.T) {
-	b, err := NewGitBackend(Options{RepoDir: t.TempDir(), CombMode: CombModeRelay})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := b.ReadClaim(context.Background(), "T-001"); !errors.Is(err, ErrRelayNotImplemented) {
-		t.Errorf("ReadClaim: %v; want ErrRelayNotImplemented", err)
-	}
-}

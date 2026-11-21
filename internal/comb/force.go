@@ -223,9 +223,6 @@ func (b *GitBackend) authorizeHeadKeeper(ctx context.Context, id string) error {
 // ForceRelease.Ref (ErrInvalidForceRelease). In remote mode it syncs first.
 // An absent ref returns ErrNotFound.
 func (b *GitBackend) RefOID(ctx context.Context, ref string) (string, error) {
-	if b.relay {
-		return "", ErrRelayNotImplemented
-	}
 	if err := b.checkRef(ctx, ref); err != nil {
 		return "", err
 	}
@@ -254,7 +251,7 @@ func (b *GitBackend) RefOID(ctx context.Context, ref string) (string, error) {
 // *GitBackend only; it is not part of Backend, so workers holding a Backend
 // never see it.
 //
-// Order: relay mode returns ErrRelayNotImplemented; the request is validated
+// Order: the request is validated
 // (ErrInvalidForceRelease); Options.HeadKeeper is consulted, and a nil
 // authorizer or any refusal returns ErrNotHeadKeeper before any claim is
 // read. Then the ref is read: absent returns ErrNotFound, and an OID other
@@ -282,9 +279,6 @@ func (b *GitBackend) RefOID(ctx context.Context, ref string) (string, error) {
 // section 3.5 every force-release is a delete decision card that the CLI and
 // queen must never auto-apply.
 func (b *GitBackend) ForceRelease(ctx context.Context, req ForceRelease) error {
-	if b.relay {
-		return ErrRelayNotImplemented
-	}
 	zero, err := b.zeroOID(ctx)
 	if err != nil {
 		return err

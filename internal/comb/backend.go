@@ -171,7 +171,11 @@ var (
 	ErrConcurrentUpdate = errors.New("comb: claim changed during release")
 	// ErrMalformedClaim reports a claim ref that cannot be decoded into a valid Lease.
 	ErrMalformedClaim = errors.New("comb: malformed claim ref")
-	// ErrRelayNotImplemented is returned by every Backend method in relay comb mode.
+	// ErrRelayNotImplemented is no longer returned by any method: relay comb
+	// mode behaves as direct mode.
+	//
+	// Deprecated: kept only so internal/dispatch tests still compile; T-065
+	// phase B removes it with that test row (outside phase A's lease).
 	ErrRelayNotImplemented = errors.New("comb: relay comb mode not implemented in v0.1")
 	// ErrNotHeadKeeper reports a ForceRelease by a caller Options.HeadKeeper did
 	// not authorize, including every call when no authorizer is configured.

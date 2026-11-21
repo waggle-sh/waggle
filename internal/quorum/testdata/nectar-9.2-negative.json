@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "rules_version": 1,
+  "repo": "example/repo",
+  "main_sha": "0123456789abcdef0123456789abcdef01234567",
+  "computed_at": "2026-11-20T12:00:00Z",
+  "keepers": [
+    {"keeper_id": "A", "nectar": 400.0, "matured": 410.0, "pending": 7.5, "clawed_back": 10.0, "units": 30},
+    {"keeper_id": "B", "nectar": 100.0, "matured": 100.0, "pending": 2.0, "clawed_back": 0.0, "units": 9},
+    {"keeper_id": "C", "nectar": 25.0, "matured": 30.0, "pending": 4.0, "clawed_back": 5.0, "units": 3},
+    {"keeper_id": "E", "nectar": -14.25, "matured": 17.5, "pending": 3.0, "clawed_back": 3.25, "units": 6}
+  ],
+  "unattributed": 2,
+  "orphaned": 0
+}
