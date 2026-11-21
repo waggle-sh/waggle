@@ -35,6 +35,7 @@ func failWhy(status int, err error) string {
 // A non-empty why means the read was inconclusive.
 type gateRead struct {
 	matched, strict bool
+	nonFF           bool // a ruleset rule blocks non-fast-forward updates
 	why             string
 }
 
@@ -56,12 +57,15 @@ func (g *github) Probe(ctx context.Context, opt ProbeOptions) (Report, error) {
 	}
 	read := g.readRules(ctx, branch, gate)
 	if read.why == "" && !read.matched {
+		nonFF := read.nonFF
 		read = g.readClassic(ctx, branch, gate)
+		read.nonFF = nonFF // a ruleset still blocks force-pushes when classic protection holds the check
 	}
 	claims := "refs/waggle/claims/* in this repository only"
 	if g.remote != "" {
 		claims = "refs/waggle/claims/* on " + g.remote
 	}
+	force := g.forcePushFinding(ctx, read, branch)
 	r := Report{Provider: "github", Repo: g.owner + "/" + g.repo, Remote: g.remote, Auth: g.auth,
 		Claims: claims, MergeStrategy: opt.MergeStrategy,
 		Findings: []Finding{gateFinding(read, branch, gate)}}
@@ -75,6 +79,7 @@ func (g *github) Probe(ctx context.Context, opt ProbeOptions) (Report, error) {
 	} else {
 		r.Findings = append(r.Findings, upToDateFinding(read, branch, gate))
 	}
+	r.Findings = append(r.Findings, force)
 	return r, nil
 }
 
@@ -95,6 +100,9 @@ func (g *github) readRules(ctx context.Context, branch, gate string) gateRead {
 			return gateRead{why: failWhy(status, err)}
 		}
 		for _, rule := range rules {
+			if rule.Type == "non_fast_forward" {
+				read.nonFF = true
+			}
 			if rule.Type != "required_status_checks" {
 				continue
 			}
@@ -187,5 +195,52 @@ func upToDateFinding(r gateRead, branch, gate string) Finding {
 		f.NotEnforced = "a pull request can merge after " + branch + " moved, so the gate never saw the merged result."
 		f.Fix = "turn on require branches to be up to date before merging for the " + gate + " check on " + branch + "."
 	}
+	return f
+}
+
+// forcePushFinding says whether the default branch can be force-pushed (T-051
+// phase C, RFC-0005 4.5). It is a warning, never required, so it does not change
+// doctor's exit code. A ruleset rule that blocks non-fast-forward updates is
+// enough; otherwise classic protection's allow_force_pushes decides.
+func (g *github) forcePushFinding(ctx context.Context, read gateRead, branch string) Finding {
+	f := Finding{ID: "force-push"}
+	why := read.why
+	allowed := false
+	switch {
+	case read.nonFF:
+		f.Status, f.Summary = StatusOK, "A rule on "+branch+" blocks force-pushes."
+		return f
+	case why == "":
+		var p struct {
+			AllowForcePushes struct {
+				Enabled bool `json:"enabled"`
+			} `json:"allow_force_pushes"`
+		}
+		status, err := g.t.do(ctx, "GET", g.repoAPI+"/branches/"+url.PathEscape(branch)+"/protection", nil, &p)
+		var ae *apiError
+		switch {
+		case err == nil:
+			allowed = p.AllowForcePushes.Enabled
+			if !allowed {
+				f.Status, f.Summary = StatusOK, "Branch protection on "+branch+" blocks force-pushes."
+				return f
+			}
+		case errors.As(err, &ae) && ae.Status == 404 && ae.Message == "Branch not protected":
+			allowed = true
+		case errors.As(err, &ae) && (ae.Status == 403 || ae.Status == 404):
+			why = "needs repo admin to read branch protection"
+		default:
+			why = failWhy(status, err)
+		}
+	}
+	if why != "" && !allowed {
+		f.Status = StatusUnknown
+		f.Summary = "Could not read whether " + branch + " allows force-pushes (" + why + ")."
+	} else {
+		f.Status = StatusMissing
+		f.Summary = branch + " allows force-pushes."
+	}
+	f.NotEnforced = "the reputation score can be rewritten, because history on " + branch + " can be force-pushed."
+	f.Fix = "block force-pushes on " + branch + " with a ruleset rule or branch protection."
 	return f
 }
