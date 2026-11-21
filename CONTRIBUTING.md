@@ -34,7 +34,7 @@ These are not part of Waggle's schema.
 
 ## 4. Words in this repo's records
 
-Our hive's records (briefs, decisions, reviews) use bee words. The docs site uses them too, each with a short plain gloss, as [the hive page](/docs/hive/) does. Where a plain term exists (task, claim, lease, protected path, approver, reviewer, maintainer, merge gate, required check), the gloss uses it. Keeping this section current:
+Our hive's records (briefs, decisions, reviews) use bee words. The docs site uses them too, each with a short plain gloss, as [the hive page](https://getwaggle.dev/docs/hive/) does. Where a plain term exists (task, claim, lease, protected path, approver, reviewer, maintainer, merge gate, required check), the gloss uses it. Keeping this section current:
 
 - Any brief that introduces a role or term updates this section in the same PR. The guard checks this: a new capitalized or code-formatted term in a brief with no entry here is a must-fix.
 - Each entry is one or two plain sentences. No decision IDs in an entry; sources stay in the brief that adds it.
