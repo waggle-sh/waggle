@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "ticket_id": "T-073",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "internal/comb"
+  ],
+  "claimed_at": "2026-11-21T23:36:34Z",
+  "expires_at": "2026-11-23T23:36:34Z",
+  "branches": [
+    "t-073a",
+    "t-073a2"
+  ]
+}
