@@ -111,8 +111,16 @@ func TestGateActionText(t *testing.T) {
 	if strings.Count(action, "inputs.token") != 1 || !strings.Contains(gate, "GITHUB_TOKEN: ${{ inputs.token }}") {
 		t.Error("inputs.token must appear once, in the gate step env")
 	}
-	if !strings.Contains(gate, `gate verify --base "$BASE_SHA" --head "$HEAD_SHA"`) {
-		t.Error("gate step lacks the gate verify line")
+	for _, s := range []string{
+		`gate verify --base "$BASE_SHA" --head "$HEAD_SHA"`,
+		`nectar gate-receipt --before "$BEFORE_SHA" --after "$AFTER_SHA" --actor "$GITHUB_ACTOR"`,
+		"MODE: ${{ inputs.mode }}",
+		"  mode:\n    description:",
+		"    default: verify\n",
+	} {
+		if !strings.Contains(action, s) {
+			t.Errorf("action lacks %q", s)
+		}
 	}
 
 	pinned := regexp.MustCompile(`^uses: \S+@[0-9a-f]{40} # v\d`)
@@ -129,7 +137,7 @@ func TestGateTemplateAction(t *testing.T) {
 	o.BuildInfo = commitBuild(pinA)
 	mustInit(t, o)
 	gate := get(t, dir, ".github/workflows/waggle-gate.yml")
-	for _, bad := range []string{"relay-claim", "issue_comment", ": write", "for file in", "::notice file=", "pull_request_target"} {
+	for _, bad := range []string{"relay-claim", "issue_comment", "for file in", "::notice file=", "pull_request_target"} {
 		if strings.Contains(gate, bad) {
 			t.Errorf("workflow contains %q", bad)
 		}
@@ -141,11 +149,36 @@ func TestGateTemplateAction(t *testing.T) {
 		"          base-sha: ${{ github.event.pull_request.base.sha }}\n" +
 		"          head-sha: ${{ github.event.pull_request.head.sha }}\n" +
 		"          token: ${{ github.token }}\n"
-	if !strings.HasSuffix(gate, want) {
-		t.Errorf("workflow does not end with the Action step:\n%s", gate)
+	jobs := strings.SplitN(gate, "\n  # Optional. Writes a gate-run", 2)
+	if len(jobs) != 2 {
+		t.Fatalf("workflow lacks the gate-receipt job:\n%s", gate)
+	}
+	if !strings.HasSuffix(jobs[0], want) {
+		t.Errorf("verify job does not end with the Action step:\n%s", jobs[0])
+	}
+	if strings.Contains(jobs[0], ": write") || !strings.Contains(jobs[0], "permissions:\n  contents: read\n") {
+		t.Error("the verify job and the top level must stay read only")
+	}
+	receipt := jobs[1]
+	for _, s := range []string{
+		"  gate-receipt:\n    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)\n",
+		"    permissions:\n      contents: write\n      pull-requests: read\n",
+		"          ref: ${{ github.sha }}\n",
+		"        uses: waggle-sh/waggle/gate@" + pinA + " # waggle.pin " + pinA + "\n",
+		"          mode: gate-receipt\n",
+	} {
+		if !strings.Contains(receipt, s) {
+			t.Errorf("gate-receipt job lacks %q", s)
+		}
+	}
+	if strings.Count(gate, ": write") != 1 || strings.Contains(receipt, "pull_request.head") {
+		t.Error("only the gate-receipt job may write, and it never names PR code")
+	}
+	if !strings.Contains(gate, "  push:\n    branches: [main]\n") {
+		t.Error("workflow lacks the push trigger")
 	}
 	action := readRepoFile(t, "../../gate/action.yml")
-	for _, k := range []string{"base-sha", "head-sha", "token"} {
+	for _, k := range []string{"mode", "base-sha", "head-sha", "before", "after", "token"} {
 		if !strings.Contains(action, "\n  "+k+":\n") {
 			t.Errorf("action has no input %s", k)
 		}
@@ -168,7 +201,7 @@ func TestGateTemplateAction(t *testing.T) {
 		t.Error("Action and template pin setup-go differently")
 	}
 	// The one token expression in the base-source gate step is untouched.
-	if strings.Count(gate, "GITHUB_TOKEN: ${{ github.token }}") != 1 {
+	if strings.Count(gate, "GITHUB_TOKEN: ${{ github.token }}") != 1 || strings.Count(gate, "token: ${{ github.token }}") != 2 {
 		t.Error("the base-source gate step must be the only GITHUB_TOKEN env")
 	}
 }

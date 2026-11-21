@@ -146,6 +146,8 @@ on:
     types: [opened, synchronize, reopened, labeled, edited]
   pull_request_review:
     types: [submitted, dismissed]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -209,6 +211,43 @@ jobs:
           base-sha: ${{ github.event.pull_request.base.sha }}
           head-sha: ${{ github.event.pull_request.head.sha }}
           token: ${{ github.token }}
+
+  # Optional. Writes a gate-run release record for each task that lands on the
+  # default branch with a live claim and no record. It needs push rights to
+  # refs/waggle/receipts/*. Delete this job and the push trigger to skip it;
+  # the verify-leases-and-tiers check does not depend on it.
+  gate-receipt:
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    concurrency:
+      group: waggle-gate-receipt
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Waggle gate receipt
+        uses: waggle-sh/waggle/gate@<commit-sha> # waggle.pin <commit-sha>
+        with:
+          mode: gate-receipt
+          before: ${{ github.event.before }}
+          after: ${{ github.event.after }}
+          token: ${{ github.token }}
 ```
 
-The Action takes the inputs `base-sha`, `head-sha` and `token`, defaulting to the event's base SHA, head SHA and `github.token`. It builds the gate from its own pinned tree with the module proxy off, fetches claim refs, and runs `gate verify --base --head` with no `--branch` (`gate/action.yml:5-51`).
+The Action takes the inputs `mode`, `base-sha`, `head-sha`, `before`, `after` and `token`. `mode` is `verify` by default. The SHA inputs default to the event's values and `token` to `github.token`. It builds the gate from its own pinned tree with the module proxy off and fetches claim refs. In `verify` mode it runs `gate verify --base --head` with no `--branch`, and its inputs and exit codes are the same as before. In `gate-receipt` mode it runs `nectar gate-receipt --before --after --actor` (section 14). Any other `mode` exits 2 (`gate/action.yml`).
+
+## 14. Release records written by the gate run
+
+A release record (a receipt) says that a task landed on the default branch, who owned the claim and who approved the PR. The gate itself never reads one: `verify-leases-and-tiers` does not fetch or depend on them.
+
+- **Writers.** `waggle release` writes a record when the owner releases a claim. The `gate-receipt` job in the calling workflow (section 13) writes one for a task whose owner never released, which is the common case for fork contributors and for a claim that expired.
+- **Trigger.** A push to the default branch. The job passes the push event's `before` and `after` commits and the pusher's login (`github.actor`) to `waggle nectar gate-receipt`. For each first-parent commit in that range that binds to a task (section 2), has a live claim and has no record yet, it appends one record with `source: gate_run`. It does not release or change the claim. A commit with no live claim gets no record.
+- **Token.** The job runs with job-level `contents: write` and `pull-requests: read` on `github.token`. The write permission is for the record ref only. The job checks out the pushed commit, never PR code, and builds the pinned Action's own tree.
+- **Who needs which right.** The token must be allowed to push `refs/waggle/receipts/*`. A ruleset or push restriction that blocks that ref makes the job fail and the records are not written. The required check is unaffected.
+- **Opting out.** Delete the `gate-receipt` job and the `push` trigger. A repo whose default branch is not `main` changes `branches: [main]` to its branch name.

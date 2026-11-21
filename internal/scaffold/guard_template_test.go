@@ -43,10 +43,14 @@ func TestGateTemplateBaseBuilt(t *testing.T) {
 		t.Error("workflow-level permissions are not contents: read only")
 	}
 	verify := strings.Index(gate, "  verify-leases-and-tiers:")
-	if strings.Contains(gate, ": write") {
-		t.Error("workflow holds a write permission")
+	receipt := strings.Index(gate, "  gate-receipt:")
+	if receipt < verify {
+		t.Fatal("gate-receipt job is missing or before the verify job")
 	}
-	if !strings.Contains(gate[verify:], "    permissions:\n      contents: read\n") {
+	if strings.Contains(gate[:receipt], ": write") || strings.Count(gate, ": write") != 1 {
+		t.Error("only the gate-receipt job may hold a write permission")
+	}
+	if !strings.Contains(gate[verify:receipt], "    permissions:\n      contents: read\n") {
 		t.Error("verify job lacks job-level contents: read")
 	}
 	if strings.Contains(gate, "|| true") {
