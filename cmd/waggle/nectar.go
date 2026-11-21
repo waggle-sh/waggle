@@ -55,11 +55,7 @@ func runNectar(args []string, stdout, stderr io.Writer) int {
 	if len(args) > 0 && args[0] == "backfill" {
 		return runNectarBackfill(args[1:], stdout, stderr)
 	}
-	fmt.Fprintln(stderr, nectarUsage)
-	if len(args) > 0 && (args[0] == "-h" || args[0] == "-help" || args[0] == "--help") {
-		return 0
-	}
-	return dispatch.ExitUsage
+	return runNectarSummary(args, stdout, stderr)
 }
 
 // runNectarBackfill implements `waggle nectar backfill`: it plans a receipt for
