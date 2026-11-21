@@ -26,7 +26,7 @@ const (
 	ReasonRefHash      = "ref_hash"
 	ReasonSignature    = "signature"
 	ReasonObject       = "object"
-	ReasonPrev         = "prev"
+	ReasonPrevMismatch = "prev_mismatch"
 	ReasonNoncanonical = "noncanonical"
 )
 
@@ -112,7 +112,8 @@ type Store struct {
 	Comb *comb.GitBackend
 	// Signer signs ballots.
 	Signer Signer
-	// Now supplies commit times. Quorum never reads the wall clock itself.
+	// Now is unused by ballot commits, whose dates come from the round's
+	// opens_at. It is kept so existing callers still compile.
 	Now func() time.Time
 
 	// hookBeforeWrite, when set by tests, runs after Cast reads the tip and
@@ -139,27 +140,81 @@ func ballotCredits(votes []Vote) (uint64, bool) {
 	return sum, true
 }
 
-// Cast records keeperID's votes in round (RFC-0006 6.2, 6.3, 6.4). The ballot
-// is validated before any git or ssh-keygen call. It writes a child of the
-// Keeper's previous ballot with that OID as expected value (create-only for a
-// first ballot), and on a lost race re-reads and retries on the new parent.
-// It returns the ballot commit OID, the receipt.
-func (s Store) Cast(ctx context.Context, round Round, keeperID string, votes []Vote) (string, error) {
-	b := Ballot{Version: Version, Round: round.Round, KeeperID: keeperID,
-		Votes: append([]Vote{}, votes...)}
-	sum, ok := ballotCredits(b.Votes)
-	if !ok {
-		return "", reason(ReasonOverBudget)
+// BallotMessage is the fixed commit message of a ballot commit.
+func BallotMessage(round int) string { return fmt.Sprintf("quorum: round %d ballot", round) }
+
+// ballotTime parses the round's opens_at, the date of every ballot commit.
+func ballotTime(round Round) (time.Time, error) {
+	t, err := time.Parse(time.RFC3339, round.OpensAt)
+	if err != nil || t.Unix() < 0 {
+		return time.Time{}, errors.New("quorum: round opens_at is not a usable timestamp")
 	}
-	b.CreditsUsed = sum
-	if err := ValidateBallot(round, b); err != nil {
-		return "", err
+	return t, nil
+}
+
+// SignedBallot is a signed ballot commit that is built but not yet on its
+// ref. Receipt is the commit OID; it is a pure function of ballot.json,
+// ballot.sig and Parent, because the message and both dates are fixed by the
+// round.
+type SignedBallot struct {
+	Ref     string
+	Receipt string
+	// Parent is the commit the ballot chains to and the expected value of Ref
+	// ("" for a first ballot).
+	Parent string
+}
+
+// SignBallot validates the ballot before any git or ssh-keygen call, sets prev
+// to the given parent, signs it and builds the ballot commit with the fixed
+// message and opens_at as both dates. It does not write the ref; WriteBallot
+// does. parent is the Keeper's current tip, or "" for a first ballot.
+func (s Store) SignBallot(ctx context.Context, round Round, keeperID string, votes []Vote, parent string) (SignedBallot, error) {
+	b, err := s.precheck(round, keeperID, votes)
+	if err != nil {
+		return SignedBallot{}, err
 	}
-	if s.Comb == nil || s.Now == nil {
-		return "", errors.New("quorum: store needs a backend and a clock")
+	when, _ := ballotTime(round)
+	b.Prev = parent
+	data := Encode(b)
+	sig, err := s.Signer.Sign(ctx, NamespaceBallot, data)
+	if err != nil {
+		return SignedBallot{}, err
 	}
 	ref := BallotRef(round.Round, keeperID)
+	oid, err := s.Comb.BuildObjectCommit(ctx, ref, []comb.ObjectFile{
+		{Name: BallotFile, Data: data}, {Name: BallotSigFile, Data: sig},
+	}, parent, BallotMessage(round.Round), when)
+	if err != nil {
+		return SignedBallot{}, err
+	}
+	return SignedBallot{Ref: ref, Receipt: oid, Parent: parent}, nil
+}
+
+// WriteBallot points the ballot ref at the built commit by compare-and-swap:
+// expected is the parent, or the ref must not exist for a first ballot. A lost
+// race returns an error wrapping comb.ErrRefLost.
+func (s Store) WriteBallot(ctx context.Context, sb SignedBallot) error {
+	if s.Comb == nil {
+		return errors.New("quorum: store needs a backend")
+	}
+	return s.Comb.UpdateObjectRef(ctx, sb.Ref, sb.Receipt, sb.Parent)
+}
+
+// Cast records keeperID's votes in round (RFC-0006 6.2, 6.3, 6.4). The ballot
+// is validated before any git or ssh-keygen call. It chains to the Keeper's
+// previous ballot with that OID as expected value (create-only for a first
+// ballot), and on a lost race re-reads and retries on the new parent. The
+// commit message and dates are fixed by the round, so Cast never reads a
+// clock. It returns the ballot commit OID, the receipt.
+func (s Store) Cast(ctx context.Context, round Round, keeperID string, votes []Vote) (string, error) {
+	ref := BallotRef(round.Round, keeperID)
 	for attempt := 0; ; attempt++ {
+		// Validation errors surface before the first git call.
+		if attempt == 0 {
+			if _, err := s.precheck(round, keeperID, votes); err != nil {
+				return "", err
+			}
+		}
 		if err := s.Comb.FetchObjectNamespace(ctx, RefPrefix); err != nil {
 			return "", err
 		}
@@ -167,25 +222,43 @@ func (s Store) Cast(ctx context.Context, round Round, keeperID string, votes []V
 		if err != nil {
 			return "", err
 		}
-		b.Prev = tip
-		data := Encode(b)
-		sig, err := s.Signer.Sign(ctx, NamespaceBallot, data)
+		sb, err := s.SignBallot(ctx, round, keeperID, votes, tip)
 		if err != nil {
 			return "", err
 		}
 		if s.hookBeforeWrite != nil {
 			s.hookBeforeWrite(attempt)
 		}
-		oid, err := s.Comb.WriteObjectRef(ctx, ref, []comb.ObjectFile{
-			{Name: BallotFile, Data: data}, {Name: BallotSigFile, Data: sig},
-		}, tip, tip, fmt.Sprintf("waggle: quorum ballot round-%d", round.Round), s.Now())
+		err = s.WriteBallot(ctx, sb)
 		if err == nil {
-			return oid, nil
+			return sb.Receipt, nil
 		}
 		if !errors.Is(err, comb.ErrRefLost) || attempt+1 >= maxCastAttempts {
 			return "", err
 		}
 	}
+}
+
+// precheck runs the validation SignBallot runs, plus the backend check, with
+// no git or ssh-keygen call.
+func (s Store) precheck(round Round, keeperID string, votes []Vote) (Ballot, error) {
+	b := Ballot{Version: Version, Round: round.Round, KeeperID: keeperID,
+		Votes: append([]Vote{}, votes...)}
+	sum, ok := ballotCredits(b.Votes)
+	if !ok {
+		return b, reason(ReasonOverBudget)
+	}
+	b.CreditsUsed = sum
+	if err := ValidateBallot(round, b); err != nil {
+		return b, err
+	}
+	if _, err := ballotTime(round); err != nil {
+		return b, err
+	}
+	if s.Comb == nil {
+		return b, errors.New("quorum: store needs a backend")
+	}
+	return b, nil
 }
 
 // LoadVerifier reads the Keeper registry from the round's base commit, never
@@ -291,8 +364,11 @@ func (s Store) loadOne(ctx context.Context, round Round, v *Verifier, r comb.Obj
 		return CountedBallot{}, "", err
 	}
 	data, sig := c.Files[BallotFile], c.Files[BallotSigFile]
-	if len(c.Files) != 2 || data == nil || sig == nil || len(c.Parents) > 1 {
+	if len(c.Files) != 2 || data == nil || sig == nil {
 		return CountedBallot{}, ReasonObject, nil
+	}
+	if len(c.Parents) > 1 {
+		return CountedBallot{}, ReasonPrevMismatch, nil
 	}
 	b, err := DecodeBallot(data)
 	if err != nil {
@@ -318,7 +394,7 @@ func (s Store) loadOne(ctx context.Context, round Round, v *Verifier, r comb.Obj
 		wantPrev = c.Parents[0]
 	}
 	if b.Prev != wantPrev {
-		return CountedBallot{}, ReasonPrev, nil
+		return CountedBallot{}, ReasonPrevMismatch, nil
 	}
 	return CountedBallot{Ref: r.Ref, OID: r.OID, Ballot: b}, "", nil
 }
