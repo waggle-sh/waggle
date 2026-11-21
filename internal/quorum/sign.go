@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 // Signature namespaces (RFC-0006 6.3, 8).
@@ -84,8 +85,14 @@ func (s Signer) Sign(ctx context.Context, namespace string, data []byte) ([]byte
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	if err := cmd.Run(); err != nil {
-		if toolUnsupported(errb.Bytes()) {
-			return nil, fmt.Errorf("%w (sign: %v)", ErrNoSSHKeygen, err)
+		// Only the fixed probe decides ErrNoSSHKeygen; the sign stderr is
+		// never scanned. The probe runs on failure only, so a working Sign
+		// costs one ssh-keygen run.
+		var ee *exec.ExitError
+		if errors.As(err, &ee) && ee.ExitCode() != -1 && ctx.Err() == nil {
+			if perr := probeKeygen(ctx, bin); errors.Is(perr, ErrNoSSHKeygen) {
+				return nil, fmt.Errorf("%w (sign: %v)", ErrNoSSHKeygen, err)
+			}
 		}
 		return nil, fmt.Errorf("quorum: ssh-keygen sign: %v: %s", err, strings.TrimSpace(errb.String()))
 	}
@@ -101,6 +108,12 @@ func (s Signer) Sign(ctx context.Context, namespace string, data []byte) ([]byte
 type Verifier struct {
 	registry  []byte
 	sshKeygen string
+
+	// probeMu guards the cached result of the ssh-keygen probe (keygen).
+	probeMu  sync.Mutex
+	probed   bool
+	probeBin string
+	probeErr error
 	// Rejected lists the 1-based registry line numbers that were dropped.
 	Rejected []int
 }
@@ -110,8 +123,8 @@ type Verifier struct {
 // three Quorum namespaces is kept; every other line is dropped and listed in
 // Rejected, so a line without namespaces= never signs a Quorum record. One
 // keeper_id may have several lines (key rotation); a signature by any of that
-// Keeper's listed keys verifies. The binary is looked up at verify time;
-// sshKeygen "" means ssh-keygen on PATH.
+// Keeper's listed keys verifies. The binary is looked up and probed on the
+// first Verify; sshKeygen "" means ssh-keygen on PATH.
 func NewVerifier(registry []byte, sshKeygen string) (*Verifier, error) {
 	if len(registry) > MaxRegistryBytes {
 		return nil, fmt.Errorf("%w: over %d bytes", ErrRegistry, MaxRegistryBytes)
@@ -178,17 +191,81 @@ func keyTypeOK(kt string) bool {
 	return false
 }
 
-// toolUnsupported reports whether ssh-keygen's stderr shows it could not run
-// the requested -Y form at all: usage text, an unknown or illegal option, or
-// an unsupported -Y operation. A failed verification prints none of these.
-func toolUnsupported(stderr []byte) bool {
-	e := strings.ToLower(string(stderr))
-	for _, m := range []string{"usage: ssh-keygen", "unknown option", "illegal option", "invalid option", "unsupported operation"} {
+// probeRegistry and probeSig are the fixed probe inputs: a well-formed
+// registry line and an armored signature whose body is not an SSHSIG. A
+// working ssh-keygen -Y verify rejects the signature with exit 255.
+const (
+	probeRegistry = `probe namespaces="waggle-quorum-ballot" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKTIPVNqqpW6QWB2ACIYw5UgiK1bIngoGnoZUOfscAwj` + "\n"
+	probeSig      = "-----BEGIN SSH SIGNATURE-----\nAAAA\n-----END SSH SIGNATURE-----\n"
+)
+
+// probeUnsupported lists the stderr phrases that mean ssh-keygen cannot run
+// -Y verify at all. Checked against OpenSSH 10.3p1 (`Unsupported operation
+// for -Y: "bogus"` then `usage: ssh-keygen ...`; `option requires an
+// argument` then usage). The getopt forms an ssh-keygen without -Y would
+// print (`illegal option -- Y` from BSD libc, `invalid option -- 'Y'` from
+// glibc) come from the libc docs, not a run of an old OpenSSH. A working ssh-keygen answers the probe with `Couldn't
+// verify signature: invalid format`, which matches none of them. Only the
+// probe's own output, from fixed input, is ever matched.
+var probeUnsupported = []string{"usage: ssh-keygen", "unknown option", "illegal option", "invalid option", "unsupported operation"}
+
+// probeKeygen runs ssh-keygen -Y verify once with fixed arguments and fixed
+// input. It returns nil when the tool handles -Y verify, ErrNoSSHKeygen when
+// it is missing or lacks -Y, and another error when it could not run. The
+// result never depends on a stored signature.
+func probeKeygen(ctx context.Context, bin string) error {
+	dir, err := os.MkdirTemp("", "waggle-quorum-probe-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+	regPath := filepath.Join(dir, "allowed_signers")
+	sigPath := filepath.Join(dir, "probe.sig")
+	if err := os.WriteFile(regPath, []byte(probeRegistry), 0o600); err != nil {
+		return err
+	}
+	if err := os.WriteFile(sigPath, []byte(probeSig), 0o600); err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, bin, "-Y", "verify", "-f", regPath, "-I", "probe", "-n", NamespaceBallot, "-s", sigPath)
+	cmd.Stdin = strings.NewReader("waggle quorum probe\n")
+	var errb bytes.Buffer
+	cmd.Stderr = &errb
+	err = cmd.Run()
+	if err == nil {
+		return nil
+	}
+	var ee *exec.ExitError
+	if !errors.As(err, &ee) || ee.ExitCode() == -1 || ctx.Err() != nil {
+		return fmt.Errorf("quorum: ssh-keygen probe: %v", err)
+	}
+	e := strings.ToLower(errb.String())
+	for _, m := range probeUnsupported {
 		if strings.Contains(e, m) {
-			return true
+			return fmt.Errorf("%w (probe: %v)", ErrNoSSHKeygen, err)
 		}
 	}
-	return false
+	return nil
+}
+
+// keygen resolves and probes the binary once per Verifier. A definite result
+// (usable, or ErrNoSSHKeygen) is cached; a probe that could not run (exec
+// failure, a signal, a cancelled context) is returned and retried next time.
+func (v *Verifier) keygen(ctx context.Context) (string, error) {
+	v.probeMu.Lock()
+	defer v.probeMu.Unlock()
+	if v.probed {
+		return v.probeBin, v.probeErr
+	}
+	bin, err := sshKeygen(v.sshKeygen)
+	if err == nil {
+		err = probeKeygen(ctx, bin)
+	}
+	if err != nil && !errors.Is(err, ErrNoSSHKeygen) {
+		return "", err
+	}
+	v.probed, v.probeBin, v.probeErr = true, bin, err
+	return bin, err
 }
 
 // splitQuoted splits on spaces and tabs, keeping a double-quoted run whole.
@@ -220,11 +297,14 @@ func splitQuoted(s string) []string {
 }
 
 // Verify checks that sig is a valid signature over data in namespace by a key
-// registered for keeperID. It returns ErrBadSignature when the check fails,
-// ErrNoSSHKeygen when ssh-keygen is missing or lacks -Y verify, and another
-// error when it could not run. A tool failure is never reported as a bad
-// signature, so two Keepers with different OpenSSH builds cannot silently
-// count different ballots.
+// registered for keeperID. It returns ErrNoSSHKeygen when the one probe of
+// ssh-keygen (probeKeygen) shows it missing or without -Y verify, and another
+// error when ssh-keygen could not run, was killed by a signal or the context
+// ended. After a good probe every other verify failure is ErrBadSignature,
+// whatever ssh-keygen printed, so a stored signature cannot steer its own
+// classification. A tool failure is never reported as a bad signature, so two
+// Keepers with different OpenSSH builds cannot silently count different
+// ballots.
 func (v *Verifier) Verify(ctx context.Context, namespace, keeperID string, data, sig []byte) error {
 	if !validNamespace(namespace) {
 		return ErrNamespace
@@ -235,7 +315,7 @@ func (v *Verifier) Verify(ctx context.Context, namespace, keeperID string, data,
 	if len(sig) == 0 || len(sig) > maxSigBytes {
 		return ErrBadSignature
 	}
-	bin, err := sshKeygen(v.sshKeygen)
+	bin, err := v.keygen(ctx)
 	if err != nil {
 		return err
 	}
@@ -252,16 +332,13 @@ func (v *Verifier) Verify(ctx context.Context, namespace, keeperID string, data,
 	if err := os.WriteFile(sigPath, sig, 0o600); err != nil {
 		return err
 	}
+	// Stderr is discarded: what ssh-keygen prints about a stored signature
+	// never affects the result.
 	cmd := exec.CommandContext(ctx, bin, "-Y", "verify", "-f", regPath, "-I", keeperID, "-n", namespace, "-s", sigPath)
 	cmd.Stdin = bytes.NewReader(data)
-	var errb bytes.Buffer
-	cmd.Stderr = &errb
 	if err := cmd.Run(); err != nil {
 		var ee *exec.ExitError
-		if errors.As(err, &ee) && ctx.Err() == nil {
-			if toolUnsupported(errb.Bytes()) {
-				return fmt.Errorf("%w (verify: %v)", ErrNoSSHKeygen, err)
-			}
+		if errors.As(err, &ee) && ee.ExitCode() != -1 && ctx.Err() == nil {
 			return ErrBadSignature
 		}
 		return fmt.Errorf("quorum: ssh-keygen verify: %v", err)
