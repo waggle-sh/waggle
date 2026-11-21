@@ -7292,3 +7292,83 @@
 **Keeper choice:** Option (a), approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 7:57 AM Pacific Time. Amend T-054 phase B (PR 261) so ballot commits use the fixed message quorum: round <r> ballot and the round's opens_at as both author and committer date, then merge. The OID is a pure function of ballot.json, ballot.sig and the parent.
 
 **Rationale:** Context: as T-054 B was first written, commitTree dated both author and committer from the clock, so a contributor could not know the receipt the importer would write, and two importers of the same envelope would write different commits (T-070 brief F1, Q-T070-1). Choice: option (a), amend T-054 B (open PR 261) with the fixed message and the round's opens_at as both dates, then merge. Rejected: (b), which works after B has dispatched but adds an unsigned envelope field that changes the OID; (c), which leaves a voter who posted through the relay unable to check verify --receipt until the reply arrives. The same records batch amends T-054 brief 2.2 items 1, 5 and 6 (fixed message and date, the sign and write split, and the prev_mismatch loader check). Q-T070-2 to Q-T070-7 stay open. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-377: T-069: Q-T069-1 to Q-T069-12 ruled as the scout recommended
+
+- **Date:** 2026-11-21
+- **Kind:** technical
+- **Tickets:** T-069
+- **Supersedes:** none
+
+**Question:** How should the twelve open questions of the T-069 brief (Quorum RFC phase 3: alias merge, area rounds, collusion flags, commit-reveal) be ruled?
+
+**Options considered:**
+1. Adopt the recommended option for each of Q-T069-1 to Q-T069-12 as written in the brief.
+2. Rule some questions differently, or hold some for a design card.
+3. Hold all twelve until T-054 phase D merges.
+
+**Hive recommendation:** Adopt the recommended option for all twelve, as the scout set out in section 11 of the T-069 brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 9:30 AM Pacific Time (relayed in writing). Q-T069-1 (a), 2 (a), 3 (a), 4 (a), 5 (a), 6 (c), 7 (a), 8 (a), 9 (a), 10 (a), 11 (a), 12 (a), each as recommended in the brief.
+
+**Rationale:** Context: T-069 was a stub under D-372 and the scout wrote the full brief on 2026-11-20 with a recommended option for each question. Choice: every recommendation stands. Phase A waits for T-054 phases A to D and AC4 (1); the alias record is the sidecar .waggle/control/keeper-aliases (2); only the primary's ballot chain counts for a merged person (3); case variants of a login are a status flag, not an automatic merge (4); area rounds weigh repo-wide Nectar (5); item directories come from the task file lease by default with explicit override (6); commit-reveal is opt in per round with no config key (7); the salt lives in a 0600 file under the git common dir (8); an approver signs a seal record after closes_at (9); flags are computed by status and verify, not stored in tally.json (10); delegated area veto stays an open RFC question (11); one live commit-reveal round with the Head Keeper as the only voter (12). Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-378: T-069: follow-on release is v0.3, the same key signs commitments and ballots, RFC-0006 amendments first
+
+- **Date:** 2026-11-21
+- **Kind:** policy
+- **Tickets:** T-069
+- **Supersedes:** none
+
+**Question:** What does the Head Keeper name the T-069 follow-on release, which key signs commit-reveal commitments, and does the RFC-0006 amendments docs PR land before phase A?
+
+**Options considered:**
+1. Name the release v0.3; the same key signs commitments as ballots, under the waggle-quorum-commit namespace; the RFC-0006 amendments docs PR lands before phase A (brief section 12 items 1, 3 and 4).
+2. Name a different release, use a separate commitment key, or amend the RFC after the build.
+3. Leave the release unnamed until phase A dispatches.
+
+**Hive recommendation:** Option 1 for the key and the RFC order, as recommended in the brief. No recommendation was made on the release name.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 9:30 AM Pacific Time (relayed in writing). The release is v0.3. The same key signs commitments and ballots, with waggle-quorum-commit as its namespace. Section 12 item 4 is adopted: the RFC-0006 amendments docs PR lands before phase A.
+
+**Rationale:** Context: D-372 left the release after v0.2 unnamed (Q-T054-8) and the T-069 brief asked for a name, a decision on the registry namespace and the RFC order. Choice: v0.3, with ROADMAP.md moving T-069 under a v0.3 heading and setting its size to L, four phases. The namespace already separates commitments from ballots, so one key serves both; the Head Keeper's commit adding waggle-quorum-commit to each line of .waggle/control/keepers is needed before the first commit-reveal round, not before the build. The RFC-0006 amendments (status lines, the seal in 6.4, primary-chain counting in section 7 item 4, the vote buying sentence, answers to section 13 questions 6 and 7) go in a small docs PR before phase A so the builder works against the RFC as amended. Sequencing, not a cut: every RFC phase 3 item stays in T-069. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-379: T-072: Q-T072-1 to Q-T072-8 ruled as recommended; T-073 opened for case-folded overlap checks
+
+- **Date:** 2026-11-21
+- **Kind:** policy
+- **Tickets:** T-072, T-073
+- **Supersedes:** none
+
+**Question:** How should the eight open questions of the T-072 brief (waggle force-release) be ruled, and does case-folded overlap checking, deferred by D-038, open as its own ticket?
+
+**Options considered:**
+1. Adopt the recommended option for each of Q-T072-1 to Q-T072-8 and open T-073 (v0.1) for case-folded overlap checks.
+2. Rule some questions differently.
+3. Fold the case-folded overlap checks into T-072.
+
+**Hive recommendation:** Option 1, as recommended in section 11 of the T-072 brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 9:35 AM Pacific Time (relayed in writing). Q-T072-1 to Q-T072-8 as the scout recommended, and T-073 opens as its own v0.1 ticket for case-folded overlap checks.
+
+**Rationale:** Context: D-009 and D-038 left a stuck or malformed claim with no audited exit, and case-folded overlap deferred to a Comb ticket that never came. Choice: only the first login in gate.approvers may force-release (1); no new config key (2); the match folds ASCII case, in internal/dispatch (3); the CLI refuses inside a dispatch worktree with exit 4 (4); case-folded overlap becomes T-073, not part of T-072 (5); no age gate and no automatic owner notice in v0.1 (6); an expired claim can be force-released, with an inspect note (7); the audit chain is not signed in T-072, with a follow-up naming audit commits written by force-release so D-068 is not narrowed (8). The T-072 brief is added as a task file. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-380: T-073: Q-T073-1 to Q-T073-8 ruled as recommended; gate Unicode ticket and doctor collision follow-up opened
+
+- **Date:** 2026-11-21
+- **Kind:** scope
+- **Tickets:** T-073, T-074, T-075
+- **Supersedes:** none
+
+**Question:** How should the eight open questions of the T-073 brief (case-folded claim overlap checks, carrying out D-038) be ruled, and do the two follow-ups it names open as tickets?
+
+**Options considered:**
+1. Adopt the recommended option for each of Q-T073-1 to Q-T073-8, open a v0.1 gate ticket for Unicode normalization variants in the head tree check, and open a doctor collision-count follow-up.
+2. Rule some questions differently.
+3. Fix the gate's Unicode check inside T-073 and add the doctor finding there.
+
+**Hive recommendation:** Option 1, as recommended in section 11 of the T-073 brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 9:40 AM Pacific Time (relayed in writing). Q-T073-1 to Q-T073-8 as the scout recommended. Two tickets open: T-074, the v0.1 gate ticket for Unicode normalization variants in the head tree check (Q-T073-8), and T-075, the doctor collision-count follow-up (Q-T073-5).
+
+**Rationale:** Context: D-038 deferred case-folded overlap to the next Comb ticket and T-072 Q-T072-5 opened T-073 to carry it. Choice: active collisions at pin move follow the grandfather rule (1); ASCII folding only by a byte helper, with Unicode folding a condition on any ticket that relaxes D-037 (2); refused at write in prepareLease, not on read (3); no opt-out config key (4); the doctor collision count waits and folds into T-072's claims finding as its own follow-up (5); T-072 phase B edits docs/multi-keeper.md first (6); RFC-0003 gets an Appendix A entry A3 (7); the gate's head tree check for Unicode normalization variants (cmd/waggle/gate_commits.go) is its own v0.1 ticket (8). Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
