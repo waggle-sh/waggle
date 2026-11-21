@@ -49,6 +49,9 @@ const (
 	Decisions = HiveDir + "/DECISIONS.md"
 	// Workplan is the derived work plan.
 	Workplan = HiveDir + "/WORKPLAN.md"
+	// Keepers is the Keeper registry in OpenSSH allowed_signers format (T-054).
+	// Tier 3.
+	Keepers = ControlDir + "/keepers"
 	// Roadmap is the hive roadmap.
 	Roadmap = HiveDir + "/ROADMAP.md"
 	// SpecsDir holds specs.
