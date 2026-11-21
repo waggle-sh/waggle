@@ -23,7 +23,17 @@ const (
 	ReasonVetoDecision  = "veto_decision"
 )
 
+// Receipt answers of Verify (RFC-0006 6.4).
+const (
+	ReceiptCounted   = "counted"
+	ReceiptMissing   = "missing"
+	ReceiptNotBallot = "not a ballot of this round"
+)
+
 const maxDecisionsBytes = 8 << 20
+
+// ReceiptSuperseded is the answer for a ballot that a later ballot replaced.
+func ReceiptSuperseded(by string) string { return "not counted (superseded by " + by + ")" }
 
 // decisionIDs returns the set of D-<n> ids in DECISIONS.md at commit.
 func (l Lifecycle) decisionIDs(ctx context.Context, commit string) (map[string]bool, error) {
@@ -217,13 +227,19 @@ func (l Lifecycle) ballotAt(ctx context.Context, round Round, v *Verifier, oid s
 // VerifyResult is what Verify reports.
 type VerifyResult struct {
 	Tally TallyRecord
+	// Receipt answers the receipt asked about, or is empty when none was.
+	Receipt string
 }
 
 // Verify recomputes tally.json from the chain, the registry and config at the
 // round's base, Nectar at nectar_at, the counted ballot commits and
 // DECISIONS.md at the stored close commit, and succeeds only on byte
-// equality with the stored record (RFC-0006 8).
-func (l Lifecycle) Verify(ctx context.Context, n int) (VerifyResult, error) {
+// equality with the stored record (RFC-0006 8). With a receipt it also
+// reports whether that ballot was counted.
+func (l Lifecycle) Verify(ctx context.Context, n int, receipt string) (VerifyResult, error) {
+	if receipt != "" && !baseOIDPattern.MatchString(receipt) {
+		return VerifyResult{}, bad("receipt is not a full commit id")
+	}
 	ch, err := l.loadChain(ctx, n)
 	if err != nil {
 		return VerifyResult{}, err
@@ -287,7 +303,13 @@ func (l Lifecycle) Verify(ctx context.Context, n int) (VerifyResult, error) {
 	if got := Encode(want); !bytes.Equal(got, rec.Data) {
 		return VerifyResult{}, fmt.Errorf("%w: stored tally differs from the recomputed one", ErrTallyMismatch)
 	}
-	return VerifyResult{Tally: want}, nil
+	res := VerifyResult{Tally: want}
+	if receipt != "" {
+		if res.Receipt, err = l.receiptStatus(ctx, ch, loaded.Counted, receipt); err != nil {
+			return VerifyResult{}, err
+		}
+	}
+	return res, nil
 }
 
 // checkRefs requires that no valid ballot ref tip is missing from the stored
@@ -327,6 +349,47 @@ func (l Lifecycle) checkRefs(ctx context.Context, stored TallyRecord, now Loaded
 		}
 	}
 	return nil
+}
+
+func (l Lifecycle) receiptStatus(ctx context.Context, ch *chain, counted []CountedBallot, receipt string) (string, error) {
+	for _, c := range counted {
+		if c.OID == receipt {
+			return ReceiptCounted, nil
+		}
+	}
+	if _, err := l.Comb.ReadObjectCommit(ctx, receipt, maxBallotBytes); err != nil {
+		if errors.Is(err, comb.ErrBadObject) {
+			return ReceiptNotBallot, nil
+		}
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
+		return ReceiptMissing, nil // the object is not in this clone
+	}
+	cb, code, err := l.ballotAt(ctx, ch.Round, ch.Info.verifier, receipt)
+	if err != nil {
+		return "", err
+	}
+	if code != "" {
+		return ReceiptNotBallot, nil
+	}
+	for _, c := range counted {
+		if c.Ballot.KeeperID != cb.Ballot.KeeperID {
+			continue
+		}
+		cur := c.OID
+		for i := 0; cur != "" && i < maxChain; i++ {
+			k, err := l.Comb.ReadObjectCommit(ctx, cur, maxBallotBytes)
+			if err != nil || len(k.Parents) != 1 {
+				break
+			}
+			cur = k.Parents[0]
+			if cur == receipt {
+				return ReceiptSuperseded(c.OID), nil
+			}
+		}
+	}
+	return ReceiptMissing, nil
 }
 
 // KeeperCredits is one Keeper's spend in a round.
@@ -386,4 +449,49 @@ func (l Lifecycle) Status(ctx context.Context, n int, commit string) (StatusRepo
 	}
 	sort.Slice(rep.Credits, func(i, j int) bool { return rep.Credits[i].KeeperID < rep.Credits[j].KeeperID })
 	return rep, nil
+}
+
+// Ready returns the ordered items of a closed tally that are not vetoed, have
+// no active claim and whose recorded dependencies are met (RFC-0006 4.3,
+// Q-T054-4). A dependency is met when merged reports it and it has no active
+// claim. The list is computed live and is never stored in tally.json.
+func Ready(ctx context.Context, b comb.Backend, round Round, t TallyRecord, merged func(task string) bool) ([]string, error) {
+	leases, err := b.ListActiveLeases(ctx)
+	var mc *comb.MalformedClaimsError
+	if err != nil && !errors.As(err, &mc) {
+		return nil, err
+	}
+	claimed := map[string]bool{}
+	for _, le := range leases {
+		if id, err := comb.ParseTicketID(le.TicketID); err == nil {
+			claimed[id] = true
+		}
+	}
+	deps := map[string][]string{}
+	for _, d := range round.Depends {
+		deps[d.Item] = d.On
+	}
+	vetoed := map[string]bool{}
+	for _, s := range t.Items {
+		if s.Vetoed {
+			vetoed[s.Item] = true
+		}
+	}
+	out := []string{}
+	for _, it := range t.Order {
+		if t.Rejected || vetoed[it] || claimed[it] {
+			continue
+		}
+		met := true
+		for _, d := range deps[it] {
+			if claimed[d] || merged == nil || !merged(d) {
+				met = false
+				break
+			}
+		}
+		if met {
+			out = append(out, it)
+		}
+	}
+	return out, nil
 }
