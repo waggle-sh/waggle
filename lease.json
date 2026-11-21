@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-069",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "internal/decisions"
+  ],
+  "claimed_at": "2026-11-21T17:00:26Z",
+  "expires_at": "2026-11-21T19:00:26Z",
+  "branches": [
+    "records-t069-t073-2026-11-21"
+  ]
+}
