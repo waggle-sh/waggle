@@ -44,6 +44,10 @@ var (
 	nectarOIDRe = regexp.MustCompile(`^(?:[0-9a-f]{40}|[0-9a-f]{64})$`)
 )
 
+// nectarSeam is a test seam called after the receipt head is read ("receipts")
+// and after main is resolved ("main"); it is a no-op outside tests.
+var nectarSeam = func(stage string) {}
+
 // nectarRun is the result of resolving the inputs once and scoring them.
 type nectarRun struct {
 	Report  nectar.Report
@@ -138,15 +142,25 @@ func runNectarSummary(args []string, stdout, stderr io.Writer) int {
 		exit = nectarFinding
 	}
 	if *asJSON {
-		data, err := json.Marshal(run.Report)
+		data, err := nectarJSON(run.Report)
 		if err != nil {
 			return nectarFail(stderr, nectarEnvEx, "encode: %v", err)
 		}
-		fmt.Fprintf(stdout, "%s\n", data)
+		stdout.Write(data)
 		return exit
 	}
 	renderNectar(stdout, run, *keeper)
 	return exit
+}
+
+// nectarJSON is the --json output: json.Marshal(report), the RFC-0005 9.2
+// object, and one newline.
+func nectarJSON(rep nectar.Report) ([]byte, error) {
+	data, err := json.Marshal(rep)
+	if err != nil {
+		return nil, err
+	}
+	return append(data, '\n'), nil
 }
 
 // nectarScore resolves the inputs once, in the order of T-052 2.1 item 2, and
@@ -211,6 +225,20 @@ func nectarScore(ctx context.Context, root, mainPin, rcPin string, now time.Time
 			}
 		}
 	}
+	// The receipt head is read now, before main is fetched, so a receipt
+	// synced later cannot name a merge the resolved main lacks.
+	rcOID := rcPin
+	if rcOID == "" {
+		rcOID = zero
+		if out, err := g.Run(ctx, "rev-parse", "--verify", "--quiet", comb.ReceiptRef+"^{commit}"); err == nil {
+			rcOID = strings.TrimSpace(string(out))
+		}
+	} else if rcOID != zero {
+		if _, err := g.Run(ctx, "merge-base", "--is-ancestor", rcOID, comb.ReceiptRef); err != nil {
+			return fail(nectarEnvEx, "--receipts %s is not on the release record chain %s", rcOID, comb.ReceiptRef)
+		}
+	}
+	nectarSeam("receipts")
 	local := ""
 	if remote != "" {
 		local = "refs/remotes/" + remote + "/main"
@@ -229,7 +257,8 @@ func nectarScore(ctx context.Context, root, mainPin, rcPin string, now time.Time
 			fmt.Fprintf(stderr, "waggle nectar: warning: could not fetch %s, scoring local state: %s\n", clean(remote), clean(err.Error()))
 		}
 	} else {
-		if remote != "" && noFetch {
+		// --no-fetch, or no remote to fetch from: local state is scored.
+		if !run.Rewound {
 			run.Local = true
 		}
 		mainOID, err = dispatch.ResolveBase(ctx, g, "", local)
@@ -244,13 +273,7 @@ func nectarScore(ctx context.Context, root, mainPin, rcPin string, now time.Time
 		}
 		mainOID = strings.TrimSpace(string(out))
 	}
-	rcOID := rcPin
-	if rcOID == "" {
-		rcOID = zero
-		if out, err := g.Run(ctx, "rev-parse", "--verify", "--quiet", comb.ReceiptRef+"^{commit}"); err == nil {
-			rcOID = strings.TrimSpace(string(out))
-		}
-	}
+	nectarSeam("main")
 	repoName := ""
 	if remote != "" {
 		if out, err := g.Run(ctx, "remote", "get-url", remote); err == nil {

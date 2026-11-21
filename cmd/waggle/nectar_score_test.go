@@ -351,3 +351,208 @@ type testSummary struct {
 	Unattributed int `json:"unattributed"`
 	Orphaned     int `json:"orphaned"`
 }
+
+// releaseOnOrigin claims task for bob on dir, lands one commit for it on main,
+// pushes it and writes its gate-run receipt to origin only. It returns the commit.
+func releaseOnOrigin(t *testing.T, repo, task, dir string) string {
+	t.Helper()
+	if res, exit := runJSON(t, claimCLI, task, "--dirs", dir, "--gate", "full", "--owner", "bob", "--repo", repo); exit != 0 {
+		t.Fatalf("claim %s: %+v", task, res)
+	}
+	before := gitStdout(t, repo, "rev-parse", "HEAD")
+	after := commitGateFile(t, repo, dir+"/f.go", "T-0"+task+": land")
+	git(t, repo, "push", "-q", "origin", "main")
+	if res, exit, stderr := runGateReceipt(t, repo, before, after); exit != 0 || res.Written != 1 {
+		t.Fatalf("gate-receipt %s: exit %d %+v %q", task, exit, res, stderr)
+	}
+	return after
+}
+
+// A3, A8: the seams. Work that lands between the two fetches, or after the
+// inputs are resolved, changes nothing; work on the remote before the run is scored.
+func TestNectarSeams(t *testing.T) {
+	// seamed runs the CLI once with f called at stage.
+	seamed := func(t *testing.T, stage string, f func(), args ...string) (string, string, int) {
+		t.Cleanup(func() { nectarSeam = func(string) {} })
+		nectarSeam = func(s string) {
+			if s == stage {
+				f()
+			}
+		}
+		defer func() { nectarSeam = func(string) {} }()
+		return nectarCLI(t, args...)
+	}
+
+	t.Run("remote work is scored by the default run", func(t *testing.T) {
+		repo, origin := scoredRepo(t)
+		tracked := gitStdout(t, repo, "rev-parse", "refs/remotes/origin/main")
+		m := releaseOnOrigin(t, repo, "26", "internal/v")
+		git(t, repo, "update-ref", "refs/remotes/origin/main", tracked)
+		git(t, repo, "update-ref", "-d", "refs/waggle/receipts/main")
+		if refOrNone(t, repo, "refs/waggle/receipts/") != "" {
+			t.Fatal("this clone holds a receipt before the run")
+		}
+		rc := gitStdout(t, origin, "rev-parse", "refs/waggle/receipts/main")
+		out, errb, exit := nectarCLI(t, "--repo", repo, "--now", nectarNow)
+		if exit != 0 || errb != "" {
+			t.Fatalf("exit %d stderr %q\n%s", exit, errb, out)
+		}
+		if !strings.Contains(out, "\nbob ") || !strings.Contains(out, "        2\n") || !strings.Contains(out, "unattributed 0, orphaned 0") ||
+			!strings.Contains(out, "scored: main "+m+", receipts "+rc+",") || strings.Contains(out, "local only") {
+			t.Errorf("want main %s and receipts %s scored, bob with 2 units:\n%s", m, rc, out)
+		}
+	})
+
+	t.Run("a main commit and its receipt between the fetches", func(t *testing.T) {
+		repo, origin := scoredRepo(t)
+		if _, _, exit := nectarCLI(t, "--repo", repo, "--now", nectarNow); exit != 0 {
+			t.Fatalf("first run exit %d", exit)
+		}
+		held := gitStdout(t, repo, "rev-parse", "refs/waggle/receipts/main")
+		var m string
+		j, errb, exit := seamed(t, "receipts", func() { m = releaseOnOrigin(t, repo, "26", "internal/v") },
+			"--repo", repo, "--now", nectarNow, "--json")
+		var sum testSummary
+		if err := json.Unmarshal([]byte(j), &sum); err != nil {
+			t.Fatalf("%q %q: %v", j, errb, err)
+		}
+		if gitStdout(t, origin, "rev-parse", "refs/waggle/receipts/main") == held {
+			t.Fatal("the seam wrote no receipt to the origin")
+		}
+		// main holds the new commit, the receipts do not: unattributed, never orphaned.
+		if sum.Orphaned != 0 || sum.MainSHA != m || sum.Unattributed != 1 || exit != 1 || len(sum.Keepers) != 1 || sum.Keepers[0].Units != 1 {
+			t.Errorf("exit %d, want main %s, orphaned 0, unattributed 1: %+v", exit, m, sum)
+		}
+		out, _, _ := nectarCLI(t, "--repo", repo, "--now", nectarNow, "--no-fetch", "--receipts", held)
+		if !strings.Contains(out, "receipts "+held+",") {
+			t.Errorf("the pinned receipts line:\n%s", out)
+		}
+	})
+
+	t.Run("a commit and a receipt after resolution", func(t *testing.T) {
+		repo, _ := scoredRepo(t)
+		want, _, exit := nectarCLI(t, "--repo", repo, "--now", nectarNow, "--json")
+		if exit != 0 {
+			t.Fatalf("first run exit %d %q", exit, want)
+		}
+		got, errb, exit := seamed(t, "main", func() {
+			releaseOnOrigin(t, repo, "26", "internal/v")
+			// A concurrent sync moves both local refs past the resolved inputs.
+			git(t, repo, "fetch", "-q", "origin", "+refs/waggle/receipts/main:refs/waggle/receipts/main", "+refs/heads/main:refs/remotes/origin/main")
+		}, "--repo", repo, "--now", nectarNow, "--json")
+		if got != want || exit != 0 {
+			t.Errorf("exit %d stderr %q\ngot  %s\nwant %s", exit, errb, got, want)
+		}
+	})
+}
+
+// A7: an orphaned receipt, one whose merge is not on the scored main, exits 1
+// with the whole report.
+func TestNectarSummaryOrphaned(t *testing.T) {
+	repo, _ := scoredRepo(t)
+	if _, _, exit := nectarCLI(t, "--repo", repo, "--now", nectarNow); exit != 0 {
+		t.Fatalf("first run exit %d", exit)
+	}
+	parent := gitStdout(t, repo, "rev-parse", "refs/remotes/origin/main^")
+	args := []string{"--repo", repo, "--now", nectarNow, "--no-fetch", "--main", parent}
+	out, errb, exit := nectarCLI(t, args...)
+	rc := gitStdout(t, repo, "rev-parse", "refs/waggle/receipts/main")
+	want := `keeper_id  nectar  matured  pending  clawed_back  units
+no attributed units
+counts: unbound 2, unattributed 0, orphaned 1, unmerged 0, incomplete 0, third_party 0, fork_mismatch 0, direct_push 0, self_merge 0, carried 0, unconfirmed_revert 0
+excluded: none
+reciprocal pairs: none
+scored: main ` + parent + `, receipts ` + rc + `, rules_version 1, at ` + nectarNow + `, repo (none), local only
+`
+	if exit != 1 || out != want {
+		t.Errorf("exit %d stderr %q\ngot:\n%s\nwant:\n%s", exit, errb, out, want)
+	}
+	j, _, jexit := nectarCLI(t, append(args, "--json")...)
+	wantJSON := `{"schema_version":1,"rules_version":1,"repo":"","main_sha":"` + parent + `","computed_at":"` + nectarNow + `","keepers":[],"unattributed":0,"orphaned":1}` + "\n"
+	if jexit != 1 || j != wantJSON {
+		t.Errorf("json: exit %d\ngot  %s\nwant %s", jexit, j, wantJSON)
+	}
+}
+
+// A2: --json is the 9.2 object byte for byte: T-051's golden through the CLI's
+// encoder, and a scored run pinned exactly.
+func TestNectarJSONBytes(t *testing.T) {
+	t.Run("T-051 golden", func(t *testing.T) {
+		golden, err := os.ReadFile("../../internal/nectar/testdata/summary.golden.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		rep := nectar.Report{Summary: nectar.Summary{SchemaVersion: 1, RulesVersion: 1, Repo: "acme/repo",
+			MainSHA: "29310fe6b638f849a02c9bf6e65f66c98a10150f", ComputedAt: "2026-02-11T05:03:00Z",
+			Keepers: []nectar.KeeperScore{
+				{KeeperID: "alice", Nectar: 6819, Matured: 6819, Units: 2},
+				{KeeperID: "bob", Nectar: 5334, Matured: 5334, Units: 1},
+				{KeeperID: "carol", Pending: 1057, Units: 1},
+			}},
+			// Counts and units never reach the 9.2 object.
+			Counts: nectar.Counts{Unbound: 4, Excluded: []nectar.ExcludedKeep{{KeeperID: "x", Weight: 1}}},
+			Units:  []nectar.Unit{{}}}
+		got, err := nectarJSON(rep)
+		if err != nil || !bytes.Equal(got, golden) {
+			t.Errorf("err %v\ngot  %q\nwant %q", err, got, golden)
+		}
+	})
+
+	t.Run("scored run", func(t *testing.T) {
+		repo, _ := scoredRepo(t)
+		out, errb, exit := nectarCLI(t, "--repo", repo, "--now", nectarNow, "--json")
+		main := gitStdout(t, repo, "rev-parse", "refs/remotes/origin/main")
+		want := `{"schema_version":1,"rules_version":1,"repo":"","main_sha":"` + main + `","computed_at":"` + nectarNow +
+			`","keepers":[{"keeper_id":"bob","nectar":0.000,"matured":0.000,"pending":1.057,"clawed_back":0.000,"units":1}],"unattributed":0,"orphaned":0}` + "\n"
+		if exit != 0 || errb != "" || out != want {
+			t.Errorf("exit %d stderr %q\ngot  %s\nwant %s", exit, errb, out, want)
+		}
+	})
+}
+
+// A5, A9: failures named one by one.
+func TestNectarSummaryRejects(t *testing.T) {
+	repo, origin := scoredRepo(t)
+	if _, _, exit := nectarCLI(t, "--repo", repo, "--now", nectarNow); exit != 0 {
+		t.Fatalf("first run exit %d", exit)
+	}
+	mainOID := gitStdout(t, repo, "rev-parse", "refs/remotes/origin/main")
+	offChain := gitStdout(t, origin, "commit-tree", "-m", "not on the chain", "refs/waggle/receipts/main^{tree}")
+	git(t, repo, "fetch", "-q", "origin", offChain)
+	for _, tc := range []struct {
+		name string
+		args []string
+		exit int
+		says string
+	}{
+		{"A5 bad --keeper with --json", []string{"--keeper", "bad id!", "--json"}, 2, "bad id!"},
+		{"A9 --receipts a main commit", []string{"--no-fetch", "--receipts", mainOID, "--json"}, 3, mainOID},
+		{"A9 --receipts a receipt commit off the chain", []string{"--no-fetch", "--receipts", offChain, "--json"}, 3, offChain},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			out, errb, exit := nectarCLI(t, append([]string{"--repo", repo, "--now", nectarNow}, tc.args...)...)
+			if exit != tc.exit || out != "" || !strings.Contains(errb, tc.says) {
+				t.Errorf("exit %d stdout %q stderr %q", exit, out, errb)
+			}
+			checkPlain(t, tc.name, errb)
+		})
+	}
+}
+
+// The scored line says local only when there is no remote to fetch from.
+func TestNectarNoRemoteLocalOnly(t *testing.T) {
+	repo, _ := scoredRepo(t)
+	git(t, repo, "remote", "remove", "origin")
+	p := filepath.Join(repo, ".waggle/control/config.yaml")
+	data, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p, []byte(strings.Replace(string(data), "  remote: origin\n", "", 1)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, errb, _ := nectarCLI(t, "--repo", repo, "--now", nectarNow)
+	if !strings.HasSuffix(out, ", repo (none), local only\n") || errb != "" {
+		t.Errorf("stderr %q\n%s", errb, out)
+	}
+}
