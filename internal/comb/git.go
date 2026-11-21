@@ -758,6 +758,15 @@ func pushRejected(out []byte, ref string) bool {
 
 // pushClaim writes ref on the remote with push --atomic --force-with-lease.
 func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero, ticket string) error {
+	return b.pushRef(ctx, ref, newOID, expected, zero, ticket, "claim", ErrAlreadyClaimed, b.sync)
+}
+
+// pushRef is the CAS push shared by claims and the object-ref writer. label
+// and what only shape error text; lost is wrapped into every lost-race error;
+// resync mirrors the remote namespace of ref after a rejected push. The claim
+// error strings pushClaim produces through it are pinned by tests
+// (TestPushRefClaimTextPinned), so keep label, what and the format strings.
+func (b *GitBackend) pushRef(ctx context.Context, ref, newOID, expected, zero, label, what string, lost error, resync func(context.Context) error) error {
 	leaseArg := "--force-with-lease=" + ref + ":"
 	if expected != zero {
 		leaseArg += expected
@@ -772,19 +781,19 @@ func (b *GitBackend) pushClaim(ctx context.Context, ref, newOID, expected, zero,
 		if ctx.Err() != nil || !pushRejected(out, ref) {
 			return err
 		}
-		if serr := b.sync(ctx); serr != nil {
-			return fmt.Errorf("%s: push rejected (%v), resync failed (%v): %w", ticket, err, serr, ErrAlreadyClaimed)
+		if serr := resync(ctx); serr != nil {
+			return fmt.Errorf("%s: push rejected (%v), resync failed (%v): %w", label, err, serr, lost)
 		}
 		cur, rerr := b.readRefOID(ctx, ref, zero)
 		if rerr != nil {
-			return fmt.Errorf("%s: push rejected (%v): %w", ticket, err, ErrAlreadyClaimed)
+			return fmt.Errorf("%s: push rejected (%v): %w", label, err, lost)
 		}
 		if cur != expected {
-			return fmt.Errorf("%s: lost claim race: %w", ticket, ErrAlreadyClaimed)
+			return fmt.Errorf("%s: lost %s race: %w", label, what, lost)
 		}
 		if attempt >= maxCASRetries {
 			return fmt.Errorf("comb: %s: push rejected %d times with remote ref unchanged: %w",
-				ticket, attempt+1, err)
+				label, attempt+1, err)
 		}
 		if b.hookBeforeRetry != nil {
 			b.hookBeforeRetry(attempt)
