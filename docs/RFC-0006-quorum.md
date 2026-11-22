@@ -137,7 +137,7 @@ Round `C = 100`. Three Keepers, items T-101, T-102, T-103.
 | T-101 | 20*8 + 5*3 = **175** | 175000 | 11 |
 | T-103 | 5*9 = **45** | 45000 | 9 |
 
-Order: T-102, T-101, T-103. A has 16 times B's Nectar but only twice B's weight.
+Order: T-102, T-101, T-103. A has 4 times B's Nectar but only twice B's weight.
 
 If A instead put all 100 credits on T-101 (10 votes), T-101 would score 20*10 + 5*3 = 215 and T-102 only 100. A can win one item outright, but only by giving up every other item. That is the trade quadratic cost is meant to force.
 
