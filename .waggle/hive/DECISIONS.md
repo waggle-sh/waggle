@@ -7433,3 +7433,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Accept the recommended defaults on all 15 T-074/T-075/T-076 brief questions so the builds can start?" answered "Yes, accept all defaults". Q-T076-1 to Q-T076-4 as the scout recommended.
 
 **Rationale:** Choice: in open, a PR too large for the gate still fails with exit 1, since a gate that could not check is not a pass (1); gate.mode applies to verify only and the single checks stay strict (2); watch is rejected as an invalid value until T-077 adds it (3); T-076 writes warnings and the notice line, and the job summary for open and watch lands once in T-077 (4). Follows D-382 open questions 1, 2, 3 and 9. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-384: T-075: Q-T075-1 to Q-T075-6 ruled as recommended
+
+- **Date:** 2026-11-22
+- **Kind:** technical
+- **Tickets:** T-075, T-084
+- **Supersedes:** none
+
+**Question:** How should the six open questions of the T-075 brief (the doctor claims finding counts case-folded claim collisions) be ruled?
+
+**Options considered:**
+1. Adopt the recommended option for each of Q-T075-1 to Q-T075-6.
+2. Rule some questions differently.
+
+**Hive recommendation:** Option 1, as recommended in section 9 of the T-075 brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Accept the recommended defaults on all 15 T-074/T-075/T-076 brief questions so the builds can start?" answered "Yes, accept all defaults". Q-T075-1 to Q-T075-6 as the scout recommended.
+
+**Rationale:** Choice: a collision makes the claims finding missing, with Impact and Fix, and it is never Required (1); doctor reads this clone's claim refs only and never fetches (2); the Fix line uses the waggle status words with no --ref (3); T-075 lands first and owns the shared wording, and T-084 reuses it after, never in parallel (4); the ok summary becomes No malformed claim or case collision. (5); the count is directory pairs, matching the waggle status lines (6). Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
