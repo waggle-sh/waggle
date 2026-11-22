@@ -4,25 +4,61 @@
 # the site environment. Do not pass --acl: the bucket owner is enforced.
 name: site
 
+# The site build reads docs/ and README.md as well as site/ (site/scripts/sync-docs.mjs), so a
+# change to any of them rebuilds the site, and a pull request that touches them must build it.
 on:
   push:
     branches: [main]
     paths:
       - "site/**"
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/site.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "docs/**"
+      - "README.md"
       - ".github/workflows/site.yml"
   workflow_dispatch:
 
 permissions: {}
 
-concurrency:
-  group: site-deploy
-  cancel-in-progress: false
-
 jobs:
+  build:
+    name: build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: site/package.json
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Build the site and check links
+        working-directory: site
+        env:
+          SITE_URL: https://getwaggle.dev
+          ASTRO_TELEMETRY_DISABLED: "1"
+        run: npm ci && npm run build && npm run check-links
+
   deploy:
     name: deploy
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    concurrency:
+      group: site-deploy
+      cancel-in-progress: false
     timeout-minutes: 15
     environment:
       name: site
@@ -48,12 +84,12 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
 
-      - name: Build the site
+      - name: Build the site and check links
         working-directory: site
         env:
           SITE_URL: https://getwaggle.dev
           ASTRO_TELEMETRY_DISABLED: "1"
-        run: npm ci && npm run build
+        run: npm ci && npm run build && npm run check-links
 
       - name: Require deploy settings
         run: |
