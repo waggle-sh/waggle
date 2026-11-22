@@ -26,6 +26,7 @@ Define the top-level modules Builders may lease:
 - `internal/scaffold/`: `waggle init` embedded templates
 - `internal/usage/`: Token and cost ledger reader behind `waggle status` (T-022)
 - `gate/`: Composite GitHub Action that builds and runs the gate from its own pinned tree (T-036, D-270, D-272)
+- `relay/`: Composite GitHub Action that builds and runs `waggle relay` from its own pinned tree (T-065)
 - `site/`: Docs site, static, deployed to S3 and CloudFront at getwaggle.dev (T-041, T-061)
 
 ## 3. Build and Verification Commands
