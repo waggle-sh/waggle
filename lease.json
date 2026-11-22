@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-073",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/RFC-0003.md"
+  ],
+  "claimed_at": "2026-11-22T16:38:23Z",
+  "expires_at": "2026-11-22T22:38:23Z",
+  "branches": [
+    "records-t073b-2026-11-22"
+  ]
+}
