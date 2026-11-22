@@ -99,6 +99,12 @@ func main() {
 	case "nectar":
 		os.Exit(runNectar(os.Args[2:], os.Stdout, os.Stderr))
 
+	case "vote":
+		os.Exit(runVote(os.Args[2:], os.Stdout, os.Stderr))
+
+	case "quorum":
+		os.Exit(runQuorum(os.Args[2:], os.Stdout, os.Stderr))
+
 	case "status":
 		os.Exit(runStatus(os.Args[2:], os.Stdout, os.Stderr))
 
@@ -139,6 +145,8 @@ Commands (v0.1 Bootstrap):
   release   Give back your claim for a task once its branch has merged [--json]
   force-release  Clear a stuck or malformed claim: inspect first, then run again with --oid and --reason (first login in gate.approvers only)
   nectar    Reputation score from merged tasks that last 30 days on main without a revert: waggle nectar [--json] [explain <task>]; backfill adds missing release records
+  vote      Spend your credits on task and issue priority in an open round: waggle vote --round <n> T-101=3
+  quorum    Open, show, close and recheck priority rounds weighted by Nectar: waggle quorum open|status|veto|close|verify
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, daemon state and per-ticket token use
   hives     Read-only view across your hives from a registry file: waggle hives status [--registry <file>] [--json]; cross-repo plans: waggle hives plan
