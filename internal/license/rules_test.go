@@ -46,6 +46,8 @@ func TestWantRows(t *testing.T) {
 		{".waggle/control/config.yaml", "MIT-0", Hash, true},
 		{".waggle/control/WAGGLE.md", "MIT-0", HTML, true},
 		{".waggle/control/scripts/scan-hive.sh", "MIT-0", Hash, true},
+		{".waggle/control/allowed_signers", "", 0, false},
+		{".waggle/control/keepers", "", 0, false},
 		{".claude/hooks/session-start.sh", "MIT-0", Hash, true},
 		{"site/package.json", "", 0, false},
 		{"site/package-lock.json", "", 0, false},
