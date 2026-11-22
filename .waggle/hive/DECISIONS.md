@@ -7372,3 +7372,45 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 9:40 AM Pacific Time (relayed in writing). Q-T073-1 to Q-T073-8 as the scout recommended. Two tickets open: T-074, the v0.1 gate ticket for Unicode normalization variants in the head tree check (Q-T073-8), and T-075, the doctor collision-count follow-up (Q-T073-5).
 
 **Rationale:** Context: D-038 deferred case-folded overlap to the next Comb ticket and T-072 Q-T072-5 opened T-073 to carry it. Choice: active collisions at pin move follow the grandfather rule (1); ASCII folding only by a byte helper, with Unicode folding a condition on any ticket that relaxes D-037 (2); refused at write in prepareLease, not on read (3); no opt-out config key (4); the doctor collision count waits and folds into T-072's claims finding as its own follow-up (5); T-072 phase B edits docs/multi-keeper.md first (6); RFC-0003 gets an Appendix A entry A3 (7); the gate's head tree check for Unicode normalization variants (cmd/waggle/gate_commits.go) is its own v0.1 ticket (8). Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-381: T-065: record the 2026-11-19 relay ruling and adopt HK-1 to HK-11
+
+- **Date:** 2026-11-22
+- **Kind:** policy
+- **Tickets:** T-065
+- **Supersedes:** none
+
+**Question:** How should the 2026-11-19 relay 7 ruling be recorded, and how are HK-1 to HK-11 in T-065.md section 12 answered?
+
+**Options considered:**
+1. Record the 2026-11-19 relay 7 ruling as option 1 (maintainer pre-claims as the supported path now, comment relay in v0.2 with approval mode on by default), and adopt each T-065.md section 12 recommendation for HK-1 to HK-11.
+2. Record them with changes.
+
+**Hive recommendation:** Option 1, as T-065.md section 13 item 3 and the section 12 recommendations, and as the relay RFC section 7 recommendation.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 9:12 PM Pacific Time, in the words "Adopt the T-065B recommendations". Records the 2026-11-19 relay 7 ruling (option 1: maintainer pre-claims, Option C, are the supported path now; the comment relay, Option A1, is built in v0.2 with maintainer approval on by default), which was on the relay RFC Keeper choice line but not yet in DECISIONS.md. Confirms D-373: each section 12 recommendation is adopted as written. HK details are in the rationale. No ruleset, protected_paths or workflow changes in this entry.
+
+**Rationale:** Section 13 item 3 asked the queen to record the 2026-11-19 ruling if it was not yet in DECISIONS.md and to rule HK-1 to HK-11 or adopt the recommendations. The Head Keeper adopted the recommendations in writing tonight. D-373 already recorded the HK-1 to HK-11 adoption dated 2026-11-20; this entry adds the 11-19 relay 7 ruling and confirms that adoption. Adopted as written: HK-1 GITHUB_TOKEN by default, optional App token input; HK-2 treat relay as a repo-writer credential, docs, scratch-repo check before HK-7; HK-3 contents and issues write; HK-4 yes, release on PR close in phase C, relay.release_on_close default true; HK-5 base gate.approvers only; HK-6 add relay/ to protected_paths before phase B; HK-7 on after phase B, pins, HK-2 check and docs, then AC7; HK-8 approve reply wording at phase B review; HK-9 accept the Actions cost; HK-10 Nectar auto-approval in phase D, off by default; HK-11 HK-4 yes, and the RFC 6.2 gate-run receipt stays on T-051's roadmap. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-382: T-060: approve staged gate modes direction with recommended defaults
+
+- **Date:** 2026-11-22
+- **Kind:** scope
+- **Tickets:** T-060, T-076, T-077, T-078, T-079, T-080
+- **Supersedes:** none
+
+**Question:** What mode should a new install start in, how may the mode be raised, what does open do on a gate fault, and does this ship before the public gate (G5)? These are open questions 1, 2, 3 and 9 of the staged gate modes RFC.
+
+**Options considered:**
+1. Default guard for every new install. open and watch are opt-in through --mode or the init question, and the signal is that explicit answer (open question 1). Raising the mode stays Tier 3 and needs no carve-out (open question 2). Exit 3 on a broken base config stays a failure in every mode (open question 3). Build before G5 (open question 9). Nothing is cut.
+2. Default open for every new install. CUT? needs Head Keeper typed reason.
+3. Default open for a one-Keeper repo and guard otherwise, from an explicit prompt. CUT? needs Head Keeper typed reason.
+4. As option 1, but a carve-out lets a solo Keeper raise open to guard without an admin merge (open question 2).
+5. As option 1, but exit 3 in open becomes exit 0 with a loud warning (open question 3).
+6. Sequencing, any option above: build after G5 instead of before (open question 9).
+
+**Hive recommendation:** Option 1, with guard as the default and open and watch opt-in, so nothing is cut. Raising stays Tier 3 for now, exit 3 stays a failure in every mode, and the build goes before G5.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 9:12 PM Pacific Time, in the words "Approve T-060 direction with recommended defaults". Open questions 1, 2, 3 and 9 follow the RFC recommendations: the new-install signal is an explicit prompt or --mode (question 1); raising the mode stays Tier 3 with no carve-out (question 2); a broken base config (exit 3) stays a failure in every mode, including open (question 3); the build goes before the public gate, G5 (question 9). Default guard for every new install; open and watch are opt-in. Questions 4, 5, 6, 7 and 8 are not decided. Code tickets T-076 to T-080 are opened as stubs.
+
+**Rationale:** Option 1 cuts nothing in VISION core items 1 and 2: every new hive starts in guard, and open and watch are opt-in. Options 2 and 3 would need a typed reason because they narrow those items. A raise carve-out and a pass on exit 3 in open were not adopted. Building before G5 is sequencing, not a cut. Decided by the Head Keeper in writing; recorded by the queen.

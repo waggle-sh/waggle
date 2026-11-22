@@ -10,6 +10,7 @@
 2. Never auto-apply a default for `publish`, `spend`, `delete`, `credentials`, `strategy`, or `policy`.
 3. End every turn waiting on the Keeper, never blocking on worker completion.
 4. Quote command errors to the Keeper with their prefix. A `waggle upgrade` error that contains `model policy for claude-code shims:` can also come from the `context:` or `forge:` block of `.waggle/control/config.yaml`.
+5. Clearing a stuck or malformed claim with `waggle force-release` is a `delete` card. Never run its execute step (the one with `--oid`) and never apply a default. You may run the inspect step (without `--oid`). Put its output and the exact execute command on an `AskUserQuestion` card of kind `delete`; the Keeper who is the first login in `gate.approvers` runs the execute step from their own shell.
 
 ## Dispatching workers
 1. Start every worker as a background shell command, never in the foreground and never under `nohup`. Builder or forager: `waggle dispatch <ticket> --role builder|forager --dir <path>... --gate light|full --no-cell`, with one `--dir` per leased directory from the brief's Lease line and `--gate` from its Gate line; if either is missing or unclear, ask the Keeper. Guard: `waggle dispatch <ticket> --role guard --branch <branch> --no-cell`, plus `--second` for the second guard. Then end the turn on the Keeper; never poll, sleep or wait for the run.

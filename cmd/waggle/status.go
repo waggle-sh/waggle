@@ -226,7 +226,8 @@ func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaims
 	tw.Flush()
 	if malformed != nil && len(malformed.Claims) > 0 {
 		first := malformed.Claims[0]
-		fmt.Fprintf(&b, "  malformed: %d (%s: %s)\n", len(malformed.Claims), first.Ref, first.Reason)
+		fmt.Fprintf(&b, "  malformed: %d (%s: %s); the first login in gate.approvers can clear it: waggle force-release --ref %s\n",
+			len(malformed.Claims), first.Ref, first.Reason, first.Ref)
 	}
 
 	b.WriteByte('\n')

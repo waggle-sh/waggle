@@ -61,16 +61,18 @@ func runDoctor(args []string, stdout, stderr io.Writer, getenv func(string) stri
 			fmt.Fprintln(stderr, w)
 		}
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), doctorTimeout)
+	defer cancel()
+	cf, cline := claimsFinding(ctx, root, cfg)
 	if cfg.Forge.Remote == "" {
 		fmt.Fprintln(stdout, "Local-only repo: no forge checks. After adding a remote and setting forge.remote, run waggle doctor.")
+		printClaims(stdout, cf, cline)
 		return 0
 	}
 	f, err := newForge(cfg.Forge.Provider, forge.Options{RepoDir: root, Remote: cfg.Forge.Remote, Getenv: getenv})
 	if err != nil {
 		return exit(3, "failed: %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), doctorTimeout)
-	defer cancel()
 	report, err := f.Probe(ctx, forge.ProbeOptions{Write: !*noWrite, MergeStrategy: cfg.Forge.MergeStrategy,
 		GateCheck: forge.DefaultGateCheck})
 	if err != nil {
@@ -81,6 +83,7 @@ func runDoctor(args []string, stdout, stderr io.Writer, getenv func(string) stri
 	if err := forge.Render(stdout, report); err != nil {
 		return exit(3, "failed: %v", err)
 	}
+	printClaims(stdout, cf, cline)
 	for _, fd := range report.Findings {
 		if fd.Required && (fd.Status == forge.StatusMissing || fd.Status == forge.StatusUnknown) {
 			return 1
