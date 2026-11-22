@@ -77,6 +77,9 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 	if len(d.BadUsage) > 0 {
 		fmt.Fprintf(stderr, "warning: %d unreadable ledger lines (first: line %d: %v)\n", len(d.BadUsage), d.BadUsage[0].Line, d.BadUsage[0].Err)
 	}
+	if d.CollisionsErr != nil {
+		fmt.Fprint(stderr, collisionsWarning(d.CollisionsErr))
+	}
 	root, cfg, cfgPath, leases, malformed, recs := d.Root, d.Cfg, d.CfgPath, d.Leases, d.Malformed, d.Usage
 	h := header{
 		Name: filepath.Base(root), Pin: readPin(cfgPath),
@@ -89,7 +92,7 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, w)
 	}
 	block := usage.Render(usage.Summarize(recs), layout.Usage)
-	stdout.Write(renderStatus(h, leases, malformed, block, statusClock()))
+	stdout.Write(renderStatus(h, leases, malformed, d.Collisions, block, statusClock()))
 	return 0
 }
 
@@ -101,6 +104,8 @@ type statusData struct {
 	Malformed     *comb.MalformedClaimsError
 	Usage         []usage.Record
 	BadUsage      []usage.BadLine
+	Collisions    []comb.CaseCollision
+	CollisionsErr error
 }
 
 // statusFault is a refusal or failure of loadStatus: the exit code and the
@@ -151,11 +156,14 @@ func loadStatus(root string, noFetch bool) (*statusData, *statusFault) {
 	if err != nil && !errors.As(err, &malformed) {
 		return fault(3, "failed: %v", err)
 	}
+	// A failed collision scan is a warning, not a refusal: it never changes
+	// the exit code.
+	collisions, collisionsErr := backend.CaseCollisions(ctx)
 	recs, bad, err := usage.Read(filepath.Join(root, layout.Usage))
 	if err != nil {
 		return fault(3, "failed: %v", err)
 	}
-	return &statusData{Root: root, CfgPath: cfgPath, Cfg: cfg, Leases: leases, Malformed: malformed, Usage: recs, BadUsage: bad}, nil
+	return &statusData{Root: root, CfgPath: cfgPath, Cfg: cfg, Leases: leases, Malformed: malformed, Usage: recs, BadUsage: bad, Collisions: collisions, CollisionsErr: collisionsErr}, nil
 }
 
 // repoRoot resolves the work tree root of dir ("" means the current
@@ -197,8 +205,9 @@ func readPin(path string) string {
 
 // renderStatus renders the report; it is pure so tests use golden output.
 // Leases print sorted by ticket number (the backend already filters expired
-// ones) with role names as the backend returns them.
-func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaimsError, usageBlock []byte, now time.Time) []byte {
+// ones) with role names as the backend returns them. Each case collision
+// prints as one warning line after the claims table.
+func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaimsError, collisions []comb.CaseCollision, usageBlock []byte, now time.Time) []byte {
 	var b bytes.Buffer
 	pin := h.Pin
 	if len(pin) == 40 && strings.Trim(pin, "0123456789abcdef") == "" {
@@ -229,10 +238,20 @@ func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaims
 		fmt.Fprintf(&b, "  malformed: %d (%s: %s); the first login in gate.approvers can clear it: waggle force-release --ref %s\n",
 			len(malformed.Claims), first.Ref, first.Reason, first.Ref)
 	}
+	for _, c := range collisions {
+		fmt.Fprintf(&b, "  warning: %s %s and %s %s differ only in letter case; they are one directory on macOS and Windows. Release one, or ask the first login in gate.approvers to clear it with waggle force-release.\n",
+			c.TicketA, c.DirA, c.TicketB, c.DirB)
+	}
 
 	b.WriteByte('\n')
 	b.Write(usageBlock)
 	return b.Bytes()
+}
+
+// collisionsWarning is the one stderr line printed when the case collision
+// scan fails; status still exits 0.
+func collisionsWarning(err error) string {
+	return fmt.Sprintf("warning: could not check claims for directories that differ only in letter case: %v\n", err)
 }
 
 // ticketNum is the number of a canonical T-<n> ticket id, 0 when unparsable.
