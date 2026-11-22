@@ -122,6 +122,40 @@ type commitScan struct {
 	keeper       func(string) bool // paths only the Head Keeper can pass; nil means none
 	keeperFilter bool              // drop tier3 and outside_lease findings on keeper paths
 	keeperHit    bool              // a tier3 or outside_lease finding on a keeper path was seen
+
+	// signed reports, once per scan, whether the Head Keeper signed the head
+	// commit (T-071); nil means never. A signed head drops tier3 and
+	// outside_lease findings on every Tier 3 path.
+	signed      func() (keeperSig, error)
+	sig         keeperSig
+	sigChecked  bool // signed was called
+	signedTiers bool // a tier3 finding was dropped by the signature
+	signedLease bool // an outside_lease finding was dropped by the signature
+}
+
+// signedPass reports whether a tier3 or outside_lease finding on a Tier 3
+// path passes on the Head Keeper's signature at the head.
+func (s *commitScan) signedPass(v comb.Violation) (bool, error) {
+	if s.signed == nil || (v.Rule != comb.RuleTier3 && v.Rule != comb.RuleOutsideLease) ||
+		s.policy.RequiredMinTier(v.Path) != comb.Tier3ControlPlane {
+		return false, nil
+	}
+	if !s.sigChecked {
+		sig, err := s.signed()
+		if err != nil {
+			return false, err
+		}
+		s.sig, s.sigChecked = sig, true
+	}
+	if !s.sig.ok {
+		return false, nil
+	}
+	if v.Rule == comb.RuleTier3 {
+		s.signedTiers = true
+	} else {
+		s.signedLease = true
+	}
+	return true, nil
 }
 
 // listCommits returns mb..head oldest first. One commit past the limit is
@@ -231,6 +265,11 @@ func (s *commitScan) scan(mb, head string) error {
 				if s.keeperFilter {
 					continue
 				}
+			}
+			if pass, err := s.signedPass(v); err != nil {
+				return err
+			} else if pass {
+				continue
 			}
 			if s.approvable != nil && s.approvable(v.Path) && (v.Rule == comb.RuleTier3 || v.Rule == comb.RuleOutsideLease) {
 				s.hit = s.hit || v.Rule == comb.RuleTier3
