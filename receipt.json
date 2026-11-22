@@ -6,19 +6,18 @@
   "co_keepers": [],
   "role": "builder",
   "gate": "full",
-  "claimed_at": "2026-11-22T16:00:46Z",
+  "claimed_at": "2026-11-22T16:38:23Z",
   "branches": [
-    "t-073b",
-    "t-073b2"
+    "records-t073b-2026-11-22"
   ],
-  "base_sha": "1512267fc64961421aaab3bde63e9b4980f5a55c",
-  "merged_sha": "7010723fe55ec64e1bc203d5eff60650b7cc734f",
-  "merged_at": "2026-11-22T16:25:11Z",
-  "pr_number": 274,
-  "pr_author": "paulternate19",
-  "head_branch": "t-073b",
+  "base_sha": "7010723fe55ec64e1bc203d5eff60650b7cc734f",
+  "merged_sha": "e33494614bf68b17c841405443fcd28d6fd41a33",
+  "merged_at": "2026-11-22T16:39:38Z",
+  "pr_number": 275,
+  "pr_author": "paulternate",
+  "head_branch": "records-t073b-2026-11-22",
   "approvers": [
-    "paulternate"
+    "paulternate19"
   ],
   "released_by": "paulternate",
   "status": "merged",
