@@ -7,9 +7,10 @@
   "directories": [
     "docs/rfc-notes/staged-gate-modes.md"
   ],
-  "claimed_at": "2026-11-20T11:49:18Z",
-  "expires_at": "2026-11-22T11:49:18Z",
+  "claimed_at": "2026-11-22T05:19:41Z",
+  "expires_at": "2026-11-24T05:19:41Z",
   "branches": [
-    "t-060-staged-gate-modes"
+    "t-060-staged-gate-modes",
+    "t-060-decision"
   ]
 }
