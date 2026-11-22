@@ -3,7 +3,7 @@
 
 Waggle lets many **keepers** (the humans who own work on a repo), each with their own team of AI agents, work on one repository without stepping on each other. One person with one agent can keep the plan in their head. Five people with five agents cannot.
 
-The full vision has three parts. **Claims and leases** say who is working on what. The **gate** is a merge check that holds every pull request to its claim. **Honey** is how contributors earn a say: **Nectar** (reputation from merged work that survives on `main`) and **Quorum** (weighted voting on what gets picked up next, with a veto for the project owner). The gate is the first piece you can use today. Nectar is coming soon, Quorum is roadmap, and the multi-keeper parts are partly coming soon. This page marks each one as it comes up.
+The full vision has three parts. **Claims and leases** say who is working on what. The **gate** is a merge check that holds every pull request to its claim. **Honey** is how contributors earn a say: **Nectar** (reputation from merged work that survives on `main`) and **Quorum** (weighted voting on what gets picked up next, with a veto for the project owner). The gate is the first piece you can use today. Nectar and Quorum are on `main` but not in a release yet, and claims for contributors without push access are coming soon. This page marks each one as it comes up.
 
 ## The problem
 
@@ -25,7 +25,7 @@ Waggle borrows its vocabulary from a beehive. Each term means one plain thing:
 - **Queen:** the coordinating agent a keeper talks to. She does not write code. She writes claims, and will open issues from the conversation (coming soon).
 - **Forager, builder, scout:** worker agents. A forager does triage, repro and lease mapping, a builder implements a task, and a scout writes briefs and specs.
 - **Guard:** a reviewer agent that checks a builder's work, on a different model than the builder's.
-- **Honey:** Nectar (coming soon) plus Quorum (roadmap).
+- **Honey:** Nectar plus Quorum, both on `main` but not in a release yet.
 - **Walt:** our bee mascot.
 
 ## How is this different from branch protection or CODEOWNERS?
@@ -68,7 +68,7 @@ T-123: path is outside the claim directories
 
 It checks each commit, so a later commit that reverts the stray edit does not hide it. A pull request from a branch the claim does not list fails too, with `claim does not name this pull request's branch`, and a commit that names no task fails closed.
 
-Some paths fail no matter what the claim says. Workflows under `.github/workflows/`, `.gitlab-ci.yml`, `.devcontainer/`, Waggle's own `.waggle/` config, and Go's `go.mod`, `go.sum` and `vendor/` are hardcoded control paths. No claim can lease them and no approval passes them; only an admin merge does.
+Some paths fail no matter what the claim says. Workflows under `.github/workflows/`, `.gitlab-ci.yml`, `.devcontainer/`, Waggle's own `.waggle/` config, and Go's `go.mod`, `go.sum` and `vendor/` are hardcoded control paths. No claim can lease them and no approval passes them; only an admin merge does, or, on `main` but not in a release yet, the Head Keeper's SSH signature on the pull request's head commit.
 
 If you run workers through `waggle dispatch`, it also checks the worker's changes against the claim when the run ends, so you hear about a stray edit early. Then you choose: widen the claim if the task needs it, or have the agent back the change out.
 
@@ -80,13 +80,13 @@ GitHub does not let you approve your own pull request, so an approver who opened
 
 The first login in `gate.approvers` is the Head Keeper, the keeper who leads the hive. Only the Head Keeper's approval passes a change under `.waggle/hive/`, the shared files that steer every later agent. The gate reads both lists from the base branch, so a pull request cannot add its author as an approver.
 
-An approval never passes the hardcoded control paths above. Those need an admin merge, on purpose. The full rules are in [Approvers](/docs/gate/#6-approvers).
+An approval never passes the hardcoded control paths above. Those need an admin merge, on purpose. On `main`, not in a release yet, the Head Keeper can pass them instead by signing the pull request's head commit with an SSH key listed in `.waggle/control/allowed_signers` on the base branch. The full rules are in [Approvers](/docs/gate/#6-approvers).
 
 ## Does it work with Claude Code and other agents?
 
 Yes. The gate does not run, prompt or schedule agents. It reads commits and claims, so it works with any agent that pushes a branch and opens a pull request. An agent only has to name its task in each commit, with a `T-123: ` subject prefix, a `Waggle-Ticket: T-123` trailer, or a branch named `t-123`.
 
-There are recipes for [Claude Code agent teams](/docs/recipes/claude-code-agent-teams/) and the [GitHub Copilot cloud agent](/docs/recipes/copilot-cloud-agent/). We have not yet run each recipe end to end with each tool, and the recipes say so.
+There are recipes for [Claude Code agent teams](/docs/recipes/claude-code-agent-teams/) and the [GitHub Copilot cloud agent](/docs/recipes/copilot-cloud-agent/), plus one for [gate-run receipts](/docs/recipes/gate-run-receipts/) after a merge. We have not yet run each recipe end to end with each tool, and the recipes say so.
 
 `waggle dispatch`, the runner the queen uses to start foragers and builders, runs Claude Code today.
 
@@ -96,14 +96,14 @@ A few limits to know: Waggle supports GitHub only, the gate does not run in GitH
 
 Outside contributors, including anyone opening a pull request from a fork, cannot write claim refs to your repo. Today a maintainer writes the claim for them, naming the fork's branch as `<owner>/<repo>:<branch>`. The gate always reads claims from your repo, never from the fork.
 
-**Coming soon:** a way for contributors without push access to request and hold their own claims, and guidance for many keepers sharing one repo. Neither is built yet.
+**Coming soon:** a way for contributors without push access to request and hold their own claims. It is not built yet. Guidance for many keepers sharing one repo is written up in the [multi-keeper guide](https://github.com/waggle-sh/waggle/blob/main/docs/multi-keeper.md).
 
 ## What are Nectar and Quorum?
 
-Nectar is **coming soon**: `waggle nectar backfill` is on `main`, and the scorer is not merged. Quorum is **roadmap**: designed on paper, no code. Neither scores or votes today. They are the other half of the vision, and they follow the gate.
+Both are on `main` but not in a release yet, so the install script does not get them; build from source to try them. They are the other half of the vision, and they build on the gate's records.
 
-- **Nectar** is reputation earned from merged work that survives on `main`. The claim and merge records the gate keeps are what Nectar will score.
-- **Quorum** is weighted voting on what gets picked up next. A contributor's weight grows with their Nectar, and the project owner (the Head Keeper today) will hold a veto. That veto role is called the Master Keeper, on the roadmap with Quorum.
+- **[Nectar](/docs/nectar/)** is reputation earned from merged work that survives 30 days on `main` without a revert. `waggle nectar` scores it from the merge history and the release records written when claims are given back. Anyone with a clone gets the same number.
+- **[Quorum](/docs/quorum/)** is weighted voting on what gets picked up next. `waggle vote` casts a signed ballot, and each voter's weight is the square root of their Nectar. The project owner (the Head Keeper today) holds a veto, `waggle quorum veto`; that veto role is called the Master Keeper.
 
 Together they are **honey**: the way a contributor, human or agent team, earns a say by shipping work that sticks. It matters most for open-source maintainers and for companies with many teams on one repo.
 
