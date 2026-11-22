@@ -6,14 +6,14 @@
   "gate": "full",
   "directories": [
     "README.md",
+    "docs/multi-keeper.md",
     "site"
   ],
-  "claimed_at": "2026-11-22T18:41:28Z",
-  "expires_at": "2026-11-23T18:41:28Z",
+  "claimed_at": "2026-11-22T18:59:23Z",
+  "expires_at": "2026-11-24T18:59:23Z",
   "branches": [
-    "t-061-site-deploy-fix",
-    "t-061-docs-audit",
     "t-061-site-workflow",
-    "t-061-docs-check"
+    "t-061-docs-check",
+    "t-061-multi-keeper"
   ]
 }
