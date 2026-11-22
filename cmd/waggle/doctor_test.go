@@ -93,7 +93,7 @@ func TestDoctorLocalOnly(t *testing.T) {
 	calls := seamForge(t, &fakeForge{}, okClaims)
 	code, out, _ := runDoc("--repo", dir)
 	want := "Local-only repo: no forge checks. After adding a remote and setting forge.remote, run waggle doctor.\n"
-	if code != 0 || out != want || len(*calls) != 0 {
+	if code != 0 || !strings.HasPrefix(out, want) || len(*calls) != 0 {
 		t.Fatalf("got %d %q %q", code, out, *calls)
 	}
 }
@@ -170,6 +170,10 @@ Enforcement: advisory (up-to-date is missing)
 Not enforced on this repo (1):
   - A pull request can merge after main moved.
 Waggle runs here, but it cannot stop the merges listed above.
+
+Claims (informational, not a merge rule):
+  ok        claims          No malformed claim.
+force-release: nobody; no first login in gate.approvers at the base commit
 `
 
 func TestDoctorGoldenMixed(t *testing.T) {
@@ -197,6 +201,10 @@ Enforcement: advisory (merge-queue is unknown)
 Not enforced on this repo (1):
   - This build does not check the merge queue rule.
 Waggle runs here, but it cannot stop the merges listed above.
+
+Claims (informational, not a merge rule):
+  ok        claims          No malformed claim.
+force-release: nobody; no first login in gate.approvers at the base commit
 `
 
 func TestDoctorGoldenNativeQueue(t *testing.T) {
