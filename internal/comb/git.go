@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -508,6 +509,16 @@ func isActive(l Lease, now time.Time) bool { return l.ExpiresAt.After(now) }
 // Renewing or taking over a stored version 1 claim writes a LeaseVersion claim
 // on top of it; the claim commit message always carries the current role name.
 //
+// The directory overlap check compares on path-segment boundaries, first byte
+// for byte and then with ASCII case folding, since macOS and Windows checkouts
+// treat "internal/comb" and "Internal/Comb" as one directory (T-073). Both
+// refusals wrap ErrLeaseOverlap. A same-owner renewal skips only the folded
+// check, and only for a directory its stored claim already lists byte for
+// byte; a new claim, a takeover and any added or recased directory get the
+// full check, and an exact overlap is never excused. A lease whose own
+// directories differ only in letter case is refused with ErrInvalidLease.
+// DirsOverlap itself stays byte exact.
+//
 // The directory overlap check is optimistic: CAS is atomic per ticket only, so
 // two different tickets with overlapping directories can both be claimed in a
 // race. The merge gate (waggle-gate.yml) is authoritative. Malformed claim refs
@@ -555,6 +566,7 @@ func (b *GitBackend) AcquireLeaseWithTrailers(ctx context.Context, lease Lease, 
 	}
 
 	expected, parent, verb := zero, "", "claim"
+	var held []string // directories a same-owner renewal already holds
 	for _, c := range claims {
 		if c.ref != ref {
 			continue
@@ -571,20 +583,11 @@ func (b *GitBackend) AcquireLeaseWithTrailers(ctx context.Context, lease Lease, 
 				c.lease.ExpiresAt.UTC().Format(time.RFC3339), ErrAlreadyClaimed)
 		default:
 			verb = "renew"
+			held = c.lease.Directories
 		}
 	}
-	for _, c := range claims {
-		if c.ref == ref || c.reason != "" || !isActive(c.lease, now) {
-			continue
-		}
-		for _, d := range l.Directories {
-			for _, od := range c.lease.Directories {
-				if DirsOverlap(d, od) {
-					return fmt.Errorf("%s directory %q overlaps %s directory %q held by %s: %w",
-						l.TicketID, d, c.lease.TicketID, od, c.lease.KeeperID, ErrLeaseOverlap)
-				}
-			}
-		}
+	if err := checkOverlap(l, ref, claims, now, held); err != nil {
+		return err
 	}
 
 	msg := fmt.Sprintf("waggle: %s %s by %s (%s, %s)", verb, l.TicketID, l.KeeperID, l.Role, l.Gate)
@@ -601,11 +604,54 @@ func (b *GitBackend) AcquireLeaseWithTrailers(ctx context.Context, lease Lease, 
 	return b.casLocal(ctx, ref, newOID, expected, zero, msg, l.TicketID)
 }
 
-// prepareLease validates a lease and fills defaults.
+// checkOverlap refuses l when one of its directories overlaps a directory of
+// another ticket's active, well-formed claim. Every exact overlap is checked
+// first, so a request refused before T-073 keeps its message. Then the same
+// pairs are compared with ASCII case folding. A directory in held, which the
+// stored claim of a same-owner renewal lists byte for byte, skips only the
+// folded check, so a collision written before the rule existed never grows and
+// never transfers (Q-T073-1).
+func checkOverlap(l Lease, ref string, claims []claim, now time.Time, held []string) error {
+	for _, folded := range []bool{false, true} {
+		for _, c := range claims {
+			if c.ref == ref || c.reason != "" || !isActive(c.lease, now) {
+				continue
+			}
+			for _, d := range l.Directories {
+				if folded && slices.Contains(held, d) {
+					continue
+				}
+				for _, od := range c.lease.Directories {
+					switch {
+					case !folded && DirsOverlap(d, od):
+						return fmt.Errorf("%s directory %q overlaps %s directory %q held by %s: %w",
+							l.TicketID, d, c.lease.TicketID, od, c.lease.KeeperID, ErrLeaseOverlap)
+					case folded && dirsOverlapFold(d, od):
+						return fmt.Errorf("%s directory %q overlaps %s directory %q held by %s when letter case"+
+							" is ignored (macOS and Windows checkouts treat them as one directory): %w",
+							l.TicketID, d, c.lease.TicketID, od, c.lease.KeeperID, ErrLeaseOverlap)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// prepareLease validates a lease and fills defaults. Like Options.Protected,
+// the letter case self check runs only here, when a lease is written: a stored
+// claim with two case variants is still read and enforced (Q-T073-3).
 func (b *GitBackend) prepareLease(lease Lease, now time.Time) (Lease, error) {
 	l, err := validateLeaseFields(lease, b.maxDirs)
 	if err != nil {
 		return Lease{}, err
+	}
+	for i, a := range l.Directories {
+		for _, d := range l.Directories[i+1:] {
+			if caseOnlyOverlap(a, d) {
+				return Lease{}, fmt.Errorf("directories %q and %q differ only in letter case: %w", a, d, ErrInvalidLease)
+			}
+		}
 	}
 	for _, d := range l.Directories {
 		if b.protected.CoversDir(d) {
@@ -908,6 +954,55 @@ func (b *GitBackend) ListActiveLeases(ctx context.Context) ([]Lease, error) {
 		return leases, &MalformedClaimsError{Claims: bad}
 	}
 	return leases, nil
+}
+
+// CaseCollision is a pair of active claims on different tickets with
+// directories that overlap when letter case is ignored but not byte for byte.
+// The A side is the lower ticket number. Directories are as stored, after
+// normalization.
+type CaseCollision struct {
+	TicketA, DirA, OwnerA string
+	TicketB, DirB, OwnerB string
+}
+
+// CaseCollisions returns every case-only directory overlap between active,
+// well-formed claims of different tickets, each pair once, sorted by the A
+// ticket number, the B ticket number, then the A and B directories. Such pairs
+// exist only when written by an older binary, a raw ref write or a race;
+// AcquireLease refuses new ones. In remote mode it syncs first. Malformed claims are skipped, as the overlap check
+// skips them. It writes nothing.
+func (b *GitBackend) CaseCollisions(ctx context.Context) ([]CaseCollision, error) {
+	if b.remote != "" {
+		if err := b.sync(ctx); err != nil {
+			return nil, err
+		}
+	}
+	claims, err := b.scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	now := b.now()
+	var active []claim
+	for _, c := range claims {
+		if c.reason == "" && isActive(c.lease, now) {
+			active = append(active, c)
+		}
+	}
+	sort.SliceStable(active, func(i, j int) bool { return active[i].num < active[j].num })
+	var out []CaseCollision
+	for i, x := range active {
+		for _, y := range active[i+1:] {
+			for _, dx := range x.lease.Directories {
+				for _, dy := range y.lease.Directories {
+					if caseOnlyOverlap(dx, dy) {
+						out = append(out, CaseCollision{x.lease.TicketID, dx, x.lease.KeeperID,
+							y.lease.TicketID, dy, y.lease.KeeperID})
+					}
+				}
+			}
+		}
+	}
+	return out, nil
 }
 
 // ClaimOID returns the commit OID of the ticket's claim ref, or ErrNotFound.
