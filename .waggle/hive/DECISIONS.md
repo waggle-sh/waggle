@@ -7490,3 +7490,21 @@
 **Keeper choice:** Move the pin from 3a9c054e69050ba2366c271afeb013223d0f8f96 to bfee532afafde4ba4f43db23844a4dc1e3ad0732; managed files re-rendered by waggle upgrade from the target build. Approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Ready to do the Head Keeper commit and gate pin move that T-069 needs?" answered "Yes, set it up for me". The re-rendered gate workflow adds the optional gate-receipt job (push to main, contents: write, writes refs/waggle/receipts/*) and the queen role gains the force-release card rule.
 
 **Rationale:** bfee532afafde4ba4f43db23844a4dc1e3ad0732 is main after T-054 phase D (#279) and the T-074 to T-076 rulings, so bin/waggle quorum exists in the hive (T-054 section 12 item 6, D-271) for the first real round (T-054 AC4), which T-069 phase A waits on. The hive's own gate already builds from base source (D-271), so this move does not change which checker runs on this repo's PRs. Nothing in VISION core items is cut or narrowed. Recorded by the queen.
+
+## D-387: Admin bypass merge of #288 (allowed_signers and the Quorum keeper registry)
+
+- **Date:** 2026-11-22
+- **Kind:** policy
+- **Tickets:** T-054, T-071
+- **Supersedes:** none
+
+**Question:** Which bypass merge does D-374 log for the protected-path PR that lands the Head Keeper's signing key?
+
+**Options considered:**
+1. Log #288 as an admin bypass merge under D-374.
+
+**Hive recommendation:** Option 1, as D-374 requires one line per bypass merge.
+
+**Keeper choice:** Option 1. PR #288 (head 99ee851, merged as 465a336) was merged with an admin bypass by the Head Keeper, Paul Cleary, on 2026-11-22 at about 10:59 AM Pacific Time. Reviewer: paulternate19 (approve at 99ee851). Reason: it adds .waggle/control/allowed_signers, which the gate's signed approval (T-071) reads from the PR base, so it cannot pass on a signature before it is on main.
+
+**Rationale:** This is the last bypass the signed approval path needs: protected-path PRs after it merge on a Head Keeper signature at the head commit with no bypass, starting with the pin move #283. The approval to set this up was the Head Keeper's written answer relayed on 2026-11-22 at 10:19 AM Pacific Time (Orca item 11, event e542): "Ready to do the Head Keeper commit and gate pin move that T-069 needs?" answered "Yes, set it up for me". Recorded by the queen.
