@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -257,16 +258,62 @@ func (r *quorumRun) latestRound(ctx context.Context) (int, error) {
 	return n, nil
 }
 
-// merged reports whether a first-parent commit on main names the task, in a
-// subject such as "T-101: ..." or "Merge pull request #1 from org/t-101-x".
+// merged reports whether the task's work is on main by the gate's binding rule
+// (Q-T054-4 (a), D-372): a non-merge commit reachable from main binds to it
+// through a "T-<id>: " subject prefix or a Waggle-Ticket trailer
+// (ticketSubject and trailerTickets in gate_commits.go). A "Head Keeper: "
+// subject binds none, and a commit whose subject and trailer name different
+// tickets binds none, as the gate rejects it. A PR merged with a merge commit
+// binds through its side commits, as internal/dispatch mergeTask reads it. A
+// subject that only mentions a task, or a revert of one, does not bind. A git
+// failure reports nothing merged, so no item becomes ready on a bad read.
 func (r *quorumRun) merged(ctx context.Context) func(string) bool {
-	out, _ := r.git.Run(ctx, "log", "--first-parent", "--format=%s", r.main)
-	subjects := string(out)
+	out, err := r.git.Run(ctx, "log", "--no-merges",
+		"--format=%s%x1f%(trailers:key=Waggle-Ticket,valueonly,unfold,separator=%x2C)%x1e", r.main)
+	bound := map[string]bool{}
+	if err == nil {
+		for _, rec := range strings.Split(string(out), "\x1e") {
+			subject, trailer, _ := strings.Cut(strings.TrimLeft(rec, "\n"), "\x1f")
+			if id := commitTask(subject, strings.TrimSpace(trailer)); id != "" {
+				bound[id] = true
+			}
+		}
+	}
 	return func(task string) bool {
-		n := strings.TrimLeft(strings.TrimPrefix(task, "T-"), "0")
-		return regexp.MustCompile(`(?im)(^|[^a-z0-9])t-0*` + n + `([^0-9]|$)`).MatchString(subjects)
+		id, err := comb.ParseTicketID(task)
+		return err == nil && bound[id]
 	}
 }
+
+// commitTask is the one task a commit binds to by its subject and trailer, or
+// "" when it binds none or names more than one.
+func commitTask(subject, trailer string) string {
+	if subject == "" || strings.HasPrefix(subject, "Head Keeper: ") {
+		return ""
+	}
+	var ids []string
+	if m := ticketSubject.FindStringSubmatch(subject); m != nil {
+		if id, err := comb.ParseTicketID(m[1]); err == nil {
+			ids = append(ids, id)
+		}
+	}
+	tids, bad := trailerTickets(trailer)
+	if bad != "" {
+		return ""
+	}
+	for _, id := range tids {
+		if !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) != 1 {
+		return ""
+	}
+	return ids[0]
+}
+
+// vetoDecision is the decision ID form a veto must cite (D-001 and up).
+var vetoDecision = regexp.MustCompile(`^D-[0-9]{3,6}$`)
 
 func qMilli(u uint64) string { return fmt.Sprintf("%d.%03d", u/1000, u%1000) }
 
@@ -537,6 +584,11 @@ func quorumVeto(ctx context.Context, args []string, stdout, stderr io.Writer) in
 	}
 	if len(pos) > 0 || *round < 1 || *item == "" || *decision == "" {
 		return quorumFail(stderr, "quorum veto", qUsage("usage: waggle quorum veto --round <n> --item <id|all> --decision D-<n>"))
+	}
+	// DECISIONS.md entries are D-001 and up, and close looks the veto up in that
+	// form, so a shorter ID would sign a veto that can never apply.
+	if !vetoDecision.MatchString(*decision) {
+		return quorumFail(stderr, "quorum veto", qUsage("--decision must be D- and at least three digits, as DECISIONS.md writes it, such as D-007"))
 	}
 	r, err := openQuorum(ctx, *q.repo, stderr)
 	if err != nil {

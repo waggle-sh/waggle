@@ -19,7 +19,7 @@ Casting again replaces your earlier ballot; the last one counts.
 
 ## Weight
 
-On the tally, each voter's votes are multiplied by the square root of their Nectar, read once when the round opens. Nectar earned during the round changes nothing. With the example in RFC-0006 section 5.6, A (Nectar 400, weight 20) puts 8 votes on T-101 and 6 on T-102, B (Nectar 100, weight 10) puts 10 on T-102, and C (Nectar 25, weight 5) puts 3 on T-101 and 9 on T-103. T-102 scores 20*6 + 10*10 = 220, T-101 scores 20*8 + 5*3 = 175 and T-103 scores 5*9 = 45. A has 16 times B's Nectar but only twice B's weight. A voter with no Nectar has no weight. Scores are whole thousandths; no fractions are stored.
+On the tally, each voter's votes are multiplied by the square root of their Nectar, read once when the round opens. Nectar earned during the round changes nothing. With the example in RFC-0006 section 5.6, A (Nectar 400, weight 20) puts 8 votes on T-101 and 6 on T-102, B (Nectar 100, weight 10) puts 10 on T-102, and C (Nectar 25, weight 5) puts 3 on T-101 and 9 on T-103. T-102 scores 20*6 + 10*10 = 220, T-101 scores 20*8 + 5*3 = 175 and T-103 scores 5*9 = 45. A has 4 times B's Nectar but only twice B's weight. A voter with no Nectar has no weight. Scores are whole thousandths; no fractions are stored.
 
 ## Commands
 
@@ -29,7 +29,7 @@ On the tally, each voter's votes are multiplied by the square root of their Nect
 - `waggle quorum close --round 1` ends the round after its close time and records the tally.
 - `waggle quorum verify --round 1` recomputes the tally from the refs and fails unless it matches byte for byte. `--receipt <oid>` also says whether your ballot was counted, replaced by a later one, or is missing.
 
-Every command takes `--json` where it prints a result, and `--repo <dir>`. Exit codes: 0 done, 1 a check or validation failed, 2 usage, 3 git, signing tool or file error.
+Every command except `veto` takes `--json`, and every command takes `--repo <dir>`. Exit codes: 0 done, 1 a check or validation failed, 2 usage, 3 git, signing tool or file error.
 
 ## Keys and the registry
 
@@ -51,7 +51,7 @@ New order goes into `ROADMAP.md` only through a normal pull request that cites t
 
 ## Veto
 
-The Head Keeper (the first login in `gate.approvers`) can remove one item from a round, or reject the whole round so the earlier order stands, with `waggle quorum veto --round 1 --item T-102 --decision D-001`. The veto must cite a decision entry that is in `.waggle/hive/DECISIONS.md` on main when the round closes; a veto without one is ignored and listed in the tally. A veto never changes a score or another item's place.
+The Head Keeper (the first login in `gate.approvers`) can remove one item from a round, or reject the whole round so the earlier order stands, with `waggle quorum veto --round 1 --item T-102 --decision D-001`. The veto must cite a decision ID in the form `D-` and at least three digits, for an entry that is in `.waggle/hive/DECISIONS.md` on main when the round closes; a veto without one is ignored and listed in the tally. A veto never changes a score or another item's place.
 
 ## Limits
 

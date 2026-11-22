@@ -260,6 +260,8 @@ func TestQuorumExitCodes(t *testing.T) {
 		{"status usage", runQuorum, h.alice, []string{"status", "--round", "-1"}, 2},
 		{"status not a repo", runQuorum, notRepo, []string{"status"}, 3},
 		{"veto no decision", runQuorum, h.alice, []string{"veto", "--round", "1", "--item", "T-101"}, 2},
+		{"veto short decision", runQuorum, h.alice, []string{"veto", "--round", "1", "--item", "T-101", "--decision", "D-7", "--key", h.aliceKey}, 2},
+		{"veto two digit decision", runQuorum, h.alice, []string{"veto", "--round", "1", "--item", "T-101", "--decision", "D-07", "--key", h.aliceKey}, 2},
 		{"veto ok", runQuorum, h.alice, []string{"veto", "--round", "1", "--item", "T-101", "--decision", "D-001", "--key", h.aliceKey}, 0},
 		{"veto unknown item", runQuorum, h.alice, []string{"veto", "--round", "1", "--item", "T-555", "--decision", "D-001", "--key", h.aliceKey}, 1},
 		{"veto not a repo", runQuorum, notRepo, []string{"veto", "--round", "1", "--item", "T-101", "--decision", "D-001", "--key", h.aliceKey}, 3},
