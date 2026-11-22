@@ -53,6 +53,10 @@ func TestHelpPlainTerms(t *testing.T) {
 	checkPlain(t, "release -h", errb.String(), "claim owner, usually your GitHub login; required without .waggle/local.yaml, else defaults to its keeper_id", "-unmerged")
 
 	errb.Reset()
+	runForceRelease([]string{"-h"}, &out, &errb)
+	checkPlain(t, "force-release -h", errb.String(), "the first login in", "gate.approvers", "The check is advisory", "-oid", "-reason")
+
+	errb.Reset()
 	runDecide([]string{"-h"}, strings.NewReader(""), &out, &errb)
 	checkPlain(t, "decide -h", errb.String(), "Who runs it: a maintainer, after the decision is made. Agents never run this", "Repository root; must contain a .waggle/ directory")
 

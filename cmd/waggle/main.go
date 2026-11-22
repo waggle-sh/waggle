@@ -93,6 +93,9 @@ func main() {
 	case "release":
 		os.Exit(runTaskRelease(os.Args[2:], os.Stdout, os.Stderr))
 
+	case "force-release":
+		os.Exit(runForceRelease(os.Args[2:], os.Stdout, os.Stderr))
+
 	case "nectar":
 		os.Exit(runNectar(os.Args[2:], os.Stdout, os.Stderr))
 
@@ -134,6 +137,7 @@ Commands (v0.1 Bootstrap):
   dispatch  Claim a ticket, run a worker in a worktree, check its changes against the claim (waggle dispatch <ticket> --help)
   claim     Lease directories for a task: waggle claim <task> --dirs <a,b> --gate light|full [--json]
   release   Give back your claim for a task once its branch has merged [--json]
+  force-release  Clear a stuck or malformed claim: inspect first, then run again with --oid and --reason (first login in gate.approvers only)
   nectar    Reputation score from merged tasks that last 30 days on main without a revert: waggle nectar [--json] [explain <task>]; backfill adds missing release records
   uninstall Print the plan to remove everything init installed; --apply executes it (clean tree required)
   status    Active claims, daemon state and per-ticket token use
