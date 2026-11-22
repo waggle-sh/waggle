@@ -58,6 +58,26 @@ Give back your claim once its branch has merged.
 | `--unmerged` | Release without the merged check, for a task that makes no PR or a PR merged by squash or rebase. |
 | `--owner`, `--repo`, `--json` | As for `claim`. |
 
+### `waggle force-release`
+
+```
+waggle force-release <task> | --ref <ref> [--oid <id> --reason <text>] [--owner <id>] [--repo <dir>] [--json]
+```
+
+Clear a stuck or malformed claim, whoever owns it. Only the first login in `gate.approvers`, read from main on the remote and never from local files, may clear one. It takes two runs and never asks for confirmation.
+
+1. Without `--oid` it only looks. It prints the claim, who may clear it and the exact second command, and writes nothing.
+2. With `--oid` and `--reason` it deletes the claim ref, but only if the ref is still at that object id. It records who cleared it and why in `refs/waggle/audit/force-releases`.
+
+| Flag | Meaning |
+| :--- | :--- |
+| `--ref` | The full claim ref, as `status` or an error printed it, instead of `<task>`. |
+| `--oid` | The full object id the first run printed. |
+| `--reason` | Why the claim is cleared, 1 to 512 bytes. Stored in the record, never printed. |
+| `--owner`, `--repo`, `--json` | As for `claim`. |
+
+The check is advisory: anyone who can push to the remote can delete a claim ref with raw git and leave no record. The command does not run inside a dispatch worktree.
+
 ### `waggle gate`
 
 ```

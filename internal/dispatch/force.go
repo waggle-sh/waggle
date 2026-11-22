@@ -249,6 +249,24 @@ func ForceReleaseTask(ctx context.Context, r ForceReleaseRequest) (res ForceRele
 	return res, nil
 }
 
+// FirstApprover returns gate.approvers[0] and the base commit it was read
+// from, for waggle doctor. It never fetches and writes nothing: the base is
+// refs/remotes/<remote>/main as last fetched, or refs/heads/main with no remote.
+func FirstApprover(ctx context.Context, repo, remote, gitBin string) (first, base string, err error) {
+	g := &Git{Bin: gitBin, Dir: repo, Remote: remote}
+	ref := "refs/heads/main"
+	if remote != "" {
+		ref = "refs/remotes/" + remote + "/main"
+	}
+	out, err := g.Run(ctx, "rev-parse", "--verify", "--quiet", ref+"^{commit}")
+	if err != nil {
+		return "", "", failf(ExitEnv, "base %q does not resolve to a commit: %w", ref, err)
+	}
+	base = strings.TrimSpace(string(out))
+	hk, err := loadBaseHeadKeeper(ctx, g, base)
+	return hk.first, base, err
+}
+
 // inspectRef fills res.OID and either the lease or the malformation reason.
 // RefOID syncs in remote mode, so the facts are the remote's.
 func inspectRef(ctx context.Context, b *comb.GitBackend, res *ForceReleaseResult, now func() time.Time) error {

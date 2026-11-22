@@ -35,6 +35,8 @@ waggle release <task> [--branch <name>] [--unmerged] [--owner <id>] [--repo <dir
 - A claim write does not trigger the workflow. After the branch list changes, re-run the failed check.
 - Claims must stay until the PR merges. After a squash or rebase merge, run `waggle release T-<id> --unmerged`.
 
+A claim whose owner is gone, or a malformed claim ref, blocks its task until it is cleared. The first login in `gate.approvers` clears it with `waggle force-release`, which looks first and deletes on a second run that is recorded in an audit ref. See [`waggle force-release`](/docs/cli/#waggle-force-release).
+
 ## How a commit names its task
 
 A commit binds to a task in one of three ways. The first one present wins, and two that name different tasks fail with `ticket conflict`.

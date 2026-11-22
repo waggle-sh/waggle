@@ -270,7 +270,7 @@ daemon: running (socket present)
 Claims (2 active):
   T-002  r1  ann   light  a/ b/c/      expires in 2h0m
   T-016  r2  paul  full   cmd/waggle/  expires in 0m
-  malformed: 2 (refs/waggle/claims/ticket-7: tree has no lease.json)
+  malformed: 2 (refs/waggle/claims/ticket-7: tree has no lease.json); the first login in gate.approvers can clear it: waggle force-release --ref refs/waggle/claims/ticket-7
 
 Usage: none recorded (.waggle/control/usage.jsonl absent)
 `
