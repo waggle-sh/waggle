@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-054",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/RFC-0006-quorum.md"
+  ],
+  "claimed_at": "2026-11-22T18:18:43Z",
+  "expires_at": "2026-11-23T18:18:43Z",
+  "branches": [
+    "t-054-records"
+  ]
+}
