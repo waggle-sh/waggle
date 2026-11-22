@@ -275,7 +275,7 @@ Claims (2 active):
 Usage: none recorded (.waggle/control/usage.jsonl absent)
 `
 	block := usage.Render(nil, layout.Usage)
-	if got := string(renderStatus(h, leases, malformed, block, fixedNow)); got != want {
+	if got := string(renderStatus(h, leases, malformed, nil, block, fixedNow)); got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
 	}
 	if strings.ContainsAny(want, dashes) {
