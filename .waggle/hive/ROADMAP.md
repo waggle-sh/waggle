@@ -37,7 +37,7 @@ T-055 · Multi-Keeper story restore (RFC + README/CONTRIBUTING cut-list unwind; 
 T-070 · Quorum RFC phase 2 (fork contributor export and import, relay transport with T-055) · TBD · proposed · v0.2 · product
 T-072 · waggle force-release (the Head Keeper clears a stuck or malformed claim, with an audit trail) · M · proposed · v0.1 · product
 T-073 · Case-folded claim overlap checks (carries out D-038; opened by T-072 Q-T072-5) · S to M · proposed · v0.1 · product
-T-074 · Gate head tree collision check: Unicode normalization variants (T-073 Q-T073-8) · TBD · proposed · v0.1 · product
+T-074 · Gate head tree collision check: Unicode normalization variants (T-073 Q-T073-8) · S to M · proposed · v0.1 · product
 T-075 · Doctor claims finding: collision count (T-073 Q-T073-5; after T-072 phase B and T-073 phase A) · S · proposed · v0.1 · product
 T-081 · One claim sync per waggle status run (T-073 phase B guard note) · S · proposed · v0.1 · product
 T-082 · Status test for a failed collision scan (T-073 phase B guard note) · S · proposed · v0.1 · product
