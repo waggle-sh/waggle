@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Builds site/src/content/docs/docs/ (generated, gitignored) from two sources:
-//   1. the repo's own markdown: docs/gate.md and docs/recipes/*.md, so the site never forks them;
+//   1. the repo's own markdown: docs/gate.md, docs/nectar.md, docs/quorum.md and docs/recipes/*.md,
+//      so the site never forks them;
 //   2. the pages written for the site in site/content/*.md.
 // Each source starts with an SPDX comment and an H1. The H1 becomes the Starlight title, and the
-// comment is dropped. Links to other published pages are rewritten to /docs/ routes. The script
-// exits 1 on a missing source or a relative .md link it cannot map, so a renamed file fails the build.
+// comment is dropped. Links to other published pages are rewritten to /docs/ routes, and links to the
+// repo files in repoLinks to their page on GitHub. The script exits 1 on a missing source or a relative
+// .md link it cannot map, so a renamed file fails the build.
 
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -18,20 +20,28 @@ const outDir = join(siteDir, 'src', 'content', 'docs');
 // Repo-relative source path -> output route (no leading or trailing slash).
 const routes = new Map([
   ['docs/gate.md', 'gate'],
+  ['docs/nectar.md', 'nectar'],
+  ['docs/quorum.md', 'quorum'],
   ['docs/recipes/README.md', 'recipes/index'],
   ['docs/recipes/claude-code-agent-teams.md', 'recipes/claude-code-agent-teams'],
   ['docs/recipes/copilot-cloud-agent.md', 'recipes/copilot-cloud-agent'],
+  ['docs/recipes/gate-run-receipts.md', 'recipes/gate-run-receipts'],
   ['README.md', 'quick-start'], // the README's Install section lives on the quick start page
 ]);
 const authored = readdirSync(join(siteDir, 'content')).filter((f) => f.endsWith('.md'));
 for (const f of authored) routes.set(`site/content/${f}`, f.replace(/\.md$/, ''));
+
+// Repo files a published page links to that the site does not publish itself. A link to one points at
+// the file on GitHub's main branch. Any other unpublished target still fails the build.
+const repoBlob = 'https://github.com/waggle-sh/waggle/blob/main/';
+const repoLinks = new Set(['docs/RFC-0005-nectar.md', 'docs/RFC-0006-quorum.md']);
 
 const errors = [];
 
 // Internal notes are never published. docs/rfc-notes and the hive records are not routes, and a
 // route that points into them fails the build instead of shipping.
 const private_prefixes = ['docs/rfc-notes/', '.waggle/'];
-for (const src of routes.keys()) {
+for (const src of [...routes.keys(), ...repoLinks]) {
   if (private_prefixes.some((p) => src.startsWith(p))) {
     errors.push(`${src}: internal notes must not be published`);
   }
@@ -80,6 +90,13 @@ function rewriteLinks(text, srcPath) {
         const target = resolve(repoDir, dirname(srcPath), file);
         const rel = target.slice(repoDir.length + 1);
         const route = routes.get(rel);
+        if (!route && repoLinks.has(rel)) {
+          if (!existsSync(target)) {
+            errors.push(`${srcPath}: link ${href} points at ${rel}, which is missing`);
+            return m;
+          }
+          return `](${repoBlob}${rel}${hash})`;
+        }
         if (!route) {
           errors.push(`${srcPath}: link ${href} points at ${rel}, which the site does not publish`);
           return m;

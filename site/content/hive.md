@@ -43,13 +43,13 @@ We ship the gate first because its records are what the rest is built on. A clai
 
 ## Honey: Nectar and Quorum
 
-**Honey** has two halves. Neither half scores or votes yet. Nectar is coming soon: the `waggle nectar backfill` command is on `main`, and the scorer is not merged. Quorum is roadmap.
+**Honey** has two halves, and both are on `main` but not in a release yet: `waggle nectar` scores Nectar, and `waggle vote` and `waggle quorum` run Quorum rounds. The release records Nectar reads, and `waggle nectar backfill`, are in v0.1.1.
 
-**Nectar** is reputation earned from merged work that lasts. A commit counts only if it survives 30 days on `main` without being reverted. Nectar is attributed through the claim, so the record of who held the task is what credits them. If the work is reverted, the credit goes with it.
+**Nectar** is reputation earned from merged work that lasts. A commit counts only if it survives 30 days on `main` without being reverted. Nectar is attributed through the release record written when the claim is given back, so the record of who held the task is what credits them. If the work is reverted, the credit goes with it. [Nectar](/docs/nectar/) has the rules.
 
-**Quorum** is how the project decides what gets picked up next. Roadmap and issue priority are set by quadratic voting: each person's weight is the square root of their Nectar, so a long record counts for more without letting one big contributor drown out everyone else. It exists so that people who have shipped work that sticks get a say in what the project builds next.
+**Quorum** is how the project decides what gets picked up next. Roadmap and issue priority are set by quadratic voting: each person's weight is the square root of their Nectar, so a long record counts for more without letting one big contributor drown out everyone else. It exists so that people who have shipped work that sticks get a say in what the project builds next. Ballots are signed with SSH keys, and anyone with a clone can recompute a closed round's tally. [Quorum](/docs/quorum/) has the commands.
 
-The **Master Keeper veto** is planned to sit on top of Quorum. The Master Keeper is a role, not a person: the project owner (the Head Keeper today), holding the veto over Quorum results. It is roadmap. The owner would be able to veto a result. Voting sets priority; it does not remove the owner's last word.
+The **Master Keeper veto** sits on top of Quorum. The Master Keeper is a role, not a person: the project owner (the Head Keeper today), holding the veto over Quorum results. `waggle quorum veto` removes one item or rejects a whole round, and must cite a decision in the decisions log. A veto never changes a score. Voting sets priority; it does not remove the owner's last word.
 
 ## Built today and coming
 
@@ -61,14 +61,18 @@ The **Master Keeper veto** is planned to sit on top of Quorum. The Master Keeper
 | Decisions log | An append-only record of project decisions, checked by the gate, written with `waggle decide` | Built |
 | `waggle dispatch` | Claims a task, runs a worker in its own worktree, checks its changes against the claim | Built (runs Claude Code today) |
 | Role templates | Queen, scout, forager, builder and guard instructions, written by `waggle init` | Built |
+| Release records | `waggle release` records who held each task; `--co` shares the credit; `waggle nectar backfill` fills in older merges | Built |
+| Guidance for many keepers on one repo | Identity, contention, stale claims and review between keepers, in the [multi-keeper guide](https://github.com/waggle-sh/waggle/blob/main/docs/multi-keeper.md) | Built |
+| `waggle force-release` | The Head Keeper clears a stuck or malformed claim, in two runs, with an audit record | On main |
+| Signed Head Keeper approval | The Head Keeper's SSH signature on a PR's head commit passes Tier 3 paths | On main |
+| Case-folded claim overlap | Claims whose directories differ only in letter case overlap; `waggle status` warns about older pairs | On main |
+| Nectar | Reputation from merged work that survives 30 days on `main`, scored by `waggle nectar` | On main |
+| Quorum | Quadratic voting on roadmap and issue priority, weight is the square root of Nectar | On main |
+| Master Keeper veto | `waggle quorum veto`: a veto over Quorum results, held by the project owner (the Head Keeper today) | On main |
 | Contributors without push access claiming for themselves | Today a maintainer writes the claim for a fork | Coming soon |
-| Guidance for many keepers on one repo | Contention, identity and how keepers' agents share claims | Coming soon |
 | Queens opening issues from keeper conversations | Today a queen can do this with the GitHub tools she already has; Waggle does not do it itself | Roadmap |
-| Nectar | Reputation from merged work that survives 30 days on `main`. `waggle nectar backfill` is on `main`; the scorer is not | Coming soon |
-| Quorum | Quadratic voting on roadmap and issue priority, weight is the square root of Nectar | Roadmap |
-| Master Keeper veto | A final veto over Quorum results, held by the project owner (the Head Keeper today) | Roadmap, with Quorum |
 
-"Roadmap" means designed on paper, with a plan and no code. "Coming soon" means the next steps on a part that already works in a smaller form. Dates are not promised.
+"Built" means in the latest release, v0.1.1. "On main" means merged to `main` but not in a release yet; build from source to use it. "Coming soon" means the next steps on a part that already works in a smaller form. "Roadmap" means designed on paper, with a plan and no code. Dates are not promised.
 
 ## Where to go next
 

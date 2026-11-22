@@ -3,7 +3,7 @@
 
 Waggle reads one file, `.waggle/control/config.yaml`. `waggle init --gate-only` seeds a small one; a full `waggle init` seeds a larger one. The file is capped at 64 KiB and uses a small YAML subset: mappings and scalars.
 
-A key the running build does not know exits 3, so a config written for a newer build fails closed on an older one. The gate reads `gate.protected_paths` and `gate.approvers` from the **PR's base commit**, never from the head, so a PR cannot widen its own permissions.
+A key the running build does not know inside a section it reads (such as `forge`, `leases` or `gate`) fails the parse, and the gate exits 3, so a config written for a newer build fails closed on an older one. A top-level section the build does not know is ignored. The gate reads `gate.protected_paths` and `gate.approvers` from the **PR's base commit**, never from the head, so a PR cannot widen its own permissions.
 
 ## Gate-only install
 
@@ -52,10 +52,26 @@ Required. Must be `1`.
 
 | Key | Format | Meaning |
 | :--- | :--- | :--- |
-| `protected_paths` | comma separated repo-relative paths, up to 64 | Paths whose change fails the check unless a listed approver's approval and a re-run pass it, or an admin bypasses. No wildcards, no absolute paths, no `..`. Raise-only: it adds to the hardcoded control paths and never removes one. |
+| `protected_paths` | comma separated repo-relative paths, up to 64 | Paths whose change fails the check unless a listed approver's approval and a re-run pass it, the Head Keeper's signature on the head commit passes it (on main), or an admin bypasses. No wildcards, no absolute paths, no `..`. Raise-only: it adds to the hardcoded control paths and never removes one. |
 | `approvers` | comma separated GitHub logins without `@`, up to 32 | Who may approve a change to a protected path. The first entry is the Head Keeper, the only approver who can pass a change under `.waggle/hive/`. Compared with ASCII case folding. |
 
 The gate spec has the full rules: [protected paths](/docs/gate/#5-risk-tiers-and-protected-paths) and [approvers](/docs/gate/#6-approvers).
+
+### `quorum`
+
+On main, not in a release yet. Optional: add the block only to change the defaults for [priority rounds](/docs/quorum/). Zero, negative or unknown keys fail the load and name the line.
+
+| Key | Default | Meaning |
+| :--- | :--- | :--- |
+| `credits` | 100 | Credits each voter gets per round. Casting `v` votes on one item costs `v` squared. |
+| `round_days` | 14 | Days a round stays open unless `waggle quorum open --closes` says otherwise. |
+
+## Key files beside the config
+
+On main, not in a release yet. Both files use the `ssh-keygen` allowed_signers format and are read from `main` or the PR base, never from a PR's head.
+
+- `.waggle/control/allowed_signers` holds the Head Keeper's SSH public key under the Head Keeper's login. With it on the base branch, the Head Keeper's signature on a PR head commit passes Tier 3 paths ([signed approval](/docs/gate/#signed-head-keeper-approval)).
+- `.waggle/control/keepers` is the Quorum registry: one line per voter key, limited to the `waggle-quorum-ballot`, `waggle-quorum-round` and `waggle-quorum-veto` namespaces ([keys and the registry](/docs/quorum/#keys-and-the-registry)).
 
 ## Full install keys
 

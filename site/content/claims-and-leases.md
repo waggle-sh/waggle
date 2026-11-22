@@ -34,8 +34,10 @@ waggle release <task> [--branch <name>] [--unmerged] [--owner <id>] [--repo <dir
 - `--ttl` sets the lifetime in whole minutes. The default is `leases.default_ttl_minutes` (120). An expired claim is accepted by the gate with a warning, not a failure.
 - A claim write does not trigger the workflow. After the branch list changes, re-run the failed check.
 - Claims must stay until the PR merges. After a squash or rebase merge, run `waggle release T-<id> --unmerged`.
+- A claim is refused when its directories overlap another active claim's, compared on whole path segments: `internal` overlaps `internal/comb`, and `internal/comb` does not overlap `internal/combx`. On main, not in a release yet, the comparison folds ASCII letter case, so `Internal/Comb` overlaps `internal/comb`, and `waggle status` warns about two older claims that differ only in case.
+- `waggle release` also records who held the task, which [Nectar](/docs/nectar/) reads. `--co <id>` names another keeper who shares the credit, up to 4.
 
-A claim whose owner is gone, or a malformed claim ref, blocks its task until it is cleared. The first login in `gate.approvers` clears it with `waggle force-release`, which looks first and deletes on a second run that is recorded in an audit ref. See [`waggle force-release`](/docs/cli/#waggle-force-release).
+A claim whose owner is gone, or a malformed claim ref, blocks its task until it is cleared. On main, not in a release yet, the first login in `gate.approvers` clears it with `waggle force-release`, which looks first and deletes on a second run that is recorded in an audit ref. See [`waggle force-release`](/docs/cli/#waggle-force-release).
 
 ## How a commit names its task
 
