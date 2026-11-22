@@ -389,8 +389,35 @@ func hasDriveLetter(d string) bool {
 
 // DirsOverlap reports whether two normalized directories overlap on a path-segment boundary.
 // "internal" and "internal/comb" overlap; "internal/comb" and "internal/combx" do not.
+// The compare is byte exact: "internal/comb" and "Internal/Comb" do not overlap
+// here. AcquireLease adds an ASCII case-folded check on top (T-073); this
+// function keeps exact semantics for callers that fold on their own.
 func DirsOverlap(a, b string) bool {
 	return a == b || strings.HasPrefix(b, a+"/") || strings.HasPrefix(a, b+"/")
+}
+
+// foldASCII maps the bytes A to Z to a to z and leaves every other byte alone.
+// It never folds Unicode, so KELVIN SIGN or LONG S cannot fold onto an ASCII
+// letter if a non-ASCII directory ever reaches it (Q-T073-2).
+func foldASCII(s string) string {
+	b := []byte(s)
+	for i, c := range b {
+		if c >= 'A' && c <= 'Z' {
+			b[i] = c + ('a' - 'A')
+		}
+	}
+	return string(b)
+}
+
+// dirsOverlapFold is DirsOverlap after ASCII case folding of both directories.
+func dirsOverlapFold(a, b string) bool {
+	return DirsOverlap(foldASCII(a), foldASCII(b))
+}
+
+// caseOnlyOverlap reports whether two directories overlap when letter case is
+// ignored but not byte for byte.
+func caseOnlyOverlap(a, b string) bool {
+	return !DirsOverlap(a, b) && dirsOverlapFold(a, b)
 }
 
 // touchesPrefixes reports whether a normalized directory equals, is contained by,
