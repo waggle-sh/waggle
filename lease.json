@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-075",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/multi-keeper.md"
+  ],
+  "claimed_at": "2026-11-22T18:28:32Z",
+  "expires_at": "2026-11-23T06:28:32Z",
+  "branches": [
+    "records-rulings-2026-11-22"
+  ]
+}
