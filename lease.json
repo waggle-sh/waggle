@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-085",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "light",
+  "directories": [
+    "internal/license"
+  ],
+  "claimed_at": "2026-11-22T22:00:38Z",
+  "expires_at": "2026-11-25T22:00:38Z",
+  "branches": [
+    "t-085"
+  ]
+}
