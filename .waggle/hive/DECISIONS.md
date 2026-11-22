@@ -7471,3 +7471,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Accept the recommended defaults on all 15 T-074/T-075/T-076 brief questions so the builds can start?" answered "Yes, accept all defaults". Q-T074-1 to Q-T074-5 as the scout recommended.
 
 **Rationale:** Choice: normalize with a standard-library decomposition table, Hangul arithmetic and ToLower in cmd/waggle/gate_fold.go, with no go.mod or go.sum change and no vendored tree (1, option b); the table covers U+00C0 to U+017F plus Hangul, with Latin Extended Additional as planned cut t-074b (2); whole paths only, and directory against file stays a known gap for a later ticket covering case and normalization together (3); one fixed finding sentence with no code points (4); Tier 3 prefix and gate.protected_paths matching are unchanged in this ticket (5). No follow-up ticket is opened by this ruling. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-386: Upgrade hive pin to bfee532afafde4ba4f43db23844a4dc1e3ad0732
+
+- **Date:** 2026-11-22
+- **Kind:** technical
+- **Tickets:** T-016, T-054
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Stay on 3a9c054e69050ba2366c271afeb013223d0f8f96
+2. Move to bfee532afafde4ba4f43db23844a4dc1e3ad0732
+
+**Hive recommendation:** Move to bfee532afafde4ba4f43db23844a4dc1e3ad0732
+
+**Keeper choice:** Move the pin from 3a9c054e69050ba2366c271afeb013223d0f8f96 to bfee532afafde4ba4f43db23844a4dc1e3ad0732; managed files re-rendered by waggle upgrade from the target build. Approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Ready to do the Head Keeper commit and gate pin move that T-069 needs?" answered "Yes, set it up for me". The re-rendered gate workflow adds the optional gate-receipt job (push to main, contents: write, writes refs/waggle/receipts/*) and the queen role gains the force-release card rule.
+
+**Rationale:** bfee532afafde4ba4f43db23844a4dc1e3ad0732 is main after T-054 phase D (#279) and the T-074 to T-076 rulings, so bin/waggle quorum exists in the hive (T-054 section 12 item 6, D-271) for the first real round (T-054 AC4), which T-069 phase A waits on. The hive's own gate already builds from base source (D-271), so this move does not change which checker runs on this repo's PRs. Nothing in VISION core items is cut or narrowed. Recorded by the queen.

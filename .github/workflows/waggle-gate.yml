@@ -7,6 +7,8 @@ on:
     types: [opened, synchronize, reopened, labeled, edited]
   pull_request_review:
     types: [submitted, dismissed]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -65,8 +67,35 @@ jobs:
 
       - name: Waggle gate (Action)
         if: steps.src.outputs.present == 'false'
-        uses: waggle-sh/waggle/gate@ea41ba132c57500becbab2e5313246cdc2c8bb8d # waggle.pin ea41ba132c57500becbab2e5313246cdc2c8bb8d
+        uses: waggle-sh/waggle/gate@bfee532afafde4ba4f43db23844a4dc1e3ad0732 # waggle.pin bfee532afafde4ba4f43db23844a4dc1e3ad0732
         with:
           base-sha: ${{ github.event.pull_request.base.sha }}
           head-sha: ${{ github.event.pull_request.head.sha }}
+          token: ${{ github.token }}
+
+  # Optional. Writes a gate-run release record for each task that lands on the
+  # default branch with a live claim and no record. It needs push rights to
+  # refs/waggle/receipts/*. Delete this job and the push trigger to skip it;
+  # the verify-leases-and-tiers check does not depend on it.
+  gate-receipt:
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    concurrency:
+      group: waggle-gate-receipt
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Waggle gate receipt
+        uses: waggle-sh/waggle/gate@bfee532afafde4ba4f43db23844a4dc1e3ad0732 # waggle.pin bfee532afafde4ba4f43db23844a4dc1e3ad0732
+        with:
+          mode: gate-receipt
+          before: ${{ github.event.before }}
+          after: ${{ github.event.after }}
           token: ${{ github.token }}
