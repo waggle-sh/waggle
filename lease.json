@@ -6,12 +6,15 @@
   "gate": "full",
   "directories": [
     "cmd/waggle",
-    "internal/dispatch"
+    "docs/multi-keeper.md",
+    "internal/dispatch",
+    "internal/scaffold",
+    "site/content"
   ],
-  "claimed_at": "2026-11-21T23:36:38Z",
-  "expires_at": "2026-11-23T23:36:38Z",
+  "claimed_at": "2026-11-22T05:09:43Z",
+  "expires_at": "2026-11-24T05:09:43Z",
   "branches": [
-    "t-072a",
-    "t-072a2"
+    "t-072b",
+    "t-072b2"
   ]
 }
