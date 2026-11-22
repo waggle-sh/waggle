@@ -11,7 +11,6 @@ import (
 	"io"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -150,51 +149,9 @@ func (l Lifecycle) readBase(ctx context.Context, base string) (baseInfo, error) 
 		return bi, fmt.Errorf("quorum: config at base: %w", err)
 	}
 	bi.approvers = cfg.Gate.Approvers
-	if bi.credits, bi.days, err = scanQuorumBlock(data); err != nil {
-		return bi, err
-	}
+	bi.credits, bi.days = uint64(cfg.Quorum.Credits), cfg.Quorum.RoundDays
 	bi.verifier, err = LoadVerifier(ctx, l.Comb, base, l.SSHKeygen)
 	return bi, err
-}
-
-// scanQuorumBlock reads credits and round_days from an optional top-level
-// quorum block. Phase D moves this into internal/config; until then the
-// config parser ignores the block as an unknown top-level section.
-func scanQuorumBlock(data []byte) (uint64, int, error) {
-	credits, days := uint64(DefaultCredits), DefaultRoundDays
-	in := false
-	for _, line := range strings.Split(string(data), "\n") {
-		line = strings.TrimRight(line, "\r \t")
-		t := strings.TrimSpace(line)
-		if t == "" || strings.HasPrefix(t, "#") {
-			continue
-		}
-		if line[0] != ' ' && line[0] != '\t' {
-			in = t == "quorum:"
-			continue
-		}
-		if !in {
-			continue
-		}
-		k, v, ok := strings.Cut(t, ":")
-		if !ok {
-			continue
-		}
-		v, _, _ = strings.Cut(v, " #")
-		n, err := strconv.Atoi(strings.TrimSpace(v))
-		switch k {
-		case "credits", "round_days":
-			if err != nil || n < 1 {
-				return 0, 0, fmt.Errorf("quorum: config quorum.%s must be a positive integer", k)
-			}
-			if k == "credits" {
-				credits = uint64(n)
-			} else {
-				days = n
-			}
-		}
-	}
-	return credits, days, nil
 }
 
 func canonicalItem(item string) error {

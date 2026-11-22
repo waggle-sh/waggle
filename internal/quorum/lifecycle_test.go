@@ -744,27 +744,6 @@ func TestLifecycleNoQuorumWrites(t *testing.T) {
 	}
 }
 
-func TestScanQuorumBlock(t *testing.T) {
-	cases := []struct {
-		in      string
-		credits uint64
-		days    int
-		bad     bool
-	}{
-		{"version: 1\n", 100, 14, false},
-		{"version: 1\nquorum:\n  credits: 7\n  round_days: 3 # note\ngate:\n  credits: 9\n", 7, 3, false},
-		{"quorum:\n  credits: 0\n", 0, 0, true},
-		{"quorum:\n  round_days: x\n", 0, 0, true},
-		{"# quorum:\n  credits: 5\n", 100, 14, false},
-	}
-	for _, c := range cases {
-		cr, d, err := scanQuorumBlock([]byte(c.in))
-		if (err != nil) != c.bad || (!c.bad && (cr != c.credits || d != c.days)) {
-			t.Errorf("%q = %d, %d, %v", c.in, cr, d, err)
-		}
-	}
-}
-
 // A tally rebuilt consistently without one valid ballot, or with it relabeled
 // as malformed, fails verify against the ballot refs.
 func TestC4VerifyOmittedBallot(t *testing.T) {

@@ -94,6 +94,7 @@ func TestDefaults(t *testing.T) {
 		Forge:   ForgeConfig{Provider: "github", CombMode: "direct", Remote: "", MergeStrategy: "up_to_date"},
 		Leases:  LeasesConfig{DefaultTTLMinutes: 120, MaxDirectoriesPerClaim: 5},
 		Relay:   RelayConfig{MaxActiveClaimsPerLogin: 2, MaxTTLMinutes: 1440, ReleaseOnClose: true},
+		Quorum:  QuorumConfig{Credits: 100, RoundDays: 14},
 	}
 	if !reflect.DeepEqual(c, want) {
 		t.Fatalf("got %+v, want %+v", *c, *want)

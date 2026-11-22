@@ -239,9 +239,9 @@ func (s Store) Cast(ctx context.Context, round Round, keeperID string, votes []V
 	}
 }
 
-// precheck runs the validation SignBallot runs, plus the backend check, with
-// no git or ssh-keygen call.
-func (s Store) precheck(round Round, keeperID string, votes []Vote) (Ballot, error) {
+// CheckVotes validates votes for keeperID against the round with no git or
+// ssh-keygen call and returns the ballot they make, credits_used set.
+func CheckVotes(round Round, keeperID string, votes []Vote) (Ballot, error) {
 	b := Ballot{Version: Version, Round: round.Round, KeeperID: keeperID,
 		Votes: append([]Vote{}, votes...)}
 	sum, ok := ballotCredits(b.Votes)
@@ -249,7 +249,14 @@ func (s Store) precheck(round Round, keeperID string, votes []Vote) (Ballot, err
 		return b, reason(ReasonOverBudget)
 	}
 	b.CreditsUsed = sum
-	if err := ValidateBallot(round, b); err != nil {
+	return b, ValidateBallot(round, b)
+}
+
+// precheck runs the validation SignBallot runs, plus the backend check, with
+// no git or ssh-keygen call.
+func (s Store) precheck(round Round, keeperID string, votes []Vote) (Ballot, error) {
+	b, err := CheckVotes(round, keeperID, votes)
+	if err != nil {
 		return b, err
 	}
 	if _, err := ballotTime(round); err != nil {

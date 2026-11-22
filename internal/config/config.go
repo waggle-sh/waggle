@@ -34,6 +34,8 @@ const (
 	DefaultMergeStrategy          = "up_to_date"
 	DefaultTTLMinutes             = 120
 	DefaultMaxDirectoriesPerClaim = 5
+	DefaultQuorumCredits          = 100
+	DefaultQuorumRoundDays        = 14
 )
 
 // Merge strategies accepted by forge.merge_strategy (D-064, D-071).
@@ -66,6 +68,13 @@ type Config struct {
 	Leases  LeasesConfig
 	Gate    GateConfig
 	Relay   RelayConfig
+	Quorum  QuorumConfig
+}
+
+// QuorumConfig is the quorum: section (T-054, RFC-0006 4.2, 5.1).
+type QuorumConfig struct {
+	Credits   int // credits each keeper spends per round
+	RoundDays int // days a round stays open when --closes is not given
 }
 
 // GateConfig is the gate: section.
@@ -173,6 +182,7 @@ func Parse(data []byte) (*Config, error) {
 			MaxTTLMinutes:           DefaultRelayMaxTTLMinutes,
 			ReleaseOnClose:          true,
 		},
+		Quorum: QuorumConfig{Credits: DefaultQuorumCredits, RoundDays: DefaultQuorumRoundDays},
 	}
 	lines := map[string]int{}
 
@@ -291,6 +301,27 @@ func Parse(data []byte) (*Config, error) {
 		}
 	}
 
+	if q, ok := tree["quorum"]; ok {
+		if !q.isMapping() {
+			return nil, invalid(q.line, "quorum", "must be a mapping")
+		}
+		for _, k := range sortedKeys(q.children) {
+			n, p := q.children[k], "quorum."+k
+			lines[p] = n.line
+			switch k {
+			case "credits":
+				c.Quorum.Credits, err = intValue(p, n)
+			case "round_days":
+				c.Quorum.RoundDays, err = intValue(p, n)
+			default:
+				err = invalid(n.line, p, "unknown key")
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	if err := validate(c, lines); err != nil {
 		return nil, err
 	}
@@ -385,6 +416,12 @@ func validate(c *Config, lines map[string]int) error {
 		if !approverPattern.MatchString(e) {
 			return invalid(lines["gate.approvers"], "gate.approvers", "entries must be GitHub logins of 1 to 39 letters, digits or hyphens, not starting with a hyphen, without @")
 		}
+	}
+	if c.Quorum.Credits < 1 {
+		return invalid(lines["quorum.credits"], "quorum.credits", "must be a positive integer, got %d", c.Quorum.Credits)
+	}
+	if c.Quorum.RoundDays < 1 {
+		return invalid(lines["quorum.round_days"], "quorum.round_days", "must be a positive integer, got %d", c.Quorum.RoundDays)
 	}
 	return validateRelay(c.Relay, lines)
 }
