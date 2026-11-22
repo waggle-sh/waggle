@@ -1,12 +1,12 @@
 {
   "version": 1,
   "source": "release",
-  "ticket_id": "T-076",
+  "ticket_id": "T-075",
   "keeper_id": "paulternate",
   "co_keepers": [],
   "role": "builder",
   "gate": "full",
-  "claimed_at": "2026-11-22T18:28:29Z",
+  "claimed_at": "2026-11-22T18:28:32Z",
   "branches": [
     "records-rulings-2026-11-22"
   ],
