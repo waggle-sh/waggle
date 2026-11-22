@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-076",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/rfc-notes/staged-gate-modes.md"
+  ],
+  "claimed_at": "2026-11-22T18:28:29Z",
+  "expires_at": "2026-11-23T06:28:29Z",
+  "branches": [
+    "records-rulings-2026-11-22"
+  ]
+}
