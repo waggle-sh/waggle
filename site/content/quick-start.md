@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Quick start
 
-Waggle lets many **keepers** (humans who own work on a repo) and their agent teams share one repo without colliding. Its first usable piece is the gate, a GitHub merge check for repos where AI agents write code; Nectar is coming soon (`waggle nectar backfill` exists, scoring does not), Quorum is roadmap, and the multi-keeper parts are partly coming soon. This page takes a repo from nothing to a required check in about ten minutes. Waggle is pre-1.0: the [gate spec](/docs/gate/) describes what the code does today, and the [recipes](/docs/recipes/) have not been run end to end with each agent tool.
+Waggle lets many **keepers** (humans who own work on a repo) and their agent teams share one repo without colliding. Its first usable piece is the gate, a GitHub merge check for repos where AI agents write code; Nectar scoring and Quorum voting are on `main` but not in a release yet, and claims for contributors without push access are coming soon. This page takes a repo from nothing to a required check in about ten minutes. Waggle is pre-1.0: the [gate spec](/docs/gate/) describes what the code does today, and the [recipes](/docs/recipes/) have not been run end to end with each agent tool.
 
 ## What you get
 
@@ -36,7 +36,7 @@ Then the agent works on branch `t-123` and names the task in every commit subjec
 - a commit that touches `cmd/main.go` fails with `path is outside the claim directories`, because `cmd` is not in the lease;
 - a PR from branch `fix-parser` fails with `claim does not name this pull request's branch`, because the claim lists only `t-123`.
 
-When the PR merges, give the claim back: `waggle release T-123` (after a squash or rebase merge, `waggle release T-123 --unmerged`). See [Claims and leases](/docs/claims-and-leases/) for every rule.
+When the PR merges, give the claim back: `waggle release T-123` (after a squash or rebase merge, `waggle release T-123 --unmerged`). The release records who held the task, which is what [Nectar](/docs/nectar/) scores. See [Claims and leases](/docs/claims-and-leases/) for every rule.
 
 ## What it does not do
 
@@ -50,4 +50,4 @@ The gate does not schedule or run agents and is not a sandbox. Its limits are wr
 - [The gate](/docs/gate/): what each check does, with the code that does it
 - [Claims and leases](/docs/claims-and-leases/)
 - [Configuration](/docs/config/) and [CLI reference](/docs/cli/)
-- [Recipes](/docs/recipes/) for Claude Code agent teams and the Copilot cloud agent
+- [Recipes](/docs/recipes/) for Claude Code agent teams, the Copilot cloud agent and gate-run receipts

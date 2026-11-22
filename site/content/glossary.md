@@ -1,15 +1,15 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Glossary
 
-Waggle uses bee words on purpose. Each one stands for something plain, and this page says what. The big picture is on [the hive](/docs/hive/). Terms for things that are not built yet are marked **roadmap** (designed, no code) or **coming soon** (a part that already works in a smaller form).
+Waggle uses bee words on purpose. Each one stands for something plain, and this page says what. The big picture is on [the hive](/docs/hive/). Terms for things that are not in a release yet are marked **on main** (merged, not in a release yet; the latest release is v0.1.1), **coming soon** (a part that already works in a smaller form) or **roadmap** (designed, no code).
 
 ## People and agents
 
 **Keeper.** A human working on the repo. Each keeper owns a plan and the agents that carry it out.
 
-**Head Keeper.** The keeper who owns the project's direction. The first login in `gate.approvers`. Only their approval passes a change to the hive's steering files.
+**Head Keeper.** The keeper who owns the project's direction. The first login in `gate.approvers`. Only their approval passes a change to the hive's steering files. **On main**, their SSH signature on a PR's head commit also passes Tier 3 paths, and only they can run `waggle force-release` and `waggle quorum veto`.
 
-**Master Keeper.** The project owner, today the Head Keeper, in their role as holder of the veto over Quorum results. **Roadmap**, with Quorum. Not a current title: today that person is the Head Keeper.
+**Master Keeper.** The project owner in their role as holder of the veto over Quorum results. Not a separate title or setting: today the Head Keeper holds the veto, through `waggle quorum veto` (**on main**).
 
 **Queen.** A coordinating agent a keeper talks to. She does not write feature code. She agrees the task with the keeper, opens the issue, writes the claim and starts the workers.
 
@@ -41,10 +41,10 @@ Waggle uses bee words on purpose. Each one stands for something plain, and this 
 
 ## Honey
 
-**Honey.** A contributor's standing in the project, built from real merged work. It has two halves, Nectar and Quorum. **Coming soon** for Nectar, **roadmap** for Quorum.
+**Honey.** A contributor's standing in the project, built from real merged work. It has two halves, Nectar and Quorum. Both are **on main**.
 
-**Nectar.** Reputation from merged commits that survive 30 days on `main` without a revert, credited through the claim. **Coming soon**: `waggle nectar backfill` is on `main`, the scorer is not.
+**Nectar.** Reputation from merged work that survives 30 days on `main` without a revert, credited through the release record of who held the task. **On main**: `waggle nectar` scores it and `waggle nectar explain` shows one task; the release records and `waggle nectar backfill` are in v0.1.1. See [Nectar](/docs/nectar/).
 
-**Quorum.** Quadratic voting on roadmap and issue priority, where each person's weight is the square root of their Nectar. The project owner, in the Master Keeper role, can veto the result. **Roadmap.**
+**Quorum.** Quadratic voting on roadmap and issue priority, where each person's weight is the square root of their Nectar. The Head Keeper, in the Master Keeper role, can veto an item or a whole round. **On main**: `waggle vote` and `waggle quorum`. See [Quorum](/docs/quorum/).
 
 See [the hive](/docs/hive/#built-today-and-coming) for what is built and what is coming.
