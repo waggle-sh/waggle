@@ -132,4 +132,4 @@ T-060 is this design. If approved, the scout cuts code tickets, each its own PR:
 
 **Hive recommendation:** Option 1, with `guard` as the default and `open` and `watch` opt-in, so nothing is cut. Raising stays Tier 3 for now, exit 3 stays a failure in every mode, and the build goes before G5.
 
-**Keeper choice:** Not decided.
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 9:12 PM Pacific Time, in the words "Approve T-060 direction with recommended defaults" (D-382). Open questions 1, 2, 3 and 9 follow the RFC recommendations. Questions 4, 5, 6, 7 and 8 are not decided.
