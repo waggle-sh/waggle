@@ -5,12 +5,14 @@
   "role": "builder",
   "gate": "full",
   "directories": [
-    "internal/comb"
+    "cmd/waggle",
+    "docs/RFC-0003.md",
+    "docs/multi-keeper.md"
   ],
-  "claimed_at": "2026-11-21T23:36:34Z",
-  "expires_at": "2026-11-23T23:36:34Z",
+  "claimed_at": "2026-11-22T16:00:46Z",
+  "expires_at": "2026-11-24T16:00:46Z",
   "branches": [
-    "t-073a",
-    "t-073a2"
+    "t-073b",
+    "t-073b2"
   ]
 }
