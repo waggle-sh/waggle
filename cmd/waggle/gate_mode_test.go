@@ -62,11 +62,14 @@ func TestModeOpenOtherChecks(t *testing.T) {
 	r := protRepo(t, openCfg)
 	r.write(".github/workflows/x.yml", []byte("x\n"))
 	r.commit("T-031: ci")
-	r.write("docs/a.md", []byte("a\n"))
-	r.write("docs/A.md", []byte("b\n"))
-	r.commit("T-031: case")
+	// Built in the index so a case-insensitive filesystem can hold both names.
+	r.index("docs/a.md")
+	r.index("docs/A.md")
+	r.git("commit", "-q", "-m", "T-031: case")
+	// Staged by path, as add -A would drop the index-only case pair.
 	r.write(layout.Decisions, []byte("not a log\n"))
-	r.commit("T-031: log")
+	r.git("add", layout.Decisions)
+	r.git("commit", "-q", "-m", "T-031: log")
 	code, out := r.runWith(nil, "verify")
 	if code != 0 || strings.Contains(out, "FAIL") {
 		t.Errorf("exit %d\n%s", code, out)
