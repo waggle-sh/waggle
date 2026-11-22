@@ -49,6 +49,7 @@ leases:
   default_ttl_minutes: 120
   max_directories_per_claim: 5
 # gate/ holds the T-036 composite Action (D-270, D-272), listed after phase A merged (T-036 2.11 item 2).
+# relay/ is listed before T-065 phase B (HK-6, D-381), so changes to the write-token Action need a listed approver at the head.
 gate:
-  protected_paths: gate/
+  protected_paths: gate/, relay/
   approvers: paulternate
