@@ -244,10 +244,21 @@ func scanRange(g gitRunner, base, head string, in scanInput, rep *gateReport) (s
 	s := commitScan{g: g, comb: cb, now: time.Now(), rep: rep, claims: map[string]claimLookup{},
 		baseOID: baseOID, policy: policy, branch: in.branchID, head: in.head, bound: map[string]string{},
 		approvable: approvablePath(policy), filter: in.filter,
-		keeper: keeperPath, keeperFilter: in.keeperFilter}
+		keeper: keeperPath, keeperFilter: in.keeperFilter,
+		signed: func() (keeperSig, error) { return headKeeperSigned(g, baseOID, headOID, approvers) }}
 	res := scanOutcome{baseOID: baseOID, headOID: headOID, approvers: approvers}
 	if err := s.scan(mb, headOID); err != nil {
 		return res, err
+	}
+	short := headOID[:12]
+	if s.signedTiers {
+		rep.warn(checkTiers, "Tier 3 paths approved by the Head Keeper's signature on head commit "+short)
+	}
+	if s.signedLease {
+		rep.warn(checkLeases, "Tier 3 paths outside the claim approved by the Head Keeper's signature on head commit "+short)
+	}
+	if s.sigChecked && s.sig.why != "" {
+		rep.warn(checkTiers, "no Head Keeper signature counts for head commit "+short+": "+s.sig.why)
 	}
 	res.hit, res.keeperHit, res.maxTier = s.hit, s.keeperHit, s.maxTier
 	for _, id := range s.bound {
