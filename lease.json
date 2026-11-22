@@ -8,10 +8,12 @@
     "README.md",
     "site"
   ],
-  "claimed_at": "2026-11-22T18:32:35Z",
-  "expires_at": "2026-11-23T18:32:35Z",
+  "claimed_at": "2026-11-22T18:41:28Z",
+  "expires_at": "2026-11-23T18:41:28Z",
   "branches": [
     "t-061-site-deploy-fix",
-    "t-061-docs-audit"
+    "t-061-docs-audit",
+    "t-061-site-workflow",
+    "t-061-docs-check"
   ]
 }
