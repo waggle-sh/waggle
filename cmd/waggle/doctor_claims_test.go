@@ -38,6 +38,13 @@ func TestDoctorClaimsFinding(t *testing.T) {
 	if code != 0 {
 		t.Errorf("exit %d, want 0: claims is not required", code)
 	}
+	summary, tail, _ := strings.Cut(out, "Claims (informational")
+	if strings.Contains(summary, "  missing   claims") || strings.Contains(summary, "malformed") || !strings.Contains(summary, "No required setting above was found missing") {
+		t.Errorf("claims leaked into the enforcement summary:\n%s", out)
+	}
+	if !strings.Contains(tail, "missing   claims") {
+		t.Errorf("claims finding not after the summary:\n%s", out)
+	}
 	if err := os.WriteFile(filepath.Join(dir, ".waggle", "control", "local.yaml"), []byte("keeper_id: ana\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -55,5 +62,10 @@ func TestDoctorClaimsLocalOnly(t *testing.T) {
 	code, out, _ := runDoc("--repo", dir)
 	if code != 0 || !strings.Contains(out, "claims") || !strings.Contains(out, "force-release: nobody") {
 		t.Fatalf("got %d %q", code, out)
+	}
+	for _, bad := range []string{"Enforcement:", "Not enforced", "cannot stop the merges"} {
+		if strings.Contains(out, bad) {
+			t.Errorf("local-only output has %q:\n%s", bad, out)
+		}
 	}
 }

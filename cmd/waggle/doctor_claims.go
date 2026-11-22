@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/waggle-sh/waggle/internal/comb"
@@ -48,4 +49,18 @@ func claimsFinding(ctx context.Context, root string, cfg *config.Config) (forge.
 		return f, "force-release: allowed for " + id
 	}
 	return f, fmt.Sprintf("force-release: only %s (first login in gate.approvers at %.12s)", first, base)
+}
+
+// printClaims writes the claims finding and the force-release line after the
+// enforcement summary. They stay out of forge.Render's findings: a claim is
+// not a merge rule, so it must not count among the merges Waggle cannot stop.
+func printClaims(w io.Writer, f forge.Finding, line string) {
+	fmt.Fprintf(w, "\nClaims (informational, not a merge rule):\n  %-9s %-15s %s\n", f.Status, f.ID, f.Summary)
+	if f.NotEnforced != "" {
+		fmt.Fprintln(w, "    Impact: "+f.NotEnforced)
+	}
+	if f.Fix != "" {
+		fmt.Fprintln(w, "    Fix: "+f.Fix)
+	}
+	fmt.Fprintln(w, line)
 }
