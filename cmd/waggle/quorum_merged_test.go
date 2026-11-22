@@ -71,3 +71,16 @@ func TestQuorumMergedBinding(t *testing.T) {
 		t.Error("a failed git read reported T-101 merged")
 	}
 }
+
+// A veto ID passes only in the form close looks up (D-%03d of a number >= 1).
+func TestCanonicalDecision(t *testing.T) {
+	for id, want := range map[string]bool{
+		"D-001": true, "D-007": true, "D-372": true, "D-1000": true, "D-999999": true,
+		"D-1": false, "D-07": false, "D-0007": false, "D-000": false, "D-01000": false,
+		"D-+01": false, "D- 01": false, "D-1e3": false, "d-007": false, "D-": false, "": false, "D-0000001": false,
+	} {
+		if got := canonicalDecision(id); got != want {
+			t.Errorf("canonicalDecision(%q) = %v, want %v", id, got, want)
+		}
+	}
+}

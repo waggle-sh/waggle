@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -312,8 +311,17 @@ func commitTask(subject, trailer string) string {
 	return ids[0]
 }
 
-// vetoDecision is the decision ID form a veto must cite (D-001 and up).
-var vetoDecision = regexp.MustCompile(`^D-[0-9]{3,6}$`)
+// canonicalDecision reports whether id is a decision ID in the one form close
+// can match: D- and the number padded to at least three digits, 1 and up, as
+// DECISIONS.md writes it (D-007, D-372, D-1000; not D-7, D-0007 or D-000).
+func canonicalDecision(id string) bool {
+	digits, ok := strings.CutPrefix(id, "D-")
+	if !ok || len(digits) > 6 {
+		return false
+	}
+	n, err := strconv.Atoi(digits)
+	return err == nil && n >= 1 && fmt.Sprintf("D-%03d", n) == id
+}
 
 func qMilli(u uint64) string { return fmt.Sprintf("%d.%03d", u/1000, u%1000) }
 
@@ -587,8 +595,8 @@ func quorumVeto(ctx context.Context, args []string, stdout, stderr io.Writer) in
 	}
 	// DECISIONS.md entries are D-001 and up, and close looks the veto up in that
 	// form, so a shorter ID would sign a veto that can never apply.
-	if !vetoDecision.MatchString(*decision) {
-		return quorumFail(stderr, "quorum veto", qUsage("--decision must be D- and at least three digits, as DECISIONS.md writes it, such as D-007"))
+	if !canonicalDecision(*decision) {
+		return quorumFail(stderr, "quorum veto", qUsage("--decision must be written as DECISIONS.md writes it: D-007, D-372, D-1000"))
 	}
 	r, err := openQuorum(ctx, *q.repo, stderr)
 	if err != nil {

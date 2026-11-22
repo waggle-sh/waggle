@@ -51,7 +51,7 @@ New order goes into `ROADMAP.md` only through a normal pull request that cites t
 
 ## Veto
 
-The Head Keeper (the first login in `gate.approvers`) can remove one item from a round, or reject the whole round so the earlier order stands, with `waggle quorum veto --round 1 --item T-102 --decision D-001`. The veto must cite a decision ID in the form `D-` and at least three digits, for an entry that is in `.waggle/hive/DECISIONS.md` on main when the round closes; a veto without one is ignored and listed in the tally. A veto never changes a score or another item's place.
+The Head Keeper (the first login in `gate.approvers`) can remove one item from a round, or reject the whole round so the earlier order stands, with `waggle quorum veto --round 1 --item T-102 --decision D-001`. The veto must cite a decision ID as `DECISIONS.md` writes it (`D-007`, `D-372`, `D-1000`), for an entry that is in `.waggle/hive/DECISIONS.md` on main when the round closes; a veto without one is ignored and listed in the tally. A veto never changes a score or another item's place.
 
 ## Limits
 
