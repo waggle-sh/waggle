@@ -96,11 +96,21 @@ func AcquireClaim(ctx context.Context, cb ClaimBackend, g *Git, req Request, kee
 	return c, nil
 }
 
+// malformedRef is the first malformed claim ref an error names.
+func malformedRef(err error) string {
+	var m *comb.MalformedClaimsError
+	if errors.As(err, &m) && len(m.Claims) > 0 {
+		return m.Claims[0].Ref
+	}
+	ref, _, _ := strings.Cut(err.Error(), ": ")
+	return ref
+}
+
 // claimError maps a Comb error to its dispatch exit code.
 func claimError(err error) error {
 	switch {
 	case errors.Is(err, comb.ErrMalformedClaim):
-		return failf(ExitClaim, "%w; a maintainer must delete the malformed claim ref by hand, on the remote if the repo has one", err)
+		return failf(ExitClaim, "%w; the first login in gate.approvers can clear it with waggle force-release --ref %s, or delete the ref by hand on the remote", err, malformedRef(err))
 	case errors.Is(err, comb.ErrAlreadyClaimed), errors.Is(err, comb.ErrLeaseOverlap),
 		errors.Is(err, comb.ErrTier3Path), errors.Is(err, comb.ErrGateTooLow), errors.Is(err, comb.ErrInvalidLease):
 		return failf(ExitClaim, "%w", err)
