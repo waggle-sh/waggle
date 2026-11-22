@@ -55,6 +55,7 @@ export default defineConfig({
             { label: 'Overview', slug: 'docs/recipes' },
             { label: 'Claude Code agent teams', slug: 'docs/recipes/claude-code-agent-teams' },
             { label: 'Copilot cloud agent', slug: 'docs/recipes/copilot-cloud-agent' },
+            { label: 'Gate-run receipts', slug: 'docs/recipes/gate-run-receipts' },
           ],
         },
       ],
