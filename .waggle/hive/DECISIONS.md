@@ -7452,3 +7452,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Accept the recommended defaults on all 15 T-074/T-075/T-076 brief questions so the builds can start?" answered "Yes, accept all defaults". Q-T075-1 to Q-T075-6 as the scout recommended.
 
 **Rationale:** Choice: a collision makes the claims finding missing, with Impact and Fix, and it is never Required (1); doctor reads this clone's claim refs only and never fetches (2); the Fix line uses the waggle status words with no --ref (3); T-075 lands first and owns the shared wording, and T-084 reuses it after, never in parallel (4); the ok summary becomes No malformed claim or case collision. (5); the count is directory pairs, matching the waggle status lines (6). Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-385: T-074: Q-T074-1 to Q-T074-5 ruled as recommended
+
+- **Date:** 2026-11-22
+- **Kind:** technical
+- **Tickets:** T-074
+- **Supersedes:** none
+
+**Question:** How should the five open questions of the T-074 brief (the gate's head tree collision check catches Unicode normalization variants) be ruled?
+
+**Options considered:**
+1. Adopt the recommended option for each of Q-T074-1 to Q-T074-5.
+2. Rule some questions differently.
+
+**Hive recommendation:** Option 1, as recommended in section 11 of the T-074 brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Accept the recommended defaults on all 15 T-074/T-075/T-076 brief questions so the builds can start?" answered "Yes, accept all defaults". Q-T074-1 to Q-T074-5 as the scout recommended.
+
+**Rationale:** Choice: normalize with a standard-library decomposition table, Hangul arithmetic and ToLower in cmd/waggle/gate_fold.go, with no go.mod or go.sum change and no vendored tree (1, option b); the table covers U+00C0 to U+017F plus Hangul, with Latin Extended Additional as planned cut t-074b (2); whole paths only, and directory against file stays a known gap for a later ticket covering case and normalization together (3); one fixed finding sentence with no code points (4); Tier 3 prefix and gate.protected_paths matching are unchanged in this ticket (5). No follow-up ticket is opened by this ruling. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
