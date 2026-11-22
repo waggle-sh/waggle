@@ -21,6 +21,7 @@ const routes = new Map([
   ['docs/recipes/README.md', 'recipes/index'],
   ['docs/recipes/claude-code-agent-teams.md', 'recipes/claude-code-agent-teams'],
   ['docs/recipes/copilot-cloud-agent.md', 'recipes/copilot-cloud-agent'],
+  ['docs/recipes/gate-run-receipts.md', 'recipes/gate-run-receipts'],
   ['README.md', 'quick-start'], // the README's Install section lives on the quick start page
 ]);
 const authored = readdirSync(join(siteDir, 'content')).filter((f) => f.endsWith('.md'));
