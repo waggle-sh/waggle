@@ -7414,3 +7414,60 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-21 at 9:12 PM Pacific Time, in the words "Approve T-060 direction with recommended defaults". Open questions 1, 2, 3 and 9 follow the RFC recommendations: the new-install signal is an explicit prompt or --mode (question 1); raising the mode stays Tier 3 with no carve-out (question 2); a broken base config (exit 3) stays a failure in every mode, including open (question 3); the build goes before the public gate, G5 (question 9). Default guard for every new install; open and watch are opt-in. Questions 4, 5, 6, 7 and 8 are not decided. Code tickets T-076 to T-080 are opened as stubs.
 
 **Rationale:** Option 1 cuts nothing in VISION core items 1 and 2: every new hive starts in guard, and open and watch are opt-in. Options 2 and 3 would need a typed reason because they narrow those items. A raise carve-out and a pass on exit 3 in open were not adopted. Building before G5 is sequencing, not a cut. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-383: T-076: Q-T076-1 to Q-T076-4 ruled as recommended
+
+- **Date:** 2026-11-22
+- **Kind:** technical
+- **Tickets:** T-076, T-077
+- **Supersedes:** none
+
+**Question:** How should the four open questions of the T-076 brief (staged gate modes, phase 1: gate.mode with open and guard in verify) be ruled?
+
+**Options considered:**
+1. Adopt the recommended option for each of Q-T076-1 to Q-T076-4.
+2. Rule some questions differently.
+
+**Hive recommendation:** Option 1, as recommended in section 11 of the T-076 brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Accept the recommended defaults on all 15 T-074/T-075/T-076 brief questions so the builds can start?" answered "Yes, accept all defaults". Q-T076-1 to Q-T076-4 as the scout recommended.
+
+**Rationale:** Choice: in open, a PR too large for the gate still fails with exit 1, since a gate that could not check is not a pass (1); gate.mode applies to verify only and the single checks stay strict (2); watch is rejected as an invalid value until T-077 adds it (3); T-076 writes warnings and the notice line, and the job summary for open and watch lands once in T-077 (4). Follows D-382 open questions 1, 2, 3 and 9. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-384: T-075: Q-T075-1 to Q-T075-6 ruled as recommended
+
+- **Date:** 2026-11-22
+- **Kind:** technical
+- **Tickets:** T-075, T-084
+- **Supersedes:** none
+
+**Question:** How should the six open questions of the T-075 brief (the doctor claims finding counts case-folded claim collisions) be ruled?
+
+**Options considered:**
+1. Adopt the recommended option for each of Q-T075-1 to Q-T075-6.
+2. Rule some questions differently.
+
+**Hive recommendation:** Option 1, as recommended in section 9 of the T-075 brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Accept the recommended defaults on all 15 T-074/T-075/T-076 brief questions so the builds can start?" answered "Yes, accept all defaults". Q-T075-1 to Q-T075-6 as the scout recommended.
+
+**Rationale:** Choice: a collision makes the claims finding missing, with Impact and Fix, and it is never Required (1); doctor reads this clone's claim refs only and never fetches (2); the Fix line uses the waggle status words with no --ref (3); T-075 lands first and owns the shared wording, and T-084 reuses it after, never in parallel (4); the ok summary becomes No malformed claim or case collision. (5); the count is directory pairs, matching the waggle status lines (6). Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-385: T-074: Q-T074-1 to Q-T074-5 ruled as recommended
+
+- **Date:** 2026-11-22
+- **Kind:** technical
+- **Tickets:** T-074
+- **Supersedes:** none
+
+**Question:** How should the five open questions of the T-074 brief (the gate's head tree collision check catches Unicode normalization variants) be ruled?
+
+**Options considered:**
+1. Adopt the recommended option for each of Q-T074-1 to Q-T074-5.
+2. Rule some questions differently.
+
+**Hive recommendation:** Option 1, as recommended in section 11 of the T-074 brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Accept the recommended defaults on all 15 T-074/T-075/T-076 brief questions so the builds can start?" answered "Yes, accept all defaults". Q-T074-1 to Q-T074-5 as the scout recommended.
+
+**Rationale:** Choice: normalize with a standard-library decomposition table, Hangul arithmetic and ToLower in cmd/waggle/gate_fold.go, with no go.mod or go.sum change and no vendored tree (1, option b); the table covers U+00C0 to U+017F plus Hangul, with Latin Extended Additional as planned cut t-074b (2); whole paths only, and directory against file stays a known gap for a later ticket covering case and normalization together (3); one fixed finding sentence with no code points (4); Tier 3 prefix and gate.protected_paths matching are unchanged in this ticket (5). No follow-up ticket is opened by this ruling. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
