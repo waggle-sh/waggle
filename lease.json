@@ -9,12 +9,12 @@
     "docs/multi-keeper.md",
     "site"
   ],
-  "claimed_at": "2026-11-22T19:01:03Z",
-  "expires_at": "2026-11-24T19:01:03Z",
+  "claimed_at": "2026-11-23T16:15:07Z",
+  "expires_at": "2026-11-25T16:15:07Z",
   "branches": [
+    "t-061-upgrade-pr-docs",
     "t-061-site-workflow",
     "t-061-docs-check",
-    "t-061-multi-keeper",
-    "records-t061-docs-impact-2026-11-22"
+    "t-061-multi-keeper"
   ]
 }
