@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: Apache-2.0
+# Docs impact check (proposal, T-061). Fails a pull request that changes what users run or install
+# without touching README.md, site/ or docs/. Not part of the hive gate (waggle-gate.yml) and not
+# scaffolded into other hives.
+#
+# User-facing paths: non-test Go under cmd/, install.sh, gate/action.yml, relay/action.yml,
+# internal/scaffold/templates/ and internal/config/config.go (config keys).
+# Docs paths: README.md, site/ and docs/, except docs/rfc-notes/ (internal notes, never published).
+#
+# Opt out with one line in the PR description, with a reason:
+#   Docs-Impact: none, <why no user sees a change>
+#   Docs-Impact: T-<id>, <the later ticket or phase that writes the docs>
+# Editing the description re-runs the check.
+name: Docs impact
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-impact-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  docs-impact:
+    name: docs-impact
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require docs for user-facing changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          # Passed through the environment, never interpolated into the script.
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE...$HEAD")"
+          facing="$(printf '%s\n' "$changed" | grep -E '^(cmd/.*\.go|install\.sh|gate/action\.yml|relay/action\.yml|internal/scaffold/templates/.*|internal/config/config\.go)$' | grep -v '_test\.go$' || true)"
+          docs="$(printf '%s\n' "$changed" | grep -E '^(README\.md|site/|docs/)' | grep -v '^docs/rfc-notes/' || true)"
+          if [ -z "$facing" ]; then
+            echo "No user-facing path changed."
+            exit 0
+          fi
+          if [ -n "$docs" ]; then
+            echo "User-facing paths changed and docs changed too:"
+            printf '  %s\n' $docs
+            exit 0
+          fi
+          optout="$(printf '%s\n' "${PR_BODY:-}" | tr -d '\r' | grep -E '^Docs-Impact: *(none|T-[0-9]+) *, *[^ ].*$' | head -n 1 || true)"
+          if [ -n "$optout" ]; then
+            echo "::notice::No docs changed; the PR description says: $optout"
+            exit 0
+          fi
+          echo "::error::This PR changes user-facing paths but not README.md, site/ or docs/."
+          printf '  %s\n' $facing
+          echo "Update the docs, or add one line to the PR description:"
+          echo "  Docs-Impact: none, <why no user sees a change>"
+          echo "  Docs-Impact: T-<id>, <the ticket that writes the docs>"
+          exit 1
