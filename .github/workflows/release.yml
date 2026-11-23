@@ -242,6 +242,8 @@ jobs:
       TAG: ${{ github.event.release.tag_name }}
       REPO: ${{ github.repository }}
       UPGRADE_TOKEN: ${{ secrets.WAGGLE_UPGRADE_TOKEN }}
+      WAGGLE_UPGRADE_GIT_NAME: ${{ vars.WAGGLE_UPGRADE_GIT_NAME }}
+      WAGGLE_UPGRADE_GIT_EMAIL: ${{ vars.WAGGLE_UPGRADE_GIT_EMAIL }}
     steps:
       - name: Check the token
         id: token
@@ -249,6 +251,9 @@ jobs:
           set -euo pipefail
           if [ -z "$UPGRADE_TOKEN" ]; then
             echo "::warning::secret WAGGLE_UPGRADE_TOKEN is not set; skipping consumer upgrades for $TAG. See docs/consumers/README.md."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$WAGGLE_UPGRADE_GIT_NAME" ] || [ -z "$WAGGLE_UPGRADE_GIT_EMAIL" ]; then
+            echo "::warning::repository variable WAGGLE_UPGRADE_GIT_NAME or WAGGLE_UPGRADE_GIT_EMAIL is not set; skipping consumer upgrades for $TAG. See docs/consumers/README.md."
             echo "present=false" >> "$GITHUB_OUTPUT"
           else
             echo "present=true" >> "$GITHUB_OUTPUT"
@@ -310,7 +315,7 @@ jobs:
             count=$((count + 1))
             echo "::group::$line"
             dir="$RUNNER_TEMP/consumers/$line"
-            if gh repo clone "$line" "$dir" && (cd "$dir" && git config user.name "Paul Cleary" && git config user.email "27632860+paulternate@users.noreply.github.com" && waggle upgrade --apply --pr); then
+            if gh repo clone "$line" "$dir" && (cd "$dir" && git config user.name "$WAGGLE_UPGRADE_GIT_NAME" && git config user.email "$WAGGLE_UPGRADE_GIT_EMAIL" && waggle upgrade --apply --pr); then
               echo "upgrade ok: $line"
             else
               echo "::error::upgrade failed for $line"

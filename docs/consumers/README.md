@@ -19,3 +19,15 @@ app token) with `contents: write` and `pull-requests: write` on exactly the
 listed consumer repos. The Head Keeper creates it in the repo settings; it is
 never committed. If it is missing, the job logs a warning and skips. The
 token is passed only through the `GH_TOKEN` environment and is never echoed.
+
+## Variables
+
+The job also reads two repository variables (not secrets), set by the Head
+Keeper in the repo settings:
+
+- `WAGGLE_UPGRADE_GIT_NAME`: the git identity name for the bump commits.
+- `WAGGLE_UPGRADE_GIT_EMAIL`: the git identity email for the bump commits.
+
+The job sets them as `user.name` and `user.email` in each consumer clone. If
+either is empty, the job logs a warning and skips, the same way it does when
+`WAGGLE_UPGRADE_TOKEN` is missing.
