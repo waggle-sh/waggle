@@ -25,11 +25,14 @@ import (
 
 // UpgradeOptions holds flags passed to `waggle upgrade`.
 type UpgradeOptions struct {
-	Dir            string // the directory the command runs in; must be the work tree root
-	Apply          bool   // execute the plan; false prints it and changes nothing
-	Diff           bool   // print a unified diff under every [rewrite] line
-	AllowDowngrade bool   // permit a release tag lower than the hive pin
-	Runtime        string // this Keeper's runtime: "claude-code" regenerates shims, "none" leaves them
+	Dir            string   // the directory the command runs in; must be the work tree root
+	Apply          bool     // execute the plan; false prints it and changes nothing
+	Diff           bool     // print a unified diff under every [rewrite] line
+	AllowDowngrade bool     // permit a release tag lower than the hive pin
+	Runtime        string   // this Keeper's runtime: "claude-code" regenerates shims, "none" leaves them
+	To             string   // pin to this release tag or full 40-hex commit instead of this build's own stamp; empty means this build
+	PR             bool     // after a successful Apply, commit the changes on a new branch, push it and open a PR
+	Exec           ExecFunc // runs git and gh for PR; nil means the real commands
 	Out            io.Writer
 	GitBinary      string   // git executable; empty means "git"
 	GitEnv         []string // appended to the git child environment (tests use this)
@@ -352,9 +355,18 @@ func Upgrade(opts UpgradeOptions) error {
 	if read == nil {
 		read = debug.ReadBuildInfo
 	}
+	if opts.PR && !opts.Apply {
+		return fmt.Errorf("--pr needs --apply: %w", ErrRefused)
+	}
 	newPin, pinned := resolvePin(read)
 	if !pinned {
 		return fmt.Errorf("this build is %s (modified or unstamped tree); build waggle from a clean, stamped checkout of the target commit: %w", Unpinned, ErrRefused)
+	}
+	if opts.To != "" {
+		if opts.To == Unpinned || !ValidPin(opts.To) {
+			return fmt.Errorf("--to %q is not a release tag (vMAJOR.MINOR.PATCH) or a full 40-hex commit: %w", opts.To, ErrRefused)
+		}
+		newPin = opts.To
 	}
 	if releaseTag.MatchString(oldPin) && releaseTag.MatchString(newPin) && compareTags(newPin, oldPin) < 0 && !opts.AllowDowngrade {
 		return fmt.Errorf("target %s is lower than the current pin %s; pass --allow-downgrade to move backwards: %w", newPin, oldPin, ErrRefused)
@@ -363,6 +375,9 @@ func Upgrade(opts UpgradeOptions) error {
 	ref, refByTag, refOK := gateRef(read)
 	if !refOK {
 		return fmt.Errorf("%s: %w", noRefReason, ErrRefused)
+	}
+	if opts.To != "" {
+		ref, refByTag = opts.To, releaseTag.MatchString(opts.To)
 	}
 
 	plan, err := planUpgrade(opts, g, root, oldPin, newPin, ref, refByTag, tfs, files, out)
@@ -386,6 +401,13 @@ func Upgrade(opts UpgradeOptions) error {
 		}
 	}
 	fmt.Fprintln(out, upgradeLastLine)
+	if opts.PR {
+		text, err := decisionText(oldPin, newPin, plan.gateOnly)
+		if err != nil {
+			return err
+		}
+		return openUpgradePR(opts, root, out, newPin, text)
+	}
 	return nil
 }
 
@@ -697,6 +719,16 @@ type decisionInput struct {
 // A gate-only repo gets text with no reference to this project's own tickets
 // or decisions; a full hive keeps its text.
 func printDecision(out io.Writer, oldPin, newPin string, gateOnly bool) error {
+	text, err := decisionText(oldPin, newPin, gateOnly)
+	if err != nil {
+		return err
+	}
+	fmt.Fprint(out, text)
+	return nil
+}
+
+// decisionText is the block printDecision prints, also used as the PR body.
+func decisionText(oldPin, newPin string, gateOnly bool) (string, error) {
 	in := decisionInput{
 		Kind:           "technical",
 		Title:          "Upgrade hive pin to " + newPin,
@@ -718,11 +750,7 @@ func printDecision(out io.Writer, oldPin, newPin string, gateOnly bool) error {
 	}
 	b, err := json.MarshalIndent(in, "", "  ")
 	if err != nil {
-		return err
+		return "", err
 	}
-	fmt.Fprintln(out, "--- waggle decide input (save as upgrade-decision.json) ---")
-	fmt.Fprintln(out, string(b))
-	fmt.Fprintln(out, "--- end ---")
-	fmt.Fprintln(out, runLine)
-	return nil
+	return "--- waggle decide input (save as upgrade-decision.json) ---\n" + string(b) + "\n--- end ---\n" + runLine + "\n", nil
 }
