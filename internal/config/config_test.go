@@ -93,6 +93,7 @@ func TestDefaults(t *testing.T) {
 		Version: 1,
 		Forge:   ForgeConfig{Provider: "github", CombMode: "direct", Remote: "", MergeStrategy: "up_to_date"},
 		Leases:  LeasesConfig{DefaultTTLMinutes: 120, MaxDirectoriesPerClaim: 5},
+		Gate:    GateConfig{Mode: "guard"},
 		Relay:   RelayConfig{MaxActiveClaimsPerLogin: 2, MaxTTLMinutes: 1440, ReleaseOnClose: true},
 		Quorum:  QuorumConfig{Credits: 100, RoundDays: 14},
 	}
