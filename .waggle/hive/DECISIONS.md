@@ -7472,7 +7472,7 @@
 
 **Rationale:** Choice: normalize with a standard-library decomposition table, Hangul arithmetic and ToLower in cmd/waggle/gate_fold.go, with no go.mod or go.sum change and no vendored tree (1, option b); the table covers U+00C0 to U+017F plus Hangul, with Latin Extended Additional as planned cut t-074b (2); whole paths only, and directory against file stays a known gap for a later ticket covering case and normalization together (3); one fixed finding sentence with no code points (4); Tier 3 prefix and gate.protected_paths matching are unchanged in this ticket (5). No follow-up ticket is opened by this ruling. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
 
-## D-386: T-061: docs-impact ships optional, required from 2026-12-06
+## D-388: T-061: docs-impact ships optional, required from 2026-12-06
 
 - **Date:** 2026-11-22
 - **Kind:** policy
