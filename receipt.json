@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "gate_run",
+  "source": "release",
   "ticket_id": "T-101",
   "keeper_id": "paulternate19",
   "co_keepers": [],
@@ -20,8 +20,8 @@
   "approvers": [
     "paulternate"
   ],
-  "released_by": "paulternate",
+  "released_by": "paulternate19",
   "status": "merged",
   "incomplete": false,
-  "merge_proof": "binding"
+  "merge_proof": "forge"
 }
