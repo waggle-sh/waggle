@@ -25,6 +25,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/waggle-sh/waggle/internal/comb"
 )
 
 var (
@@ -209,13 +211,14 @@ func digits(s string) (int, bool) {
 	return n, n >= 1
 }
 
-// parseTicket accepts ^(T-)?[0-9]{1,6}$ with value >= 1 (D-003).
-// TODO(T-006): unify with comb.ParseTicketID after T-002 merges
+// parseTicket accepts ^(T-)?[0-9]{1,6}$ with value >= 1 (D-003), using the
+// same parser as the claim refs so both agree on what a ticket ID is.
 func parseTicket(s string) (int, error) {
-	n, ok := digits(strings.TrimPrefix(s, "T-"))
-	if !ok {
+	canonical, err := comb.ParseTicketID(s)
+	if err != nil {
 		return 0, fmt.Errorf("%q is not a ticket ID (T-<n> or <n>, 1 to 6 digits, value >= 1)", s)
 	}
+	n, _ := digits(strings.TrimPrefix(canonical, "T-"))
 	return n, nil
 }
 
