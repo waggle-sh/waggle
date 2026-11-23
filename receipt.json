@@ -1,21 +1,24 @@
 {
   "version": 1,
   "source": "release",
-  "ticket_id": "T-006",
+  "ticket_id": "T-061",
   "keeper_id": "paulternate",
   "co_keepers": [],
   "role": "builder",
   "gate": "full",
-  "claimed_at": "2026-11-23T16:06:16Z",
+  "claimed_at": "2026-11-23T16:15:07Z",
   "branches": [
-    "t-006-ticket-parse-unify"
+    "t-061-upgrade-pr-docs",
+    "t-061-site-workflow",
+    "t-061-docs-check",
+    "t-061-multi-keeper"
   ],
-  "base_sha": "21e0c8b9a4f9ebdc40cecf129417aef851fd7f29",
-  "merged_sha": "1b85df646eb5175309e5928ed06a50466054b44a",
-  "merged_at": "2026-11-23T16:13:42Z",
-  "pr_number": 300,
+  "base_sha": "30c58b6253592af593238403e6174bb7b1d3fa36",
+  "merged_sha": "e9bff44929e04297c2b17571209ba42aba59664e",
+  "merged_at": "2026-11-23T17:26:46Z",
+  "pr_number": 304,
   "pr_author": "paulternate19",
-  "head_branch": "t-006-ticket-parse-unify",
+  "head_branch": "t-061-upgrade-pr-docs",
   "approvers": [
     "paulternate"
   ],
