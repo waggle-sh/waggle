@@ -7508,3 +7508,23 @@
 **Keeper choice:** Option 1. PR #288 (head 99ee851, merged as 465a336) was merged with an admin bypass by the Head Keeper, Paul Cleary, on 2026-11-22 at about 10:59 AM Pacific Time. Reviewer: paulternate19 (approve at 99ee851). Reason: it adds .waggle/control/allowed_signers, which the gate's signed approval (T-071) reads from the PR base, so it cannot pass on a signature before it is on main.
 
 **Rationale:** This is the last bypass the signed approval path needs: protected-path PRs after it merge on a Head Keeper signature at the head commit with no bypass, starting with the pin move #283. The approval to set this up was the Head Keeper's written answer relayed on 2026-11-22 at 10:19 AM Pacific Time (Orca item 11, event e542): "Ready to do the Head Keeper commit and gate pin move that T-069 needs?" answered "Yes, set it up for me". Recorded by the queen.
+
+## D-388: T-061: docs-impact ships optional, required from 2026-12-06
+
+- **Date:** 2026-11-22
+- **Kind:** policy
+- **Tickets:** T-061
+- **Supersedes:** none
+
+**Question:** Should the docs-impact check (PR #285: fails a PR that changes cmd/, install.sh, the gate or relay Action, the scaffold templates or the config keys without touching README.md, site/ or docs/, unless the PR description carries a Docs-Impact: line with a reason) become a required check after a two-week optional trial?
+
+**Options considered:**
+1. Ship it optional now and make it required after two weeks.
+2. Ship it optional and decide later.
+3. Make it required at merge.
+
+**Hive recommendation:** Option 1, from the PR #285 body: 25 of 32 merges that changed flag, usage or subcommand lines in cmd/ changed no docs, despite the PR template checkbox, and two weeks of optional runs show the opt-out rate before it can block merges.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 11:00 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e576), in the words "Make the Waggle docs-impact check required after a two-week optional trial?" answered "Yes, required after two weeks". PR #285 merges as an optional check. On 2026-12-06 the Head Keeper adds docs-impact to the required checks of ruleset main; the orchestrator holds the reminder.
+
+**Rationale:** Choice: a hard check, since the template checkbox did not keep docs current; optional first, so phased tickets and cmd/ refactors can show how often they need the Docs-Impact: line before it blocks a merge. Making it required is a ruleset change by the Head Keeper, not a repo change.
