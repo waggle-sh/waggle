@@ -117,7 +117,7 @@ These serve the full Waggle hive workflow: roles (a **forager** triages and maps
 | `waggle decide` | `waggle decide --file <path \| -> [--repo <dir>] [--dry-run]` | Append one decision entry to `.waggle/hive/DECISIONS.md` from a JSON file. `--dry-run` validates and prints the entry and writes nothing. |
 | `waggle dispatch` | `waggle dispatch <ticket> --role builder\|forager --dir <path>... --gate light\|full --no-cell` | Claim a ticket, run a worker in a worktree and check its changes against the claim. Run `waggle dispatch <ticket> --help` for every flag. |
 | `waggle pace` | `waggle pace [--repo <dir>] [--tool claude-code\|copilot\|gas-town]` | Show the agent pace set for this repo and how to apply it in each agent tool. |
-| `waggle upgrade` | `waggle upgrade [--apply] [--diff] [--allow-downgrade] [--runtime=claude-code\|none]` | Print the plan to re-render managed files from this build and move `waggle.pin`. `--apply` executes it. |
+| `waggle upgrade` | `waggle upgrade [--apply] [--diff] [--allow-downgrade] [--runtime=claude-code\|none] [--pr]` | Print the plan to re-render managed files from this build and move `waggle.pin`. `--apply` executes it. `--pr` (needs `--apply`) then commits the changes on a new `waggle/upgrade-<pin>` branch, pushes it and opens a bump PR with `gh`, using `GH_TOKEN` or your `gh auth login`. It never merges and opens nothing if the apply changed nothing. Example: `waggle upgrade --apply --pr`. |
 | `waggle uninstall` | `waggle uninstall [--apply]` | Print the plan to remove everything `init` installed. `--apply` executes it and needs a clean tree. |
 | `waggle version` | `waggle version` | Print the version. |
 
