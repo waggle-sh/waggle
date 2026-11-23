@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "ticket_id": "T-101",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "light",
+  "directories": [
+    "cmd/waggle",
+    "internal/scaffold"
+  ],
+  "claimed_at": "2026-11-23T16:08:24Z",
+  "expires_at": "2026-11-25T16:08:24Z",
+  "branches": [
+    "t-101",
+    "t-101-upgrade-pr"
+  ]
+}
