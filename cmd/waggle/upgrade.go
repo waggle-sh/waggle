@@ -27,10 +27,10 @@ func runUpgrade(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("upgrade", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() {
-		fmt.Fprintln(stderr, "Usage: waggle upgrade [--apply] [--diff] [--allow-downgrade] [--runtime=claude-code|none] [--pr] [--to <tag-or-sha>]")
+		fmt.Fprintln(stderr, "Usage: waggle upgrade [--apply] [--diff] [--allow-downgrade] [--runtime=claude-code|none] [--pr [--author \"Name <email>\"]] [--to <tag-or-sha>]")
 		fmt.Fprintln(stderr, "Print the plan to re-render managed files from this build and move waggle.pin; --apply executes it.")
 		fmt.Fprintln(stderr, "--to pins to a published release tag or a full 40-hex commit even when this build is newer; the templates still come from this build, so they must stay compatible with that pin.")
-		fmt.Fprintln(stderr, "--pr (after --apply) commits the changes on a new branch, pushes it and opens a bump PR with gh (GH_TOKEN or gh auth); it never merges.")
+		fmt.Fprintln(stderr, "--pr (after --apply) commits the changes on a new branch, pushes it and opens a bump PR with gh (GH_TOKEN or gh auth); it never merges. The commit author, committer and Signed-off-by come from git config user.name and user.email, or --author; with neither it refuses. --pr also refuses when the work tree has uncommitted or untracked files, and stages only the files apply wrote.")
 		fs.PrintDefaults()
 	}
 	apply := fs.Bool("apply", false, "Execute the plan (default: dry run, print it and change nothing)")
@@ -39,6 +39,7 @@ func runUpgrade(args []string, stdout, stderr io.Writer) int {
 	rt := fs.String("runtime", "claude-code", "Local agent runtime whose shims to regenerate ('claude-code' or 'none')")
 	to := fs.String("to", "", "Pin to this release tag (vMAJOR.MINOR.PATCH) or full 40-hex commit instead of this build's own stamp")
 	pr := fs.Bool("pr", false, "After --apply, commit on a new branch, push and open a PR on this repo (never merges)")
+	author := fs.String("author", "", "With --pr, commit as \"Name <email>\" instead of git config user.name and user.email")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -55,6 +56,10 @@ func runUpgrade(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
+	if *author != "" && !*pr {
+		fmt.Fprintln(stderr, "waggle upgrade: --author needs --pr")
+		return 2
+	}
 	if *pr && !*apply {
 		fmt.Fprintln(stderr, "waggle upgrade: --pr needs --apply")
 		return 2
@@ -67,7 +72,7 @@ func runUpgrade(args []string, stdout, stderr io.Writer) int {
 	}
 	err = scaffold.Upgrade(scaffold.UpgradeOptions{
 		Dir: cwd, Apply: *apply, Diff: *diff, AllowDowngrade: *allowDowngrade, Runtime: *rt, Out: stdout,
-		BuildInfo: upgradeBuildInfo, To: *to, PR: *pr, Exec: upgradeExec,
+		BuildInfo: upgradeBuildInfo, To: *to, PR: *pr, Author: *author, Exec: upgradeExec,
 	})
 	switch {
 	case err == nil:

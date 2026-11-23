@@ -32,6 +32,7 @@ type UpgradeOptions struct {
 	Runtime        string   // this Keeper's runtime: "claude-code" regenerates shims, "none" leaves them
 	To             string   // pin to this release tag or full 40-hex commit instead of this build's own stamp; empty means this build
 	PR             bool     // after a successful Apply, commit the changes on a new branch, push it and open a PR
+	Author         string   // "Name <email>" override for the PR commit identity; empty means git config
 	Exec           ExecFunc // runs git and gh for PR; nil means the real commands
 	Out            io.Writer
 	GitBinary      string   // git executable; empty means "git"
@@ -236,6 +237,23 @@ func (plan *upgradePlan) execute() error {
 	return nil
 }
 
+// stagePaths lists the tracked paths execute wrote or removed, for git add.
+// Shims are gitignored and never staged.
+func (plan *upgradePlan) stagePaths() []string {
+	var rels []string
+	if plan.config != "" {
+		rels = append(rels, layout.Config)
+	}
+	for _, e := range plan.renders {
+		rels = append(rels, e.rel)
+	}
+	rels = append(rels, plan.removes...)
+	for _, e := range plan.blocks {
+		rels = append(rels, e.rel)
+	}
+	return rels
+}
+
 // checkSymlinks refuses when any path upgrade may write or delete, or a
 // directory on the way to it, is a symlink: a committed link would carry the
 // write outside the repository. A stale entry under a managed directory is
@@ -392,6 +410,12 @@ func Upgrade(opts UpgradeOptions) error {
 		fmt.Fprintln(out, upgradeLastLine)
 		return nil
 	}
+	var id prIdentity
+	if opts.PR {
+		if id, err = resolvePRIdentity(opts, root); err != nil {
+			return err
+		}
+	}
 	if err := plan.execute(); err != nil {
 		return err
 	}
@@ -406,7 +430,7 @@ func Upgrade(opts UpgradeOptions) error {
 		if err != nil {
 			return err
 		}
-		return openUpgradePR(opts, root, out, newPin, text)
+		return openUpgradePR(opts, root, out, newPin, text, id, plan.stagePaths())
 	}
 	return nil
 }

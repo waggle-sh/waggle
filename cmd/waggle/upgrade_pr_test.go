@@ -7,6 +7,12 @@ import (
 	"testing"
 )
 
+func TestRunUpgradeAuthorNeedsPR(t *testing.T) {
+	if code, _, errb := runUp("--author", "A <a@b.c>"); code != 2 || !strings.Contains(errb, "--author needs --pr") {
+		t.Errorf("code %d, stderr %q", code, errb)
+	}
+}
+
 func TestRunUpgradePRNeedsApply(t *testing.T) {
 	if code, _, errb := runUp("--pr"); code != 2 || !strings.Contains(errb, "--pr needs --apply") {
 		t.Errorf("code %d, stderr %q", code, errb)
