@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "ticket_id": "T-075",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle",
+    "docs/multi-keeper.md"
+  ],
+  "claimed_at": "2026-11-23T17:30:40Z",
+  "expires_at": "2026-11-25T17:30:40Z",
+  "branches": [
+    "t-075",
+    "t-075b"
+  ]
+}
