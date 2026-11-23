@@ -50,6 +50,7 @@ type rule struct {
 var rules = []rule{
 	{[]string{"**/testdata/**"}, exempt, ""},
 	{[]string{"**/*.json", "internal/scaffold/templates/**/*.json.tmpl"}, exempt, ""},
+	{[]string{".waggle/control/allowed_signers", ".waggle/control/keepers"}, exempt, ""},
 	{[]string{"LICENSE", "NOTICE", "LICENSES/**", "go.mod", "go.sum", ".gitignore", "CLAUDE.md"}, exempt, ""},
 	{[]string{
 		"site/public/**",
