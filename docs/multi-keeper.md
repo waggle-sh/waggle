@@ -21,7 +21,7 @@ Each Keeper claims a task before work starts. The claim names an owner, the dire
 1. Give them push access to the repository. Today that is what lets them write `refs/waggle/claims/*`.
 2. They clone the repo and set `keeper_id` in `.waggle/control/local.yaml` to their GitHub login. The seeded file says `keeper_id: local-keeper`, which is refused once the repo has a remote.
 3. They run `waggle doctor`. Its `claim-refs` finding says whether this clone can push claim refs.
-4. If they will review protected paths, the Head Keeper adds their login to `gate.approvers`. That file is under `.waggle/control/`, a Tier 3 path, so the change merges only with an admin bypass.
+4. If they will review protected paths, the Head Keeper adds their login to `gate.approvers`. That file is under `.waggle/control/`, a Tier 3 path, so the change merges only with an admin bypass or the Head Keeper's SSH signature on the PR head commit ([gate spec](gate.md) section 6, Signed Head Keeper approval). The signature route is on main, not in a release yet.
 5. Turn on a required review in the branch ruleset if it is not on already (section 5).
 
 Each Keeper runs their own agents with their own credentials. Keep agent credentials unable to push claim refs, so an agent cannot write or widen its own lease (gate spec L3).
@@ -92,9 +92,16 @@ Ana and Ben share `example/shop`. Both logins are in `gate.approvers`; Ana is fi
 5. Ben's PR is clean. Ana reviews and approves it on GitHub; the ruleset's one required review is met, the gate is green, and it merges. Ben runs `waggle release T-102`.
 6. Ana's T-101 runs long and its claim expires overnight. Nobody else wanted it, so in the morning she runs `waggle claim T-101 --dirs internal/checkout --gate full --branch t-101` again. Because the old claim had expired, this is a takeover of her own claim, not a renewal, so she names the branch again. Had Ben taken it over first, her PR would fail the branch check until the claim named `t-101` again.
 
-## 7. What is not built yet
+## 7. Nectar and Quorum across Keepers
+
+Both are on main, not in a release yet (the latest release is v0.1.1).
+
+- **Nectar** credits each merged task to the Keeper in its release record: `keeper_id`, plus up to 4 `--co` keepers who share the credit. `waggle release` writes the record, and so do `waggle nectar backfill` and the gate's optional post-merge job, so a release no longer loses who held the task. `waggle nectar` scores every Keeper from `main` and those records, and anyone with a clone gets the same number. A self merge in a repo with several Keepers earns less review credit. See [Nectar](nectar.md).
+- **Quorum** orders the backlog by quadratic votes weighted by `sqrt(Nectar)`. Each voter signs ballots with an SSH key listed under their `keeper_id` in `.waggle/control/keepers`, a protected path. The rule is one person, one `keeper_id`. The Head Keeper can veto an item or a whole round, citing a decision. See [Quorum](quorum.md).
+
+Keeping `keeper_id` equal to the GitHub login (section 2) is what lets both line up a Keeper's claims, records, approvals and ballots.
+
+## 8. What is not built yet
 
 - **Claims for contributors without push access.** Today a maintainer writes the claim for a fork PR, with an `<owner>/<repo>:<branch>` branch entry (gate spec L3). `forge.comb_mode: relay` is accepted by config but every claim operation then refuses with "relay comb mode not implemented" (`internal/comb/git.go`). The design spike is [docs/rfc-notes/relay.md](rfc-notes/relay.md). Head Keeper decision, Paul Cleary, 2026-11-19: maintainer claims on a contributor's behalf now; v0.2 builds the `/waggle claim` comment relay with maintainer approval on by default.
-- **Nectar (T-050).** Reputation from merged commits that survive 30 days on main without a revert, attributed through claim owners (`keeper_id`). Planned for v0.2. Note that release deletes the claim ref today, so Nectar needs a durable record of who claimed what.
-- **Quorum (T-053).** Quadratic votes on roadmap and issue priority, weight `sqrt(Nectar)`, with a Head Keeper veto. Planned for v0.2.
 - **Proof of who wrote a claim.** The gate trusts any claim ref it can read (gate spec L3). A signature check on claims is planned and not designed.
