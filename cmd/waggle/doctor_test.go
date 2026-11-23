@@ -172,7 +172,7 @@ Not enforced on this repo (1):
 Waggle runs here, but it cannot stop the merges listed above.
 
 Claims (informational, not a merge rule):
-  ok        claims          No malformed claim.
+  ok        claims          No malformed claim or case collision.
 force-release: nobody; no first login in gate.approvers at the base commit
 `
 
@@ -203,7 +203,7 @@ Not enforced on this repo (1):
 Waggle runs here, but it cannot stop the merges listed above.
 
 Claims (informational, not a merge rule):
-  ok        claims          No malformed claim.
+  ok        claims          No malformed claim or case collision.
 force-release: nobody; no first login in gate.approvers at the base commit
 `
 
