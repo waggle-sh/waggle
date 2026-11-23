@@ -63,15 +63,20 @@ func (r *gateReport) warn(check, msg string) {
 	r.findings = append(r.findings, gateFinding{check: check, msg: msg, warning: true})
 }
 
-// print writes the findings of one check and returns its exit code.
-func (r *gateReport) print(check string, stdout, stderr io.Writer, gha bool) int {
+// print writes the findings of one check and returns its exit code. With open
+// set (gate.mode open), a finding prints as a would-be failure and the code
+// stays 0.
+func (r *gateReport) print(check string, stdout, stderr io.Writer, gha, open bool) int {
 	code := gatePass
+	failed := false
 	for _, f := range r.findings {
 		if f.check != check {
 			continue
 		}
 		msg := annotData.Replace(f.msg)
 		switch {
+		case open && !f.warning:
+			printWouldFail(stderr, gha, check, f.path, msg)
 		case f.warning && gha:
 			fmt.Fprintf(stderr, "::warning::%s: %s\n", check, msg)
 		case f.warning:
@@ -86,13 +91,31 @@ func (r *gateReport) print(check string, stdout, stderr io.Writer, gha bool) int
 			fmt.Fprintf(stderr, "%s: FAIL: %s\n", check, msg)
 		}
 		if !f.warning {
-			code = gateFail
+			failed = true
+			if !open {
+				code = gateFail
+			}
 		}
 	}
-	if code == gatePass {
+	if !failed {
 		fmt.Fprintf(stdout, "%s: ok\n", check)
 	}
 	return code
+}
+
+// printWouldFail reports a finding that gate.mode open does not enforce. msg
+// is already encoded.
+func printWouldFail(stderr io.Writer, gha bool, check, path, msg string) {
+	switch {
+	case gha && path != "":
+		fmt.Fprintf(stderr, "::warning file=%s::%s: would fail (mode open): %s\n", annotProp.Replace(path), check, msg)
+	case gha:
+		fmt.Fprintf(stderr, "::warning::%s: would fail (mode open): %s\n", check, msg)
+	case path != "":
+		fmt.Fprintf(stderr, "%s: would fail (mode open): %s: %s\n", check, annotData.Replace(path), msg)
+	default:
+		fmt.Fprintf(stderr, "%s: would fail (mode open): %s\n", check, msg)
+	}
 }
 
 // runGateRange implements `waggle gate verify|leases|tiers`. verify runs
@@ -159,6 +182,16 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	pre := slices.Clone(rep.findings)
 	out, err := scanRange(g, *base, *head, in, rep)
 	code := gatePass
+	// Only verify honors gate.mode, and only the exact value "open" loosens it.
+	// A pass too large to check stays a failure (Q-T076-1).
+	open := check == "verify" && out.mode == config.GateModeOpen && !errors.Is(err, errTooLarge)
+	if open {
+		if gha {
+			fmt.Fprintln(stderr, "::notice::gate: mode open: findings are reported, not enforced")
+		} else {
+			fmt.Fprintln(stderr, "gate: mode open: findings are reported, not enforced")
+		}
+	}
 	switch {
 	case errors.Is(err, errTooLarge) && check == checkTiers:
 		rep.fail(checkTiers, "", err.Error())
@@ -174,12 +207,12 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	if code == gatePass {
 		for _, c := range []string{checkLeases, checkTiers} {
 			if check == c || check == "verify" {
-				code = max(code, rep.print(c, stdout, stderr, gha))
+				code = max(code, rep.print(c, stdout, stderr, gha, open))
 			}
 		}
 	}
 	if check == "verify" {
-		code = max(code, runGateDecisions([]string{"--base", *base, "--head", *head, "--repo", *repo}, stdout, stderr, getenv))
+		code = max(code, runGateDecisionsMode([]string{"--base", *base, "--head", *head, "--repo", *repo}, stdout, stderr, getenv, open))
 	}
 	return code
 }
@@ -209,6 +242,7 @@ type scanInput struct {
 type scanOutcome struct {
 	baseOID, headOID string
 	approvers        []string      // gate.approvers of the base config
+	mode             string        // gate.mode of the base config
 	hit              bool          // a tier3 finding on an approvable path
 	keeperHit        bool          // a tier3 or outside_lease finding on a hive path
 	bound            []string      // distinct tickets the commits bind, sorted
@@ -237,7 +271,7 @@ func scanRange(g gitRunner, base, head string, in scanInput, rep *gateReport) (s
 	if err != nil {
 		return scanOutcome{}, fmt.Errorf("%w: %v", errGit, err)
 	}
-	policy, approvers, err := baseTierPolicy(g, baseOID)
+	policy, approvers, mode, err := baseTierPolicy(g, baseOID)
 	if err != nil {
 		return scanOutcome{}, err
 	}
@@ -246,7 +280,7 @@ func scanRange(g gitRunner, base, head string, in scanInput, rep *gateReport) (s
 		approvable: approvablePath(policy), filter: in.filter,
 		keeper: keeperPath, keeperFilter: in.keeperFilter,
 		signed: func() (keeperSig, error) { return headKeeperSigned(g, baseOID, headOID, approvers) }}
-	res := scanOutcome{baseOID: baseOID, headOID: headOID, approvers: approvers}
+	res := scanOutcome{baseOID: baseOID, headOID: headOID, approvers: approvers, mode: mode}
 	if err := s.scan(mb, headOID); err != nil {
 		return res, err
 	}
@@ -273,42 +307,45 @@ func scanRange(g gitRunner, base, head string, in scanInput, rep *gateReport) (s
 	return res, nil
 }
 
-// baseTierPolicy reads gate.protected_paths and gate.approvers from the config
+// baseTierPolicy reads gate.protected_paths, gate.approvers and gate.mode from the config
 // at the PR base, never from the head tree or the worktree. A missing file
 // means no entries;
 // a symlink, tree, submodule, oversized or invalid file is an error.
-func baseTierPolicy(g gitRunner, baseOID string) (comb.TierPolicy, []string, error) {
+func baseTierPolicy(g gitRunner, baseOID string) (comb.TierPolicy, []string, string, error) {
 	out, err := g.run("ls-tree", "-z", "--full-tree", baseOID, "--", layout.Config)
-	if err != nil || len(out) == 0 {
-		return comb.TierPolicy{}, nil, err
+	if err != nil {
+		return comb.TierPolicy{}, nil, config.GateModeGuard, err
+	}
+	if len(out) == 0 {
+		return comb.TierPolicy{}, nil, config.GateModeGuard, nil
 	}
 	recs := strings.Split(strings.TrimSuffix(string(out), "\x00"), "\x00")
 	meta, _, _ := strings.Cut(recs[0], "\t")
 	f := strings.Fields(meta)
 	if len(f) != 3 || !oidPattern.MatchString(f[2]) {
-		return comb.TierPolicy{}, nil, fmt.Errorf("%w ls-tree: unexpected output %q", errGit, recs[0])
+		return comb.TierPolicy{}, nil, "", fmt.Errorf("%w ls-tree: unexpected output %q", errGit, recs[0])
 	}
 	if len(recs) != 1 || f[1] != "blob" || (f[0] != "100644" && f[0] != "100755") {
-		return comb.TierPolicy{}, nil, fmt.Errorf("base: %s is mode %s type %s; it must be a regular file", layout.Config, f[0], f[1])
+		return comb.TierPolicy{}, nil, "", fmt.Errorf("base: %s is mode %s type %s; it must be a regular file", layout.Config, f[0], f[1])
 	}
 	out, err = g.run("cat-file", "-s", f[2])
 	if err != nil {
-		return comb.TierPolicy{}, nil, err
+		return comb.TierPolicy{}, nil, "", err
 	}
 	size, err := strconv.Atoi(strings.TrimSpace(string(out)))
 	if err != nil {
-		return comb.TierPolicy{}, nil, fmt.Errorf("%w cat-file -s: unexpected output %q", errGit, out)
+		return comb.TierPolicy{}, nil, "", fmt.Errorf("%w cat-file -s: unexpected output %q", errGit, out)
 	}
 	if size > config.MaxFileSize {
-		return comb.TierPolicy{}, nil, fmt.Errorf("base: %s is %d bytes, over the %d byte cap", layout.Config, size, config.MaxFileSize)
+		return comb.TierPolicy{}, nil, "", fmt.Errorf("base: %s is %d bytes, over the %d byte cap", layout.Config, size, config.MaxFileSize)
 	}
 	data, err := g.run("cat-file", "blob", f[2])
 	if err != nil {
-		return comb.TierPolicy{}, nil, err
+		return comb.TierPolicy{}, nil, "", err
 	}
 	cfg, err := config.Parse(data)
 	if err != nil {
-		return comb.TierPolicy{}, nil, fmt.Errorf("base: %w", err)
+		return comb.TierPolicy{}, nil, "", fmt.Errorf("base: %w", err)
 	}
-	return comb.TierPolicy{ExtraTier3: cfg.Gate.ProtectedPaths}, cfg.Gate.Approvers, nil
+	return comb.TierPolicy{ExtraTier3: cfg.Gate.ProtectedPaths}, cfg.Gate.Approvers, cfg.Gate.Mode, nil
 }
