@@ -1,21 +1,22 @@
 {
   "version": 1,
   "source": "release",
-  "ticket_id": "T-085",
+  "ticket_id": "T-076",
   "keeper_id": "paulternate",
   "co_keepers": [],
   "role": "builder",
-  "gate": "light",
-  "claimed_at": "2026-11-22T22:00:38Z",
+  "gate": "full",
+  "claimed_at": "2026-11-23T05:32:08Z",
   "branches": [
-    "t-085"
+    "t-076",
+    "t-076b"
   ],
-  "base_sha": "465a336950bc59a4b7163cb858a055e3316b69a2",
-  "merged_sha": "b9c2da12f6ba819f985ea98b46fac343084a3dc0",
-  "merged_at": "2026-11-23T00:19:32Z",
-  "pr_number": 291,
+  "base_sha": "ffb4fd8e733f48797f48d1ba3fab8218ab37a1c8",
+  "merged_sha": "e12b5451e2f2ec8070ad3d096ba12898a85a1d5e",
+  "merged_at": "2026-11-23T05:53:56Z",
+  "pr_number": 287,
   "pr_author": "paulternate19",
-  "head_branch": "t-085",
+  "head_branch": "t-076",
   "approvers": [
     "paulternate"
   ],
