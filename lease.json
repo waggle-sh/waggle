@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-102",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/consumers"
+  ],
+  "claimed_at": "2026-11-23T16:11:24Z",
+  "expires_at": "2026-11-25T16:11:24Z",
+  "branches": [
+    "t-102"
+  ]
+}
