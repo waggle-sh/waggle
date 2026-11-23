@@ -38,6 +38,12 @@ const (
 	DefaultQuorumRoundDays        = 14
 )
 
+// Values of gate.mode (T-076). Guard is the default.
+const (
+	GateModeGuard = "guard"
+	GateModeOpen  = "open"
+)
+
 // Merge strategies accepted by forge.merge_strategy (D-064, D-071).
 const (
 	MergeStrategyUpToDate    = "up_to_date"
@@ -84,6 +90,9 @@ type GateConfig struct {
 	// Approvers are GitHub logins whose approval at the head passes a change to
 	// a protected path (T-035). Compared with ASCII case folding.
 	Approvers []string
+	// Mode is gate.mode: "guard" fails on a finding, "open" reports it and
+	// passes (T-076).
+	Mode string
 }
 
 // Bounds on gate.protected_paths and gate.approvers.
@@ -173,6 +182,7 @@ func Parse(data []byte) (*Config, error) {
 			CombMode:      comb.CombModeDirect,
 			MergeStrategy: DefaultMergeStrategy,
 		},
+		Gate: GateConfig{Mode: GateModeGuard},
 		Leases: LeasesConfig{
 			DefaultTTLMinutes:      DefaultTTLMinutes,
 			MaxDirectoriesPerClaim: DefaultMaxDirectoriesPerClaim,
@@ -257,6 +267,8 @@ func Parse(data []byte) (*Config, error) {
 						c.Gate.ProtectedPaths[i] = strings.Trim(e, " ")
 					}
 				}
+			case "mode":
+				c.Gate.Mode, err = stringValue(p, n)
 			case "approvers":
 				var s string
 				if s, err = stringValue(p, n); err == nil && strings.TrimSpace(s) != "" {
@@ -416,6 +428,11 @@ func validate(c *Config, lines map[string]int) error {
 		if !approverPattern.MatchString(e) {
 			return invalid(lines["gate.approvers"], "gate.approvers", "entries must be GitHub logins of 1 to 39 letters, digits or hyphens, not starting with a hyphen, without @")
 		}
+	}
+	switch c.Gate.Mode {
+	case GateModeGuard, GateModeOpen:
+	default:
+		return invalid(lines["gate.mode"], "gate.mode", `must be "open" or "guard", got %q`, c.Gate.Mode)
 	}
 	if c.Quorum.Credits < 1 {
 		return invalid(lines["quorum.credits"], "quorum.credits", "must be a positive integer, got %d", c.Quorum.Credits)
