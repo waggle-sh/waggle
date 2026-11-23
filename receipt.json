@@ -1,26 +1,25 @@
 {
   "version": 1,
   "source": "release",
-  "ticket_id": "T-101",
-  "keeper_id": "paulternate19",
+  "ticket_id": "T-006",
+  "keeper_id": "paulternate",
   "co_keepers": [],
   "role": "builder",
-  "gate": "light",
-  "claimed_at": "2026-11-23T16:08:24Z",
+  "gate": "full",
+  "claimed_at": "2026-11-23T16:06:16Z",
   "branches": [
-    "t-101",
-    "t-101-upgrade-pr"
+    "t-006-ticket-parse-unify"
   ],
-  "base_sha": "1b85df646eb5175309e5928ed06a50466054b44a",
-  "merged_sha": "30c58b6253592af593238403e6174bb7b1d3fa36",
-  "merged_at": "2026-11-23T17:07:05Z",
-  "pr_number": 302,
+  "base_sha": "21e0c8b9a4f9ebdc40cecf129417aef851fd7f29",
+  "merged_sha": "1b85df646eb5175309e5928ed06a50466054b44a",
+  "merged_at": "2026-11-23T16:13:42Z",
+  "pr_number": 300,
   "pr_author": "paulternate19",
-  "head_branch": "t-101-upgrade-pr",
+  "head_branch": "t-006-ticket-parse-unify",
   "approvers": [
     "paulternate"
   ],
-  "released_by": "paulternate19",
+  "released_by": "paulternate",
   "status": "merged",
   "incomplete": false,
   "merge_proof": "forge"
