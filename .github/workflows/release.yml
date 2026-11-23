@@ -310,7 +310,7 @@ jobs:
             count=$((count + 1))
             echo "::group::$line"
             dir="$RUNNER_TEMP/consumers/$line"
-            if gh repo clone "$line" "$dir" && (cd "$dir" && waggle upgrade --apply --pr); then
+            if gh repo clone "$line" "$dir" && (cd "$dir" && git config user.name "Paul Cleary" && git config user.email "27632860+paulternate@users.noreply.github.com" && waggle upgrade --apply --pr); then
               echo "upgrade ok: $line"
             else
               echo "::error::upgrade failed for $line"

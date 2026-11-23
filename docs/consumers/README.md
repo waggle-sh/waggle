@@ -6,6 +6,8 @@ release is published, the `upgrade-consumers` job in
 repo and runs `waggle upgrade --apply --pr` (the `--pr` flag comes from T-101;
 the first release published after T-101 merges is the first live run).
 
+Before `waggle upgrade --apply --pr`, the job sets `user.name` and `user.email` in each consumer clone, because `--pr` takes its author and committer from git config and refuses when neither is set.
+
 Adding a repo here is a rollout decision for the Head Keeper. Do not list a
 repo that has not opted in.
 
