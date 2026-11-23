@@ -1,0 +1,3 @@
+# Consumer hives that get a bump PR when a waggle release is published (T-102).
+# One owner/repo per line. Comments start with #.
+waggle-sh/gate-demo

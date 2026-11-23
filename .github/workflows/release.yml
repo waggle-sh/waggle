@@ -7,22 +7,30 @@
 # DRAFT release with the archives and SHA256SUMS. The Head Keeper publishes
 # the draft by hand. Every output lives under $RUNNER_TEMP, never inside the
 # checkout: an untracked file there would stamp vcs.modified=true.
+#
+# When the Head Keeper publishes a release, the upgrade-consumers job (T-102)
+# walks docs/consumers/hives.txt and runs `waggle upgrade --apply --pr` in each
+# listed consumer hive, using the repository secret WAGGLE_UPGRADE_TOKEN (see
+# docs/consumers/README.md). It only opens bump PRs; it never merges.
 name: Release
 
 on:
   push:
     tags: ['v*.*.*']
+  release:
+    types: [published]
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   build:
     name: build
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -174,6 +182,7 @@ jobs:
 
   release:
     name: release
+    if: github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -221,3 +230,95 @@ jobs:
             --title "$TAG" \
             --notes "Draft built from $TAG by the release workflow. Check SHA256SUMS before publishing." \
             "${files[@]}"
+
+  upgrade-consumers:
+    name: upgrade-consumers
+    if: github.event_name == 'release' && !github.event.release.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+      REPO: ${{ github.repository }}
+      UPGRADE_TOKEN: ${{ secrets.WAGGLE_UPGRADE_TOKEN }}
+    steps:
+      - name: Check the token
+        id: token
+        run: |
+          set -euo pipefail
+          if [ -z "$UPGRADE_TOKEN" ]; then
+            echo "::warning::secret WAGGLE_UPGRADE_TOKEN is not set; skipping consumer upgrades for $TAG. See docs/consumers/README.md."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: steps.token.outputs.present == 'true'
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+
+      - name: Install the published CLI
+        if: steps.token.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s\n' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error::tag $TAG is not vMAJOR.MINOR.PATCH[-PRERELEASE]"
+            exit 1
+          fi
+          version="${TAG#v}"
+          dl="$RUNNER_TEMP/waggle-cli"
+          mkdir -p "$dl/bin"
+          name="waggle_${version}_linux_amd64"
+          gh release download "$TAG" --repo "$REPO" --dir "$dl" \
+            --pattern "$name.tar.gz" --pattern SHA256SUMS
+          (cd "$dl" && grep -F " $name.tar.gz" SHA256SUMS | sha256sum --strict -c -)
+          tar -C "$dl" -xzf "$dl/$name.tar.gz"
+          cp "$dl/$name/waggle" "$dl/bin/waggle"
+          echo "$dl/bin" >> "$GITHUB_PATH"
+          echo "WAGGLE_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Open bump PRs in the registered consumers
+        if: steps.token.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.WAGGLE_UPGRADE_TOKEN }}
+        run: |
+          set -euo pipefail
+          got="$(waggle version)"
+          if [ "$got" != "waggle v$WAGGLE_VERSION" ]; then
+            echo "::error::installed CLI prints '$got', want 'waggle v$WAGGLE_VERSION'"
+            exit 1
+          fi
+          git config --global user.name "waggle-upgrade[bot]"
+          git config --global user.email "waggle-upgrade@users.noreply.github.com"
+          gh auth setup-git
+          failed=0
+          count=0
+          while IFS= read -r line || [ -n "$line" ]; do
+            line="${line%%#*}"
+            line="$(printf '%s' "$line" | tr -d '[:space:]')"
+            [ -n "$line" ] || continue
+            if ! printf '%s\n' "$line" | grep -Eq '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'; then
+              echo "::error::registry entry is not owner/repo: $line"
+              failed=1
+              continue
+            fi
+            count=$((count + 1))
+            echo "::group::$line"
+            dir="$RUNNER_TEMP/consumers/$line"
+            if gh repo clone "$line" "$dir" && (cd "$dir" && waggle upgrade --apply --pr); then
+              echo "upgrade ok: $line"
+            else
+              echo "::error::upgrade failed for $line"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done < docs/consumers/hives.txt
+          if [ "$count" -eq 0 ]; then
+            echo "::warning::docs/consumers/hives.txt lists no consumers"
+          fi
+          exit "$failed"
