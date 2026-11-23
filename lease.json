@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "ticket_id": "T-081",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle",
+    "internal/comb"
+  ],
+  "claimed_at": "2026-11-23T18:00:48Z",
+  "expires_at": "2026-11-25T18:00:48Z",
+  "branches": [
+    "t-081",
+    "t-081b"
+  ]
+}
