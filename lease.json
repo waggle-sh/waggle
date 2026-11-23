@@ -6,11 +6,13 @@
   "gate": "full",
   "directories": [
     "AGENTS.md",
-    "INSTALL-AGENT.md"
+    "INSTALL-AGENT.md",
+    "internal/license"
   ],
-  "claimed_at": "2026-11-22T23:54:37Z",
-  "expires_at": "2026-11-24T23:54:37Z",
+  "claimed_at": "2026-11-23T05:54:58Z",
+  "expires_at": "2026-11-25T05:54:58Z",
   "branches": [
-    "t-086"
+    "t-086",
+    "t-086-19"
   ]
 }
