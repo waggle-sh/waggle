@@ -79,11 +79,22 @@ Waggle-Verdict trailers. A head commit SSH-signed with the key that
 %s at base lists for the first gate.approvers
 entry, checked with ssh-keygen -Y verify, passes every Tier 3 path, on or
 off Actions.
+
+verify reads gate.mode from the base config. guard, the default, fails on a
+finding. open prints each finding as a warning and exits 0. Exit codes 2 and 3
+do not change, a change too large to check still fails, and leases, tiers and
+decisions run alone stay strict.
 `, layout.Decisions, allowedSignersPath)
 	return gateUsage
 }
 
 func runGateDecisions(args []string, stdout, stderr io.Writer, getenv func(string) string) int {
+	return runGateDecisionsMode(args, stdout, stderr, getenv, false)
+}
+
+// runGateDecisionsMode is runGateDecisions; with open set (gate.mode open, from
+// verify only) a failure prints as a would-be finding and exits 0. Exit 3 stays.
+func runGateDecisionsMode(args []string, stdout, stderr io.Writer, getenv func(string) string, open bool) int {
 	fs := flag.NewFlagSet("gate decisions", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	base := fs.String("base", "", "PR base revision (required)")
@@ -114,6 +125,9 @@ func runGateDecisions(args []string, stdout, stderr io.Writer, getenv func(strin
 		case errors.Is(err, errGit):
 			fmt.Fprintf(stderr, "decisions: error: %s\n", reason)
 			return gateError
+		case open:
+			printWouldFail(stderr, getenv("GITHUB_ACTIONS") == "true", "decisions", layout.Decisions, annotData.Replace(reason))
+			return gatePass
 		case getenv("GITHUB_ACTIONS") == "true":
 			fmt.Fprintf(stderr, "::error file=%s::%s\n", layout.Decisions, reason)
 		default:
