@@ -31,14 +31,14 @@ T-050 · Nectar design brief (scoring rules, revert window, attribution from cla
 T-051 · Nectar scorer (git history + claim owners, 30-day survival, revert clawback) · M · merged (phases A to D2, #241 to #254) · v0.2 · product
 T-052 · Nectar status surfaces (CLI / derived view; no public dashboard required) · M · merged (phases A and B, #258, #260) · v0.2 · product
 T-053 · Quorum design brief (ballot store, sqrt weight, Head Keeper veto, Sybil notes) · S · merged (#235) · v0.2 · design
-T-054 · Quorum voting MVP (roadmap/issue priority ballots; four phases, nothing cut) · L · code merged through phase D (#279); pin move is PR #283, open · v0.2 · product
+T-054 · Quorum voting MVP (roadmap/issue priority ballots; four phases, nothing cut) · L · code merged through phase D (#279); pin move merged (#295) · v0.2 · product
 T-071 · Signed Head Keeper approval for protected paths (T-054 Quorum family; verify-leases-and-tiers accepts it so gate/, .github/workflows and control path PRs merge without an admin bypass) · M · merged (#273) · v0.1 (public gate; a gate change, sequenced after T-054 phase A) · product
 T-055 · Multi-Keeper story restore (RFC + README/CONTRIBUTING cut-list unwind; relay design spike) · S · merged (#236) · v0.2 · docs+design
 T-070 · Quorum RFC phase 2 (fork contributor export and import, relay transport with T-055) · TBD · proposed · v0.2 · product
 T-072 · waggle force-release (the Head Keeper clears a stuck or malformed claim, with an audit trail) · M · merged (phases A, B and the README line: #267, #271, #272) · v0.1 · product
 T-073 · Case-folded claim overlap checks (carries out D-038; opened by T-072 Q-T072-5) · S to M · merged (phases A and B: #266, #274) · v0.1 · product
 T-074 · Gate head tree collision check: Unicode normalization variants (T-073 Q-T073-8) · S to M · proposed (scout brief merged, #277; no build yet) · v0.1 · product
-T-075 · Doctor claims finding: collision count (T-073 Q-T073-5; after T-072 phase B and T-073 phase A) · S · proposed (scout brief merged, #278; no build yet) · v0.1 · product
+T-075 · Doctor claims finding: collision count (T-073 Q-T073-5; after T-072 phase B and T-073 phase A) · S · merged (#305; scout brief #278) · v0.1 · product
 T-081 · One claim sync per waggle status run (T-073 phase B guard note) · S · proposed · v0.1 · product
 T-082 · Status test for a failed collision scan (T-073 phase B guard note) · S · proposed · v0.1 · product
 T-083 · multi-keeper.md wording: the collision never grows (T-073 phase B guard note) · S · proposed · v0.1 · docs
