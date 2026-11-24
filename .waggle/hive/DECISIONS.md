@@ -7529,7 +7529,28 @@
 
 **Rationale:** Choice: a hard check, since the template checkbox did not keep docs current; optional first, so phased tickets and cmd/ refactors can show how often they need the Docs-Impact: line before it blocks a merge. Making it required is a ruleset change by the Head Keeper, not a repo change.
 
-## D-389: T-081: Q1 ruled Tier 2 if golden tests show no change
+## D-389: T-103: approve opt-in telemetry, the insights loop and the held hive with recommended defaults
+
+- **Date:** 2026-11-24
+- **Kind:** scope
+- **Tickets:** T-103, T-104, T-105, T-106, T-107, T-108, T-109, T-110, T-111, T-112, T-113, T-114, T-115, T-116, T-117, T-118
+- **Supersedes:** none
+
+**Question:** Approve the direction of the T-103 RFC note (docs/rfc-notes/telemetry-insights-held-hive.md): opt-in privacy-preserving telemetry, an analyst that turns the numbers into proposals the Head Keeper approves or rejects, and gate.mode hold for private repos on plans without required checks, with the recommendations for open questions 1 to 11?
+
+**Options considered:**
+1. Approve all three directions with the section 6 recommendations; sequence telemetry schema and show first, hold second, collector and analyst third (open question 11).
+2. Approve hold (part 3) now; a second draft for telemetry and the insights loop.
+3. Approve telemetry and the insights loop (parts 1 and 2) now; keep the pilots in open with scripted merges and defer hold.
+4. Offer hold everywhere, plans with required checks included. CUT? needs Head Keeper typed reason (narrows VISION core item 2, "Required check").
+
+**Hive recommendation:** Option 1, with every open question at its recommended answer, so nothing is cut: hold is offered only where the forge cannot provide a required check.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-23 at 10:35 PM Pacific Time (relayed in writing by the orchestrator), in the words "All the recs look good!". Open questions 1 to 11 follow the RFC recommendations: rotating install id every 90 days (1); pilots on, phase 0 local only for 4 to 6 weeks (2); public waggle-sh/insights with a Cloudflare Worker and D1 (3); analyst proposes only, at most 2 open and 1 new a week (4); rejection memory 6 months or 1.5x signal (5); hold only where guard is impossible (6); one mode value, gate.mode: hold (7); on_breach: issue by default, revert opt-in (8); a GitHub App as merge identity (9); a scout-editable stage: field (10); sequencing as option 1 (11). Option 4 is not adopted. Code tickets T-104 to T-118 are opened as stubs.
+
+**Rationale:** Option 1 cuts nothing in VISION core items: telemetry is off by default and adds no footprint for hives that do not opt in (core item 4), and hold covers only private repos where guard cannot be enforced, so core item 2 is not narrowed for any hive that could have a required check. Option 4 would narrow core item 2 and would need a typed reason. Creating the insights repo, any Cloudflare resource (T-110) or a GitHub App (T-114) still needs the Head Keeper's explicit yes at that ticket, since they involve infrastructure, money or secrets. The scout-editable stage: field (T-106) changes the hive format and gets its own Head Keeper card. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-390: T-081: Q1 ruled Tier 2 if golden tests show no change
 
 - **Date:** 2026-11-23
 - **Kind:** technical
