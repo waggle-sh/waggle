@@ -7566,6 +7566,6 @@
 
 **Hive recommendation:** Option 1, from the T-081 scout brief: Tier 2 only if the existing methods' behaviour is byte for byte unchanged.
 
-**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-23 at 9:59 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e683), in the words "Tier 2 if golden tests show no change".
+**Keeper choice:** Option 1, approved by the Head Keeper, on 2026-11-23 at 9:59 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e683), in the words "Tier 2 if golden tests show no change".
 
 **Rationale:** The T-081 build adds golden tests that capture ListActiveLeases and CaseCollisions output on main before the refactor and prove identical output after. If any golden differs, the PR is Tier 3 and waits for the Head Keeper signature.
