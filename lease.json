@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-103",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/rfc-notes"
+  ],
+  "claimed_at": "2026-11-24T06:43:07Z",
+  "expires_at": "2026-11-24T08:43:07Z",
+  "branches": [
+    "t-103-telemetry-insights-held-hive"
+  ]
+}
