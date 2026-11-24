@@ -925,16 +925,25 @@ func (b *GitBackend) ReleaseLease(ctx context.Context, ticketID string, keeperID
 // rules, so a rule change can report an existing claim as malformed. Returned
 // leases carry canonical ticket IDs and normalized directories only.
 func (b *GitBackend) ListActiveLeases(ctx context.Context) ([]Lease, error) {
+	claims, err := b.syncedScan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return leasesOf(claims, b.now())
+}
+
+// syncedScan syncs claim refs once in remote mode, then scans them.
+func (b *GitBackend) syncedScan(ctx context.Context) ([]claim, error) {
 	if b.remote != "" {
 		if err := b.sync(ctx); err != nil {
 			return nil, err
 		}
 	}
-	claims, err := b.scan(ctx)
-	if err != nil {
-		return nil, err
-	}
-	now := b.now()
+	return b.scan(ctx)
+}
+
+// leasesOf is the ListActiveLeases result for an already scanned claim set.
+func leasesOf(claims []claim, now time.Time) ([]Lease, error) {
 	var active []claim
 	var bad []MalformedClaim
 	for _, c := range claims {
@@ -956,6 +965,21 @@ func (b *GitBackend) ListActiveLeases(ctx context.Context) ([]Lease, error) {
 	return leases, nil
 }
 
+// ClaimsView reads active leases and case collisions from one sync and one
+// scan, so the two always describe the same snapshot. leasesErr is what
+// ListActiveLeases would return alongside the leases (nil or a
+// *MalformedClaimsError); err is a git or transport failure, with the other
+// results then empty. It writes nothing.
+func (b *GitBackend) ClaimsView(ctx context.Context) (leases []Lease, leasesErr error, collisions []CaseCollision, err error) {
+	claims, err := b.syncedScan(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	now := b.now()
+	leases, leasesErr = leasesOf(claims, now)
+	return leases, leasesErr, collisionsOf(claims, now), nil
+}
+
 // CaseCollision is a pair of active claims on different tickets with
 // directories that overlap when letter case is ignored but not byte for byte.
 // The A side is the lower ticket number. Directories are as stored, after
@@ -972,16 +996,15 @@ type CaseCollision struct {
 // AcquireLease refuses new ones. In remote mode it syncs first. Malformed claims are skipped, as the overlap check
 // skips them. It writes nothing.
 func (b *GitBackend) CaseCollisions(ctx context.Context) ([]CaseCollision, error) {
-	if b.remote != "" {
-		if err := b.sync(ctx); err != nil {
-			return nil, err
-		}
-	}
-	claims, err := b.scan(ctx)
+	claims, err := b.syncedScan(ctx)
 	if err != nil {
 		return nil, err
 	}
-	now := b.now()
+	return collisionsOf(claims, b.now()), nil
+}
+
+// collisionsOf is the CaseCollisions result for an already scanned claim set.
+func collisionsOf(claims []claim, now time.Time) []CaseCollision {
 	var active []claim
 	for _, c := range claims {
 		if c.reason == "" && isActive(c.lease, now) {
@@ -1002,7 +1025,7 @@ func (b *GitBackend) CaseCollisions(ctx context.Context) ([]CaseCollision, error
 			}
 		}
 	}
-	return out, nil
+	return out
 }
 
 // ClaimOID returns the commit OID of the ticket's claim ref, or ErrNotFound.
