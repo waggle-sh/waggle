@@ -7528,3 +7528,23 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 11:00 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e576), in the words "Make the Waggle docs-impact check required after a two-week optional trial?" answered "Yes, required after two weeks". PR #285 merges as an optional check. On 2026-12-06 the Head Keeper adds docs-impact to the required checks of ruleset main; the orchestrator holds the reminder.
 
 **Rationale:** Choice: a hard check, since the template checkbox did not keep docs current; optional first, so phased tickets and cmd/ refactors can show how often they need the Docs-Impact: line before it blocks a merge. Making it required is a ruleset change by the Head Keeper, not a repo change.
+
+## D-389: T-081: Q1 ruled Tier 2 if golden tests show no change
+
+- **Date:** 2026-11-23
+- **Kind:** technical
+- **Tickets:** T-081
+- **Supersedes:** none
+
+**Question:** Is refactoring internal/comb ListActiveLeases and CaseCollisions (internal/comb/git.go) onto a shared sync helper, so waggle status fetches claim refs once, Tier 3 because it "changes how comb reads claims", or Tier 2?
+
+**Options considered:**
+1. Tier 2 if golden tests show the output of both methods is unchanged.
+2. Tier 3 regardless.
+3. Tier 2 without extra tests.
+
+**Hive recommendation:** Option 1, from the T-081 scout brief: Tier 2 only if the existing methods' behaviour is byte for byte unchanged.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-23 at 9:59 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e683), in the words "Tier 2 if golden tests show no change".
+
+**Rationale:** The T-081 build adds golden tests that capture ListActiveLeases and CaseCollisions output on main before the refactor and prove identical output after. If any golden differs, the PR is Tier 3 and waits for the Head Keeper signature.
