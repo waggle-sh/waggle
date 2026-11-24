@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-119",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/recipes"
+  ],
+  "claimed_at": "2026-11-24T07:15:57Z",
+  "expires_at": "2026-11-26T07:15:57Z",
+  "branches": [
+    "t-119-product-ci-19"
+  ]
+}
