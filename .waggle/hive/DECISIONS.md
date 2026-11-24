@@ -7471,3 +7471,81 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Accept the recommended defaults on all 15 T-074/T-075/T-076 brief questions so the builds can start?" answered "Yes, accept all defaults". Q-T074-1 to Q-T074-5 as the scout recommended.
 
 **Rationale:** Choice: normalize with a standard-library decomposition table, Hangul arithmetic and ToLower in cmd/waggle/gate_fold.go, with no go.mod or go.sum change and no vendored tree (1, option b); the table covers U+00C0 to U+017F plus Hangul, with Latin Extended Additional as planned cut t-074b (2); whole paths only, and directory against file stays a known gap for a later ticket covering case and normalization together (3); one fixed finding sentence with no code points (4); Tier 3 prefix and gate.protected_paths matching are unchanged in this ticket (5). No follow-up ticket is opened by this ruling. Nothing in VISION core items is cut or narrowed. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-386: Upgrade hive pin to bfee532afafde4ba4f43db23844a4dc1e3ad0732
+
+- **Date:** 2026-11-22
+- **Kind:** technical
+- **Tickets:** T-016, T-054
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Stay on 3a9c054e69050ba2366c271afeb013223d0f8f96
+2. Move to bfee532afafde4ba4f43db23844a4dc1e3ad0732
+
+**Hive recommendation:** Move to bfee532afafde4ba4f43db23844a4dc1e3ad0732
+
+**Keeper choice:** Move the pin from 3a9c054e69050ba2366c271afeb013223d0f8f96 to bfee532afafde4ba4f43db23844a4dc1e3ad0732; managed files re-rendered by waggle upgrade from the target build. Approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 10:19 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e542), in the words "Ready to do the Head Keeper commit and gate pin move that T-069 needs?" answered "Yes, set it up for me". The re-rendered gate workflow adds the optional gate-receipt job (push to main, contents: write, writes refs/waggle/receipts/*) and the queen role gains the force-release card rule.
+
+**Rationale:** bfee532afafde4ba4f43db23844a4dc1e3ad0732 is main after T-054 phase D (#279) and the T-074 to T-076 rulings, so bin/waggle quorum exists in the hive (T-054 section 12 item 6, D-271) for the first real round (T-054 AC4), which T-069 phase A waits on. The hive's own gate already builds from base source (D-271), so this move does not change which checker runs on this repo's PRs. Nothing in VISION core items is cut or narrowed. Recorded by the queen.
+
+## D-387: Admin bypass merge of #288 (allowed_signers and the Quorum keeper registry)
+
+- **Date:** 2026-11-22
+- **Kind:** policy
+- **Tickets:** T-054, T-071
+- **Supersedes:** none
+
+**Question:** Which bypass merge does D-374 log for the protected-path PR that lands the Head Keeper's signing key?
+
+**Options considered:**
+1. Log #288 as an admin bypass merge under D-374.
+
+**Hive recommendation:** Option 1, as D-374 requires one line per bypass merge.
+
+**Keeper choice:** Option 1. PR #288 (head 99ee851, merged as 465a336) was merged with an admin bypass by the Head Keeper, Paul Cleary, on 2026-11-22 at about 10:59 AM Pacific Time. Reviewer: paulternate19 (approve at 99ee851). Reason: it adds .waggle/control/allowed_signers, which the gate's signed approval (T-071) reads from the PR base, so it cannot pass on a signature before it is on main.
+
+**Rationale:** This is the last bypass the signed approval path needs: protected-path PRs after it merge on a Head Keeper signature at the head commit with no bypass, starting with the pin move #283. The approval to set this up was the Head Keeper's written answer relayed on 2026-11-22 at 10:19 AM Pacific Time (Orca item 11, event e542): "Ready to do the Head Keeper commit and gate pin move that T-069 needs?" answered "Yes, set it up for me". Recorded by the queen.
+
+## D-388: T-061: docs-impact ships optional, required from 2026-12-06
+
+- **Date:** 2026-11-22
+- **Kind:** policy
+- **Tickets:** T-061
+- **Supersedes:** none
+
+**Question:** Should the docs-impact check (PR #285: fails a PR that changes cmd/, install.sh, the gate or relay Action, the scaffold templates or the config keys without touching README.md, site/ or docs/, unless the PR description carries a Docs-Impact: line with a reason) become a required check after a two-week optional trial?
+
+**Options considered:**
+1. Ship it optional now and make it required after two weeks.
+2. Ship it optional and decide later.
+3. Make it required at merge.
+
+**Hive recommendation:** Option 1, from the PR #285 body: 25 of 32 merges that changed flag, usage or subcommand lines in cmd/ changed no docs, despite the PR template checkbox, and two weeks of optional runs show the opt-out rate before it can block merges.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-22 at 11:00 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e576), in the words "Make the Waggle docs-impact check required after a two-week optional trial?" answered "Yes, required after two weeks". PR #285 merges as an optional check. On 2026-12-06 the Head Keeper adds docs-impact to the required checks of ruleset main; the orchestrator holds the reminder.
+
+**Rationale:** Choice: a hard check, since the template checkbox did not keep docs current; optional first, so phased tickets and cmd/ refactors can show how often they need the Docs-Impact: line before it blocks a merge. Making it required is a ruleset change by the Head Keeper, not a repo change.
+
+## D-389: T-103: approve opt-in telemetry, the insights loop and the held hive with recommended defaults
+
+- **Date:** 2026-11-24
+- **Kind:** scope
+- **Tickets:** T-103, T-104, T-105, T-106, T-107, T-108, T-109, T-110, T-111, T-112, T-113, T-114, T-115, T-116, T-117, T-118
+- **Supersedes:** none
+
+**Question:** Approve the direction of the T-103 RFC note (docs/rfc-notes/telemetry-insights-held-hive.md): opt-in privacy-preserving telemetry, an analyst that turns the numbers into proposals the Head Keeper approves or rejects, and gate.mode hold for private repos on plans without required checks, with the recommendations for open questions 1 to 11?
+
+**Options considered:**
+1. Approve all three directions with the section 6 recommendations; sequence telemetry schema and show first, hold second, collector and analyst third (open question 11).
+2. Approve hold (part 3) now; a second draft for telemetry and the insights loop.
+3. Approve telemetry and the insights loop (parts 1 and 2) now; keep the pilots in open with scripted merges and defer hold.
+4. Offer hold everywhere, plans with required checks included. CUT? needs Head Keeper typed reason (narrows VISION core item 2, "Required check").
+
+**Hive recommendation:** Option 1, with every open question at its recommended answer, so nothing is cut: hold is offered only where the forge cannot provide a required check.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-23 at 10:35 PM Pacific Time (relayed in writing by the orchestrator), in the words "All the recs look good!". Open questions 1 to 11 follow the RFC recommendations: rotating install id every 90 days (1); pilots on, phase 0 local only for 4 to 6 weeks (2); public waggle-sh/insights with a Cloudflare Worker and D1 (3); analyst proposes only, at most 2 open and 1 new a week (4); rejection memory 6 months or 1.5x signal (5); hold only where guard is impossible (6); one mode value, gate.mode: hold (7); on_breach: issue by default, revert opt-in (8); a GitHub App as merge identity (9); a scout-editable stage: field (10); sequencing as option 1 (11). Option 4 is not adopted. Code tickets T-104 to T-118 are opened as stubs.
+
+**Rationale:** Option 1 cuts nothing in VISION core items: telemetry is off by default and adds no footprint for hives that do not opt in (core item 4), and hold covers only private repos where guard cannot be enforced, so core item 2 is not narrowed for any hive that could have a required check. Option 4 would narrow core item 2 and would need a typed reason. Creating the insights repo, any Cloudflare resource (T-110) or a GitHub App (T-114) still needs the Head Keeper's explicit yes at that ticket, since they involve infrastructure, money or secrets. The scout-editable stage: field (T-106) changes the hive format and gets its own Head Keeper card. Decided by the Head Keeper in writing; recorded by the queen.
