@@ -1,6 +1,7 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 # Consumer hives
 
-`hives.txt` lists the consumer hives the post-release job upgrades. When a
+`hives.yml` lists the consumer hives the post-release job upgrades. When a
 release is published, the `upgrade-consumers` job in
 `.github/workflows/release.yml` installs the published CLI, clones each listed
 repo and runs `waggle upgrade --apply --pr` (the `--pr` flag comes from T-101;

@@ -9,7 +9,7 @@
 # checkout: an untracked file there would stamp vcs.modified=true.
 #
 # When the Head Keeper publishes a release, the upgrade-consumers job (T-102)
-# walks docs/consumers/hives.txt and runs `waggle upgrade --apply --pr` in each
+# walks docs/consumers/hives.yml and runs `waggle upgrade --apply --pr` in each
 # listed consumer hive, using the repository secret WAGGLE_UPGRADE_TOKEN (see
 # docs/consumers/README.md). It only opens bump PRs; it never merges.
 name: Release
@@ -322,8 +322,8 @@ jobs:
               failed=1
             fi
             echo "::endgroup::"
-          done < docs/consumers/hives.txt
+          done < docs/consumers/hives.yml
           if [ "$count" -eq 0 ]; then
-            echo "::warning::docs/consumers/hives.txt lists no consumers"
+            echo "::warning::docs/consumers/hives.yml lists no consumers"
           fi
           exit "$failed"
