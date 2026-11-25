@@ -40,7 +40,7 @@ T-073 · Case-folded claim overlap checks (carries out D-038; opened by T-072 Q-
 T-074 · Gate head tree collision check: Unicode normalization variants (T-073 Q-T073-8) · S to M · proposed (scout brief merged, #277; no build yet) · v0.1 · product
 T-075 · Doctor claims finding: collision count (T-073 Q-T073-5; after T-072 phase B and T-073 phase A) · S · merged (#305; scout brief #278) · v0.1 · product
 T-081 · One claim sync per waggle status run (T-073 phase B guard note) · S · proposed · v0.1 · product
-T-082 · Status test for a failed collision scan (T-073 phase B guard note) · S · proposed · v0.1 · product
+T-082 · Status test for a failed claims read, drop dead CollisionsErr (T-073 phase B guard note, retargeted after T-081) · S · proposed · v0.1 · product
 T-083 · multi-keeper.md wording: the collision never grows (T-073 phase B guard note) · S · proposed · v0.1 · docs
 T-084 · waggle hives status shows case collisions (T-073 phase B guard note) · S · proposed · v0.1 · product
 
