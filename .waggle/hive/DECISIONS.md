@@ -7569,3 +7569,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, on 2026-11-23 at 9:59 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e683), in the words "Tier 2 if golden tests show no change".
 
 **Rationale:** The T-081 build adds golden tests that capture ListActiveLeases and CaseCollisions output on main before the refactor and prove identical output after. If any golden differs, the PR is Tier 3 and waits for the Head Keeper signature.
+
+## D-391: Upgrade hive pin to v0.1.3 (f2543b6)
+
+- **Date:** 2026-11-25
+- **Kind:** technical
+- **Tickets:** T-120
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Stay on bfee532afafde4ba4f43db23844a4dc1e3ad0732
+2. Move to f2543b6f05e90240308b325f75e3aeaf8eebf1a9 (v0.1.3)
+
+**Hive recommendation:** Move to f2543b6f05e90240308b325f75e3aeaf8eebf1a9 (v0.1.3)
+
+**Keeper choice:** Move the pin from bfee532afafde4ba4f43db23844a4dc1e3ad0732 to f2543b6f05e90240308b325f75e3aeaf8eebf1a9, the v0.1.3 release commit; managed files re-rendered by waggle upgrade from the v0.1.3 release binary
+
+**Rationale:** v0.1.3 carries the T-120 gate fix (GHSA-mcv7-2x6g-pmwc): an approving review counts only when its body names the exact head. Pinned by commit, not tag. The Head Keeper approved the release and the pin move on 2026-11-25.
