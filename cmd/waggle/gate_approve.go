@@ -98,6 +98,7 @@ func readPREvent(getenv func(string) string) (*prEvent, string) {
 type reviewSource interface {
 	Reviews(ctx context.Context, number int) (forge.PRReviews, error)
 	Comments(ctx context.Context, number int) ([]forge.Comment, error)
+	ReviewApproves(ctx context.Context, id, login string) ([]string, error)
 }
 
 var newReviewSource = func(repository, token string) (reviewSource, error) {
@@ -142,11 +143,32 @@ func isHeadKeeper(entry string, approvers []string) bool {
 // the counted state is that login's last APPROVED, CHANGES_REQUESTED or
 // DISMISSED review. Any counted CHANGES_REQUESTED blocks, and no comment
 // clears it. An approval counts only at exactly head and strictly after the
-// last base change. It is either a counted APPROVED review or, since GitHub
-// refuses a review on your own PR, a comment by that login with a whole line
-// "waggle-approve <head>" (T-057).
+// last base change, and only when it names head on a whole line
+// "waggle-approve <head>": in the body of a counted APPROVED review that
+// GitHub reports at head, or, since GitHub refuses a review on your own PR, in
+// a comment by that login (T-057). The commit GitHub reports for a review
+// does not count alone (T-120).
 func approvedBy(rv forge.PRReviews, approvers []string, head string) string {
-	reviews := slices.SortedFunc(slices.Values(rv.Reviews), func(a, b forge.Review) int {
+	reviews := sortedReviews(rv.Reviews)
+	winner := ""
+	for _, entry := range approvers {
+		last := lastDeciding(reviews, entry)
+		switch {
+		case last != nil && last.State == "CHANGES_REQUESTED":
+			return ""
+		case winner != "":
+		case reviewCandidate(last, head, rv.LastBaseChange) && slices.Contains(last.Approves, head):
+			winner = entry
+		case commentApproves(rv, entry, head):
+			winner = entry
+		}
+	}
+	return winner
+}
+
+// sortedReviews returns a copy of reviews ordered by ID.
+func sortedReviews(reviews []forge.Review) []forge.Review {
+	return slices.SortedFunc(slices.Values(reviews), func(a, b forge.Review) int {
 		switch {
 		case a.ID < b.ID:
 			return -1
@@ -155,28 +177,53 @@ func approvedBy(rv forge.PRReviews, approvers []string, head string) string {
 		}
 		return 0
 	})
-	winner := ""
-	for _, entry := range approvers {
-		var last *forge.Review
-		for i, r := range reviews {
-			switch r.State {
-			case "APPROVED", "CHANGES_REQUESTED", "DISMISSED":
-				if strings.EqualFold(r.Login, entry) {
-					last = &reviews[i]
-				}
+}
+
+// lastDeciding returns entry's last APPROVED, CHANGES_REQUESTED or DISMISSED
+// review in reviews, which are in ID order, or nil.
+func lastDeciding(reviews []forge.Review, entry string) *forge.Review {
+	var last *forge.Review
+	for i, r := range reviews {
+		switch r.State {
+		case "APPROVED", "CHANGES_REQUESTED", "DISMISSED":
+			if strings.EqualFold(r.Login, entry) {
+				last = &reviews[i]
 			}
 		}
-		switch {
-		case last != nil && last.State == "CHANGES_REQUESTED":
-			return ""
-		case winner != "":
-		case last != nil && last.State == "APPROVED" && last.CommitID == head && last.Submitted.After(rv.LastBaseChange):
-			winner = entry
-		case commentApproves(rv, entry, head):
-			winner = entry
-		}
 	}
-	return winner
+	return last
+}
+
+// reviewCandidate reports whether r is an APPROVED review that GitHub reports
+// at head, submitted strictly after the last base change. Only such a review
+// can count, and only once its body names head (approvedBy).
+func reviewCandidate(r *forge.Review, head string, lastBase time.Time) bool {
+	return r != nil && r.State == "APPROVED" && r.CommitID == head && r.Submitted.After(lastBase)
+}
+
+// fillReviewApproves sorts rv.Reviews by ID, clears every Approves, and reads
+// the waggle-approve lines of each listed approver's candidate review. It
+// returns how many candidates there were and how many bodies could not be
+// read; an unread body approves nothing.
+func fillReviewApproves(ctx context.Context, src reviewSource, rv *forge.PRReviews, approvers []string, head string) (candidates, unread int) {
+	rv.Reviews = sortedReviews(rv.Reviews)
+	for i := range rv.Reviews {
+		rv.Reviews[i].Approves = nil
+	}
+	for _, entry := range approvers {
+		last := lastDeciding(rv.Reviews, entry)
+		if !reviewCandidate(last, head, rv.LastBaseChange) {
+			continue
+		}
+		candidates++
+		shas, err := src.ReviewApproves(ctx, last.NodeID, last.Login)
+		if err != nil {
+			unread++
+			continue
+		}
+		last.Approves = shas
+	}
+	return candidates, unread
 }
 
 // commentApproves reports whether a comment by entry names exactly head on a
@@ -257,6 +304,10 @@ func (p prRun) approve(rep *gateReport, out scanOutcome, reason string) *gateRep
 		}
 		return skip("GitHub reviews unavailable")
 	}
+	// A review counts only when its body names the head (T-120). Bodies are
+	// read for candidate reviews only and never printed, before the
+	// comments so a long comment read cannot use up their time.
+	candidates, bodiesUnread := fillReviewApproves(ctx, src, &rv, out.approvers, out.headOID)
 	// Comments are a second approval signal; a failed read leaves them empty
 	// and the reviews decide alone. Bodies are never printed.
 	rv.Comments = nil
@@ -271,11 +322,17 @@ func (p prRun) approve(rep *gateReport, out scanOutcome, reason string) *gateRep
 		if !commentsRead {
 			r.warn(chk, "PR comments could not be read; only reviews were checked")
 		}
+		if bodiesUnread > 0 {
+			r.warn(chk, "an approving review's body could not be read; that review was not counted")
+		}
 	}
 	short := out.headOID[:12]
 	entry := approvedBy(rv, out.approvers, out.headOID)
 	if entry == "" {
 		rep.warn(chk, "no approving review or waggle-approve comment from a listed approver at "+short)
+		if candidates > bodiesUnread {
+			rep.warn(chk, "an approving review counts only when its body has the line waggle-approve "+out.headOID)
+		}
 		unread(rep)
 		return rep
 	}

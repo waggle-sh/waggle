@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
 
@@ -80,6 +81,27 @@ func TestHeadKeeperHivePaths(t *testing.T) {
 			reviews: func(head, prev string) []forge.Review {
 				return []forge.Review{approval(1, "alice", "APPROVED", prev)}
 			}, code: 1, want: []string{brief, noApproval}, not: []string{passed}},
+		// T-120: a review reported at the head whose body names an earlier
+		// head does not count.
+		{name: "approval naming an earlier head",
+			more: baseMerge,
+			reviews: func(head, prev string) []forge.Review {
+				r := approval(1, "alice", "APPROVED", head)
+				r.Approves = []string{prev}
+				return []forge.Review{r}
+			}, code: 1, want: []string{brief, noApproval, "its body has the line waggle-approve "}, not: []string{passed}},
+		{name: "approval at head without a waggle-approve line",
+			reviews: func(head, prev string) []forge.Review {
+				return []forge.Review{bare(approval(1, "alice", "APPROVED", head))}
+			},
+			code: 1, want: []string{brief, noApproval, "its body has the line waggle-approve "}, not: []string{passed}},
+		{name: "fresh approval naming the head after a push",
+			more: baseMerge,
+			reviews: func(head, prev string) []forge.Review {
+				old := approval(1, "alice", "APPROVED", head)
+				old.Approves = []string{prev}
+				return []forge.Review{old, approval(2, "alice", "APPROVED", head)}
+			}, code: 0, want: []string{"leases: ok", passed}, not: []string{"::error"}},
 		{name: "other approver requests changes",
 			reviews: func(head, prev string) []forge.Review {
 				return []forge.Review{approval(1, "alice", "APPROVED", head), approval(2, "bob", "CHANGES_REQUESTED", head)}
@@ -138,6 +160,57 @@ func TestHeadKeeperHivePaths(t *testing.T) {
 				t.Errorf("exit %d, want %d\n%s", code, tc.code, out)
 			}
 		})
+	}
+}
+
+// baseMerge adds a commit to main and merges main into the branch.
+func baseMerge(r gateRepo) {
+	r.git("checkout", "-q", "main")
+	r.write("other.md", []byte("o\n"))
+	r.commit("main moves")
+	r.git("checkout", "-q", "branch")
+	r.git("merge", "-q", "--no-ff", "-m", "Merge main into branch", "main")
+}
+
+// TestReviewBodyUnread: when a candidate review's body cannot be read, the
+// review does not count and the gate says why; a comment naming the head
+// still passes.
+func TestReviewBodyUnread(t *testing.T) {
+	const passed = "hive paths approved by the Head Keeper alice at "
+	const why = "an approving review's body could not be read; that review was not counted"
+	for _, withComment := range []bool{false, true} {
+		r := keeperRepo(t, keeperConfig, nil)
+		head := r.head()
+		f := &fakeReviews{rv: forge.PRReviews{Reviews: []forge.Review{approval(1, "alice", "APPROVED", head)}},
+			bodyErr: errors.New("read failed")}
+		if withComment {
+			f.comments = []forge.Comment{{ID: 1, Login: "alice", Created: apprTime, Approves: []string{head}}}
+		}
+		useFake(t, f)
+		code, out := r.runWith(prEnv(writeEvent(t, head, "x", apprBody)), "verify")
+		switch {
+		case f.bodyReads != 1:
+			t.Errorf("comment %v: %d body reads, want 1", withComment, f.bodyReads)
+		case !withComment && (code != 1 || !strings.Contains(out, why) || strings.Contains(out, passed)):
+			t.Errorf("no comment: exit %d\n%s", code, out)
+		case withComment && (code != 0 || !strings.Contains(out, passed)):
+			t.Errorf("comment: exit %d\n%s", code, out)
+		}
+	}
+}
+
+// TestReviewBodyReadOnlyForCandidates: bodies are read only for a listed
+// approver's last deciding review when it is APPROVED at head.
+func TestReviewBodyReadOnlyForCandidates(t *testing.T) {
+	r := keeperRepo(t, keeperConfig, nil)
+	head := r.head()
+	f := &fakeReviews{rv: forge.PRReviews{Reviews: []forge.Review{
+		approval(1, "alice", "APPROVED", otherHead), approval(2, "carol", "APPROVED", head),
+		approval(3, "bob", "APPROVED", head), approval(4, "bob", "COMMENTED", head)}}}
+	useFake(t, f)
+	code, out := r.runWith(prEnv(writeEvent(t, head, "x", apprBody)), "verify")
+	if code != 1 || f.bodyReads != 1 || !strings.Contains(out, "need an approving review or waggle-approve comment from the Head Keeper") {
+		t.Errorf("exit %d, %d body reads, want 1\n%s", code, f.bodyReads, out)
 	}
 }
 
