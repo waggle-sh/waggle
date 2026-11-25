@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "ticket_id": "T-088",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle/init.go",
+    "cmd/waggle/init_test.go",
+    "cmd/waggle/main.go",
+    "site/content/cli.md"
+  ],
+  "claimed_at": "2026-11-25T18:44:05Z",
+  "expires_at": "2026-11-28T18:44:05Z",
+  "branches": [
+    "t-088"
+  ]
+}
