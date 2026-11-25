@@ -5,14 +5,11 @@
   "role": "builder",
   "gate": "full",
   "directories": [
-    "cmd/waggle/claim.go",
-    "cmd/waggle/norepo.go",
-    "cmd/waggle/norepo_test.go",
-    "cmd/waggle/status.go",
+    "cmd/waggle",
     "docs/troubleshooting.md"
   ],
-  "claimed_at": "2026-11-25T19:32:20Z",
-  "expires_at": "2026-11-28T19:32:20Z",
+  "claimed_at": "2026-11-25T20:59:02Z",
+  "expires_at": "2026-11-28T20:59:02Z",
   "branches": [
     "t-091"
   ]
