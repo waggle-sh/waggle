@@ -63,6 +63,11 @@ T-098 · Empty states for status and doctor · S · proposed · v0.1 · product
 T-099 · Golden tests for --json output · S · proposed · v0.1 · product
 T-100 · One local check script that matches CI and the release matrix · S · proposed · v0.1 · product
 
+## Security fixes
+
+T-120 · Bind gate approvals to the exact head (GHSA-mcv7-2x6g-pmwc) · M · merged #334, v0.1.3 · v0.1 · product
+T-121 · Receipts list an approver only when the review body names the merged head · S · built, on hold until Nectar scoring is revisited · v0.1 · product
+
 ## Still deferred (not honey)
 
 - v0.2 roles weaver / nurse / studio / assembly: unspecified; open only when a measured job needs them.
