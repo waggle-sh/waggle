@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "ticket_id": "T-104",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/telemetry",
+    "docs/telemetry.md"
+  ],
+  "claimed_at": "2026-11-25T21:38:48Z",
+  "expires_at": "2026-11-27T21:38:48Z",
+  "branches": [
+    "t-104",
+    "t-104-2"
+  ]
+}
