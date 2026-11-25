@@ -48,6 +48,7 @@ type rule struct {
 // site/ is checked. T-062 adds SECURITY.md to the Apache-2.0 docs row and
 // gives CODE_OF_CONDUCT.md (Contributor Covenant text) its own CC-BY-4.0 row.
 // T-100 adds scripts/** (contributor tooling) to the same Apache-2.0 row.
+// T-096 adds examples/** (runnable examples) to it too.
 var rules = []rule{
 	{[]string{"**/testdata/**"}, exempt, ""},
 	{[]string{"**/*.json", "internal/scaffold/templates/**/*.json.tmpl"}, exempt, ""},
@@ -63,7 +64,7 @@ var rules = []rule{
 	{[]string{".waggle/hive/**"}, notChecked, ""},
 	{[]string{"internal/scaffold/templates/**"}, checked, "MIT-0"},
 	{[]string{"cmd/**", "internal/**"}, checked, "Apache-2.0"},
-	{[]string{"docs/**", "README.md", "CONTRIBUTING.md", "SECURITY.md", "AGENTS.md", "INSTALL-AGENT.md", "install.sh", "scripts/**"}, checked, "Apache-2.0"},
+	{[]string{"docs/**", "README.md", "CONTRIBUTING.md", "SECURITY.md", "AGENTS.md", "INSTALL-AGENT.md", "install.sh", "scripts/**", "examples/**"}, checked, "Apache-2.0"},
 	{[]string{"CODE_OF_CONDUCT.md"}, checked, "CC-BY-4.0"},
 	{[]string{".github/workflows/waggle-gate.yml"}, checked, "MIT-0"},
 	{[]string{".github/**"}, checked, "Apache-2.0"},
