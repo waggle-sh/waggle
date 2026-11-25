@@ -44,7 +44,7 @@ waggle hives status [--registry <file>] [--json]
 
 For each hive, in registry order:
 
-- **claimed:** the active claims, as `waggle status` lists them. The view reads them with the same code, so the two agree.
+- **claimed:** the active claims, as `waggle status` lists them. The view reads them with the same code, so the two agree. Under them, one `warning:` line for each pair of claims whose directories differ only in letter case, worded as `waggle status` words it. In `--json` these pairs are `case_collisions` (`ticket_a`, `dir_a`, `ticket_b`, `dir_b`), an empty list when there are none.
 - **open:** tasks in the hive's task briefs that are not finished, not claimed and not waiting on another task.
 - **blocked:** tasks that depend on another task of the same hive that is not finished.
 

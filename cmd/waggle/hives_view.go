@@ -111,6 +111,7 @@ type Task struct {
 type HiveInput struct {
 	Leases      []comb.Lease
 	Malformed   int
+	Collisions  []comb.CaseCollision
 	Tasks       []Task
 	Decisions   []decisions.Entry
 	DecisionErr string // non-empty when the decision log could not be parsed
@@ -134,6 +135,15 @@ type TaskView struct {
 	BlockedBy []string `json:"blocked_by,omitempty"`
 }
 
+// CollisionView is one pair of active claims whose directories differ only in
+// letter case, as `waggle status` warns about it.
+type CollisionView struct {
+	TicketA string `json:"ticket_a"`
+	DirA    string `json:"dir_a"`
+	TicketB string `json:"ticket_b"`
+	DirB    string `json:"dir_b"`
+}
+
 // Card is a decision still waiting on the Keeper, tagged with its hive. The
 // view lists it; it never answers it (RFC-0004 open question 4).
 type Card struct {
@@ -146,20 +156,21 @@ type Card struct {
 
 // HiveView is the read-only view of one home hive.
 type HiveView struct {
-	Name           string      `json:"name"`
-	Path           string      `json:"path,omitempty"`
-	Repo           string      `json:"repo,omitempty"`
-	Level          string      `json:"level"`
-	Reachable      bool        `json:"reachable"`
-	Error          string      `json:"error,omitempty"`
-	Claims         []ClaimView `json:"claims"`
-	MalformedCount int         `json:"malformed_claims"`
-	Open           []TaskView  `json:"open"`
-	Blocked        []TaskView  `json:"blocked"`
-	Waiting        []Card      `json:"waiting_on_keeper"`
-	DecisionError  string      `json:"decision_log_error,omitempty"`
-	Done           []string    `json:"-"` // tasks the hive's briefs mark done; used by plans, not in the status report
-	Dropped        []string    `json:"-"` // the subset of Done that was cancelled, rejected or dropped; used by plans
+	Name           string          `json:"name"`
+	Path           string          `json:"path,omitempty"`
+	Repo           string          `json:"repo,omitempty"`
+	Level          string          `json:"level"`
+	Reachable      bool            `json:"reachable"`
+	Error          string          `json:"error,omitempty"`
+	Claims         []ClaimView     `json:"claims"`
+	MalformedCount int             `json:"malformed_claims"`
+	Collisions     []CollisionView `json:"case_collisions"`
+	Open           []TaskView      `json:"open"`
+	Blocked        []TaskView      `json:"blocked"`
+	Waiting        []Card          `json:"waiting_on_keeper"`
+	DecisionError  string          `json:"decision_log_error,omitempty"`
+	Done           []string        `json:"-"` // tasks the hive's briefs mark done; used by plans, not in the status report
+	Dropped        []string        `json:"-"` // the subset of Done that was cancelled, rejected or dropped; used by plans
 }
 
 // HivesReport is the whole answer: one view per registry entry, in registry
@@ -173,7 +184,7 @@ type HivesReport struct {
 // guess: every list is empty and the reason is stated.
 func UnreachableView(e RegistryEntry, reason string) HiveView {
 	return HiveView{Name: e.Name, Path: e.Path, Repo: e.Repo, Level: e.Level, Error: flatten(reason),
-		Claims: []ClaimView{}, Open: []TaskView{}, Blocked: []TaskView{}, Waiting: []Card{}}
+		Claims: []ClaimView{}, Collisions: []CollisionView{}, Open: []TaskView{}, Blocked: []TaskView{}, Waiting: []Card{}}
 }
 
 // BuildHiveView derives a hive's view from what was read. Claims are the
@@ -185,6 +196,9 @@ func BuildHiveView(e RegistryEntry, in HiveInput, now time.Time) HiveView {
 	v := UnreachableView(e, "")
 	v.Reachable = true
 	v.MalformedCount = in.Malformed
+	for _, c := range in.Collisions {
+		v.Collisions = append(v.Collisions, CollisionView{TicketA: c.TicketA, DirA: c.DirA, TicketB: c.TicketB, DirB: c.DirB})
+	}
 
 	leases := slices.Clone(in.Leases)
 	sort.SliceStable(leases, func(i, j int) bool { return ticketNum(leases[i].TicketID) < ticketNum(leases[j].TicketID) })
@@ -312,6 +326,9 @@ func RenderHivesText(r HivesReport) []byte {
 		tw.Flush()
 		if v.MalformedCount > 0 {
 			fmt.Fprintf(&b, "    malformed: %d\n", v.MalformedCount)
+		}
+		for _, c := range v.Collisions {
+			fmt.Fprintf(&b, "    %s\n", collisionWarning(comb.CaseCollision{TicketA: c.TicketA, DirA: c.DirA, TicketB: c.TicketB, DirB: c.DirB}))
 		}
 		fmt.Fprintf(&b, "  open (%d):\n", len(v.Open))
 		for _, t := range v.Open {

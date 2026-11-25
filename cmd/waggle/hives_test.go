@@ -437,7 +437,7 @@ func TestHivesJSONShape(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := m["hives"].([]any)[0].(map[string]any)
-	for _, k := range []string{"claims", "open", "blocked", "waiting_on_keeper"} {
+	for _, k := range []string{"claims", "case_collisions", "open", "blocked", "waiting_on_keeper"} {
 		if _, ok := h[k].([]any); !ok {
 			t.Errorf("%s is not a JSON array: %v", k, h[k])
 		}

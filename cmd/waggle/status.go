@@ -236,7 +236,7 @@ func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaims
 			len(malformed.Claims), first.Ref, first.Reason, first.Ref)
 	}
 	for _, c := range collisions {
-		fmt.Fprintf(&b, "  warning: %s; %s. %s.\n", collisionPair(c), collisionImpact, strings.ToUpper(collisionFix[:1])+collisionFix[1:])
+		fmt.Fprintf(&b, "  %s\n", collisionWarning(c))
 	}
 
 	b.WriteByte('\n')
