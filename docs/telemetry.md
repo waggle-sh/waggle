@@ -14,7 +14,7 @@ Telemetry is off unless a hive opts in. Nothing is sent before the collector shi
 | `claim_rate` | percent, rounded to 10 | yes | Percent of merged PRs with a bound claim (receipts vs merged PRs). |
 | `claim_to_merge_hours` | p50 and p90 | yes | Receipt `claimed_at` to `merged_at`, rounded to 1, 4, 12, 24, 72, 168 or 336+ (`336` in the payload means 336 or more). |
 | `contributors` | bucket `1`, `2-5`, `6-20`, `21+` | yes | Distinct commit authors on the default branch, 90 days. |
-| `failed` | counts per check | no | Counts per check (`leases`, `tiers`, `binding`, `decisions`), bucketed (`0`, `1-5`, `6-20`, `21-50`, `51+`), for `guard` and `hold`. From the gate counts artifact. |
+| `failed` | counts per check | no | Counts per check (`leases`, `tiers`, `binding`, `decisions`), bucketed (`0`, `1-5`, `6-20`, `21-50`, `51+`). Expected only under `guard` and `hold`. From the gate counts artifact. |
 | `fix_cycles_per_pr` | p50 and p90, integer, capped at 10 | yes | Pushes after first review. |
 | `forge_capability` | `required_check` or `none` | yes | Result of the doctor probe. |
 | `gate_mode` | `open`, `guard` or `hold` | yes | Gate mode from the base config. |
@@ -69,7 +69,7 @@ The gate can write `waggle-gate-counts.json` as a job artifact under any mode. I
 - **Timing.** Someone who knows a repo merged on a given day and watches the published aggregates cannot isolate it below k. The operator could match send time to public activity on a public repo. The weekly job sends at a random minute in a 24 hour window to reduce this.
 - **Network metadata.** The collector sees the source IP when a request arrives (a CI runner IP, or the user's own IP for a hand `send`). The collector drops it and does not store it. Cloudflare still processes it.
 - **Version and mode.** A rare version combined with `hold` and a `21+` contributor bucket is a small set. Version is sent at minor granularity only.
-- **Supply chain.** A malicious PR could add fields to the sender. The allowlist and schema sit under protected paths, and the collector rejects unknown keys.
+- **Supply chain.** A malicious PR could add fields to the sender. This page and the schema are listed in `gate.protected_paths` (D-402), so a change to either needs a listed approver at the head, and the collector rejects unknown keys.
 - **Forks.** A fork of Waggle can send anything. The guarantees hold only for official builds.
 
 ## Privacy statement
