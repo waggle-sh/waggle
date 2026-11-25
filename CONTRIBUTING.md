@@ -5,7 +5,7 @@ This file is for people building Waggle itself. If you use Waggle in your own re
 
 ## Contributing
 
-- **Build and test:** `go build ./... && go test -race ./...`; also `go vet ./...` and `gofmt -l .` (empty output means clean).
+- **Build and test:** `scripts/check.sh` runs `go build ./...`, `go vet ./...`, the gofmt check and `go test -race ./...` as CI does, and stops at the first failing step. `--quick` skips the race tests; `--cross` also cross-builds `./cmd/waggle` for the release matrix and vets darwin and windows.
 - **Sign off every commit** with `git commit -s`. The DCO check fails a PR whose commits lack `Signed-off-by` (section 6).
 - New files start with an SPDX header; no em dashes or en dashes.
 - **Where work comes from.** Work items normally come from keepers' queens, who open issues and write claims for them. Humans can also open issues: use the bug or feature template, and report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). A maintainer may need to write a claim naming your branch before the repo's gate passes on your PR.
