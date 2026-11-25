@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "rules_version": 1,
+  "repo": "",
+  "main_sha": "<OID>",
+  "computed_at": "<TIME>",
+  "keepers": [
+    {
+      "keeper_id": "bob",
+      "nectar": 0.000,
+      "matured": 0.000,
+      "pending": 1.057,
+      "clawed_back": 0.000,
+      "units": 1
+    }
+  ],
+  "unattributed": 0,
+  "orphaned": 0
+}

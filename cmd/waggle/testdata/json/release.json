@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "command": "release",
+  "ok": true,
+  "task": "T-032",
+  "outcome": "released",
+  "oid": "<OID>",
+  "merged": false,
+  "branch": "",
+  "receipt": "<OID>",
+  "warnings": [
+    "could not read the forge for T-032; the receipt is marked incomplete"
+  ]
+}
