@@ -32,6 +32,7 @@ func TestWantRows(t *testing.T) {
 		{"cmd/waggle/main.go", "Apache-2.0", Slash, true},
 		{"internal/license/rules.go", "Apache-2.0", Slash, true},
 		{"docs/gate.md", "Apache-2.0", HTML, true},
+		{"scripts/check.sh", "Apache-2.0", Hash, true},
 		{"README.md", "Apache-2.0", HTML, true},
 		{"CONTRIBUTING.md", "Apache-2.0", HTML, true},
 		{"SECURITY.md", "Apache-2.0", HTML, true},
