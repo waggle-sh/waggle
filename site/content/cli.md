@@ -153,3 +153,19 @@ These serve the full Waggle hive workflow: roles (a **forager** triages and maps
 | `waggle quorum verify` | `waggle quorum verify --round <n> [--receipt <oid>] [--repo <dir>] [--json]` | Recompute the tally from the refs and fail unless it matches byte for byte. |
 
 Quorum needs OpenSSH `ssh-keygen` with `-Y` support. Exit codes for `vote` and `quorum`: `0` done, `1` a check or validation failed, `2` usage, `3` git, signing tool or file error.
+
+## JSON output
+
+Commands with `--json` print one JSON object on one line of stdout. During 0.x, new keys may be added to these objects but existing keys are not renamed or removed. Read the keys you need and ignore the rest.
+
+`claim`, `release`, `force-release`, `nectar backfill` and `nectar gate-receipt` share an envelope: `version` (now `1`), `command`, `ok`. A failure has `ok: false`, `task` and `error` (`code`, `exit`, `message`); `nectar backfill` and `nectar gate-receipt` leave out `task`. A success adds these top-level keys:
+
+- `claim`: `task`, `outcome`, `claim` (`task`, `owner`, `gate`, `directories`, `claimed_at`, `expires_at`, `ref`, `oid`, `branches`), `notes`, `warnings`.
+- `release`: `task`, `outcome`, `oid`, `merged`, `branch`, `receipt`, `warnings`.
+- `force-release`: `task`, `outcome`, `ref`, `oid`, `owner`, `gate`, `directories`, `expires_at`, `expired`, `malformed_reason`, `caller`, `first_approver`, `authorized`, `base`, `next`, `audit_oid`, `warnings`.
+- `nectar backfill`: `applied`, `written`, `items`, `warnings`.
+- `nectar gate-receipt`: `written`, `items`, `warnings`.
+
+`waggle nectar --json` has no envelope. Its keys are `schema_version`, `rules_version`, `repo`, `main_sha`, `computed_at`, `keepers`, `unattributed` and `orphaned`. `waggle hives status --json` has `hives` and `cards`.
+
+`waggle status` and `waggle doctor` have no `--json`. `nectar explain`, `vote`, `quorum`, `hives plan` and `dispatch` also take `--json`; this page does not list their keys yet. Golden files under `cmd/waggle/testdata/json/` pin the shape of `claim`, `release`, `force-release` and `nectar`.
