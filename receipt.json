@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "source": "gate_run",
-  "ticket_id": "T-120",
-  "keeper_id": "paulternate",
+  "source": "release",
+  "ticket_id": "T-099",
+  "keeper_id": "paulternate19",
   "co_keepers": [],
   "role": "builder",
   "gate": "full",
-  "claimed_at": "2026-11-25T19:17:44Z",
+  "claimed_at": "2026-11-25T19:11:15Z",
   "branches": [
-    "gate-approval-head"
+    "t-099"
   ],
-  "base_sha": "3cd2fede584fd96bd4f97690610c17d8cba6fe46",
-  "merged_sha": "f2543b6f05e90240308b325f75e3aeaf8eebf1a9",
-  "merged_at": "2026-11-25T19:47:10Z",
-  "pr_number": 334,
-  "pr_author": "paulternate",
-  "head_branch": "gate-approval-head",
+  "base_sha": "f2543b6f05e90240308b325f75e3aeaf8eebf1a9",
+  "merged_sha": "a9604773ccb6f1a5727c16e3862c20040205aff1",
+  "merged_at": "2026-11-25T19:58:02Z",
+  "pr_number": 335,
+  "pr_author": "paulternate19",
+  "head_branch": "t-099",
   "approvers": [
-    "paulternate19"
+    "paulternate"
   ],
-  "released_by": "paulternate",
+  "released_by": "paulternate19",
   "status": "merged",
   "incomplete": false,
-  "merge_proof": "binding"
+  "merge_proof": "forge"
 }
