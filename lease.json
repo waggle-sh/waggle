@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "ticket_id": "T-094",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle/install_script_test.go",
+    "install.sh"
+  ],
+  "claimed_at": "2026-11-25T17:36:09Z",
+  "expires_at": "2026-11-28T17:36:09Z",
+  "branches": [
+    "t-094"
+  ]
+}
