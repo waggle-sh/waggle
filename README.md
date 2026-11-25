@@ -115,7 +115,7 @@ Usage: waggle release <task> [--branch <name>] [--unmerged] [--co <id>]... [--ow
 Usage: waggle force-release <task> | --ref <ref> [--oid <id> --reason <text>] [--owner <id>] [--repo <dir>] [--json]
 ```
 
-These are the usage lines `waggle claim -h`, `waggle release -h` and `waggle force-release -h` print (`cmd/waggle/claim.go:181, 246`, `cmd/waggle/force.go:40`).
+These are the usage lines `waggle claim -h`, `waggle release -h` and `waggle force-release -h` print (`cmd/waggle/claim.go:201, 275`, `cmd/waggle/force.go:40`).
 
 - `--owner` is required in a repo that has only the gate installed. Its help reads `claim owner, usually your GitHub login; required without .waggle/local.yaml, else defaults to its keeper_id`; the file Waggle reads is `.waggle/control/local.yaml`.
 - `--branch` names a PR branch the claim accepts; repeat it, up to 4. With none, a new claim records `t-<nnn>`. Given flags replace the stored list, and a same-owner renewal without flags keeps it. A re-claim after the claim expired starts a new list, so repeat every `--branch`.
