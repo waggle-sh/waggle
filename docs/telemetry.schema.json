@@ -10,8 +10,7 @@
       "enum": ["1", "2-5", "6-20", "21+"]
     },
     "countBucket": {
-      "type": "string",
-      "minLength": 1
+      "enum": ["0", "1-5", "6-20", "21-50", "51+"]
     },
     "hours": {
       "enum": [1, 4, 12, 24, 72, 168, 336]
@@ -104,6 +103,6 @@
     "claim_rate": { "$ref": "#/$defs/percentRounded" },
     "receipt_rate": { "$ref": "#/$defs/percentRounded" },
     "releases_90d": { "type": "integer", "minimum": 0, "maximum": 12 },
-    "install_id": { "type": "string", "minLength": 1 }
+    "install_id": { "type": "string", "pattern": "^[0-9a-f]{32}$" }
   }
 }

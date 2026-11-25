@@ -3,7 +3,7 @@
 
 This page lists every field of the weekly telemetry report and the data that is never sent. The machine-readable form is [`telemetry.schema.json`](telemetry.schema.json) (JSON Schema 2020-12). It sets `additionalProperties: false` on the root and on every nested object, so any key not listed here is rejected. Design: `docs/rfc-notes/telemetry-insights-held-hive.md`, section 3.2.
 
-Telemetry is off unless a hive opts in. Nothing is sent before T-110. This page holds the field table, the never-sent list, the install id rules, how to see a payload, the rule for publishing aggregates, the threat model and the privacy statement.
+Telemetry is off unless a hive opts in. Nothing is sent before the collector ships. This page holds the field table, the never-sent list, the install id rules, how to see a payload, the rule for publishing aggregates, the threat model and the privacy statement.
 
 ## Fields
 
@@ -12,9 +12,9 @@ Telemetry is off unless a hive opts in. Nothing is sent before T-110. This page 
 | Name | Type | Required | Meaning |
 | :--- | :--- | :--- | :--- |
 | `claim_rate` | percent, rounded to 10 | yes | Percent of merged PRs with a bound claim (receipts vs merged PRs). |
-| `claim_to_merge_hours` | p50 and p90 | yes | Receipt `claimed_at` to `merged_at`, rounded to 1, 4, 12, 24, 72, 168 or 336+. |
+| `claim_to_merge_hours` | p50 and p90 | yes | Receipt `claimed_at` to `merged_at`, rounded to 1, 4, 12, 24, 72, 168 or 336+ (`336` in the payload means 336 or more). |
 | `contributors` | bucket `1`, `2-5`, `6-20`, `21+` | yes | Distinct commit authors on the default branch, 90 days. |
-| `failed` | counts per check | no | Counts per check (`leases`, `tiers`, `binding`, `decisions`), bucketed, for `guard` and `hold`. From the gate counts artifact. |
+| `failed` | counts per check | no | Counts per check (`leases`, `tiers`, `binding`, `decisions`), bucketed (`0`, `1-5`, `6-20`, `21-50`, `51+`), for `guard` and `hold`. From the gate counts artifact. |
 | `fix_cycles_per_pr` | p50 and p90, integer, capped at 10 | yes | Pushes after first review. |
 | `forge_capability` | `required_check` or `none` | yes | Result of the doctor probe. |
 | `gate_mode` | `open`, `guard` or `hold` | yes | Gate mode from the base config. |
@@ -27,10 +27,10 @@ Telemetry is off unless a hive opts in. Nothing is sent before T-110. This page 
 | `schema` | constant `1` | yes | Payload schema version. |
 | `stage_dwell_hours` | p50 and p90 per stage, rounded to 1, 4, 12, 24, 72, 168 or 336+ | no | Time in each stage, from git history of the stage field. |
 | `ticket_to_merge_hours` | p50 and p90, same rounding | yes | Task file creation to receipt `merged_at`. |
-| `tickets_by_stage` | counts per `backlog`, `ready`, `in-progress`, `done`, each bucketed | no | Tickets per stage, from the structured stage field. |
+| `tickets_by_stage` | counts per `backlog`, `ready`, `in-progress`, `done`, each bucketed (`0`, `1-5`, `6-20`, `21-50`, `51+`) | no | Tickets per stage, from the structured stage field. |
 | `waggle_version` | release tag, minor only (`0.2`) | yes | Build version. |
 | `week` | ISO week, e.g. `2026-W48` | yes | Report week, from the clock. |
-| `would_fail` | counts per check | no | Counts per check (`leases`, `tiers`, `binding`, `decisions`), bucketed, of findings that would fail under a stricter mode. From the gate counts artifact. |
+| `would_fail` | counts per check | no | Counts per check (`leases`, `tiers`, `binding`, `decisions`), bucketed (`0`, `1-5`, `6-20`, `21-50`, `51+`), of findings that would fail under a stricter mode. From the gate counts artifact. |
 
 The table is sorted by name; the schema defines the same 20 properties.
 
@@ -40,10 +40,10 @@ Logins, names, emails, repo or org names, URLs, branch names, ticket IDs or titl
 
 ## Install id
 
-The install id is a random 128 bit value kept in a git-ignored local file. It is never derived from repo data.
+The install id is a random 128 bit value, written as 32 lowercase hex characters, kept in a git-ignored local file. It is never derived from repo data.
 
 - It is replaced every 90 days, so one id is linkable across at most 13 weekly reports.
-- It is tied to no one: it names no person, repo or org, and nothing maps it back to one.
+- It is tied to no one: it names no person, repo or org.
 - A stable id is not used, because over time it would become a repo identifier.
 
 ## Gate counts artifact
@@ -74,7 +74,7 @@ The gate can write `waggle-gate-counts.json` as a job artifact under any mode. I
 
 ## Privacy statement
 
-Telemetry is off unless a hive opts in, and nothing is sent before T-110. When on, the report is aggregate, no personal data by design.
+Telemetry is off unless a hive opts in, and nothing is sent before the collector ships. When on, the report is aggregate, no personal data by design.
 
 - The never-sent list above is complete. Nothing outside the field table is sent.
 - The install id is linkable across 13 weekly reports, then it rotates.
