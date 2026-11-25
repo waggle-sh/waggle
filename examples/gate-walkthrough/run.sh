@@ -28,6 +28,9 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_TERMINAL_PROMPT=0
 export GIT_AUTHOR_NAME=Demo GIT_AUTHOR_EMAIL=demo@example.com
 export GIT_COMMITTER_NAME=Demo GIT_COMMITTER_EMAIL=demo@example.com
+# The gate reads these when it runs in GitHub Actions. Clear them so the
+# walkthrough checks its own throwaway branch, not the CI job's pull request.
+unset GITHUB_ACTIONS GITHUB_EVENT_NAME GITHUB_EVENT_PATH GITHUB_HEAD_REF GITHUB_REPOSITORY GITHUB_TOKEN
 
 step() {
 	printf '\n== %s\n' "$1"
