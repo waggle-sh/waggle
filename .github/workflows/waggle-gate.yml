@@ -67,7 +67,7 @@ jobs:
 
       - name: Waggle gate (Action)
         if: steps.src.outputs.present == 'false'
-        uses: waggle-sh/waggle/gate@bfee532afafde4ba4f43db23844a4dc1e3ad0732 # waggle.pin bfee532afafde4ba4f43db23844a4dc1e3ad0732
+        uses: waggle-sh/waggle/gate@f2543b6f05e90240308b325f75e3aeaf8eebf1a9 # waggle.pin f2543b6f05e90240308b325f75e3aeaf8eebf1a9
         with:
           base-sha: ${{ github.event.pull_request.base.sha }}
           head-sha: ${{ github.event.pull_request.head.sha }}
@@ -93,7 +93,7 @@ jobs:
           fetch-depth: 0
 
       - name: Waggle gate receipt
-        uses: waggle-sh/waggle/gate@bfee532afafde4ba4f43db23844a4dc1e3ad0732 # waggle.pin bfee532afafde4ba4f43db23844a4dc1e3ad0732
+        uses: waggle-sh/waggle/gate@f2543b6f05e90240308b325f75e3aeaf8eebf1a9 # waggle.pin f2543b6f05e90240308b325f75e3aeaf8eebf1a9
         with:
           mode: gate-receipt
           before: ${{ github.event.before }}
