@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "ticket_id": "T-091",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle/claim.go",
+    "cmd/waggle/norepo.go",
+    "cmd/waggle/norepo_test.go",
+    "cmd/waggle/status.go",
+    "docs/troubleshooting.md"
+  ],
+  "claimed_at": "2026-11-25T19:32:20Z",
+  "expires_at": "2026-11-28T19:32:20Z",
+  "branches": [
+    "t-091"
+  ]
+}
