@@ -61,6 +61,12 @@ Exit 1. The PR has more than 500 commits, or one commit changes more than 5000 p
 
 Exit 3. The clone has too little history for the gate to find where the PR branched. In the workflow, set `fetch-depth: 0` on the checkout step. Locally, run `git fetch --unshallow`.
 
+## Any command with `--repo`
+
+### `waggle <cmd>: <dir> is not a git repository (run it inside your repo or pass --repo <dir>)`
+
+Exit 3. `claim`, `release`, `status`, `doctor`, `pace`, `nectar`, `quorum` and `vote` work on a git repository, and the directory they looked at is not inside one. Run the command from inside your repo, or pass `--repo <dir>` with the path to it.
+
 ## `waggle claim`
 
 ### `pass --owner <your GitHub login> or create .waggle/control/local.yaml with keeper_id: <your GitHub login>`

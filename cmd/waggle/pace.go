@@ -105,6 +105,9 @@ func runPace(args []string, stdout, stderr io.Writer) int {
 	}
 	root, err := repoRoot(*repo)
 	if err != nil {
+		if code, ok := noRepoExit(stderr, "pace", err); ok {
+			return code
+		}
 		return exit(3, "failed: %v", err)
 	}
 	if _, err := os.Stat(root + "/" + layout.Config); err != nil {

@@ -68,6 +68,9 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 
 	root, err := repoRoot(*repo)
 	if err != nil {
+		if code, ok := noRepoExit(stderr, "status", err); ok {
+			return code
+		}
 		return exit(3, "failed: %v", err)
 	}
 	d, fault := loadStatus(root, false)
@@ -172,6 +175,9 @@ func repoRoot(dir string) (string, error) {
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
+		if gitNotRepo(stderr.String()) {
+			return "", &notRepoError{dir}
+		}
 		return "", fmt.Errorf("git rev-parse --show-toplevel in %s: %v: %s", dir, err, strings.TrimSpace(stderr.String()))
 	}
 	return strings.TrimSpace(string(out)), nil
