@@ -166,6 +166,7 @@ func readHive(e RegistryEntry) (HiveInput, error) {
 	if d.Malformed != nil {
 		in.Malformed = len(d.Malformed.Claims)
 	}
+	in.Collisions = d.Collisions
 	in.Tasks = readTasks(filepath.Join(root, layout.TasksDir))
 	if data, err := readCapped(filepath.Join(root, layout.Decisions), maxReadSize); err == nil {
 		if in.Decisions, err = decisions.Parse(data); err != nil {
