@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "ticket_id": "T-100",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "light",
+  "directories": [
+    "CONTRIBUTING.md",
+    "scripts"
+  ],
+  "claimed_at": "2026-11-25T15:37:09Z",
+  "expires_at": "2026-11-27T15:37:09Z",
+  "branches": [
+    "t-100-check-script"
+  ]
+}
