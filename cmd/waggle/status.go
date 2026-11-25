@@ -151,19 +151,20 @@ func loadStatus(root string, noFetch bool) (*statusData, *statusFault) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	leases, err := backend.ListActiveLeases(ctx)
-	var malformed *comb.MalformedClaimsError
-	if err != nil && !errors.As(err, &malformed) {
+	// One sync and one scan feed both the table and the collision warnings.
+	leases, leasesErr, collisions, err := backend.ClaimsView(ctx)
+	if err != nil {
 		return fault(3, "failed: %v", err)
 	}
-	// A failed collision scan is a warning, not a refusal: it never changes
-	// the exit code.
-	collisions, collisionsErr := backend.CaseCollisions(ctx)
+	var malformed *comb.MalformedClaimsError
+	if leasesErr != nil && !errors.As(leasesErr, &malformed) {
+		return fault(3, "failed: %v", leasesErr)
+	}
 	recs, bad, err := usage.Read(filepath.Join(root, layout.Usage))
 	if err != nil {
 		return fault(3, "failed: %v", err)
 	}
-	return &statusData{Root: root, CfgPath: cfgPath, Cfg: cfg, Leases: leases, Malformed: malformed, Usage: recs, BadUsage: bad, Collisions: collisions, CollisionsErr: collisionsErr}, nil
+	return &statusData{Root: root, CfgPath: cfgPath, Cfg: cfg, Leases: leases, Malformed: malformed, Usage: recs, BadUsage: bad, Collisions: collisions}, nil
 }
 
 // repoRoot resolves the work tree root of dir ("" means the current
