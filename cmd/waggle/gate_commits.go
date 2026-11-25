@@ -419,8 +419,9 @@ func (s *commitScan) checkHead(id string, l comb.Lease) {
 	s.rep.fail(checkLeases, "", id+": claim does not name this pull request's branch")
 }
 
-// caseCollisions fails head tree paths that are equal under case folding but
-// differ in bytes, and paths over maxTreePath bytes (T-014 section 4.4).
+// caseCollisions fails head tree paths that are equal under case folding or
+// Unicode normalization (collisionKey) but differ in bytes, and paths over
+// maxTreePath bytes (T-014 section 4.4, T-074).
 func caseCollisions(g gitRunner, head string, rep *gateReport) error {
 	out, err := g.run("ls-tree", "-r", "-z", "--name-only", "--full-tree", head)
 	if err != nil {
@@ -435,9 +436,9 @@ func caseCollisions(g gitRunner, head string, rep *gateReport) error {
 			rep.fail(checkTiers, p[:256], fmt.Sprintf("path is %d bytes, over the %d byte limit", len(p), maxTreePath))
 			continue
 		}
-		k := strings.ToLower(p)
-		if prev, dup := seen[k]; dup && prev != p && strings.EqualFold(prev, p) {
-			rep.fail(checkTiers, p, "path collides with "+prev+" on case-insensitive checkouts")
+		k := collisionKey(p)
+		if prev, dup := seen[k]; dup && prev != p {
+			rep.fail(checkTiers, p, collisionText(prev, p))
 			continue
 		}
 		seen[k] = p
