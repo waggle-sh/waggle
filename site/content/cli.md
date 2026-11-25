@@ -27,6 +27,8 @@ Scaffold Waggle into the current directory.
 
 `--gate-only` refuses a build that has neither a clean commit stamp nor a release tag, because it pins the gate Action to that build.
 
+`init` takes no arguments. Exit codes: `0` done, `1` init failed (a refused build, a legacy layout, a bad marker, an I/O error or an unsupported `--runtime`; nothing is written), `2` usage (an unknown flag, a positional argument such as `waggle init foo`, or an invalid `--profile`, `--delivery`, `--forge` or `--comb-mode`, whose message lists the allowed values).
+
 ### `waggle claim`
 
 ```
