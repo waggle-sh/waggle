@@ -5,17 +5,12 @@
   "role": "builder",
   "gate": "full",
   "directories": [
-    "cmd/waggle/gate_approve.go",
-    "cmd/waggle/gate_approve_test.go",
-    "cmd/waggle/gate_keeper_test.go",
-    "internal/forge/reviews.go",
-    "internal/forge/reviews_test.go"
+    "README.md",
+    "docs/gate.md"
   ],
-  "claimed_at": "2026-11-25T19:54:22Z",
-  "expires_at": "2026-11-27T19:54:22Z",
+  "claimed_at": "2026-11-25T20:58:58Z",
+  "expires_at": "2026-11-27T20:58:58Z",
   "branches": [
-    "hive-pin-v0.1.3",
-    "records-t120-t121",
     "gate-approval-docs"
   ]
 }
