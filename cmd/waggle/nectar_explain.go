@@ -105,6 +105,9 @@ func runNectarExplain(args []string, stdout, stderr io.Writer) int {
 	}
 	root, err := repoRoot(*repo)
 	if err != nil {
+		if code, ok := noRepoExit(stderr, "nectar", err); ok {
+			return code
+		}
 		return nectarFail(stderr, nectarEnvEx, "failed: %v", err)
 	}
 	if now.IsZero() {

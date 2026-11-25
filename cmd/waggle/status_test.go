@@ -222,7 +222,7 @@ func TestStatusRefused(t *testing.T) {
 	}
 
 	plain := t.TempDir()
-	if code, _, errb := runStatusT(t, "--repo", plain); code != 3 || !strings.Contains(errb, "rev-parse") {
+	if code, _, errb := runStatusT(t, "--repo", plain); code != 3 || !strings.Contains(errb, "is not a git repository") {
 		t.Errorf("not a git repo: code %d, stderr %q", code, errb)
 	}
 

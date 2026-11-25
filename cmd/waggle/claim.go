@@ -233,6 +233,9 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 	case ttlSet && *ttl == 0:
 		return o.fail(id, usageError("ttl 0s: must be a whole number of minutes, at least 1"))
 	}
+	if err := checkRepo(*repo); err != nil {
+		return o.fail(id, err)
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), stopSignals...)
 	defer stop()
 	res, err := dispatch.ClaimTask(ctx, dispatch.ClaimTaskRequest{RepoDir: *repo, Ticket: task, Dirs: list, Gate: *gate, Branches: branches, TTL: *ttl, Owner: *owner, Base: *base})
@@ -285,6 +288,10 @@ func runTaskRelease(args []string, stdout, stderr io.Writer) int {
 	if task == "" || extra > 0 {
 		id, _ := comb.ParseTicketID(task)
 		return o.fail(id, usageError("usage: waggle release <task>"))
+	}
+	if err := checkRepo(*repo); err != nil {
+		id, _ := comb.ParseTicketID(task)
+		return o.fail(id, err)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), stopSignals...)
 	defer stop()
