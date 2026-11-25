@@ -77,9 +77,6 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 	if len(d.BadUsage) > 0 {
 		fmt.Fprintf(stderr, "warning: %d unreadable ledger lines (first: line %d: %v)\n", len(d.BadUsage), d.BadUsage[0].Line, d.BadUsage[0].Err)
 	}
-	if d.CollisionsErr != nil {
-		fmt.Fprint(stderr, collisionsWarning(d.CollisionsErr))
-	}
 	root, cfg, cfgPath, leases, malformed, recs := d.Root, d.Cfg, d.CfgPath, d.Leases, d.Malformed, d.Usage
 	h := header{
 		Name: filepath.Base(root), Pin: readPin(cfgPath),
@@ -105,7 +102,6 @@ type statusData struct {
 	Usage         []usage.Record
 	BadUsage      []usage.BadLine
 	Collisions    []comb.CaseCollision
-	CollisionsErr error
 }
 
 // statusFault is a refusal or failure of loadStatus: the exit code and the
@@ -246,12 +242,6 @@ func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaims
 	b.WriteByte('\n')
 	b.Write(usageBlock)
 	return b.Bytes()
-}
-
-// collisionsWarning is the one stderr line printed when the case collision
-// scan fails; status still exits 0.
-func collisionsWarning(err error) string {
-	return fmt.Sprintf("warning: could not check claims for directories that differ only in letter case: %v\n", err)
 }
 
 // ticketNum is the number of a canonical T-<n> ticket id, 0 when unparsable.
