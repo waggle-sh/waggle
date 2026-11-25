@@ -50,6 +50,9 @@ func runDoctor(args []string, stdout, stderr io.Writer, getenv func(string) stri
 	}
 	root, err := repoRoot(*repo)
 	if err != nil {
+		if code, ok := noRepoExit(stderr, "doctor", err); ok {
+			return code
+		}
 		return exit(3, "failed: %v", err)
 	}
 	cfg, err := config.Load(filepath.Join(root, layout.Config))
