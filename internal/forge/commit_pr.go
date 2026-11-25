@@ -57,12 +57,17 @@ func (g *github) MergedPRByCommit(ctx context.Context, sha string) (MergedPull, 
 		if r := p.Head.Repo; r != nil && !strings.EqualFold(r.FullName, g.owner+"/"+g.repo) {
 			head = r.FullName + ":" + p.Head.Ref
 		}
-		rv, err := (&ReviewReader{t: g.t, owner: g.owner, repo: g.repo}).Reviews(ctx, p.Number)
+		rr := &ReviewReader{t: g.t, owner: g.owner, repo: g.repo}
+		rv, err := rr.Reviews(ctx, p.Number)
 		if err != nil {
 			return MergedPull{}, false, fmt.Errorf("forge: reviews of pull request %d: %w", p.Number, err)
 		}
+		approvers, err := rr.approversAt(ctx, rv.Reviews, p.Head.SHA)
+		if err != nil {
+			return MergedPull{}, false, fmt.Errorf("forge: review bodies of pull request %d: %w", p.Number, err)
+		}
 		return MergedPull{Number: p.Number, Author: p.User.Login, HeadBranch: head, MergeSHA: sha,
-			Approvers: approversAt(rv.Reviews, p.Head.SHA)}, true, nil
+			Approvers: approvers}, true, nil
 	}
 	return MergedPull{}, false, nil
 }

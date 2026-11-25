@@ -14,7 +14,8 @@ import (
 // MergedPull is a merged pull request as a release receipt records it (T-051,
 // RFC-0005 6.2). HeadBranch is the entry of the branch list that matched,
 // MergeSHA the commit the merge left on the base branch, and Approvers every
-// login whose latest review is APPROVED at the merged head and not dismissed.
+// login whose latest review is APPROVED at the merged head, not dismissed, and
+// names that head on a waggle-approve line in its body (T-121).
 type MergedPull struct {
 	Number                       int
 	Author, HeadBranch, MergeSHA string
@@ -63,12 +64,17 @@ func (g *github) MergedPRByHead(ctx context.Context, branches []string) (MergedP
 		if best == nil {
 			continue
 		}
-		rv, err := (&ReviewReader{t: g.t, owner: g.owner, repo: g.repo}).Reviews(ctx, best.Number)
+		rr := &ReviewReader{t: g.t, owner: g.owner, repo: g.repo}
+		rv, err := rr.Reviews(ctx, best.Number)
 		if err != nil {
 			return MergedPull{}, false, fmt.Errorf("forge: reviews of pull request %d: %w", best.Number, err)
 		}
+		approvers, err := rr.approversAt(ctx, rv.Reviews, best.Head.SHA)
+		if err != nil {
+			return MergedPull{}, false, fmt.Errorf("forge: review bodies of pull request %d: %w", best.Number, err)
+		}
 		return MergedPull{Number: best.Number, Author: best.User.Login, HeadBranch: b, MergeSHA: best.MergeSHA,
-			Approvers: approversAt(rv.Reviews, best.Head.SHA)}, true, nil
+			Approvers: approvers}, true, nil
 	}
 	return MergedPull{}, false, nil
 }
@@ -89,21 +95,35 @@ func NewTokenPRFinder(repository, token, apiBase string) (PRFinder, error) {
 }
 
 // approversAt is every login whose latest deciding review (reviews come in ID
-// order; a comment or pending review decides nothing) is APPROVED at head. A
-// dismissed review is DISMISSED, so it leaves its login out.
-func approversAt(reviews []Review, head string) []string {
+// order; a comment or pending review decides nothing) is APPROVED at head and
+// whose body names head on a waggle-approve line. A dismissed review is
+// DISMISSED, so it leaves its login out. The commit GitHub reports for a
+// review does not count alone, as in the merge gate (T-120, T-121), so the
+// body of each such review is read; a failed read is an error.
+func (r *ReviewReader) approversAt(ctx context.Context, reviews []Review, head string) ([]string, error) {
 	latest := map[string]Review{}
-	for _, r := range reviews {
-		if r.State != "COMMENTED" && r.State != "PENDING" {
-			latest[r.Login] = r
+	for _, rv := range reviews {
+		if rv.State != "COMMENTED" && rv.State != "PENDING" {
+			latest[rv.Login] = rv
 		}
 	}
+	logins := []string{}
+	for login, rv := range latest {
+		if rv.State == "APPROVED" && rv.CommitID == head {
+			logins = append(logins, login)
+		}
+	}
+	slices.Sort(logins)
 	out := []string{}
-	for login, r := range latest {
-		if r.State == "APPROVED" && r.CommitID == head {
+	for _, login := range logins {
+		rv := latest[login]
+		shas, err := r.ReviewApproves(ctx, rv.NodeID, rv.Login)
+		if err != nil {
+			return nil, err
+		}
+		if slices.Contains(shas, head) {
 			out = append(out, login)
 		}
 	}
-	slices.Sort(out)
-	return out
+	return out, nil
 }

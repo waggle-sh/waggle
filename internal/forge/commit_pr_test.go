@@ -14,15 +14,18 @@ const commitPulls = `[
  {"number":9,"merged_at":"2026-10-23T11:00:00Z","merge_commit_sha":"` + mergeOK + `","user":{"login":"alice"},"head":{"sha":"` + headNew + `","ref":"t-051","repo":{"full_name":"O/R"}}}]`
 
 // The merged pull request is the one whose merge commit is the commit, not one
-// that merely contains it; approvers are read at its merged head.
+// that merely contains it; approvers are read at its merged head, from review
+// bodies that name it (T-121).
 func TestMergedPRByCommit(t *testing.T) {
-	g, log := fakeGitHub(t, map[string]reply{
+	b := approving(bodies{}, 1, "bob", headNew)
+	approving(b, 2, "dave", headOld)
+	g, log := withBodies(t, map[string]reply{
 		"GET /repos/o/r/commits/" + mergeOK + "/pulls": {200, commitPulls},
 		"POST /graphql": {200, reviewsBody(
 			reviewNode(1, "APPROVED", headNew, "bob"),
 			reviewNode(2, "APPROVED", headOld, "dave"),
 		)},
-	})
+	}, b)
 	pr, found, err := g.MergedPRByCommit(context.Background(), mergeOK)
 	if err != nil || !found {
 		t.Fatalf("found %v err %v", found, err)
