@@ -7763,3 +7763,43 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
 
 **Rationale:** Saves a ticket; T-119 already edits that file.
+
+## D-401: T-104 Q-T104-1: approve the telemetry privacy statement as written
+
+- **Date:** 2026-11-25
+- **Kind:** policy
+- **Tickets:** T-104
+- **Supersedes:** none
+
+**Question:** Does the Head Keeper approve these statements in docs/telemetry.md: the never-sent list is complete; the install id is linkable across 13 weekly reports; raw rows are kept 13 months, with a k = 10 rule for anything published; the operator can see rows, and Cloudflare processes the source IP even though it is dropped; forks are not covered; there is no per-install deletion, because the id rotates every 90 days and is tied to no one; the statement says aggregate, no personal data by design, never anonymous?
+
+**Options considered:**
+1. Approve as written.
+2. Approve, with a review of the wording by someone with legal knowledge before T-110 sends any data.
+3. Changes first.
+
+**Hive recommendation:** Option 1, from the T-104 scout brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 1:53 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1296), in the words "Approve as written".
+
+**Rationale:** T-104 cut B writes the statement as approved. Sending any data still waits for T-110 and its own Head Keeper yes (D-389).
+
+## D-402: T-104 Q-T104-2: protect the telemetry doc and schema with gate.protected_paths
+
+- **Date:** 2026-11-25
+- **Kind:** technical
+- **Tickets:** T-104
+- **Supersedes:** none
+
+**Question:** RFC section 3.8 says the telemetry allowlist and schema live under Tier 3 paths, but docs/telemetry.md and docs/telemetry.schema.json would not. Protect them?
+
+**Options considered:**
+1. Add both files to gate.protected_paths in .waggle/control/config.yaml, so a change needs a listed approver at the head.
+2. Leave them unprotected and correct RFC 3.8's wording.
+3. Put the files under an already protected path.
+
+**Hive recommendation:** Option 1: it makes RFC 3.8 true with a one-line config change.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 1:53 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1296), in the words "Yes, protect them".
+
+**Rationale:** The config change is its own PR. It touches .waggle/control, so it needs the Head Keeper's SSH-signed head commit.
