@@ -7549,3 +7549,23 @@
 **Keeper choice:** Option 1, approved by the Head Keeper, Paul Cleary, on 2026-11-23 at 10:35 PM Pacific Time (relayed in writing by the orchestrator), in the words "All the recs look good!". Open questions 1 to 11 follow the RFC recommendations: rotating install id every 90 days (1); pilots on, phase 0 local only for 4 to 6 weeks (2); public waggle-sh/insights with a Cloudflare Worker and D1 (3); analyst proposes only, at most 2 open and 1 new a week (4); rejection memory 6 months or 1.5x signal (5); hold only where guard is impossible (6); one mode value, gate.mode: hold (7); on_breach: issue by default, revert opt-in (8); a GitHub App as merge identity (9); a scout-editable stage: field (10); sequencing as option 1 (11). Option 4 is not adopted. Code tickets T-104 to T-118 are opened as stubs.
 
 **Rationale:** Option 1 cuts nothing in VISION core items: telemetry is off by default and adds no footprint for hives that do not opt in (core item 4), and hold covers only private repos where guard cannot be enforced, so core item 2 is not narrowed for any hive that could have a required check. Option 4 would narrow core item 2 and would need a typed reason. Creating the insights repo, any Cloudflare resource (T-110) or a GitHub App (T-114) still needs the Head Keeper's explicit yes at that ticket, since they involve infrastructure, money or secrets. The scout-editable stage: field (T-106) changes the hive format and gets its own Head Keeper card. Decided by the Head Keeper in writing; recorded by the queen.
+
+## D-390: T-081: Q1 ruled Tier 2 if golden tests show no change
+
+- **Date:** 2026-11-24
+- **Kind:** technical
+- **Tickets:** T-081
+- **Supersedes:** none
+
+**Question:** Is refactoring internal/comb ListActiveLeases and CaseCollisions (internal/comb/git.go) onto a shared sync helper, so waggle status fetches claim refs once, Tier 3 because it "changes how comb reads claims", or Tier 2?
+
+**Options considered:**
+1. Tier 2 if golden tests show the output of both methods is unchanged.
+2. Tier 3 regardless.
+3. Tier 2 without extra tests.
+
+**Hive recommendation:** Option 1, from the T-081 scout brief: Tier 2 only if the existing methods' behaviour is byte for byte unchanged.
+
+**Keeper choice:** Option 1, approved by the Head Keeper, on 2026-11-23 at 9:59 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e683), in the words "Tier 2 if golden tests show no change".
+
+**Rationale:** The T-081 build adds golden tests that capture ListActiveLeases and CaseCollisions output on main before the refactor and prove identical output after. If any golden differs, the PR is Tier 3 and waits for the Head Keeper signature.
