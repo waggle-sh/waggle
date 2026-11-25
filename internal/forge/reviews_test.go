@@ -203,3 +203,99 @@ func TestNewReviewReader(t *testing.T) {
 		t.Errorf("valid: %v", err)
 	}
 }
+
+func TestReviewsNodeID(t *testing.T) {
+	withID := func(id, n string) string {
+		return strings.Replace(n, `{"fullDatabaseId"`, `{"id":`+id+`,"fullDatabaseId"`, 1)
+	}
+	rr, reqs := reviewServer(t, 200, page([]string{
+		withID(`"PRR_kwDOabc-_="`, node("1", "APPROVED", "alice")),
+		withID(`"bad id!"`, node("2", "APPROVED", "bob")),
+		node("3", "APPROVED", "carol"),
+	}, "", ""))
+	got, err := rr.Reviews(context.Background(), 1)
+	if err != nil || len(got.Reviews) != 3 {
+		t.Fatalf("got %+v %v", got, err)
+	}
+	if ids := []string{got.Reviews[0].NodeID, got.Reviews[1].NodeID, got.Reviews[2].NodeID}; ids[0] != "PRR_kwDOabc-_=" || ids[1] != "" || ids[2] != "" {
+		t.Errorf("node IDs = %q", ids)
+	}
+	if got.Reviews[0].Approves != nil {
+		t.Errorf("Reviews filled Approves: %v", got.Reviews[0].Approves)
+	}
+	if !regexp.MustCompile(`nodes \{ id fullDatabaseId`).MatchString((*reqs)[0]) {
+		t.Errorf("query does not select id: %s", (*reqs)[0])
+	}
+}
+
+// bodyReply renders a review body reply. editor "" means no editor.
+func bodyReply(body, author, editor string) string {
+	ed := "null"
+	if editor != "" {
+		ed = fmt.Sprintf(`{"login":%q}`, editor)
+	}
+	return fmt.Sprintf(`{"data":{"node":{"body":%q,"author":{"login":%q},"editor":%s}}}`, body, author, ed)
+}
+
+// TestReviewApproves is T-120: an approving review names the commit it
+// approves in its body, and only that name binds it to a head.
+func TestReviewApproves(t *testing.T) {
+	const headB = "fedcba9876543210fedcba9876543210fedcba98"
+	cases := []struct {
+		name, reply string
+		want        []string
+		err         bool
+	}{
+		{"names head", bodyReply("Looks good.\n  waggle-approve "+headA+"  \n", "alice", ""), []string{headA}, false},
+		{"case-folded author", bodyReply("waggle-approve "+headA, "ALICE", ""), []string{headA}, false},
+		{"self edit", bodyReply("waggle-approve "+headA, "alice", "Alice"), []string{headA}, false},
+		{"two lines", bodyReply("waggle-approve "+headA+"\nwaggle-approve "+headB, "alice", ""), []string{headA, headB}, false},
+		{"no line", bodyReply("LGTM", "alice", ""), nil, false},
+		{"short sha", bodyReply("waggle-approve "+headA[:12], "alice", ""), nil, false},
+		{"quoted", bodyReply("> waggle-approve "+headA, "alice", ""), nil, false},
+		{"edited by another account", bodyReply("waggle-approve "+headA, "alice", "mallory"), nil, false},
+		{"edited, editor gone", strings.Replace(bodyReply("waggle-approve "+headA, "alice", ""), `"editor":null`, `"editor":null,"lastEditedAt":"2026-11-25T10:00:00Z"`, 1), nil, false},
+		{"self edit with time", strings.Replace(bodyReply("waggle-approve "+headA, "alice", "alice"), `"editor"`, `"lastEditedAt":"2026-11-25T10:00:00Z","editor"`, 1), []string{headA}, false},
+		{"other author", bodyReply("waggle-approve "+headA, "mallory", ""), nil, true},
+		{"no node", `{"data":{"node":null}}`, nil, true},
+		{"no body", `{"data":{"node":{"author":{"login":"alice"}}}}`, nil, true},
+		{"no author", `{"data":{"node":{"body":"waggle-approve ` + headA + `","author":null}}}`, nil, true},
+		{"graphql errors", `{"errors":[{"message":"x"}],"data":null}`, nil, true},
+		{"malformed", `{`, nil, true},
+	}
+	for _, tc := range cases {
+		rr, reqs := reviewServer(t, 200, tc.reply)
+		got, err := rr.ReviewApproves(context.Background(), "PRR_1", "alice")
+		if (err != nil) != tc.err || strings.Join(got, ",") != strings.Join(tc.want, ",") {
+			t.Errorf("%s: got %v, %v", tc.name, got, err)
+		}
+		if len(*reqs) != 1 || !strings.Contains((*reqs)[0], `"id":"PRR_1"`) {
+			t.Errorf("%s: requests = %q", tc.name, *reqs)
+		}
+	}
+	rr, reqs := reviewServer(t, 200, bodyReply("waggle-approve "+headA, "alice", ""))
+	for _, id := range []string{"", "bad id", strings.Repeat("a", 129)} {
+		if _, err := rr.ReviewApproves(context.Background(), id, "alice"); err == nil {
+			t.Errorf("id %.12q: want an error", id)
+		}
+	}
+	if len(*reqs) != 0 {
+		t.Errorf("a bad ID was sent: %q", *reqs)
+	}
+	for _, status := range []int{403, 500} {
+		rr, _ := reviewServer(t, status, `{"message":"nope `+testToken+`"}`)
+		_, err := rr.ReviewApproves(context.Background(), "PRR_1", "alice")
+		var se *StatusError
+		if !errors.As(err, &se) || se.Status != status {
+			t.Errorf("status %d: err = %v", status, err)
+		}
+		noToken(t, err)
+	}
+}
+
+// TestReviewBodyFitsCap: the worst-case one-review reply stays within maxBody.
+func TestReviewBodyFitsCap(t *testing.T) {
+	if worst := commentBodyMax*commentJSONWorst + commentPageWrapper; worst > maxBody {
+		t.Fatalf("worst reply %d bytes over maxBody %d", worst, maxBody)
+	}
+}
