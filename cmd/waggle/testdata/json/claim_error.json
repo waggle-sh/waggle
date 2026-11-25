@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "command": "claim",
+  "ok": false,
+  "task": "T-032",
+  "error": {
+    "code": "usage",
+    "exit": 2,
+    "message": "--dirs is required: a comma-separated list with no empty entry"
+  }
+}

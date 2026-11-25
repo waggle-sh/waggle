@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,12 +18,16 @@ import (
 )
 
 // fakeReviews is the review source tests install; it makes no HTTP call.
+// ReviewApproves answers from the Approves of the matching review in rv, as
+// if read from its body.
 type fakeReviews struct {
 	rv          forge.PRReviews
 	err         error
 	calls       int
 	comments    []forge.Comment
 	commentsErr error
+	bodyErr     error
+	bodyReads   int
 }
 
 func (f *fakeReviews) Reviews(ctx context.Context, number int) (forge.PRReviews, error) {
@@ -32,6 +37,19 @@ func (f *fakeReviews) Reviews(ctx context.Context, number int) (forge.PRReviews,
 
 func (f *fakeReviews) Comments(ctx context.Context, number int) ([]forge.Comment, error) {
 	return f.comments, f.commentsErr
+}
+
+func (f *fakeReviews) ReviewApproves(ctx context.Context, id, login string) ([]string, error) {
+	f.bodyReads++
+	if f.bodyErr != nil {
+		return nil, f.bodyErr
+	}
+	for _, r := range f.rv.Reviews {
+		if r.NodeID == id && r.NodeID != "" && strings.EqualFold(r.Login, login) {
+			return r.Approves, nil
+		}
+	}
+	return nil, errors.New("no such review")
 }
 
 // noApproval is the warning when no listed approver's approval counts.
@@ -106,9 +124,17 @@ func prEnv(path string) map[string]string {
 		"GITHUB_TOKEN": "tok", "GITHUB_REPOSITORY": "o/r"}
 }
 
+// approval is a review GitHub reports at commit whose body names commit on a
+// waggle-approve line. bare drops that line.
 func approval(id int64, login, state, commit string) forge.Review {
-	return forge.Review{ID: id, Login: login, State: state, CommitID: commit, Submitted: apprTime}
+	return forge.Review{ID: id, Login: login, State: state, CommitID: commit, Submitted: apprTime,
+		NodeID: fmt.Sprintf("PRR_%d", id), Approves: []string{commit}}
 }
+
+func bare(r forge.Review) forge.Review { r.Approves = nil; return r }
+
+// names sets the commits r's body names on waggle-approve lines.
+func names(r forge.Review, shas ...string) forge.Review { r.Approves = shas; return r }
 
 func errLines(out string) string {
 	var ls []string
@@ -149,6 +175,11 @@ func TestApprovedBy(t *testing.T) {
 		{"no time with base change", []forge.Review{{ID: 1, Login: "alice", State: "APPROVED", CommitID: h}}, apprTime, ""},
 		{"id order not slice order", []forge.Review{approval(1<<31+1, "alice", "APPROVED", h), approval(1<<31-1, "alice", "CHANGES_REQUESTED", h)}, time.Time{}, "alice"},
 		{"changes after approval by id", []forge.Review{approval(1<<31-1, "alice", "CHANGES_REQUESTED", h), approval(1<<31+1, "alice", "APPROVED", h)}, time.Time{}, "alice"},
+		{"reported at head, names an older head", []forge.Review{names(approval(1, "alice", "APPROVED", h), o)}, time.Time{}, ""},
+		{"reported at head, no waggle-approve line", []forge.Review{bare(approval(1, "alice", "APPROVED", h))}, time.Time{}, ""},
+		{"names head, reported at older head", []forge.Review{names(approval(1, "alice", "APPROVED", o), h)}, time.Time{}, ""},
+		{"names older and head", []forge.Review{names(approval(1, "alice", "APPROVED", h), o, h)}, time.Time{}, "alice"},
+		{"older named then fresh one", []forge.Review{names(approval(1, "alice", "APPROVED", h), o), approval(2, "alice", "APPROVED", h)}, time.Time{}, "alice"},
 		{"none", nil, time.Time{}, ""},
 	}
 	for _, tc := range cases {
@@ -173,6 +204,30 @@ func TestApproverPasses(t *testing.T) {
 		code, out := r.runWith(env, c)
 		if code != 0 || !strings.Contains(out, "::warning::"+c+": protected paths approved by alice at "+head[:12]) {
 			t.Errorf("%s exit %d\n%s", c, code, out)
+		}
+	}
+}
+
+// TestApproverNamesHead is T-120 on a listed protected path: a review
+// GitHub reports at the head but whose body names an older head does not
+// pass it, and a fresh one naming the head does.
+func TestApproverNamesHead(t *testing.T) {
+	r := apprRepo(t, apprConfig, func(r gateRepo) { r.write("docs/b.md", []byte("b\n")); r.commit("T-031: more") })
+	head, prev := r.head(), r.git("rev-parse", "branch~1")
+	older := names(approval(1, "alice", "APPROVED", head), prev)
+	for _, tc := range []struct {
+		name    string
+		reviews []forge.Review
+		code    int
+		want    string
+	}{
+		{"names older head", []forge.Review{older}, 1, noApproval},
+		{"fresh", []forge.Review{older, approval(2, "alice", "APPROVED", head)}, 0, "protected paths approved by alice at "},
+	} {
+		useFake(t, &fakeReviews{rv: forge.PRReviews{Reviews: tc.reviews}})
+		code, out := r.runWith(prEnv(writeEvent(t, head, "x", apprBody)), "verify")
+		if code != tc.code || !strings.Contains(out, tc.want) {
+			t.Errorf("%s: exit %d, want %d\n%s", tc.name, code, tc.code, out)
 		}
 	}
 }

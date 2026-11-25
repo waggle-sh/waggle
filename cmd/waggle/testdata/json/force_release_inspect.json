@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "command": "force-release",
+  "ok": true,
+  "task": "T-023",
+  "outcome": "inspected",
+  "ref": "refs/waggle/claims/ticket-23",
+  "oid": "<OID>",
+  "owner": "carol",
+  "gate": "full",
+  "directories": [
+    "internal/x"
+  ],
+  "expires_at": "<TIME>",
+  "expired": false,
+  "malformed_reason": "",
+  "caller": "alice",
+  "first_approver": "alice",
+  "authorized": true,
+  "base": "<OID>",
+  "next": "waggle force-release T-023 --oid <OID> --reason \"\u003cwhy\u003e\" --repo <REPO>",
+  "audit_oid": "",
+  "warnings": []
+}

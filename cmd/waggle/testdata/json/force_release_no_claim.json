@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "command": "force-release",
+  "ok": true,
+  "task": "T-099",
+  "outcome": "no_claim",
+  "ref": "refs/waggle/claims/ticket-99",
+  "oid": "",
+  "owner": "",
+  "gate": "",
+  "directories": [],
+  "expires_at": "",
+  "expired": false,
+  "malformed_reason": "",
+  "caller": "alice",
+  "first_approver": "alice",
+  "authorized": true,
+  "base": "<OID>",
+  "next": "",
+  "audit_oid": "",
+  "warnings": []
+}

@@ -15,11 +15,17 @@ import (
 )
 
 // Review is one pull request review as the merge gate reads it. Submitted is
-// zero and CommitID is "" when GitHub sent no usable value.
+// zero and CommitID and NodeID are "" when GitHub sent no usable value.
+// CommitID is the commit GitHub reports for the review; the gate does not
+// take it alone as the commit approved (T-120). Approves is empty after
+// Reviews: the gate fills it, with ReviewApproves, only for reviews it may
+// count.
 type Review struct {
 	ID                     int64
 	Login, State, CommitID string
+	NodeID                 string
 	Submitted              time.Time
+	Approves               []string
 }
 
 // PRReviews is every review of one pull request in ID order, and the time of
@@ -77,13 +83,14 @@ const reviewsQuery = `query($owner: String!, $name: String!, $n: Int!, $cursor: 
     timelineItems(last: 1, itemTypes: [BASE_REF_CHANGED_EVENT]) { nodes { ... on BaseRefChangedEvent { createdAt } } }
     reviews(first: 100, after: $cursor) {
       pageInfo { hasNextPage endCursor }
-      nodes { fullDatabaseId state submittedAt commit { oid } author { login } }
+      nodes { id fullDatabaseId state submittedAt commit { oid } author { login } }
     }
   } }
 }`
 
 var (
 	digits     = regexp.MustCompile(`^[0-9]{1,19}$`)
+	nodeID     = regexp.MustCompile(`^[A-Za-z0-9_=-]{1,128}$`)
 	headOID    = regexp.MustCompile(`^[0-9a-f]{40}$`)
 	reviewKind = map[string]bool{"APPROVED": true, "CHANGES_REQUESTED": true, "COMMENTED": true, "DISMISSED": true, "PENDING": true}
 )
@@ -104,6 +111,7 @@ type reviewsResponse struct {
 						EndCursor   *string `json:"endCursor"`
 					} `json:"pageInfo"`
 					Nodes []struct {
+						NodeID      string  `json:"id"`
 						ID          *string `json:"fullDatabaseId"`
 						State       string  `json:"state"`
 						SubmittedAt *string `json:"submittedAt"`
@@ -174,6 +182,9 @@ func (r *ReviewReader) Reviews(ctx context.Context, number int) (PRReviews, erro
 			}
 			seen[id] = true
 			rv := Review{ID: id, Login: n.Author.Login, State: n.State}
+			if nodeID.MatchString(n.NodeID) {
+				rv.NodeID = n.NodeID
+			}
 			if n.Commit != nil && headOID.MatchString(n.Commit.OID) {
 				rv.CommitID = n.Commit.OID
 			}
@@ -195,4 +206,63 @@ func (r *ReviewReader) Reviews(ctx context.Context, number int) (PRReviews, erro
 	}
 	sort.Slice(res.Reviews, func(i, j int) bool { return res.Reviews[i].ID < res.Reviews[j].ID })
 	return res, nil
+}
+
+// reviewBodyQuery reads one review body. One review per request keeps the
+// worst-case reply (a 65536-character body, each character a 6-byte JSON
+// escape) within maxBody.
+const reviewBodyQuery = `query($id: ID!) {
+  node(id: $id) { ... on PullRequestReview { body lastEditedAt author { login } editor { login } } }
+}`
+
+type reviewBodyResponse struct {
+	Errors []any `json:"errors"`
+	Data   struct {
+		Node *struct {
+			Body   *string `json:"body"`
+			Author *struct {
+				Login string `json:"login"`
+			} `json:"author"`
+			Editor *struct {
+				Login string `json:"login"`
+			} `json:"editor"`
+			LastEditedAt *string `json:"lastEditedAt"`
+		} `json:"node"`
+	} `json:"data"`
+}
+
+// ReviewApproves returns the commits named by the waggle-approve lines of the
+// body of the review with GraphQL ID id, written by login (T-120). A body last
+// edited by another account, or edited by an account GitHub no longer names,
+// approves nothing. The body is never kept or returned, and errors carry no
+// GitHub text.
+func (r *ReviewReader) ReviewApproves(ctx context.Context, id, login string) ([]string, error) {
+	if !nodeID.MatchString(id) {
+		return nil, errors.New("forge: review body: no usable review ID")
+	}
+	in := map[string]any{"query": reviewBodyQuery, "variables": map[string]any{"id": id}}
+	var out reviewBodyResponse
+	if _, err := r.t.do(ctx, "POST", "/graphql", in, &out); err != nil {
+		var ae *apiError
+		if errors.As(err, &ae) {
+			return nil, &StatusError{Status: ae.Status}
+		}
+		return nil, errors.New("forge: review body: read failed")
+	}
+	if len(out.Errors) > 0 {
+		return nil, errors.New("forge: review body: GraphQL returned errors")
+	}
+	n := out.Data.Node
+	if n == nil || n.Body == nil || n.Author == nil {
+		return nil, errors.New("forge: review body: no such review")
+	}
+	if !strings.EqualFold(n.Author.Login, login) {
+		return nil, errors.New("forge: review body: author differs from the review list")
+	}
+	// An edit whose editor GitHub no longer names (a deleted account) may be
+	// another account's, so it names nothing either.
+	if (n.Editor != nil && !strings.EqualFold(n.Editor.Login, n.Author.Login)) || (n.Editor == nil && n.LastEditedAt != nil) {
+		return nil, nil
+	}
+	return ApproveSHAs(*n.Body), nil
 }

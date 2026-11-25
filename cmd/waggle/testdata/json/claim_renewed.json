@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "command": "claim",
+  "ok": true,
+  "task": "T-032",
+  "outcome": "renewed",
+  "claim": {
+    "task": "T-032",
+    "owner": "alice",
+    "gate": "full",
+    "directories": [
+      "internal/x",
+      "internal/y"
+    ],
+    "claimed_at": "<TIME>",
+    "expires_at": "<TIME>",
+    "ref": "refs/waggle/claims/ticket-32",
+    "oid": "<OID>",
+    "branches": [
+      "t-032"
+    ]
+  },
+  "notes": [],
+  "warnings": []
+}
