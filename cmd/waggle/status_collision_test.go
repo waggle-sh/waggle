@@ -3,7 +3,8 @@
 package main
 
 import (
-	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -60,12 +61,36 @@ func TestStatusCaseCollision(t *testing.T) {
 	checkPlain(t, "status warning line", collisionLine)
 }
 
-// T-073 test B2: a failed scan is one plain warning line. loadStatus returns
-// the error in statusData and runStatus prints only this line for it.
-func TestCollisionsWarning(t *testing.T) {
-	got := collisionsWarning(errors.New("fetch failed"))
-	if strings.Count(got, "\n") != 1 || !strings.HasPrefix(got, "warning: ") || !strings.Contains(got, "fetch failed") {
-		t.Errorf("warning %q", got)
+// T-082: a failed claims read (here the claim sync from a missing remote)
+// fails status with exit 3 before any collision result exists, so stdout is
+// empty and neither stream carries a collision warning.
+func TestStatusClaimsReadFails(t *testing.T) {
+	requireGit(t)
+	fixClock(t)
+	dir := newHive(t)
+	git(t, dir, "remote", "add", "origin", filepath.Join(t.TempDir(), "missing.git"))
+	cfg := filepath.Join(dir, layout.Config)
+	b, err := os.ReadFile(cfg)
+	if err != nil {
+		t.Fatal(err)
 	}
-	checkPlain(t, "collision scan warning", got)
+	if !strings.Contains(string(b), "forge:\n") {
+		t.Fatalf("config has no forge section:\n%s", b)
+	}
+	if err := os.WriteFile(cfg, []byte(strings.Replace(string(b), "forge:\n", "forge:\n  remote: origin\n", 1)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	code, out, errb := runStatusT(t, "--repo", dir)
+	if code != 3 {
+		t.Fatalf("code %d, want 3; stderr %q", code, errb)
+	}
+	if out != "" {
+		t.Errorf("stdout %q, want empty", out)
+	}
+	if !strings.HasPrefix(errb, "waggle status failed: ") {
+		t.Errorf("stderr %q, want prefix %q", errb, "waggle status failed: ")
+	}
+	if strings.Contains(out+errb, "letter case") {
+		t.Errorf("collision warning printed on a failed claims read: %q", errb)
+	}
 }
