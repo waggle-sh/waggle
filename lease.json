@@ -10,10 +10,11 @@
     "internal/comb",
     "site"
   ],
-  "claimed_at": "2026-11-25T06:44:07Z",
-  "expires_at": "2026-11-27T06:44:07Z",
+  "claimed_at": "2026-11-25T06:48:31Z",
+  "expires_at": "2026-11-28T06:48:31Z",
   "branches": [
     "t-081",
-    "t-081b"
+    "t-081b",
+    "records-d390-19"
   ]
 }
