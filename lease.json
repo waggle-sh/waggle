@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "ticket_id": "T-120",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle/gate_approve.go",
+    "cmd/waggle/gate_approve_test.go",
+    "cmd/waggle/gate_keeper_test.go",
+    "internal/forge/reviews.go",
+    "internal/forge/reviews_test.go"
+  ],
+  "claimed_at": "2026-11-25T19:17:44Z",
+  "expires_at": "2026-11-27T19:17:44Z",
+  "branches": [
+    "gate-approval-head"
+  ]
+}
