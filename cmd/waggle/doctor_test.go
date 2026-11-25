@@ -132,8 +132,13 @@ func TestDoctorExitCodes(t *testing.T) {
 		requireGit(t)
 		empty := t.TempDir()
 		git(t, empty, "init", "-q")
-		if code, _, _ := runDoc("--repo", empty); code != 3 {
-			t.Errorf("exit %d, want 3", code)
+		code, out, errb := runDoc("--repo", empty)
+		if code != 3 || out != "" {
+			t.Errorf("exit %d stdout %q, want 3 and empty", code, out)
+		}
+		if !strings.HasPrefix(errb, "waggle doctor failed: config: ") ||
+			!strings.HasSuffix(errb, "No .waggle/control/config.yaml here. To set up the gate, run: waggle init --gate-only\n") {
+			t.Errorf("stderr %q", errb)
 		}
 	})
 }
