@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "ticket_id": "T-096",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "README.md",
+    "cmd/waggle/examples_test.go",
+    "examples/gate-walkthrough"
+  ],
+  "claimed_at": "2026-11-25T17:37:15Z",
+  "expires_at": "2026-11-28T17:37:15Z",
+  "branches": [
+    "t-096"
+  ]
+}
