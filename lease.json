@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "ticket_id": "T-113",
+  "keeper_id": "paulternate",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle/gate_mode_test.go",
+    "cmd/waggle/gate_verify.go",
+    "cmd/waggle/gate_verify_test.go",
+    "internal/config"
+  ],
+  "claimed_at": "2026-11-25T21:38:54Z",
+  "expires_at": "2026-11-27T21:38:54Z",
+  "branches": [
+    "t-113",
+    "t-113-2"
+  ]
+}
