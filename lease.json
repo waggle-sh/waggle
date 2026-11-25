@@ -5,11 +5,13 @@
   "role": "builder",
   "gate": "full",
   "directories": [
+    "README.md",
     "cmd/waggle",
-    "internal/comb"
+    "internal/comb",
+    "site"
   ],
-  "claimed_at": "2026-11-23T18:00:48Z",
-  "expires_at": "2026-11-25T18:00:48Z",
+  "claimed_at": "2026-11-25T06:44:07Z",
+  "expires_at": "2026-11-27T06:44:07Z",
   "branches": [
     "t-081",
     "t-081b"
