@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://getwaggle.dev/telemetry.schema.json",
+  "title": "Waggle telemetry payload v1",
+  "description": "One weekly report. Allowlist: any key not listed here is rejected. See docs/telemetry.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "peopleBucket": {
+      "enum": ["1", "2-5", "6-20", "21+"]
+    },
+    "countBucket": {
+      "enum": ["0", "1-5", "6-20", "21-50", "51+"]
+    },
+    "hours": {
+      "enum": [1, 4, 12, 24, 72, 168, 336]
+    },
+    "hoursPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p50", "p90"],
+      "properties": {
+        "p50": { "$ref": "#/$defs/hours" },
+        "p90": { "$ref": "#/$defs/hours" }
+      }
+    },
+    "cyclesPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p50", "p90"],
+      "properties": {
+        "p50": { "type": "integer", "minimum": 0, "maximum": 10 },
+        "p90": { "type": "integer", "minimum": 0, "maximum": 10 }
+      }
+    },
+    "percentRounded": {
+      "enum": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    },
+    "checkCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "leases": { "$ref": "#/$defs/countBucket" },
+        "tiers": { "$ref": "#/$defs/countBucket" },
+        "binding": { "$ref": "#/$defs/countBucket" },
+        "decisions": { "$ref": "#/$defs/countBucket" }
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "week",
+    "waggle_version",
+    "gate_mode",
+    "forge_capability",
+    "contributors",
+    "keepers",
+    "prs_merged",
+    "ticket_to_merge_hours",
+    "claim_to_merge_hours",
+    "fix_cycles_per_pr",
+    "rebase_cycles_per_pr",
+    "claim_rate",
+    "receipt_rate",
+    "releases_90d",
+    "install_id"
+  ],
+  "properties": {
+    "schema": { "const": 1 },
+    "week": { "type": "string", "pattern": "^[0-9]{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$" },
+    "waggle_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+    "gate_mode": { "enum": ["open", "guard", "hold"] },
+    "forge_capability": { "enum": ["required_check", "none"] },
+    "contributors": { "$ref": "#/$defs/peopleBucket" },
+    "keepers": { "$ref": "#/$defs/peopleBucket" },
+    "prs_merged": { "enum": ["0", "1-5", "6-20", "21-50", "51+"] },
+    "tickets_by_stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "backlog": { "$ref": "#/$defs/countBucket" },
+        "ready": { "$ref": "#/$defs/countBucket" },
+        "in-progress": { "$ref": "#/$defs/countBucket" },
+        "done": { "$ref": "#/$defs/countBucket" }
+      }
+    },
+    "stage_dwell_hours": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "backlog": { "$ref": "#/$defs/hoursPair" },
+        "ready": { "$ref": "#/$defs/hoursPair" },
+        "in-progress": { "$ref": "#/$defs/hoursPair" },
+        "done": { "$ref": "#/$defs/hoursPair" }
+      }
+    },
+    "ticket_to_merge_hours": { "$ref": "#/$defs/hoursPair" },
+    "claim_to_merge_hours": { "$ref": "#/$defs/hoursPair" },
+    "would_fail": { "$ref": "#/$defs/checkCounts" },
+    "failed": { "$ref": "#/$defs/checkCounts" },
+    "fix_cycles_per_pr": { "$ref": "#/$defs/cyclesPair" },
+    "rebase_cycles_per_pr": { "$ref": "#/$defs/cyclesPair" },
+    "claim_rate": { "$ref": "#/$defs/percentRounded" },
+    "receipt_rate": { "$ref": "#/$defs/percentRounded" },
+    "releases_90d": { "type": "integer", "minimum": 0, "maximum": 12 },
+    "install_id": { "type": "string", "pattern": "^[0-9a-f]{32}$" }
+  }
+}
