@@ -47,6 +47,7 @@ Start at [getwaggle.dev](https://getwaggle.dev) and its [docs](https://getwaggle
 - [Several keepers on one repo](docs/multi-keeper.md)
 - [Nectar: the reputation score](docs/nectar.md) and [Quorum: priority rounds](docs/quorum.md) (on main, not in a release yet)
 - [Recipes](docs/recipes/README.md)
+- [Gate walkthrough: a runnable pass and fail, no GitHub needed](examples/gate-walkthrough/README.md)
 - [Contributing: product layer, repo records and the glossary](CONTRIBUTING.md)
 
 ## Quick start
