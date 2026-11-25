@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-087",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "CODE_OF_CONDUCT.md"
+  ],
+  "claimed_at": "2026-11-25T06:48:27Z",
+  "expires_at": "2026-11-28T06:48:27Z",
+  "branches": [
+    "t-087-hive-19"
+  ]
+}
