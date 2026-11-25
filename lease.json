@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "ticket_id": "T-082",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "SECURITY.md"
+  ],
+  "claimed_at": "2026-11-25T14:06:30Z",
+  "expires_at": "2026-11-28T14:06:30Z",
+  "branches": [
+    "t-082-retarget",
+    "t-082"
+  ]
+}
