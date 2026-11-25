@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "command": "release",
+  "ok": true,
+  "task": "T-032",
+  "outcome": "no_claim",
+  "oid": "",
+  "merged": false,
+  "branch": "",
+  "receipt": "",
+  "warnings": []
+}
