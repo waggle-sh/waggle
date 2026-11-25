@@ -37,31 +37,33 @@ T-055 · Multi-Keeper story restore (RFC + README/CONTRIBUTING cut-list unwind; 
 T-070 · Quorum RFC phase 2 (fork contributor export and import, relay transport with T-055) · TBD · proposed · v0.2 · product
 T-072 · waggle force-release (the Head Keeper clears a stuck or malformed claim, with an audit trail) · M · merged (phases A, B and the README line: #267, #271, #272) · v0.1 · product
 T-073 · Case-folded claim overlap checks (carries out D-038; opened by T-072 Q-T072-5) · S to M · merged (phases A and B: #266, #274) · v0.1 · product
-T-074 · Gate head tree collision check: Unicode normalization variants (T-073 Q-T073-8) · S to M · proposed (scout brief merged, #277; no build yet) · v0.1 · product
+T-074 · Gate head tree collision check: Unicode normalization variants (T-073 Q-T073-8) · S to M · merged (#336) · v0.1 · product
 T-075 · Doctor claims finding: collision count (T-073 Q-T073-5; after T-072 phase B and T-073 phase A) · S · merged (#305; scout brief #278) · v0.1 · product
-T-081 · One claim sync per waggle status run (T-073 phase B guard note) · S · proposed · v0.1 · product
-T-082 · Status test for a failed claims read, drop dead CollisionsErr (T-073 phase B guard note, retargeted after T-081) · S · proposed · v0.1 · product
-T-083 · multi-keeper.md wording: the collision never grows (T-073 phase B guard note) · S · proposed · v0.1 · docs
-T-084 · waggle hives status shows case collisions (T-073 phase B guard note) · S · proposed · v0.1 · product
+T-081 · One claim sync per waggle status run (T-073 phase B guard note) · S · merged (#310) · v0.1 · product
+T-082 · Status test for a failed claims read, drop dead CollisionsErr (T-073 phase B guard note, retargeted after T-081) · S · merged (#321) · v0.1 · product
+T-083 · multi-keeper.md wording: the collision never grows (T-073 phase B guard note) · S · merged (#306) · v0.1 · docs
+T-084 · waggle hives status shows case collisions (T-073 phase B guard note) · S · merged (#323) · v0.1 · product
 
 ## Backlog (public source release polish)
 
 Ported on 2026-11-23 from dev-mgr's `docs/BACKLOG.md` (PR #294, superseded). Every ticket is decision-free and touches Tier 1 or Tier 2 paths only. Each is a stub: the scout writes the full brief (lease, target, stop and planned cut under D-185) before any dispatch.
 
-T-087 · Top-level help and version flags, usage on the right stream · S · proposed · v0.1 · product
-T-088 · waggle init testable and strict about its arguments · S · proposed · v0.1 · product
-T-089 · Docs drift test: usage lines and command list · S · proposed · v0.1 · product
-T-090 · Claim and release error messages name the flag and the fix · S · proposed · v0.1 · product
-T-091 · Clear message when run outside a git repo or without a remote · S · proposed · v0.1 · product
-T-092 · Gate tests: submodule end to end and rename out of a Tier 3 path · S · proposed · v0.1 · product
-T-093 · Gate tests: awkward path names and claim directory spelling · S · proposed · v0.1 · product
-T-094 · Test the install script offline · S · proposed · v0.1 · product
-T-095 · Docs cite source by line number: audit and guard · S · proposed · v0.1 · docs
-T-096 · Runnable gate walkthrough in examples/ · S · proposed · v0.1 · docs
-T-097 · Troubleshooting page built from real gate messages · S · proposed · v0.1 · docs
-T-098 · Empty states for status and doctor · S · proposed · v0.1 · product
-T-099 · Golden tests for --json output · S · proposed · v0.1 · product
-T-100 · One local check script that matches CI and the release matrix · S · proposed · v0.1 · product
+T-087 · Top-level help and version flags, usage on the right stream · S · merged (#327) · v0.1 · product
+T-088 · waggle init testable and strict about its arguments · S · merged (#332) · v0.1 · product
+T-089 · Docs drift test: usage lines and command list · S · merged (#339) · v0.1 · product
+T-090 · Claim and release error messages name the flag and the fix · S · merged (#330) · v0.1 · product
+T-091 · Clear message when run outside a git repo or without a remote · S · in part (#341, no-remote half held) · v0.1 · product
+T-092 · Gate tests: submodule end to end and rename out of a Tier 3 path · S · merged (#325) · v0.1 · product
+T-093 · Gate tests: awkward path names and claim directory spelling · S · merged (#328) · v0.1 · product
+T-094 · Test the install script offline · S · merged (#326) · v0.1 · product
+T-095 · Docs cite source by line number: audit and guard · S · merged (#342) · v0.1 · docs
+T-096 · Runnable gate walkthrough in examples/ · S · merged (#331) · v0.1 · docs
+T-097 · Troubleshooting page built from real gate messages · S · merged (#333) · v0.1 · docs
+T-098 · Empty states for status and doctor · S · merged (#329) · v0.1 · product
+T-099 · Golden tests for --json output · S · merged (#335) · v0.1 · product
+T-100 · One local check script that matches CI and the release matrix · S · merged (#320) · v0.1 · product
+T-122 · Encode tab and backslash in gate finding lines (D-398) · S · proposed · v0.1 · product
+T-123 · Gate collision check: directory against file with the same folded name (D-395) · S to M · proposed · TBD · product
 
 ## Security fixes
 
