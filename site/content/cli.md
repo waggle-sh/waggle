@@ -112,7 +112,7 @@ These serve the full Waggle hive workflow: roles (a **forager** triages and maps
 
 | Command | Usage | Purpose |
 | :--- | :--- | :--- |
-| `waggle status` | `waggle status [--repo <dir>]` | Active claims, daemon state and per-ticket token use. On main it also names malformed claims with the `force-release` line that clears them, and warns about two claims whose directories differ only in letter case. |
+| `waggle status` | `waggle status [--repo <dir>]` | Active claims, daemon state and per-ticket token use. On main it also names malformed claims with the `force-release` line that clears them, and warns about two claims whose directories differ only in letter case. It syncs claims once per run, and the table and the warnings read that one sync. |
 | `waggle hives` | `waggle hives status [--registry <file>] [--json]`, `waggle hives plan new\|add\|show\|list\|check\|brief\|rm` | A read-only view across several hives listed in a registry file, and cross-repo plans. |
 | `waggle decide` | `waggle decide --file <path \| -> [--repo <dir>] [--dry-run]` | Append one decision entry to `.waggle/hive/DECISIONS.md` from a JSON file. `--dry-run` validates and prints the entry and writes nothing. |
 | `waggle dispatch` | `waggle dispatch <ticket> --role builder\|forager --dir <path>... --gate light\|full --no-cell` | Claim a ticket, run a worker in a worktree and check its changes against the claim. Run `waggle dispatch <ticket> --help` for every flag. |
