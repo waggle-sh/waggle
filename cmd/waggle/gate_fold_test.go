@@ -22,6 +22,10 @@ const (
 func foldRepo(t *testing.T, paths ...string) gateRepo {
 	t.Helper()
 	r := leaseRepo(t)
+	// git init on macOS sets core.precomposeunicode, which turns an NFD path
+	// argument into NFC before it reaches the index. Turn it off so the twins
+	// are staged byte for byte on every platform.
+	r.git("config", "core.precomposeunicode", "false")
 	r.claim(1, "full", active, "docs")
 	for _, p := range paths {
 		r.index(p)
@@ -41,6 +45,7 @@ func TestCollisionKey(t *testing.T) {
 		{"\u0130", "I\u0307", "i\u0307"},
 		{"\u2126", "\u03c9"},
 		{"\ud55c", "\u1112\u1161\u11ab"},
+		{"\ud558", "\u1112\u1161"},
 	}
 	for _, g := range same {
 		for _, s := range g[1:] {
@@ -97,6 +102,18 @@ func TestDecomposeTableShape(t *testing.T) {
 		}
 		if r < 0xc0 || r > 0x17f {
 			t.Errorf("U+%04X is outside the ruled range", r)
+		}
+		// A letter and its case partner decompose to the same mark over bases
+		// that are themselves a case pair, so a typo in one entry of a pair
+		// fails here.
+		for _, o := range []rune{unicode.ToUpper(r), unicode.ToLower(r)} {
+			od, ok := decomposeTable[o]
+			if o == r || !ok {
+				continue
+			}
+			if od[1] != d[1] || (unicode.ToUpper(od[0]) != unicode.ToUpper(d[0])) {
+				t.Errorf("U+%04X %v and its case partner U+%04X %v disagree", r, d, o, od)
+			}
 		}
 	}
 }

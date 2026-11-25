@@ -51,6 +51,8 @@ func appendDecomposed(b *strings.Builder, r rune) {
 		return
 	}
 	if d, ok := decomposeTable[r]; ok {
+		// No base in today's table decomposes again (every entry is already
+		// its full NFD). The recursion is for the t-074b table, where it is.
 		appendDecomposed(b, d[0])
 		appendDecomposed(b, d[1])
 		return
