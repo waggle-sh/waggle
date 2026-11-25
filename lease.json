@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "ticket_id": "T-090",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle/claim.go",
+    "cmd/waggle/claim_errors_test.go"
+  ],
+  "claimed_at": "2026-11-25T17:37:11Z",
+  "expires_at": "2026-11-28T17:37:11Z",
+  "branches": [
+    "t-090"
+  ]
+}
