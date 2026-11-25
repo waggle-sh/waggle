@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	iofs "io/fs"
 	"path/filepath"
 	"time"
 
@@ -52,6 +53,11 @@ func runDoctor(args []string, stdout, stderr io.Writer, getenv func(string) stri
 		return exit(3, "failed: %v", err)
 	}
 	cfg, err := config.Load(filepath.Join(root, layout.Config))
+	if errors.Is(err, iofs.ErrNotExist) {
+		fmt.Fprintf(stderr, "waggle doctor failed: %v\n", err)
+		fmt.Fprintf(stderr, "No %s here. To set up the gate, run: waggle init --gate-only\n", layout.Config)
+		return 3
+	}
 	if err != nil {
 		return exit(3, "failed: %v", err)
 	}
