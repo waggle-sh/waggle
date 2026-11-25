@@ -8,9 +8,9 @@
     "cmd/waggle",
     "docs/hives.md"
   ],
-  "claimed_at": "2026-11-25T17:17:37Z",
-  "expires_at": "2026-11-28T17:17:37Z",
+  "claimed_at": "2026-11-25T17:18:11Z",
+  "expires_at": "2026-11-28T17:18:11Z",
   "branches": [
-    "t-084"
+    "t-084b"
   ]
 }
