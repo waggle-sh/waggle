@@ -7726,14 +7726,14 @@
 
 **Rationale:** T-122 is opened as a stub. T-093 (#328) pins today's behavior, and its test changes with T-122.
 
-## D-399: Records batch for tickets built from stubs on 2026-11-25
+## D-399: Records batch for tickets merged through 2026-11-25
 
 - **Date:** 2026-11-25
 - **Kind:** policy
-- **Tickets:** T-074, T-081, T-082, T-084, T-087, T-088, T-089, T-090, T-091, T-092, T-093, T-094, T-095, T-096, T-097, T-098, T-099, T-100
+- **Tickets:** T-074, T-081, T-082, T-083, T-084, T-087, T-088, T-089, T-090, T-091, T-092, T-093, T-094, T-095, T-096, T-097, T-098, T-099, T-100
 - **Supersedes:** none
 
-**Question:** T-087 to T-100 were built from stubs with the scout notes (lease, target, stop, cut) in each PR body, as T-100 was, not in a hive brief PR. How do the hive records catch up?
+**Question:** T-087 to T-100 were built from stubs with the scout notes (lease, target, stop, cut) in each PR body, as T-100 was, not in a hive brief PR, and T-074 and T-081 to T-084 merged without a status update in the hive. How do the hive records catch up?
 
 **Options considered:**
 1. One records PR marks the merged tickets done in ROADMAP and in their Status lines, with PR numbers.
