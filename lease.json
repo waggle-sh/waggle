@@ -7,10 +7,12 @@
   "directories": [
     "README.md",
     "cmd/waggle/examples_test.go",
-    "examples/gate-walkthrough"
+    "examples/gate-walkthrough",
+    "internal/license/rules.go",
+    "internal/license/rules_test.go"
   ],
-  "claimed_at": "2026-11-25T17:37:15Z",
-  "expires_at": "2026-11-28T17:37:15Z",
+  "claimed_at": "2026-11-25T18:17:12Z",
+  "expires_at": "2026-11-28T18:17:12Z",
   "branches": [
     "t-096"
   ]
