@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "ticket_id": "T-095",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "README.md",
+    "cmd/waggle/docs_citations_test.go",
+    "docs/gate.md"
+  ],
+  "claimed_at": "2026-11-25T21:28:28Z",
+  "expires_at": "2026-11-28T21:28:28Z",
+  "branches": [
+    "t-095"
+  ]
+}
