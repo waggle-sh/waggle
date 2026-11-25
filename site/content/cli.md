@@ -5,6 +5,8 @@
 
 ## Exit codes
 
+`waggle -h`, `--help` and `help` print the usage on stdout and exit `0`. `waggle -v` and `--version` print the same line as `waggle version` and exit `0`. With no command, or an unknown one, waggle prints the usage on stderr and exits `2`; an unknown command is named first, with a `did you mean` hint when it is within two edits of a real one. `waggle version` takes no arguments: `waggle version extra` prints `waggle version takes no arguments` on stderr and exits `2`.
+
 `gate` and `doctor` share a convention: `0` pass, `1` a check failed or a required setting is missing, `2` usage, `3` git or I/O error (an unreadable config, forge or default branch).
 
 ## Gate commands
@@ -119,7 +121,7 @@ These serve the full Waggle hive workflow: roles (a **forager** triages and maps
 | `waggle pace` | `waggle pace [--repo <dir>] [--tool claude-code\|copilot\|gas-town]` | Show the agent pace set for this repo and how to apply it in each agent tool. |
 | `waggle upgrade` | `waggle upgrade [--apply] [--diff] [--allow-downgrade] [--runtime=claude-code\|none] [--pr [--author "Name <email>"]] [--to <tag-or-sha>]` | Print the plan to re-render managed files from this build and move `waggle.pin`. `--apply` executes it. `--pr` (needs `--apply`) then commits the changes on a new `waggle/upgrade-<pin>` branch, pushes it and opens a bump PR with `gh`, using `GH_TOKEN` or your `gh auth login`. It never merges and opens nothing if the apply changed nothing. The commit author, committer and `Signed-off-by` line come from `git config user.name` and `user.email`. `--author "Name <email>"` overrides them and is valid only with `--pr`. With neither it refuses before it writes anything. `--pr` refuses when the work tree has uncommitted or untracked files ("work tree is not clean"), so commit or stash first. It stages only the files the apply wrote. Example: `waggle upgrade --apply --pr --author "Jo Doe <jo@example.com>"`. |
 | `waggle uninstall` | `waggle uninstall [--apply]` | Print the plan to remove everything `init` installed. `--apply` executes it and needs a clean tree. |
-| `waggle version` | `waggle version` | Print the version. |
+| `waggle version` | `waggle version` (also `waggle -v`, `waggle --version`) | Print the version. |
 
 ### Role status
 
