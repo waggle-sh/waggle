@@ -131,6 +131,26 @@ func usageError(format string, args ...any) error {
 	return &dispatch.Error{Code: dispatch.ExitUsage, Err: fmt.Errorf(format, args...)}
 }
 
+// maxClaimBranches is the most --branch values a claim accepts.
+const maxClaimBranches = 4
+
+// errHint rewords a failure so it names the fix: a bad task id gets the accepted
+// form, and a missing owner gets both ways out. The error keeps its code and exit.
+func errHint(err error) error {
+	if errors.Is(err, comb.ErrInvalidTicketID) {
+		return fmt.Errorf("%w; use T-<digits>, for example T-90", err)
+	}
+	var de *dispatch.Error
+	if !errors.As(err, &de) || de.Code != dispatch.ExitUsage {
+		return err
+	}
+	msg, ok := strings.CutSuffix(err.Error(), "; or pass --owner <id>")
+	if !ok {
+		return err
+	}
+	return usageError("%s; pass --owner <your GitHub login> or create .waggle/control/local.yaml with keeper_id: <your GitHub login>", msg)
+}
+
 func rfc3339(t time.Time) string {
 	if t.IsZero() {
 		return ""
@@ -204,6 +224,12 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 		return o.fail(id, usageError("usage: waggle claim <task> --dirs <a,b> --gate light|full [--branch <name>]..."))
 	case len(list) == 0 || slices.Contains(list, ""):
 		return o.fail(id, usageError("--dirs is required: a comma-separated list with no empty entry"))
+	case *gate == "":
+		return o.fail(id, usageError("--gate is required: light or full"))
+	case *gate != "light" && *gate != "full":
+		return o.fail(id, usageError("--gate %q: must be light or full", *gate))
+	case len(branches) > maxClaimBranches:
+		return o.fail(id, usageError("--branch given %d times; at most %d", len(branches), maxClaimBranches))
 	case ttlSet && *ttl == 0:
 		return o.fail(id, usageError("ttl 0s: must be a whole number of minutes, at least 1"))
 	}
@@ -211,7 +237,7 @@ func runClaim(args []string, stdout, stderr io.Writer) int {
 	defer stop()
 	res, err := dispatch.ClaimTask(ctx, dispatch.ClaimTaskRequest{RepoDir: *repo, Ticket: task, Dirs: list, Gate: *gate, Branches: branches, TTL: *ttl, Owner: *owner, Base: *base})
 	if err != nil {
-		return o.fail(res.Task, err)
+		return o.fail(res.Task, errHint(err))
 	}
 	l := res.Lease
 	o.warn(res.Warnings)
@@ -265,12 +291,16 @@ func runTaskRelease(args []string, stdout, stderr io.Writer) int {
 	res, err := dispatch.ReleaseTask(ctx, dispatch.ReleaseRequest{RepoDir: *repo, Ticket: task, Branch: *branch, Unmerged: *unmerged, Owner: *owner, CoKeepers: co})
 	o.warn(res.Warnings)
 	if err != nil {
-		return o.fail(res.Task, err)
+		return o.fail(res.Task, errHint(err))
 	}
 	if *asJSON {
 		o.json(releaseOKJSON{jsonVersion, "release", true, res.Task, res.Outcome, res.OID, res.Merged, res.Branch, res.Receipt, nonNil(res.Warnings)})
 		return 0
 	}
-	fmt.Fprintln(stdout, clean(dispatch.ReleaseLine(res)))
+	line := dispatch.ReleaseLine(res)
+	if ref, err := comb.RefName(res.Task); err == nil && res.Outcome == "no_claim" {
+		line += ": no claim exists, " + ref + " was not found"
+	}
+	fmt.Fprintln(stdout, clean(line))
 	return 0
 }
