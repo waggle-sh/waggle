@@ -22,6 +22,7 @@ const routes = new Map([
   ['docs/gate.md', 'gate'],
   ['docs/nectar.md', 'nectar'],
   ['docs/quorum.md', 'quorum'],
+  ['docs/troubleshooting.md', 'troubleshooting'],
   ['docs/recipes/README.md', 'recipes/index'],
   ['docs/recipes/claude-code-agent-teams.md', 'recipes/claude-code-agent-teams'],
   ['docs/recipes/copilot-cloud-agent.md', 'recipes/copilot-cloud-agent'],
