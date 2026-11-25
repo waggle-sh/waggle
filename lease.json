@@ -11,9 +11,10 @@
     "internal/forge/reviews.go",
     "internal/forge/reviews_test.go"
   ],
-  "claimed_at": "2026-11-25T19:17:44Z",
-  "expires_at": "2026-11-27T19:17:44Z",
+  "claimed_at": "2026-11-25T19:51:03Z",
+  "expires_at": "2026-11-27T19:51:03Z",
   "branches": [
-    "gate-approval-head"
+    "gate-approval-head",
+    "hive-pin-v0.1.3"
   ]
 }
