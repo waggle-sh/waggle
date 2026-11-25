@@ -1,0 +1,356 @@
+== none/local
+leases err: <nil>
+leases: []
+collisions err: <nil>
+collisions: null
+
+== none/remote
+leases err: <nil>
+leases: []
+collisions err: <nil>
+collisions: null
+
+== several/local
+leases err: <nil>
+leases: [
+  {
+    "version": 2,
+    "ticket_id": "T-002",
+    "keeper_id": "carl",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "cmd"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-003",
+    "keeper_id": "ana",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "internal/x"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-010",
+    "keeper_id": "ben",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "docs",
+      "pkg/a"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  }
+]
+collisions err: <nil>
+collisions: null
+
+== several/remote
+leases err: <nil>
+leases: [
+  {
+    "version": 2,
+    "ticket_id": "T-002",
+    "keeper_id": "carl",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "cmd"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-003",
+    "keeper_id": "ana",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "internal/x"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-010",
+    "keeper_id": "ben",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "docs",
+      "pkg/a"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  }
+]
+collisions err: <nil>
+collisions: null
+
+== case-collision/local
+leases err: <nil>
+leases: [
+  {
+    "version": 2,
+    "ticket_id": "T-001",
+    "keeper_id": "ben",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "docs"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-002",
+    "keeper_id": "carl",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "Docs/api"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-003",
+    "keeper_id": "dee",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "PKG/x",
+      "other"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-010",
+    "keeper_id": "ana",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "Docs",
+      "pkg"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  }
+]
+collisions err: <nil>
+collisions: [
+  {
+    "TicketA": "T-001",
+    "DirA": "docs",
+    "OwnerA": "ben",
+    "TicketB": "T-002",
+    "DirB": "Docs/api",
+    "OwnerB": "carl"
+  },
+  {
+    "TicketA": "T-001",
+    "DirA": "docs",
+    "OwnerA": "ben",
+    "TicketB": "T-010",
+    "DirB": "Docs",
+    "OwnerB": "ana"
+  },
+  {
+    "TicketA": "T-003",
+    "DirA": "PKG/x",
+    "OwnerA": "dee",
+    "TicketB": "T-010",
+    "DirB": "pkg",
+    "OwnerB": "ana"
+  }
+]
+
+== case-collision/remote
+leases err: <nil>
+leases: [
+  {
+    "version": 2,
+    "ticket_id": "T-001",
+    "keeper_id": "ben",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "docs"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-002",
+    "keeper_id": "carl",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "Docs/api"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-003",
+    "keeper_id": "dee",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "PKG/x",
+      "other"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-010",
+    "keeper_id": "ana",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "Docs",
+      "pkg"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  }
+]
+collisions err: <nil>
+collisions: [
+  {
+    "TicketA": "T-001",
+    "DirA": "docs",
+    "OwnerA": "ben",
+    "TicketB": "T-002",
+    "DirB": "Docs/api",
+    "OwnerB": "carl"
+  },
+  {
+    "TicketA": "T-001",
+    "DirA": "docs",
+    "OwnerA": "ben",
+    "TicketB": "T-010",
+    "DirB": "Docs",
+    "OwnerB": "ana"
+  },
+  {
+    "TicketA": "T-003",
+    "DirA": "PKG/x",
+    "OwnerA": "dee",
+    "TicketB": "T-010",
+    "DirB": "pkg",
+    "OwnerB": "ana"
+  }
+]
+
+== expired/local
+leases err: <nil>
+leases: []
+collisions err: <nil>
+collisions: null
+
+== expired/remote
+leases err: <nil>
+leases: []
+collisions err: <nil>
+collisions: null
+
+== malformed/local
+leases err: comb: malformed claim ref: 1 malformed: refs/waggle/claims/ticket-2 (unsupported lease version 0)
+leases: [
+  {
+    "version": 2,
+    "ticket_id": "T-001",
+    "keeper_id": "ben",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "docs"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-003",
+    "keeper_id": "carl",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "DOCS/x"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  }
+]
+collisions err: <nil>
+collisions: [
+  {
+    "TicketA": "T-001",
+    "DirA": "docs",
+    "OwnerA": "ben",
+    "TicketB": "T-003",
+    "DirB": "DOCS/x",
+    "OwnerB": "carl"
+  }
+]
+
+== malformed/remote
+leases err: comb: malformed claim ref: 1 malformed: refs/waggle/claims/ticket-2 (unsupported lease version 0)
+leases: [
+  {
+    "version": 2,
+    "ticket_id": "T-001",
+    "keeper_id": "ben",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "docs"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  },
+  {
+    "version": 2,
+    "ticket_id": "T-003",
+    "keeper_id": "carl",
+    "role": "builder",
+    "gate": "full",
+    "directories": [
+      "DOCS/x"
+    ],
+    "claimed_at": "2026-10-17T14:00:00Z",
+    "expires_at": "2026-10-17T16:00:00Z"
+  }
+]
+collisions err: <nil>
+collisions: [
+  {
+    "TicketA": "T-001",
+    "DirA": "docs",
+    "OwnerA": "ben",
+    "TicketB": "T-003",
+    "DirB": "DOCS/x",
+    "OwnerB": "carl"
+  }
+]
+
