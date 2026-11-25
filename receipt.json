@@ -1,21 +1,21 @@
 {
   "version": 1,
   "source": "gate_run",
-  "ticket_id": "T-103",
+  "ticket_id": "T-083",
   "keeper_id": "paulternate19",
   "co_keepers": [],
   "role": "builder",
   "gate": "full",
-  "claimed_at": "2026-11-24T07:15:54Z",
+  "claimed_at": "2026-11-23T17:56:31Z",
   "branches": [
-    "t-103-rfc-19"
+    "t-083"
   ],
-  "base_sha": "2d69b2d424f97a1e2565b71f6796847ee96db7b4",
-  "merged_sha": "036a9f0c376534b2b81dfce374d02eb0f5a5456c",
-  "merged_at": "2026-11-24T14:26:48Z",
-  "pr_number": 312,
+  "base_sha": "036a9f0c376534b2b81dfce374d02eb0f5a5456c",
+  "merged_sha": "715f73fa438789863829eb43d59c63b7c869b612",
+  "merged_at": "2026-11-25T04:50:51Z",
+  "pr_number": 306,
   "pr_author": "paulternate19",
-  "head_branch": "t-103-rfc-19",
+  "head_branch": "t-083",
   "approvers": [
     "paulternate"
   ],
