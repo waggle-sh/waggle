@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-093",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle/gate_paths_test.go"
+  ],
+  "claimed_at": "2026-11-25T17:36:05Z",
+  "expires_at": "2026-11-28T17:36:05Z",
+  "branches": [
+    "t-093"
+  ]
+}
