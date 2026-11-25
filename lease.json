@@ -9,10 +9,11 @@
     "docs/telemetry.md",
     "docs/telemetry.schema.json"
   ],
-  "claimed_at": "2026-11-25T21:51:59Z",
-  "expires_at": "2026-11-27T21:51:59Z",
+  "claimed_at": "2026-11-25T21:57:20Z",
+  "expires_at": "2026-11-28T21:57:20Z",
   "branches": [
     "t-104",
-    "t-104-2"
+    "t-104-2",
+    "t-104-protect"
   ]
 }
