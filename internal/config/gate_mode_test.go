@@ -24,6 +24,7 @@ func TestGateModeValues(t *testing.T) {
 	for _, tc := range []struct{ val, want string }{
 		{"open", "open"}, {"guard", "guard"}, {`"open"`, "open"}, {`'guard'`, "guard"},
 		{"open # note", "open"}, {`"guard" # note`, "guard"},
+		{"hold", "hold"}, {`"hold"`, "hold"}, {`'hold'`, "hold"}, {"hold # note", "hold"},
 	} {
 		if m := mustParse(t, "version: 1\ngate:\n  mode: "+tc.val+"\n").Gate.Mode; m != tc.want {
 			t.Errorf("%s: got %q", tc.val, m)
@@ -32,7 +33,7 @@ func TestGateModeValues(t *testing.T) {
 }
 
 func TestGateModeInvalid(t *testing.T) {
-	for _, val := range []string{"watch", "Open", "OPEN", `""`, "all", `"open,guard"`, "on", "true", "\n    x: y"} {
+	for _, val := range []string{"watch", "Open", "OPEN", "Hold", "HOLD", `""`, "all", `"open,guard"`, "on", "true", "\n    x: y"} {
 		_, err := Parse([]byte("version: 1\ngate:\n  mode: " + val + "\n"))
 		if !errors.Is(err, ErrInvalidConfig) {
 			t.Errorf("%q: err %v", val, err)

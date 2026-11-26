@@ -182,7 +182,8 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	pre := slices.Clone(rep.findings)
 	out, err := scanRange(g, *base, *head, in, rep)
 	code := gatePass
-	// Only verify honors gate.mode, and only the exact value "open" loosens it.
+	// Only verify honors gate.mode, and only the exact value "open" loosens it;
+	// "hold" fails on a finding exactly like "guard" (T-113).
 	// A pass too large to check stays a failure (Q-T076-1).
 	open := check == "verify" && out.mode == config.GateModeOpen && !errors.Is(err, errTooLarge)
 	if open {

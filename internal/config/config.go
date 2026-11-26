@@ -42,6 +42,7 @@ const (
 const (
 	GateModeGuard = "guard"
 	GateModeOpen  = "open"
+	GateModeHold  = "hold"
 )
 
 // Merge strategies accepted by forge.merge_strategy (D-064, D-071).
@@ -90,8 +91,8 @@ type GateConfig struct {
 	// Approvers are GitHub logins whose approval at the head passes a change to
 	// a protected path (T-035). Compared with ASCII case folding.
 	Approvers []string
-	// Mode is gate.mode: "guard" fails on a finding, "open" reports it and
-	// passes (T-076).
+	// Mode is gate.mode: "guard" and "hold" fail on a finding, "open"
+	// reports it and passes (T-076, T-113).
 	Mode string
 }
 
@@ -430,9 +431,9 @@ func validate(c *Config, lines map[string]int) error {
 		}
 	}
 	switch c.Gate.Mode {
-	case GateModeGuard, GateModeOpen:
+	case GateModeGuard, GateModeOpen, GateModeHold:
 	default:
-		return invalid(lines["gate.mode"], "gate.mode", `must be "open" or "guard", got %q`, c.Gate.Mode)
+		return invalid(lines["gate.mode"], "gate.mode", `must be "open", "guard" or "hold", got %q`, c.Gate.Mode)
 	}
 	if c.Quorum.Credits < 1 {
 		return invalid(lines["quorum.credits"], "quorum.credits", "must be a positive integer, got %d", c.Quorum.Credits)

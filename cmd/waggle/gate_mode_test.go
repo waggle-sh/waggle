@@ -14,6 +14,7 @@ import (
 const (
 	openCfg   = "version: 1\ngate:\n  mode: open\n"
 	guardCfg  = "version: 1\ngate:\n  mode: guard\n"
+	holdCfg   = "version: 1\ngate:\n  mode: hold\n"
 	openNote  = "gate: mode open: findings are reported, not enforced"
 	wouldFail = "would fail (mode open)"
 )
@@ -42,6 +43,27 @@ func TestModeGuardBytesUnchanged(t *testing.T) {
 		if o != outs[0] {
 			t.Errorf("guard output differs:\n%s\n---\n%s", outs[0], o)
 		}
+	}
+}
+
+func TestModeHoldFailsLikeGuard(t *testing.T) {
+	g := protRepo(t, guardCfg)
+	outsideLease(g)
+	gcode, gout := g.runWith(nil, "verify")
+	r := protRepo(t, holdCfg)
+	outsideLease(r)
+	code, out := r.runWith(nil, "verify")
+	if code != 1 || gcode != 1 || !strings.Contains(out, "leases: FAIL: other/y.md") || strings.Contains(out, wouldFail) || strings.Contains(out, openNote) {
+		t.Errorf("hold exit %d, guard exit %d\n%s", code, gcode, out)
+	}
+	if strings.ReplaceAll(out, r.dir, "DIR") != strings.ReplaceAll(gout, g.dir, "DIR") {
+		t.Errorf("hold output differs from guard:\n%s\n---\n%s", out, gout)
+	}
+	c := protRepo(t, holdCfg)
+	c.write("docs/a.md", []byte("a\n"))
+	c.commit("T-031: add")
+	if code, out := c.runWith(nil, "verify"); code != 0 || strings.Contains(out, openNote) {
+		t.Errorf("clean: exit %d\n%s", code, out)
 	}
 }
 
