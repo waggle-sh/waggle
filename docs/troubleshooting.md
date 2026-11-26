@@ -67,6 +67,10 @@ Exit 3. The clone has too little history for the gate to find where the PR branc
 
 Exit 3. `claim`, `release`, `status`, `doctor`, `pace`, `nectar`, `quorum` and `vote` work on a git repository, and the directory they looked at is not inside one. Run the command from inside your repo, or pass `--repo <dir>` with the path to it.
 
+### `waggle <cmd>: forge.remote is <name>, but this repo has no remote named <name>; add it with git remote add <name> <url> or set forge.remote: "" for local-only use`
+
+Exit 3. `claim`, `release` and `doctor` read `forge.remote` from `.waggle/control/config.yaml`, and this repo has no remote with that name. Run `git remote add <name> <url>` to add it, or fix the name in the config. For a repo that stays local, set `forge.remote: ""`: the commands then skip the fetch, and `doctor` reports a local-only repo.
+
 ## `waggle claim`
 
 ### `pass --owner <your GitHub login> or create .waggle/control/local.yaml with keeper_id: <your GitHub login>`

@@ -7588,3 +7588,238 @@
 **Keeper choice:** Move the pin from bfee532afafde4ba4f43db23844a4dc1e3ad0732 to f2543b6f05e90240308b325f75e3aeaf8eebf1a9, the v0.1.3 release commit; managed files re-rendered by waggle upgrade from the v0.1.3 release binary
 
 **Rationale:** v0.1.3 carries the T-120 gate fix (GHSA-mcv7-2x6g-pmwc): an approving review counts only when its body names the exact head. Pinned by commit, not tag. The Head Keeper approved the release and the pin move on 2026-11-25.
+
+## D-392: T-098: keep the waggle status empty-state lines, merge the doctor row only
+
+- **Date:** 2026-11-25
+- **Kind:** scope
+- **Tickets:** T-098
+- **Supersedes:** none
+
+**Question:** T-098 asked waggle status to reword its fresh-hive lines (daemon: stopped (no .waggle/control/run.sock), Claims (0 active):, Usage: none recorded (...)) to daemon: not running, no active claims and no token use recorded. Reword them?
+
+**Options considered:**
+1. Keep today's lines, merge #329 doctor-only and mark the status rows dropped.
+2. Reword as the stub says, changing the fresh-hive golden text and breaking scripts that read those lines.
+3. Merge #329 now and defer the status rows to a follow-up ticket.
+
+**Hive recommendation:** Option 1: today's lines already say what is empty, and scripts may parse them.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
+
+**Rationale:** The doctor row (config missing prints the reason and waggle init --gate-only) merged in #329. The three status rows are dropped, not deferred.
+
+## D-393: T-074 Q-T074-1: normalize path names with the standard library only
+
+- **Date:** 2026-11-25
+- **Kind:** technical
+- **Tickets:** T-074
+- **Supersedes:** none
+
+**Question:** How should the gate's head tree collision check normalize path names?
+
+**Options considered:**
+1. golang.org/x/text/unicode/norm (changes go.mod and go.sum, needs vendor/, breaks TestSignedApprovalAddsNoDependency).
+2. Standard library only: a decomposition table, Hangul arithmetic and ToLower in gate_fold.go.
+3. Standard library, no table: fail any path with a combining mark.
+4. Do nothing.
+
+**Hive recommendation:** Option 2, from the T-074 scout brief: it closes the macOS case without a Tier 3 path change or a vendored tree.
+
+**Keeper choice:** Option 2, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
+
+**Rationale:** No go.mod, go.sum or vendor/ change. The known gaps (mark reordering, other scripts) are stated in docs/gate.md. The ticket stays Tier 3 by content (D-205), with two guards on the first review. Opened by D-380.
+
+## D-394: T-074 Q-T074-2: table covers Latin-1 Supplement, Latin Extended-A and Hangul
+
+- **Date:** 2026-11-25
+- **Kind:** technical
+- **Tickets:** T-074
+- **Supersedes:** none
+
+**Question:** How wide is the decomposition table under the standard library option?
+
+**Options considered:**
+1. Latin-1 Supplement and Latin Extended-A (U+00C0 to U+017F), plus Hangul.
+2. Option 1 plus Latin Extended Additional (U+1E00 to U+1EFF).
+3. Option 2 plus Greek and Cyrillic precomposed letters.
+
+**Hive recommendation:** Option 1 in the build, with option 2 as the planned cut t-074b.
+
+**Keeper choice:** Option 1, with option 2 as the planned cut t-074b, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
+
+**Rationale:** Each table entry is a merge rule on Tier 3 code, so the table grows only on a ruling.
+
+## D-395: T-074 Q-T074-3: compare whole paths only; open T-123 for directory against file
+
+- **Date:** 2026-11-25
+- **Kind:** scope
+- **Tickets:** T-074, T-123
+- **Supersedes:** none
+
+**Question:** Should the collision check compare whole paths only, or also a directory against a file with the same folded name?
+
+**Options considered:**
+1. Whole paths only, as today, and open a follow-up ticket for directory against file.
+2. Also report a path whose parent directory folds to another entry's path.
+
+**Hive recommendation:** Option 1: T-014b review F6 accepted the same gap for case; the follow-up covers case and normalization together.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
+
+**Rationale:** T-123 is opened as a stub for directory against file collisions, case and normalization together.
+
+## D-396: T-074 Q-T074-4: one fixed sentence for a normalization collision
+
+- **Date:** 2026-11-25
+- **Kind:** technical
+- **Tickets:** T-074
+- **Supersedes:** none
+
+**Question:** What does the finding say for a pair that differs only in Unicode normalization?
+
+**Options considered:**
+1. One fixed sentence: path collides with <prev> on checkouts that treat Unicode normalization forms as one name.
+2. Option 1 plus the code points of the first differing rune.
+
+**Hive recommendation:** Option 1: the finding names both files.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
+
+**Rationale:** A guard may still ask for code points if the text proves unclear.
+
+## D-397: T-074 Q-T074-5: Tier 3 and protected path matching do not normalize
+
+- **Date:** 2026-11-25
+- **Kind:** technical
+- **Tickets:** T-074
+- **Supersedes:** none
+
+**Question:** Should Tier 3 prefix matching and gate.protected_paths matching normalize too?
+
+**Options considered:**
+1. No, T-074 changes only the head tree collision check.
+2. Yes, add the key function to the protected path matcher.
+
+**Hive recommendation:** Option 1: the hardcoded prefixes are ASCII; a repo-defined non-ASCII protected path is a separate internal/comb ticket if wanted.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
+
+**Rationale:** No follow-up ticket is opened for this now.
+
+## D-398: T-122: encode tab and backslash in gate finding lines
+
+- **Date:** 2026-11-25
+- **Kind:** scope
+- **Tickets:** T-093, T-122
+- **Supersedes:** none
+
+**Question:** T-093's tests found that the gate prints a raw tab and a raw backslash in finding lines (newline and carriage return are encoded). Encode them?
+
+**Options considered:**
+1. Open a small follow-up ticket to encode tab and backslash like newline and CR.
+2. Leave as is and document it.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
+
+**Rationale:** T-122 is opened as a stub. T-093 (#328) pins today's behavior, and its test changes with T-122.
+
+## D-399: Records batch for tickets merged through 2026-11-25
+
+- **Date:** 2026-11-25
+- **Kind:** policy
+- **Tickets:** T-074, T-081, T-082, T-083, T-084, T-087, T-088, T-089, T-090, T-091, T-092, T-093, T-094, T-095, T-096, T-097, T-098, T-099, T-100
+- **Supersedes:** none
+
+**Question:** T-087 to T-100 were built from stubs with the scout notes (lease, target, stop, cut) in each PR body, as T-100 was, not in a hive brief PR, and T-074 and T-081 to T-084 merged without a status update in the hive. How do the hive records catch up?
+
+**Options considered:**
+1. One records PR marks the merged tickets done in ROADMAP and in their Status lines, with PR numbers.
+2. Require a hive brief PR per ticket before dispatch.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
+
+**Rationale:** Each Status line names its PR. The scout notes stay in the PR bodies. T-091 is merged in part (#341, the not-a-git-repo half); its no-remote half waits for a Head Keeper ruling, so T-091 stays open. Tier 3 records PRs still need the Head Keeper's approval at the exact head.
+
+## D-400: T-119 adds the recipes link to the troubleshooting page
+
+- **Date:** 2026-11-25
+- **Kind:** scope
+- **Tickets:** T-097, T-119
+- **Supersedes:** none
+
+**Question:** T-097 (#333) could not link docs/troubleshooting.md from docs/recipes/README.md, which T-119 leases. Who adds it?
+
+**Options considered:**
+1. T-119 adds it.
+2. A one-line follow-up after T-119.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 11:16 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1205), in the words "Yes, all five".
+
+**Rationale:** Saves a ticket; T-119 already edits that file.
+
+## D-401: T-104 Q-T104-1: approve the telemetry privacy statement as written
+
+- **Date:** 2026-11-25
+- **Kind:** policy
+- **Tickets:** T-104
+- **Supersedes:** none
+
+**Question:** Does the Head Keeper approve these statements in docs/telemetry.md: the never-sent list is complete; the install id is linkable across 13 weekly reports; raw rows are kept 13 months, with a k = 10 rule for anything published; the operator can see rows, and Cloudflare processes the source IP even though it is dropped; forks are not covered; there is no per-install deletion, because the id rotates every 90 days and is tied to no one; the statement says aggregate, no personal data by design, never anonymous?
+
+**Options considered:**
+1. Approve as written.
+2. Approve, with a review of the wording by someone with legal knowledge before T-110 sends any data.
+3. Changes first.
+
+**Hive recommendation:** Option 1, from the T-104 scout brief.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 1:53 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1296), in the words "Approve as written".
+
+**Rationale:** T-104 cut B writes the statement as approved. Sending any data still waits for T-110 and its own Head Keeper yes (D-389).
+
+## D-402: T-104 Q-T104-2: protect the telemetry doc and schema with gate.protected_paths
+
+- **Date:** 2026-11-25
+- **Kind:** technical
+- **Tickets:** T-104
+- **Supersedes:** none
+
+**Question:** RFC section 3.8 says the telemetry allowlist and schema live under Tier 3 paths, but docs/telemetry.md and docs/telemetry.schema.json would not. Protect them?
+
+**Options considered:**
+1. Add both files to gate.protected_paths in .waggle/control/config.yaml, so a change needs a listed approver at the head.
+2. Leave them unprotected and correct RFC 3.8's wording.
+3. Put the files under an already protected path.
+
+**Hive recommendation:** Option 1: it makes RFC 3.8 true with a one-line config change.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 1:53 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1296), in the words "Yes, protect them".
+
+**Rationale:** The config change is its own PR. It touches .waggle/control, so it needs the Head Keeper's SSH-signed head commit.
+
+## D-403: T-091: fail only when forge.remote names a missing remote
+
+- **Date:** 2026-11-26
+- **Kind:** technical
+- **Tickets:** T-091
+- **Supersedes:** none
+
+**Question:** T-091's stub wanted claim, release and doctor to exit 3 with 'this repo has no remote named origin' when origin is missing. An empty forge.remote is the deliberate local-only mode (dispatch.ResolveBase skips the fetch, and doctor says Local-only repo and exits 0, as TestDoctorLocalOnly checks). How should a missing remote behave?
+
+**Options considered:**
+1. Fail only when forge.remote names a remote that does not exist, with one fix-it line and exit 3; an empty forge.remote keeps local-only mode.
+2. Build the stub as written, breaking local-only mode and TestDoctorLocalOnly.
+3. Drop the no-remote half and mark T-091 done with the not-a-repo half (#341).
+
+**Hive recommendation:** Option 1: it keeps the stub's goal, a clear message instead of a raw git error, without breaking a supported mode.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 (relayed in writing by the orchestrator, Orca item 11, in the same relay as event e1331, 3:30 PM Pacific Time), in the words "Yes, that".
+
+**Rationale:** Built in #348: claim, release and doctor print 'waggle <cmd>: forge.remote is <name>, but this repo has no remote named <name>; add it with git remote add <name> <url> or set forge.remote: "" for local-only use' and exit 3. With #341 (the not-a-git-repo half), T-091 is done.

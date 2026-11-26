@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/waggle-sh/waggle/internal/config"
+	"github.com/waggle-sh/waggle/internal/dispatch"
 	"github.com/waggle-sh/waggle/internal/forge"
 	"github.com/waggle-sh/waggle/internal/layout"
 )
@@ -72,6 +73,13 @@ func runDoctor(args []string, stdout, stderr io.Writer, getenv func(string) stri
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), doctorTimeout)
 	defer cancel()
+	if err := dispatch.CheckRemote(ctx, &dispatch.Git{Dir: root}, cfg.Forge.Remote); err != nil {
+		if line, ok := missingRemoteLine("doctor", err); ok {
+			fmt.Fprintln(stderr, line)
+			return 3
+		}
+		return exit(3, "failed: %v", err)
+	}
 	cf, cline := claimsFinding(ctx, root, cfg)
 	if cfg.Forge.Remote == "" {
 		fmt.Fprintln(stdout, "Local-only repo: no forge checks. After adding a remote and setting forge.remote, run waggle doctor.")

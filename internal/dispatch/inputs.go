@@ -32,6 +32,30 @@ type Inputs struct {
 	MustFix                             int // must-fix verdicts in Review; 0 when absent
 }
 
+// MissingRemoteError reports that forge.remote names a remote this repo does
+// not have (T-091). An empty forge.remote is local-only mode and never gets it.
+type MissingRemoteError struct{ Name string }
+
+func (e *MissingRemoteError) Error() string {
+	return fmt.Sprintf(`forge.remote is %s, but this repo has no remote named %s; add it with git remote add %s <url> or set forge.remote: "" for local-only use`, e.Name, e.Name, e.Name)
+}
+
+// CheckRemote returns an ExitEnv *MissingRemoteError when name is not a remote
+// of the repo at g. An empty name is local-only mode and passes. It runs before
+// the first fetch so git's own "fatal:" text never reaches the user.
+func CheckRemote(ctx context.Context, g *Git, name string) error {
+	if name == "" {
+		return nil
+	}
+	if _, err := g.Run(ctx, "remote", "get-url", "--", name); err != nil {
+		if strings.Contains(err.Error(), "No such remote") {
+			return &Error{Code: ExitEnv, Err: &MissingRemoteError{Name: name}}
+		}
+		return failf(ExitEnv, "%w", err)
+	}
+	return nil
+}
+
 // ResolveBase returns the OID of the base commit. With remote set it fetches
 // the remote first (host side, the Keeper's git auth). An empty base means
 // refs/remotes/<remote>/main, or refs/heads/main for a local-only hive, fully
@@ -39,6 +63,9 @@ type Inputs struct {
 // resolve is ExitUsage; the default failing is ExitEnv.
 func ResolveBase(ctx context.Context, g *Git, remote, base string) (string, error) {
 	if remote != "" {
+		if err := CheckRemote(ctx, g, remote); err != nil {
+			return "", err
+		}
 		if _, err := g.Run(ctx, "fetch", remote); err != nil {
 			return "", failf(ExitEnv, "%w", err)
 		}

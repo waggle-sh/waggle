@@ -50,6 +50,7 @@ leases:
   max_directories_per_claim: 5
 # gate/ holds the T-036 composite Action (D-270, D-272), listed after phase A merged (T-036 2.11 item 2).
 # relay/ is listed before T-065 phase B (HK-6, D-381), so changes to the write-token Action need a listed approver at the head.
+# docs/telemetry.md and docs/telemetry.schema.json are listed by D-402 (T-104 Q-T104-2), so RFC 3.8 holds: a change needs a listed approver at the head.
 gate:
-  protected_paths: gate/, relay/
+  protected_paths: gate/, relay/, docs/telemetry.md, docs/telemetry.schema.json
   approvers: paulternate
