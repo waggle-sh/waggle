@@ -273,19 +273,23 @@ func TestTaskStage(t *testing.T) {
 // A repo that lists the task files in gate.protected_paths keeps them Tier 3:
 // the stage carve-out never lowers a raise-only protected path (T-106 guard).
 func TestStageOnlyProtectedPathStays(t *testing.T) {
-	r := newGateRepo(t)
-	r.write("README.md", []byte("hive\n"))
-	r.write(layout.Decisions, gateLog(1))
-	r.write(layout.Config, []byte("version: 1\ngate:\n  protected_paths: .waggle/hive/tasks/\n"))
-	r.write(stageTask, []byte(stageFile("- **Stage:** backlog")))
-	r.commit("init")
-	r.git("checkout", "-q", "-b", "branch")
-	r.claimOn(31, []string{"x"}, "full", active, "docs")
-	r.write(stageTask, []byte(stageFile("- **Stage:** ready")))
-	r.commit("T-031: stage")
-	out := r.expect(t, 1, stageTask)
-	if !strings.Contains(out, "protected path") {
-		t.Errorf("want the protected path finding\n%s", out)
+	for _, entry := range []string{".waggle/hive/tasks/", ".waggle/hive/"} {
+		t.Run(entry, func(t *testing.T) {
+			r := newGateRepo(t)
+			r.write("README.md", []byte("hive\n"))
+			r.write(layout.Decisions, gateLog(1))
+			r.write(layout.Config, []byte("version: 1\ngate:\n  protected_paths: "+entry+"\n"))
+			r.write(stageTask, []byte(stageFile("- **Stage:** backlog")))
+			r.commit("init")
+			r.git("checkout", "-q", "-b", "branch")
+			r.claimOn(31, []string{"x"}, "full", active, "docs")
+			r.write(stageTask, []byte(stageFile("- **Stage:** ready")))
+			r.commit("T-031: stage")
+			out := r.expect(t, 1, stageTask)
+			if !strings.Contains(out, "protected path") {
+				t.Errorf("want the protected path finding\n%s", out)
+			}
+		})
 	}
 }
 
@@ -294,11 +298,17 @@ func TestStageOnlyProtectedPathStays(t *testing.T) {
 // file system cannot hold both spellings.
 func TestStageOnlyExactCasePath(t *testing.T) {
 	const upper = ".waggle/HIVE/tasks/T-099.md"
-	r := stageRepo(t, stageFile("- **Stage:** backlog"))
+	r := newGateRepo(t)
 	r.git("config", "core.ignorecase", "false")
+	r.write("README.md", []byte("hive\n"))
+	r.write(layout.Decisions, gateLog(1))
+	r.git("add", "-A")
 	blob := r.gitIn(stageFile("- **Stage:** backlog"), "hash-object", "-w", "--stdin")
 	r.git("update-index", "--add", "--cacheinfo", "100644,"+blob+","+upper)
-	r.git("commit", "-q", "-m", "T-031: add upper")
+	r.git("commit", "-q", "-m", "init")
+	r.git("checkout", "-q", "-b", "branch")
+	r.claimOn(31, []string{"x"}, "full", active, "docs")
+	// The branch's only change is a stage-only edit of the upper-case path.
 	blob = r.gitIn(stageFile("- **Stage:** ready"), "hash-object", "-w", "--stdin")
 	r.git("update-index", "--cacheinfo", "100644,"+blob+","+upper)
 	r.git("commit", "-q", "-m", "T-031: stage upper")
@@ -308,16 +318,23 @@ func TestStageOnlyExactCasePath(t *testing.T) {
 // A task file over the blob cap never qualifies, on either side of the edit.
 func TestStageOnlyBlobCap(t *testing.T) {
 	big := strings.Repeat("x", maxStageBlob+1024) + "\n"
-	for _, side := range []string{"both", "new"} {
-		t.Run(side, func(t *testing.T) {
-			old := stageFile("- **Stage:** backlog")
-			if side == "both" {
-				old += big
-			}
-			r := stageRepo(t, old)
-			r.write(stageTask, []byte(stageFile("- **Stage:** ready")+big))
-			r.commit("T-031: stage")
-			r.expect(t, 1, stageFinding)
-		})
-	}
+	t.Run("both", func(t *testing.T) {
+		r := stageRepo(t, stageFile("- **Stage:** backlog")+big)
+		r.write(stageTask, []byte(stageFile("- **Stage:** ready")+big))
+		r.commit("T-031: stage")
+		r.expect(t, 1, stageFinding)
+	})
+	t.Run("new side only", func(t *testing.T) {
+		// Old side just under the cap with "ready", new side just over it with
+		// "in-progress" and the same padding: a stage-only edit that crosses it.
+		base := stageFile("- **Stage:** ready")
+		pad := strings.Repeat("x", maxStageBlob-len(base)-2) + "\n"
+		if len(base+pad) > maxStageBlob || len(stageFile("- **Stage:** in-progress")+pad) <= maxStageBlob {
+			t.Fatalf("fixture sizes %d and %d do not straddle %d", len(base+pad), len(stageFile("- **Stage:** in-progress")+pad), maxStageBlob)
+		}
+		r := stageRepo(t, base+pad)
+		r.write(stageTask, []byte(stageFile("- **Stage:** in-progress")+pad))
+		r.commit("T-031: stage")
+		r.expect(t, 1, stageFinding)
+	})
 }
