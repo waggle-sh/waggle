@@ -235,7 +235,7 @@ func TestVerifyDirectoryCollision(t *testing.T) {
 	for _, c := range [][2]string{
 		{"docs/" + nfcCafe, "docs/" + nfdCafe + "/a"},
 		{"docs/" + nfdCafe, "docs/" + nfcCafe + "/a"},
-		{"docs/CAFÉ", "docs/" + nfdCafe + "/a"},
+		{"docs/CAF\u00c9", "docs/" + nfdCafe + "/a"},
 	} {
 		foldRepo(t, c[0], c[1]).expect(t, 1, "tiers: FAIL: "+c[0]+": path collides with directory", newNorm)
 	}
@@ -248,7 +248,7 @@ func TestVerifyDirectoryNoFalsePositive(t *testing.T) {
 		{"docs/doc", "docs/docs/a"},
 		{"docs/a/b", "docs/c/b/x"},
 		{"docs/cafe", "docs/" + nfdCafe + "/a"},
-		{"docs/日本", "docs/über/a"},
+		{"docs/\u65e5\u672c", "docs/\u00fcber/a"},
 		{"docs/a/Docs", "docs/b/docs/x"},
 		{"docs/Docs/a", "docs/docs/b"},
 	} {
@@ -316,6 +316,13 @@ func TestDirIndexBound(t *testing.T) {
 	if n := buildDirIndex([]string{strings.Repeat("a/", maxTreePath)}).dirCount(); n != 0 {
 		t.Errorf("over-length path indexed %d directories", n)
 	}
+	// About 2000 loose trees trip git's detached auto maintenance, which writes
+	// into .git while t.TempDir cleans up. Turn it off for every git call.
+	t.Setenv("GIT_CONFIG_COUNT", "2")
+	t.Setenv("GIT_CONFIG_KEY_0", "maintenance.auto")
+	t.Setenv("GIT_CONFIG_VALUE_0", "false")
+	t.Setenv("GIT_CONFIG_KEY_1", "gc.auto")
+	t.Setenv("GIT_CONFIG_VALUE_1", "0")
 	foldRepo(t, deep).expect(t, 0, "leases: ok")
 }
 
@@ -338,14 +345,33 @@ func TestVerifyDirectoryHostileText(t *testing.T) {
 // D13.
 func TestVerifyDirectoryApprovalDoesNotClear(t *testing.T) {
 	k := newSignKeys(t)
-	r := signRepo(t, signerLine("alice", k.alicePub), "docs/Docs")
-	r.git("config", "core.precomposeunicode", "false")
+	r := signRepo(t, signerLine("alice", k.alicePub), "gate/action.yml")
+	r.index("docs/Docs")
 	r.index("docs/docs/a")
 	indexCommit(r, k.alice, "T-031: Head Keeper approval")
 	code, out := r.run("verify", false)
-	if code != 1 || !strings.Contains(out, "tiers: FAIL: docs/Docs: path collides with directory docs/docs ") {
+	for _, w := range []string{signedTiers, "tiers: FAIL: docs/Docs: path collides with directory docs/docs "} {
+		if !strings.Contains(out, w) {
+			t.Errorf("output lacks %q\n%s", w, out)
+		}
+	}
+	if code != 1 || strings.Contains(out, "tiers: FAIL: gate/action.yml") {
 		t.Errorf("exit %d\n%s", code, out)
 	}
+}
+
+// D16. A tree holding a file and a directory of the same bytes lists docs and
+// docs/a; the byte-equal rule keeps docs from being flagged against itself.
+func TestVerifyDirectoryByteEqualTree(t *testing.T) {
+	r := leaseRepo(t)
+	r.claim(1, "full", active, "docs")
+	blob := r.gitIn("x\n", "hash-object", "-w", "--stdin")
+	sub := r.gitIn("100644 blob "+blob+"\ta\n", "mktree")
+	tree := r.gitIn("100644 blob "+blob+"\tdocs\n040000 tree "+sub+"\tdocs\n", "mktree", "--missing")
+	c := r.git("commit-tree", "-m", "T-001: twin", "-p", "HEAD", tree)
+	r.git("update-ref", "refs/heads/branch", c)
+	r.git("checkout", "-q", "branch")
+	r.expect(t, 1, "tiers: FAIL: docs: path collides with")
 }
 
 // D15. A head equal to main's tree passes.

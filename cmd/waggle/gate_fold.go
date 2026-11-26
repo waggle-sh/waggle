@@ -118,8 +118,11 @@ func buildDirIndex(paths []string) *dirIndex {
 // dirOf reports whether the folded name of the whole path p is a directory in
 // the index, and returns the first spelling of that directory.
 func (x *dirIndex) dirOf(p string) (string, bool) {
+	if p == "" {
+		return "", false
+	}
 	node, off := 0, 0
-	for p != "" {
+	for {
 		end := len(p)
 		if i := strings.IndexByte(p[off:], '/'); i >= 0 {
 			end = off + i
@@ -135,7 +138,6 @@ func (x *dirIndex) dirOf(p string) (string, bool) {
 		}
 		off = end + 1
 	}
-	return "", false
 }
 
 // dirCount is the number of distinct folded directories.
