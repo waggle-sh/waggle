@@ -7823,3 +7823,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 (relayed in writing by the orchestrator, Orca item 11, in the same relay as event e1331, 3:30 PM Pacific Time), in the words "Yes, that".
 
 **Rationale:** Built in #348: claim, release and doctor print 'waggle <cmd>: forge.remote is <name>, but this repo has no remote named <name>; add it with git remote add <name> <url> or set forge.remote: "" for local-only use' and exit 3. With #341 (the not-a-git-repo half), T-091 is done.
+
+## D-404: Upgrade hive pin to v0.1.4 (069ab5c)
+
+- **Date:** 2026-11-26
+- **Kind:** technical
+- **Tickets:** T-113
+- **Supersedes:** none
+
+**Question:** Which Waggle build does this hive run?
+
+**Options considered:**
+1. Stay on f2543b6f05e90240308b325f75e3aeaf8eebf1a9 (v0.1.3)
+2. Move to 069ab5c9a91a0e88939a5871333dece0fc2c66c6 (v0.1.4)
+
+**Hive recommendation:** Move to 069ab5c9a91a0e88939a5871333dece0fc2c66c6 (v0.1.4)
+
+**Keeper choice:** Move the pin from f2543b6f05e90240308b325f75e3aeaf8eebf1a9 to 069ab5c9a91a0e88939a5871333dece0fc2c66c6, the v0.1.4 release commit; managed files re-rendered by waggle upgrade from the v0.1.4 release binary. Approved by the Head Keeper on 2026-11-25 at 4:38 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1349), in the words "Yes, release and pin".
+
+**Rationale:** v0.1.4 carries T-113 (gate.mode hold, #344), so this hive's gate can parse hold before T-114 and T-116 build on it. It also carries T-074's normalization collision check (#336) and the T-091 messages (#341, #348). Pinned by commit, not tag.
