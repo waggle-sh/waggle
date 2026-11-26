@@ -9,13 +9,13 @@ Owned by the scout; Full gate. Vision bar: VISION.md (core items need a typed He
 
 Product focus now: Waggle is the claims layer for Backlog.md and GitHub issues (D-416). Backlog.md, an issue or a hive task says what the work is; Waggle says who holds it now, until when, and what it touches. Claims are flat refs in the existing `refs/waggle/claims/` store keyed on an opaque task id, created atomically, taken over only after expiry with the expected old value, renewed in one push, released on merge, and checked for path overlap after the write (earliest wins). `waggle next` picks the top unheld, non-overlapping task in the sources' own priority order. The CLI mirrors each claim one way onto its GitHub issue (assignee, `claimed` label, one sticky comment), and a 15-minute sweep on our own runner repairs drift. Claims are cooperative among people who can push, with holder caps, a 24-hour maximum lease, a grace window and a "claim vanished" notice; the App, later, is the only writer for outsiders and `/claim`. GitHub first, Linear after the dogfood (D-412). Level 0 is an `AGENTS.md` convention; Level 2 is the gate as an opt-in check that a PR stays inside its claim, after the dogfood. Governance (D-415): owners set vision and roadmap, the tracker sets priority, config sets who may reprioritize, Quorum later. Two people's queens use it on one Level 19 repo for 14 days against a measured bar, then outreach starts and the D-235 clock restarts on three outside repos using claims. Plan of record: `.waggle/hive/tasks/T-124.md`. The version number is set at release.
 
-Held (frozen: claims-first refocus, item 55, D-411): T-069, T-070, T-108 to T-112 and T-121. In-flight approved builds finish (T-116 phase 1).
+Held (frozen: claims-first refocus, item 55, D-411): T-069, T-070, T-108 to T-112 and T-121. In-flight approved builds finish (T-116 phase 1 merged as #363).
 
 In build order:
 
 T-124 · Claims-first refocus brief, VISION amendment, this section · S · approved (D-417), merged #362 · claims first · records
-T-125 · Claim spec and the Level 0 AGENTS.md section · S · ready (D-417) · dogfood · docs
-T-136 · Frozen comb skips claim refs it does not own · S · ready (D-417) · dogfood · product
+T-125 · Claim spec and the Level 0 AGENTS.md section · S · claimed, building (D-417) · dogfood · docs
+T-136 · Frozen comb skips claim refs it does not own · S · claimed, building (D-417) · dogfood · product
 T-127 · Pure claims core: keys, record, expiry, overlap, caps · M · ready (D-417) · dogfood · product
 T-145 · Claim ref store: create, takeover, batch renew, release with log · M · ready (D-417) · dogfood · product
 T-142 · Task sources and order: Backlog.md, hive tasks, GitHub issues · M · ready (D-417) · dogfood · product
@@ -114,7 +114,7 @@ T-112 · Analyst weekly job, proposals and rejection memory · TBD · held (froz
 T-113 · `gate.mode: hold` in config and verify · TBD · merged (#344, v0.1.4; pin move #350, D-404) · unscheduled · product
 T-114 · `waggle merge`: Waggle-owned merge path · TBD · proposed (stub) · unscheduled · product
 T-115 · Post-merge audit and breach record · TBD · proposed (stub) · unscheduled · product
-T-116 · `waggle doctor` capability probe and `hold` readiness · S to M (t-116), S (t-116b) · brief approved (D-409); t-116 claimed and building (D-414) · unscheduled · product
+T-116 · `waggle doctor` capability probe and `hold` readiness · S to M (t-116), S (t-116b) · t-116 merged (#363, D-418); t-116b waits on T-114 and T-115 · unscheduled · product
 T-117 · Docs for the held hive · TBD · proposed (stub) · unscheduled · product
 T-118 · Pilot rollout from `open` to `hold` · TBD · proposed (stub) · unscheduled · rollout
 
