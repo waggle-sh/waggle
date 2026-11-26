@@ -7,7 +7,7 @@ Telemetry is off unless a hive opts in. Nothing is sent before the collector shi
 
 ## Fields
 
-"Required" means always sent. The four optional fields are omitted, never guessed, when their source is missing.
+"Required" means always sent. The seven optional fields are omitted, never guessed, when their source is missing. `forge_capability`, `fix_cycles_per_pr` and `rebase_cycles_per_pr` need the forge, so a payload built from local refs alone, such as `waggle telemetry show`, leaves them out (D-405).
 
 | Name | Type | Required | Meaning |
 | :--- | :--- | :--- | :--- |
@@ -15,13 +15,13 @@ Telemetry is off unless a hive opts in. Nothing is sent before the collector shi
 | `claim_to_merge_hours` | p50 and p90 | yes | Receipt `claimed_at` to `merged_at`, rounded to 1, 4, 12, 24, 72, 168 or 336+ (`336` in the payload means 336 or more). |
 | `contributors` | bucket `1`, `2-5`, `6-20`, `21+` | yes | Distinct commit authors on the default branch, 90 days. |
 | `failed` | counts per check | no | Counts per check (`leases`, `tiers`, `binding`, `decisions`), bucketed (`0`, `1-5`, `6-20`, `21-50`, `51+`). Expected only under `guard` and `hold`. From the gate counts artifact. |
-| `fix_cycles_per_pr` | p50 and p90, integer, capped at 10 | yes | Pushes after first review. |
-| `forge_capability` | `required_check` or `none` | yes | Result of the doctor probe. |
+| `fix_cycles_per_pr` | p50 and p90, integer, capped at 10 | no | Pushes after first review. |
+| `forge_capability` | `required_check` or `none` | no | Result of the doctor probe. |
 | `gate_mode` | `open`, `guard` or `hold` | yes | Gate mode from the base config. |
 | `install_id` | string | yes | Install id; rules in the install id section below. |
 | `keepers` | bucket, same edges as `contributors` | yes | Count of `gate.approvers`. |
 | `prs_merged` | bucket `0`, `1-5`, `6-20`, `21-50`, `51+` | yes | PRs merged, from receipts and the forge. |
-| `rebase_cycles_per_pr` | p50 and p90, integer, capped at 10 | yes | Head force-updates and base merges. |
+| `rebase_cycles_per_pr` | p50 and p90, integer, capped at 10 | no | Head force-updates and base merges. |
 | `receipt_rate` | percent, rounded to 10 | yes | Percent of claims released with a receipt. |
 | `releases_90d` | integer, capped at 12 | yes | Tags matching `v*` in 90 days. |
 | `schema` | constant `1` | yes | Payload schema version. |
@@ -40,7 +40,7 @@ Logins, names, emails, repo or org names, URLs, branch names, ticket IDs or titl
 
 ## Install id
 
-The install id is a random 128 bit value, written as 32 lowercase hex characters, kept in a git-ignored local file. It is never derived from repo data.
+The install id is a random 128 bit value, written as 32 lowercase hex characters, kept in a local file under `.git/waggle/`, so it is never committed (D-405). `waggle telemetry show` leaves it out until `waggle telemetry send` creates it. It is never derived from repo data.
 
 - It is replaced every 90 days, so one id is linkable across at most 13 weekly reports.
 - It is tied to no one: it names no person, repo or org.
