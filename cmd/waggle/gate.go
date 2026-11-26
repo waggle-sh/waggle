@@ -120,13 +120,15 @@ func runGateDecisionsMode(args []string, stdout, stderr io.Writer, getenv func(s
 	defer cancel()
 	added, err := gateDecisions(gitRunner{ctx, *repo}, *base, *head)
 	if err != nil {
-		reason := strings.NewReplacer("\r", " ", "\n", " ").Replace(err.Error())
+		// CR and LF become a space first (unchanged), then annotData encodes
+		// %, tab and backslash; text without those bytes is byte-identical.
+		reason := annotData.Replace(strings.NewReplacer("\r", " ", "\n", " ").Replace(err.Error()))
 		switch {
 		case errors.Is(err, errGit):
 			fmt.Fprintf(stderr, "decisions: error: %s\n", reason)
 			return gateError
 		case open:
-			printWouldFail(stderr, getenv("GITHUB_ACTIONS") == "true", "decisions", layout.Decisions, annotData.Replace(reason))
+			printWouldFail(stderr, getenv("GITHUB_ACTIONS") == "true", "decisions", layout.Decisions, reason)
 			return gatePass
 		case getenv("GITHUB_ACTIONS") == "true":
 			fmt.Fprintf(stderr, "::error file=%s::%s\n", layout.Decisions, reason)
