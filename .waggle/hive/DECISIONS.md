@@ -8002,3 +8002,41 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 by 11:25 PM Pacific Time (relayed in writing by the orchestrator, Orca item 55, event e1771), in the words "GitHub first, Linear after dogfood". It replaces the claim-location part of D-411 (event e1752).
 
 **Rationale:** The rest of D-411 stands: open core, existing code kept and frozen, our queens first for 2 weeks.
+
+## D-413: T-123 merged at 3684120
+
+- **Date:** 2026-11-26
+- **Kind:** scope
+- **Tickets:** T-123
+- **Supersedes:** none
+
+**Question:** Merge T-123 (#360, file and folder names that differ only by case fail the gate) at head 3684120?
+
+**Options considered:**
+1. Yes, merge #360.
+2. Hold.
+
+**Hive recommendation:** Option 1. The AWS guard and the laptop confirming guard both approved at 3684120, and D-411 lets in-flight approved builds finish.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-26, read at 7:31 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1846), in the words "Merge Waggle T-123 (#360, file and folder names that differ only by case fail the gate) at 3684120? → Yes, merge #360". The waggle-approve line was posted at 3684120fc1afa2c4f0a6725890b36e0bf6d1ef4b, and #360 merged through the gate with the head pinned, no bypass, as 5b485f0. The T-123 claim was then released as merged.
+
+**Rationale:** The build was approved before the claims-first freeze, and D-411 names T-123 as one that finishes.
+
+## D-414: Release the frozen T-121 claim for T-116 phase t-116
+
+- **Date:** 2026-11-26
+- **Kind:** scope
+- **Tickets:** T-121, T-116
+- **Supersedes:** none
+
+**Question:** T-116 phase 1 needs files that the frozen T-121 claim holds. Release T-121's claim now?
+
+**Options considered:**
+1. Release T-121's claim now.
+2. Keep it and hold T-116.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-26, read at 7:31 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1846), in the words "T-116 phase 1 needs files that the frozen T-121 claim holds. Release T-121's claim now? → Release T-121's claim now". T-121 was released with `waggle release T-121 --unmerged` (claim e132d2b4defc). Branch receipts-approval-head is kept at 48647a1, and T-121 stays frozen.
+
+**Rationale:** T-116 carries the D-409 approved brief, and the frozen T-121 work is kept on its branch. Lease note: a claim holds at most 5 entries, and the brief's phase t-116 lease names nine files. So the T-116 claim (claim fe2e62b92ec1, owner paulternate19, branch t-116) leases internal/forge, cmd/waggle, docs/gate.md and docs/troubleshooting.md, a coordinator choice. The build stays bound to the brief's nine files, and the claim is released when the PR merges.

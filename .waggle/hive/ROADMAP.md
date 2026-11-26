@@ -64,7 +64,7 @@ T-099 · Golden tests for --json output · S · merged (#335) · v0.1 · product
 T-100 · One local check script that matches CI and the release matrix · S · merged (#320) · v0.1 · product
 T-119 · Speed up product-ci with Go build and test caches · S · proposed · after v0.1.2 · product
 T-122 · Encode tab and backslash in gate finding lines (D-398) · S · merged (#358) · v0.1 · product
-T-123 · Gate collision check: directory against file with the same folded name (D-395) · S to M · brief approved (D-408), building · v0.1 · product
+T-123 · Gate collision check: directory against file with the same folded name (D-395) · S to M · merged (#360, D-413) · v0.1 · product
 
 ## Backlog (telemetry, insights and the held hive, D-389)
 
@@ -83,14 +83,14 @@ T-112 · Analyst weekly job, proposals and rejection memory · TBD · held (froz
 T-113 · `gate.mode: hold` in config and verify · TBD · merged (#344, v0.1.4; pin move #350, D-404) · unscheduled · product
 T-114 · `waggle merge`: Waggle-owned merge path · TBD · proposed (stub) · unscheduled · product
 T-115 · Post-merge audit and breach record · TBD · proposed (stub) · unscheduled · product
-T-116 · `waggle doctor` capability probe and `hold` readiness · S to M (t-116), S (t-116b) · brief approved (D-409); t-116 waits on its lease · unscheduled · product
+T-116 · `waggle doctor` capability probe and `hold` readiness · S to M (t-116), S (t-116b) · brief approved (D-409); t-116 claimed and building (D-414) · unscheduled · product
 T-117 · Docs for the held hive · TBD · proposed (stub) · unscheduled · product
 T-118 · Pilot rollout from `open` to `hold` · TBD · proposed (stub) · unscheduled · rollout
 
 ## Security fixes
 
 T-120 · Bind gate approvals to the exact head (GHSA-mcv7-2x6g-pmwc) · M · merged #334, v0.1.3 · v0.1 · product
-T-121 · Receipts list an approver only when the review body names the merged head · S · held (frozen: claims-first refocus, item 55, D-411); built on branch receipts-approval-head, no PR · v0.1 · product
+T-121 · Receipts list an approver only when the review body names the merged head · S · held (frozen: claims-first refocus, item 55, D-411); built on branch receipts-approval-head, no PR; claim released (D-414) · v0.1 · product
 
 ## Still deferred (not honey)
 
