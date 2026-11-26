@@ -5,7 +5,7 @@ Owned by the scout; Full gate. Vision bar: VISION.md (core items need a typed He
 
 ## Releases
 
-### Claims first (next release; proposed by T-124 under D-410 to D-412, D-415 and D-416)
+### Claims first (next release; T-124 under D-410 to D-412 and D-415 to D-417)
 
 Product focus now: Waggle is the claims layer for Backlog.md and GitHub issues (D-416). Backlog.md, an issue or a hive task says what the work is; Waggle says who holds it now, until when, and what it touches. Claims are flat refs in the existing `refs/waggle/claims/` store keyed on an opaque task id, created atomically, taken over only after expiry with the expected old value, renewed in one push, released on merge, and checked for path overlap after the write (earliest wins). `waggle next` picks the top unheld, non-overlapping task in the sources' own priority order. The CLI mirrors each claim one way onto its GitHub issue (assignee, `claimed` label, one sticky comment), and a 15-minute sweep on our own runner repairs drift. Claims are cooperative among people who can push, with holder caps, a 24-hour maximum lease, a grace window and a "claim vanished" notice; the App, later, is the only writer for outsiders and `/claim`. GitHub first, Linear after the dogfood (D-412). Level 0 is an `AGENTS.md` convention; Level 2 is the gate as an opt-in check that a PR stays inside its claim, after the dogfood. Governance (D-415): owners set vision and roadmap, the tracker sets priority, config sets who may reprioritize, Quorum later. Two people's queens use it on one Level 19 repo for 14 days against a measured bar, then outreach starts and the D-235 clock restarts on three outside repos using claims. Plan of record: `.waggle/hive/tasks/T-124.md`. The version number is set at release.
 
@@ -13,18 +13,18 @@ Held (frozen: claims-first refocus, item 55, D-411): T-069, T-070, T-108 to T-11
 
 In build order:
 
-T-124 · Claims-first refocus brief, VISION amendment, this section · S · brief written, awaiting Head Keeper approval · claims first · records
-T-125 · Claim spec and the Level 0 AGENTS.md section · S · proposed · dogfood · docs
-T-136 · Frozen comb skips claim refs it does not own · S · proposed · dogfood · product
-T-127 · Pure claims core: keys, record, expiry, overlap, caps · M · proposed · dogfood · product
-T-145 · Claim ref store: create, takeover, batch renew, release with log · M · proposed · dogfood · product
-T-142 · Task sources and order: Backlog.md, hive tasks, GitHub issues · M · proposed · dogfood · product
-T-130 · CLI: claim, scope, renew, release, claims · M · proposed · dogfood · product
-T-128 · GitHub issue mirror, one way · M · proposed · dogfood · product
-T-131 · waggle next · S · proposed · dogfood · product
-T-132 · Reconcile sweep and its runner timer · M · proposed · dogfood · product
-T-144 · The dogfood repo's backlog: Backlog.md files plus issues · S · proposed · dogfood · ops
-T-138 · Dogfood: two people's queens on one repo for 14 days · S · proposed · dogfood · ops
+T-124 · Claims-first refocus brief, VISION amendment, this section · S · approved (D-417), merged #362 · claims first · records
+T-125 · Claim spec and the Level 0 AGENTS.md section · S · ready (D-417) · dogfood · docs
+T-136 · Frozen comb skips claim refs it does not own · S · ready (D-417) · dogfood · product
+T-127 · Pure claims core: keys, record, expiry, overlap, caps · M · ready (D-417) · dogfood · product
+T-145 · Claim ref store: create, takeover, batch renew, release with log · M · ready (D-417) · dogfood · product
+T-142 · Task sources and order: Backlog.md, hive tasks, GitHub issues · M · ready (D-417) · dogfood · product
+T-130 · CLI: claim, scope, renew, release, claims · M · ready (D-417) · dogfood · product
+T-128 · GitHub issue mirror, one way · M · ready (D-417) · dogfood · product
+T-131 · waggle next · S · ready (D-417) · dogfood · product
+T-132 · Reconcile sweep and its runner timer · M · ready (D-417) · dogfood · product
+T-144 · The dogfood repo's backlog: Backlog.md files plus issues · S · ready (D-417) · dogfood · ops
+T-138 · Dogfood: two people's queens on one repo for 14 days · S · ready (D-417) · dogfood · ops
 T-126 · README leads with claims and the Backlog.md companion · S · proposed · before outreach · docs
 T-135 · waggle init --claims · S · proposed · before outreach · product
 T-141 · Governance config: owners, reprioritizers, steering paths · S · proposed · after the dogfood starts · product
