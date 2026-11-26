@@ -62,13 +62,35 @@ T-097 · Troubleshooting page built from real gate messages · S · merged (#333
 T-098 · Empty states for status and doctor · S · merged (#329) · v0.1 · product
 T-099 · Golden tests for --json output · S · merged (#335) · v0.1 · product
 T-100 · One local check script that matches CI and the release matrix · S · merged (#320) · v0.1 · product
+T-119 · Speed up product-ci with Go build and test caches · S · proposed · after v0.1.2 · product
 T-122 · Encode tab and backslash in gate finding lines (D-398) · S · merged (#358) · v0.1 · product
 T-123 · Gate collision check: directory against file with the same folded name (D-395) · S to M · brief approved (D-408), building · v0.1 · product
+
+## Backlog (telemetry, insights and the held hive, D-389)
+
+Opened from the T-103 RFC (section 7) under D-389. Release unscheduled; sequencing per T-103 RFC open question 11. Size is set by the scout at brief time unless a row gives one.
+
+T-103 · Opt-in telemetry, the insights loop, and a held hive for GitHub Free (RFC and stubs) · S · approved (D-389) · unscheduled · design
+T-104 · Telemetry schema v1 and privacy statement · TBD · merged (#346; protected paths #347, D-401, D-402) · unscheduled · product
+T-105 · `telemetry:` config section and `waggle telemetry show` · TBD · merged (#353, D-405) · unscheduled · product
+T-106 · Machine-readable ticket stage in task files · TBD · merged (#351, D-406) · unscheduled · product
+T-107 · Gate counts artifact from `verify` · TBD · merged (#355, D-407) · unscheduled · product
+T-108 · Weekly telemetry workflow and `waggle telemetry send` · TBD · held (frozen: claims-first refocus, item 55, D-411) · unscheduled · product
+T-109 · Analyst phase 0 over the pilot repos, local only · TBD · held (frozen: claims-first refocus, item 55, D-411) · unscheduled · product
+T-110 · `waggle-sh/insights` repo and collector · TBD · held (frozen: claims-first refocus, item 55, D-411) · unscheduled · infra
+T-111 · Public rollup with k = 10 suppression · TBD · held (frozen: claims-first refocus, item 55, D-411) · unscheduled · product
+T-112 · Analyst weekly job, proposals and rejection memory · TBD · held (frozen: claims-first refocus, item 55, D-411) · unscheduled · product
+T-113 · `gate.mode: hold` in config and verify · TBD · merged (#344, v0.1.4; pin move #350, D-404) · unscheduled · product
+T-114 · `waggle merge`: Waggle-owned merge path · TBD · proposed (stub) · unscheduled · product
+T-115 · Post-merge audit and breach record · TBD · proposed (stub) · unscheduled · product
+T-116 · `waggle doctor` capability probe and `hold` readiness · S to M (t-116), S (t-116b) · brief approved (D-409); t-116 waits on its lease · unscheduled · product
+T-117 · Docs for the held hive · TBD · proposed (stub) · unscheduled · product
+T-118 · Pilot rollout from `open` to `hold` · TBD · proposed (stub) · unscheduled · rollout
 
 ## Security fixes
 
 T-120 · Bind gate approvals to the exact head (GHSA-mcv7-2x6g-pmwc) · M · merged #334, v0.1.3 · v0.1 · product
-T-121 · Receipts list an approver only when the review body names the merged head · S · built, on hold until Nectar scoring is revisited · v0.1 · product
+T-121 · Receipts list an approver only when the review body names the merged head · S · held (frozen: claims-first refocus, item 55, D-411); built on branch receipts-approval-head, no PR · v0.1 · product
 
 ## Still deferred (not honey)
 
