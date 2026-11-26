@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-113",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "SECURITY.md"
+  ],
+  "claimed_at": "2026-11-26T01:02:39Z",
+  "expires_at": "2026-11-29T01:02:39Z",
+  "branches": [
+    "hive-pin-v0.1.4"
+  ]
+}
