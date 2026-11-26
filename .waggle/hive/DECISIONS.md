@@ -7842,3 +7842,24 @@
 **Keeper choice:** Move the pin from f2543b6f05e90240308b325f75e3aeaf8eebf1a9 to 069ab5c9a91a0e88939a5871333dece0fc2c66c6, the v0.1.4 release commit; managed files re-rendered by waggle upgrade from the v0.1.4 release binary. Approved by the Head Keeper on 2026-11-25 at 4:38 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1349), in the words "Yes, release and pin".
 
 **Rationale:** v0.1.4 carries T-113 (gate.mode hold, #344), so this hive's gate can parse hold before T-114 and T-116 build on it. It also carries T-074's normalization collision check (#336) and the T-091 messages (#341, #348). Pinned by commit, not tag.
+
+## D-405: T-105 Q-T105: schema v1 makes three forge-sourced fields optional
+
+- **Date:** 2026-11-26
+- **Kind:** technical
+- **Tickets:** T-104, T-105
+- **Supersedes:** none
+
+**Question:** waggle telemetry show must use no network, never guess and create nothing, yet schema v1 requires forge_capability (from the doctor probe, which calls the forge), fix_cycles_per_pr and rebase_cycles_per_pr (from PR review and push history), and install_id (created only by send, T-108). How should show and the schema fit?
+
+**Options considered:**
+1. show prints a partial payload and the schema stays; the test checks only fields present.
+2. Schema v1 makes forge_capability, fix_cycles_per_pr and rebase_cycles_per_pr optional, omitted with no local source; the install id lives under .git/waggle/ and is omitted until send creates it.
+3. show makes one forge read, breaking the no-network rule.
+4. Split T-105 and decide the rest at T-108.
+
+**Hive recommendation:** Option 2: it keeps no network and never guess, and the payload stays schema-valid.
+
+**Keeper choice:** Option 2, approved by the Head Keeper on 2026-11-25 at 5:30 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1384), in the words "Yes, make them optional".
+
+**Rationale:** The schema and docs change is its own protected-path PR. install_id stays required in the schema, because every sent payload has one; show omits it until send creates it.
