@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "ticket_id": "T-105",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle/main.go",
+    "cmd/waggle/telemetry.go",
+    "internal/config",
+    "internal/telemetry",
+    "site/content/cli.md"
+  ],
+  "claimed_at": "2026-11-26T01:03:21Z",
+  "expires_at": "2026-11-29T01:03:21Z",
+  "branches": [
+    "t-105"
+  ]
+}
