@@ -85,6 +85,8 @@ func runMain(args []string, stdin io.Reader, stdout, stderr io.Writer, getenv fu
 		return runUpgrade(rest, stdout, stderr)
 	case "doctor":
 		return runDoctor(rest, stdout, stderr, getenv)
+	case "telemetry":
+		return runTelemetry(rest, stdout, stderr)
 	}
 	fmt.Fprintf(stderr, "Unknown subcommand %q\n", args[0])
 	if near := nearCommand(args[0]); near != "" {
@@ -96,7 +98,7 @@ func runMain(args []string, stdin io.Reader, stdout, stderr io.Writer, getenv fu
 }
 
 // commandNames lists every subcommand, for "did you mean" hints.
-var commandNames = []string{"init", "decide", "gate", "dispatch", "claim", "release", "force-release", "nectar", "vote", "quorum", "uninstall", "status", "hives", "pace", "upgrade", "doctor", "version", "help"}
+var commandNames = []string{"init", "decide", "gate", "dispatch", "claim", "release", "force-release", "nectar", "vote", "quorum", "uninstall", "status", "hives", "pace", "upgrade", "doctor", "telemetry", "version", "help"}
 
 // nearCommand returns the command closest to word within edit distance 2,
 // or "" when none is that close.
@@ -161,5 +163,6 @@ Commands:
   pace      Show the agent pace set for this repo and how to apply it in each agent tool [--tool]
   upgrade   Print the plan to re-render managed files from this build and move waggle.pin; --apply executes it
   doctor    Check that claim refs can be pushed and the gate is a required check [--no-write]
+  telemetry Print the exact weekly telemetry report, with no network: waggle telemetry show [--repo <dir>]
   version   Print version`)
 }

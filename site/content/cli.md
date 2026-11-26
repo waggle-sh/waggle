@@ -110,6 +110,16 @@ waggle doctor [--repo <dir>] [--no-write]
 
 Checks that claim refs can be pushed and the gate is a required check. It reports `claim-refs`, `required-gate` and `up-to-date`. On main it also prints an informational `claims` finding, which names the first malformed claim and the `waggle force-release --ref` line that clears it, and says who may run `force-release`; it never changes the exit code. `--no-write` skips the temporary refs it would otherwise push under `refs/waggle/probe/`. It does not check that PRs are required, required reviews, code-owner review, or which app may post the check. See [the gate spec](/docs/gate/#12-install-and-waggle-doctor).
 
+### `waggle telemetry`
+
+```
+waggle telemetry show [--repo <dir>]
+```
+
+Prints the exact JSON that this week's telemetry report would hold, computed from local refs. It needs no network, writes nothing and works whether `telemetry.enabled` is true or false. Nothing is sent today: the sender is not built yet, and the `telemetry:` section in `.waggle/control/config.yaml` (`enabled`, default `false`) is only read. An older build ignores the section.
+
+A field with no local source is left out, never guessed. Today that is the stage fields, the gate counts, `forge_capability` and the cycle counts. Any of `claim_rate`, `receipt_rate`, `claim_to_merge_hours` and `ticket_to_merge_hours` is also left out when no receipt merged in the last 7 days. The install id lives in a file under `.git/waggle/`. `show` never creates it: without the file it leaves out `install_id` and prints one line on stderr saying so. The payload holds no login, path, URL, commit SHA or ticket text. Every field and the never-sent list are in [the payload schema](https://github.com/waggle-sh/waggle/blob/main/docs/telemetry.md).
+
 ## Hive commands
 
 These serve the full Waggle hive workflow: roles (a **forager** triages and maps leases, a **builder** implements, a **guard** reviews, a **scout** writes briefs), worktrees and a decisions log. You do not need them to run the gate. The Nectar and Quorum commands are in [their own section](#nectar-and-quorum).
