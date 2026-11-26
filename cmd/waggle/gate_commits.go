@@ -259,6 +259,12 @@ func (s *commitScan) scan(mb, head string) error {
 		for _, ch := range changes {
 			s.maxTier = max(s.maxTier, s.policy.RequiredMinTier(ch.Path))
 		}
+		// A task file edit that changes only its stage line needs no claim
+		// directory and no approval (T-106, docs/gate.md sections 5 and 6).
+		changes, err = dropStageOnly(s.g, diffFrom, changes, s.policy)
+		if err != nil {
+			return err
+		}
 		for _, v := range comb.CheckChangesPolicy(cl.lease, changes, s.policy) {
 			if s.keeper != nil && s.keeper(v.Path) && (v.Rule == comb.RuleTier3 || v.Rule == comb.RuleOutsideLease) {
 				s.keeperHit = true
