@@ -486,12 +486,15 @@ func decodeLease(data []byte, num int) (Lease, string) {
 	return v, ""
 }
 
-// scan reads and decodes every claim ref. In remote mode callers sync first.
+// scan reads and decodes every claim ref it owns. A ref that is not ours (see
+// otherClaimKey) is skipped: not a claim, not malformed. In remote mode
+// callers sync first.
 func (b *GitBackend) scan(ctx context.Context) ([]claim, error) {
 	refs, err := b.listRefs(ctx, ClaimRefPrefix)
 	if err != nil {
 		return nil, err
 	}
+	refs = slices.DeleteFunc(refs, func(r refEntry) bool { _, other := otherClaimKey(r.ref); return other })
 	return b.loadClaims(ctx, refs)
 }
 
@@ -978,6 +981,109 @@ func (b *GitBackend) ClaimsView(ctx context.Context) (leases []Lease, leasesErr 
 	now := b.now()
 	leases, leasesErr = leasesOf(claims, now)
 	return leases, leasesErr, collisionsOf(claims, now), nil
+}
+
+// OtherClaim is a claim ref this code does not own, for display only. Holder,
+// Lead and ExpiresAt come from claim.json (T-124 4.2) and are untrusted text;
+// Readable is false when the record could not be read or decoded.
+type OtherClaim struct {
+	Key, Holder, Lead string
+	ExpiresAt         time.Time
+	Readable          bool
+}
+
+// OtherClaims lists the claim refs that scan skips, sorted by key in byte
+// order, with the display fields of each claim.json (holder, lead, expires_at;
+// T-127 owns the full parser). It reads the local refs and never syncs: in
+// remote mode call it after ClaimsView, which syncs. It writes nothing. A ref
+// that is not a commit, has no claim.json, whose blob is over MaxLeaseBytes
+// (never read, D-107) or does not decode is Readable false.
+func (b *GitBackend) OtherClaims(ctx context.Context) ([]OtherClaim, error) {
+	refs, err := b.listRefs(ctx, ClaimRefPrefix)
+	if err != nil {
+		return nil, err
+	}
+	refs = slices.DeleteFunc(refs, func(r refEntry) bool { _, ok := otherClaimKey(r.ref); return !ok })
+	slices.SortFunc(refs, func(x, y refEntry) int { return strings.Compare(x.ref, y.ref) })
+	out := make([]OtherClaim, len(refs))
+	var batch bytes.Buffer
+	var pending []int
+	for i, r := range refs {
+		out[i].Key, _ = otherClaimKey(r.ref)
+		if r.objType == "commit" && oidPattern.MatchString(r.oid) {
+			pending = append(pending, i)
+			batch.WriteString(r.oid + ":claim.json\n")
+		}
+	}
+	if len(pending) > 0 {
+		if err := b.readOtherRecords(ctx, out, pending, batch.Bytes()); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// readOtherRecords fills out[i] for each i in pending from the claim.json
+// names in batch: sizes and types first, then only blobs under the cap.
+func (b *GitBackend) readOtherRecords(ctx context.Context, out []OtherClaim, pending []int, batch []byte) error {
+	sizes, err := b.git(ctx, batch, nil, "cat-file", "--batch-check")
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(strings.TrimSuffix(string(sizes), "\n"), "\n")
+	if len(lines) != len(pending) {
+		return errors.New("comb: short cat-file --batch-check output")
+	}
+	var blobs bytes.Buffer
+	var read []int
+	for k, i := range pending {
+		f := strings.Fields(lines[k])
+		if len(f) != 3 || f[1] != "blob" || !oidPattern.MatchString(f[0]) {
+			continue
+		}
+		if size, err := strconv.Atoi(f[2]); err == nil && size >= 0 && size <= MaxLeaseBytes {
+			read = append(read, i)
+			blobs.WriteString(f[0] + "\n")
+		}
+	}
+	if len(read) == 0 {
+		return nil
+	}
+	data, err := b.git(ctx, blobs.Bytes(), nil, "cat-file", "--batch")
+	if err != nil {
+		return err
+	}
+	rd := bufio.NewReader(bytes.NewReader(data))
+	for _, i := range read {
+		header, err := rd.ReadString('\n')
+		if err != nil {
+			return fmt.Errorf("comb: short cat-file --batch output: %w", err)
+		}
+		f := strings.Fields(header)
+		size := -1
+		if len(f) == 3 && f[1] == "blob" {
+			size, _ = strconv.Atoi(f[2])
+		}
+		if size < 0 || size > MaxLeaseBytes {
+			return fmt.Errorf("comb: unexpected cat-file --batch header %q", strings.TrimSpace(header))
+		}
+		body := make([]byte, size+1)
+		if _, err := io.ReadFull(rd, body); err != nil {
+			return fmt.Errorf("comb: short cat-file --batch output: %w", err)
+		}
+		var rec struct {
+			Holder    string `json:"holder"`
+			Lead      string `json:"lead"`
+			ExpiresAt string `json:"expires_at"`
+		}
+		if json.Unmarshal(body[:size], &rec) != nil {
+			continue
+		}
+		if exp, err := time.Parse(time.RFC3339, rec.ExpiresAt); err == nil {
+			out[i].Holder, out[i].Lead, out[i].ExpiresAt, out[i].Readable = rec.Holder, rec.Lead, exp.UTC(), true
+		}
+	}
+	return nil
 }
 
 // CaseCollision is a pair of active claims on different tickets with

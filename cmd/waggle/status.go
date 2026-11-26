@@ -36,12 +36,13 @@ var (
 
 // header is the hive line and the daemon line of the report.
 type header struct {
-	Name   string // repo root basename
-	Pin    string // waggle.pin as written in config.yaml
-	Mode   string // forge.comb_mode
-	Remote string // forge.remote; "" prints as (local)
-	Daemon bool   // the waggled socket exists
-	Pace   string // the pace line; "" when config.yaml has no pace: section
+	Name   string            // repo root basename
+	Pin    string            // waggle.pin as written in config.yaml
+	Mode   string            // forge.comb_mode
+	Remote string            // forge.remote; "" prints as (local)
+	Daemon bool              // the waggled socket exists
+	Pace   string            // the pace line; "" when config.yaml has no pace: section
+	Other  []comb.OtherClaim // claim refs this build does not own (T-136)
 }
 
 // runStatus implements `waggle status`. Exit codes: 0 report printed (even
@@ -91,6 +92,7 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 	for _, w := range paceWarns {
 		fmt.Fprintln(stderr, w)
 	}
+	h.Other = d.Other
 	block := usage.Render(usage.Summarize(recs), layout.Usage)
 	stdout.Write(renderStatus(h, leases, malformed, d.Collisions, block, statusClock()))
 	return 0
@@ -105,6 +107,7 @@ type statusData struct {
 	Usage         []usage.Record
 	BadUsage      []usage.BadLine
 	Collisions    []comb.CaseCollision
+	Other         []comb.OtherClaim
 }
 
 // statusFault is a refusal or failure of loadStatus: the exit code and the
@@ -159,11 +162,13 @@ func loadStatus(root string, noFetch bool) (*statusData, *statusFault) {
 	if leasesErr != nil && !errors.As(leasesErr, &malformed) {
 		return fault(3, "failed: %v", leasesErr)
 	}
+	// Display only: a failure here never fails status (T-136).
+	other, _ := backend.OtherClaims(ctx)
 	recs, bad, err := usage.Read(filepath.Join(root, layout.Usage))
 	if err != nil {
 		return fault(3, "failed: %v", err)
 	}
-	return &statusData{Root: root, CfgPath: cfgPath, Cfg: cfg, Leases: leases, Malformed: malformed, Usage: recs, BadUsage: bad, Collisions: collisions}, nil
+	return &statusData{Root: root, CfgPath: cfgPath, Cfg: cfg, Leases: leases, Malformed: malformed, Usage: recs, BadUsage: bad, Collisions: collisions, Other: other}, nil
 }
 
 // repoRoot resolves the work tree root of dir ("" means the current
@@ -236,6 +241,9 @@ func renderStatus(h header, leases []comb.Lease, malformed *comb.MalformedClaims
 			strings.Join(l.Directories, "/ "), expiresIn(l.ExpiresAt.Sub(now)))
 	}
 	tw.Flush()
+	if len(h.Other) > 0 {
+		renderOther(&b, h.Other, now)
+	}
 	if malformed != nil && len(malformed.Claims) > 0 {
 		first := malformed.Claims[0]
 		fmt.Fprintf(&b, "  malformed: %d (%s: %s); the first login in gate.approvers can clear it: waggle force-release --ref %s\n",
@@ -263,4 +271,33 @@ func expiresIn(d time.Duration) string {
 		return fmt.Sprintf("%dh%dm", mins/60, mins%60)
 	}
 	return fmt.Sprintf("%dm", mins)
+}
+
+// renderOther prints the second table, one row per claim ref this build does
+// not own, in the order given (key byte order). Holder and lead come from a
+// record anyone who can push wrote, so they are cleaned and capped.
+func renderOther(b *bytes.Buffer, other []comb.OtherClaim, now time.Time) {
+	fmt.Fprintf(b, "\nOther claims (%d):\n", len(other))
+	tw := tabwriter.NewWriter(b, 0, 0, 2, ' ', 0)
+	for _, o := range other {
+		if !o.Readable {
+			fmt.Fprintf(tw, "  %s\tunreadable\n", o.Key)
+			continue
+		}
+		exp := "expired"
+		if d := o.ExpiresAt.Sub(now); d > 0 {
+			exp = "expires in " + expiresIn(d)
+		}
+		fmt.Fprintf(tw, "  %s\t%s\t%s\t%s\n", o.Key, otherCell(o.Holder), otherCell(o.Lead), exp)
+	}
+	tw.Flush()
+}
+
+// otherCell drops control characters from s and cuts it to 64 bytes.
+func otherCell(s string) string {
+	s = clean(s)
+	if len(s) > 64 {
+		s = strings.ToValidUTF8(s[:64], "")
+	}
+	return s
 }

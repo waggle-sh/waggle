@@ -253,6 +253,34 @@ func parseClaimRef(ref string) (int, bool) {
 	return n, true
 }
 
+// otherClaimKey returns the key of a claim ref this code does not own: a name
+// under ClaimRefPrefix that is a valid T-124 4.1 key and does not start with
+// "ticket-". Every other name, valid or not, is left to the ticket-<n> rules
+// and stays malformed when it is not canonical, so an upper-case name that
+// could fold onto a ticket ref is never skipped.
+func otherClaimKey(ref string) (string, bool) {
+	key, ok := strings.CutPrefix(ref, ClaimRefPrefix)
+	if !ok || strings.HasPrefix(key, "ticket-") || !validClaimKey(key) {
+		return "", false
+	}
+	return key, true
+}
+
+// validClaimKey reports whether k is 1 to 100 bytes of [a-z0-9._-] with no
+// "..", not ending in "." or ".lock".
+func validClaimKey(k string) bool {
+	if len(k) < 1 || len(k) > 100 || strings.Contains(k, "..") || strings.HasSuffix(k, ".") || strings.HasSuffix(k, ".lock") {
+		return false
+	}
+	for i := 0; i < len(k); i++ {
+		c := k[i]
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '.' || c == '_' || c == '-') {
+			return false
+		}
+	}
+	return true
+}
+
 // NormalizeDirectories validates and canonicalizes a lease's directory list.
 //
 // Each entry must be a literal, repo-relative directory of at most 1024 bytes
