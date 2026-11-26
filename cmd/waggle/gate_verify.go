@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"flag"
@@ -128,6 +129,10 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 	head := fs.String("head", "", "PR head revision (required)")
 	repo := fs.String("repo", ".", "Git repository to inspect")
 	branch := fs.String("branch", "", "PR branch name (default: GITHUB_HEAD_REF under GitHub Actions)")
+	counts := new(string)
+	if check == "verify" {
+		fs.StringVar(counts, "counts", "", "write per-check finding counts as JSON to this path")
+	}
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return gatePass
@@ -212,8 +217,21 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 			}
 		}
 	}
+	decFailed := false
 	if check == "verify" {
-		code = max(code, runGateDecisionsMode([]string{"--base", *base, "--head", *head, "--repo", *repo}, stdout, stderr, getenv, open))
+		var dout bytes.Buffer
+		dcode := runGateDecisionsMode([]string{"--base", *base, "--head", *head, "--repo", *repo}, &dout, stderr, getenv, open)
+		stdout.Write(dout.Bytes())
+		decFailed = decisionsFailed(dcode, open, dout.String())
+		code = max(code, dcode)
+	}
+	// On a gate error no file is written: without the artifact the counts are
+	// omitted, never guessed. A write failure only warns; telemetry must never
+	// fail the required gate.
+	if *counts != "" && code != gateError {
+		if err := writeGateCounts(*counts, countGate(rep.findings, open, decFailed)); err != nil {
+			fmt.Fprintf(stderr, "gate: warning: cannot write counts file: %s\n", annotData.Replace(err.Error()))
+		}
 	}
 	return code
 }
