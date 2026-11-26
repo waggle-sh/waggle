@@ -8099,3 +8099,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-26, read at 2:30 PM Pacific Time (relayed in writing by the orchestrator, Orca item 55, event e2020), in the words "Approve brief and all recommendations". His approval at d3787cd carried over the main-only catch-up to 5197ec2 under his standing rule (item 41, e1135), and #362 merged through the gate with the head pinned, no bypass, as a0e8281.
 
 **Rationale:** Two AWS guards reviewed the brief: CHANGES at f1a7ff1 (four must-fix items), then APPROVE at d3787cd. The dogfood-cut tickets are marked ready in build order. Still the Head Keeper's to do (brief section 13): add `internal/claims/` to WAGGLE.md section 2 before T-127 is claimed, approve the gate pin move past T-136 before any new-kind claim is written here, create the sweep token, name the dogfood repo and the second person, and create the queens' machine-user login.
+
+## D-418: T-116 phase t-116 merged at ced8690
+
+- **Date:** 2026-11-26
+- **Kind:** scope
+- **Tickets:** T-116
+- **Supersedes:** none
+
+**Question:** Merge T-116 phase t-116 (#363, the `waggle doctor` capability probe and plan report) at head ced8690?
+
+**Options considered:**
+1. Yes, merge #363.
+2. Hold.
+
+**Hive recommendation:** Option 1. The build was approved before the claims-first freeze, and D-411 lets in-flight approved builds finish (T-124 section 12).
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-26, read at 2:32 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e2032), in the words "Yes, merge it". The waggle-approve line was posted at ced8690da8199596202372fc29ed9f22df7a43a8 and carried over three main-only catch-ups (48b9a42, 668f847, 79f01b6) under the standing rule (item 41, e1135). #363 merged through the gate with the head pinned, no bypass, as 4624a55. The T-116 claim was then released, which let T-136 be claimed.
+
+**Rationale:** T-116 carries the D-409 approved brief; phase t-116b still waits on T-114 and T-115.
