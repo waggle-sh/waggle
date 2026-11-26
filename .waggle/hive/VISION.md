@@ -45,6 +45,19 @@ Honey = Nectar + Quorum. Gate ships public first; Nectar and Quorum follow in v0
 4. User-facing docs may keep plain terms (task, claim, lease, gate). Hive records may keep bee names. Plain vocabulary is not a cut of Nectar, Quorum, or multi-Keeper.
 5. If this file and a decision or RFC note disagree, this file wins until I update it.
 
+## Amendment, 2026-11-26: claims first (D-410, D-411, D-412)
+
+Proposed by the scout with T-124 for the Head Keeper's approval; it lands only with that approval. It adds to the text above and deletes none of it.
+
+1. **Both, product first.** Waggle is our own tool and a product other teams adopt. Product focus comes now, around one problem: agent leads claim the issues they work on, so other people and agent teams see those issues as claimed (D-410).
+2. **Claims are the front door.** The first thing a new user meets is a claim on a GitHub issue (assignee, label, one sticky comment), starting from the `AGENTS.md` convention and adding atomic claims, expiry and declared scope. The issue is the source of truth; git refs become an optional cache for issue claims, and today's `refs/waggle/claims/` claims keep working unchanged. GitHub comes first and Linear follows the dogfood; the claim format names no tracker, so Linear adds an adapter and changes no format (D-412). This is how core item 1 (claims and path leases) ships first. It is not a cut of item 1.
+3. **The gate is step two.** Core item 2 stays, unchanged, and gains an opt-in check that a PR stays inside its issue claim. Shipping the gate second, off by default or report-only, reverses the gate-first order of D-229 as sequencing. It is not a cut of item 2.
+4. **Adoption defaults are not cuts.** An install with no ruleset, no admin step and nothing that fails a person's PR; report-only before binding; plain words on first-contact pages with bee names in a glossary; claims on GitHub, then Linear, before a hosted App (D-412). Choosing these defaults does not narrow any core item, and a card proposing one does not need the CUT label. Removing the stricter mode a default replaces would still be a cut.
+5. **Open core.** The CLI, the GitHub Action and the MCP server are free and open source now (core item 4 holds). A hosted GitHub App comes only after three outside repos use claims (D-411).
+6. **Nectar and Quorum stay, after users.** Core items 5 and 6 remain in the vision. Their merged code is kept and frozen; new work on them, on relay, on telemetry and on further collision hardening waits until outside teams use claims (D-411). Frozen work stays on the roadmap with its tickets, held. "Ship later" is not "cut" (guard rule 3).
+7. **People set direction.** A repo's owners (a list in its Waggle config, defaulting to its admins) own the vision and roadmap; agents propose by PR or issue and never merge them. Priority comes from the tracker, `waggle next` follows it, and who may reprioritize is set in config; an agent reprioritizing its own claimed issue is flagged. Quorum (core item 6) is the optional, later answer for open projects with many contributors (item 55, e1759).
+8. **Order of proof.** Our own queens use claims for two weeks against a measured bar, then outside teams. The D-235 test restarts on three outside repos using claims.
+
 ## Sources
 
 - RFC-0003 core thesis and Nectar/Quorum (docs/RFC-0003.md).
