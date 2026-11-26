@@ -7883,3 +7883,103 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 4:38 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1349), in the words "Yes, carve them out". The final diff was approved for merge in event e1410 ("Yes, post it").
 
 **Rationale:** Built in #351. The commit still needs a bound ticket with a claim naming the branch. A task file covered by gate.protected_paths never qualifies (found by the Opus guard and fixed before merge). Every other byte of the file must stay unchanged, and the blob must be under 256 KiB.
+
+## D-407: T-107 Q-T107: widen T-107 to gate/action.yml so the Action writes the counts file
+
+- **Date:** 2026-11-26
+- **Kind:** scope
+- **Tickets:** T-107
+- **Supersedes:** none
+
+**Question:** Installed repos run the gate through gate/action.yml, a protected path, which could not pass a counts flag. Widen T-107 to the Action?
+
+**Options considered:**
+1. Widen T-107 to gate/action.yml: the Action passes --counts $RUNNER_TEMP/waggle-gate-counts.json and the template uploads it with if: always(); one Tier 3 PR with the Head Keeper's signature. Binding failures fold into leases, and the file emits binding: 0.
+2. Keep T-107 to cmd/waggle and the template only, so only repos with the gate source on base write the file.
+3. Make verify write the file at a default path with no flag.
+
+**Hive recommendation:** Option 1: without the Action change most installed repos never produce the artifact, and T-108 would omit would_fail and failed for them.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 8:40 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1552), in the words "Yes, widen it". The signed head 2520df0 followed in event e1621.
+
+**Rationale:** Merged in #355 (a775ef6). The guards added that a gate error writes no file and a write failure only warns, so telemetry never fails the required gate. The template uploads the file as the waggle-gate-counts artifact for 7 days, with overwrite on re-runs.
+
+## D-408: T-123: approve the brief and every scout recommendation
+
+- **Date:** 2026-11-26
+- **Kind:** technical
+- **Tickets:** T-123
+- **Supersedes:** none
+
+**Question:** Approve the T-123 brief (a file and a directory whose names fold to one name fail the gate), with its open questions Q-T123-1 to Q-T123-4 and three scout defaults?
+
+**Options considered:**
+1. Approve the brief and all scout picks: Q-T123-1 (a) the finding names the file; Q-T123-2 (a) directory against directory passes; Q-T123-3 (a) the docs/gate.md line rides in the build; Q-T123-4 (a) every pair in the head tree fails; byte-equal pairs fail with no exemption, symlinks and gitlinks count as files, one finding per file with the file twin finding first.
+2. Approve, but fail only pairs where a path is added or renamed in the PR.
+3. Hold T-123.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 10:16 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1662), in the words "Approve brief and all scout picks".
+
+**Rationale:** Brief merged in #356 (f4737d8) after three guard rounds. Tier 3 by content (a merge rule, D-205). Main holds no such pair.
+
+## D-409: T-116: approve the brief and every scout recommendation
+
+- **Date:** 2026-11-26
+- **Kind:** technical
+- **Tickets:** T-116
+- **Supersedes:** none
+
+**Question:** Approve the T-116 brief (waggle doctor capability probe and hold readiness), with its open questions Q-T116-1 to Q-T116-7 and Q-T116-4b?
+
+**Options considered:**
+1. Approve the brief and all scout picks: Q1 (a) non-required mode-fit names guard; Q2 (c) on hold with capability none, required-gate and up-to-date are skipped; Q3 (c) Enforcement reads advisory (hold parts not checked) until t-116b; Q4 (a) t-116 now, t-116b after T-115; Q4b (c) audit-refs decided after T-115; Q5 (c) in t-116b a missing merge identity or audit workflow exits 1; Q6 (a) Write-holder count, 5 page cap, no logins; Q7 (a) upgrade answer is 403, private and the word upgrade.
+2. Approve, but nothing in t-116b exits 1.
+3. Hold T-116 until T-114 and T-115 are built.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 10:16 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1662), in the words "Approve brief and all scout picks".
+
+**Rationale:** Brief merged in #357 (5d6c96b) after three guard rounds. Ticket Tier 2 (read-only probes). Q-T116-1 and Q-T116-5 touch RFC open question 6 and narrow nothing.
+
+## D-410: Item 55: refocus Waggle on claims first, as a product other teams adopt
+
+- **Date:** 2026-11-26
+- **Kind:** scope
+- **Tickets:** T-103
+- **Supersedes:** none
+
+**Question:** What should Waggle focus on now: our internal tool, a product other teams adopt, or both, and around what problem?
+
+**Options considered:**
+1. Both, with product focus now, refocused on claims: agent leads (queens) claim the issues they work on so other users and agent teams see them as claimed. Start from the AGENTS.md convention (assign yourself before you start, skip assigned issues) and add the missing 20 percent.
+2. Internal tool only.
+3. Keep the gate-first plan of record (D-229) unchanged.
+
+**Hive recommendation:** Option 1, from the outside analysis and the claims follow-up.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 by 11:13 PM Pacific Time (relayed in writing by the orchestrator, Orca item 55, events e1698, e1705 and e1725), in the words "Both, product focus now", "What about the problem of multiple agents claiming work from a shared backlog in general? Agent leads (queens) need to claim issues that they are working on so other users and agent teams even know those are 'claimed' in the first place. That's the real problem I have." and "could we refocus waggle around that [the AGENTS.md 'assign yourself before you start, skip assigned issues' convention]. It's simple, easy to implement, and we could add the extra 20% it misses."
+
+**Rationale:** Claims become the front door. A claims-first refocus brief follows as its own hive PR for Head Keeper approval, with a VISION.md amendment so adoption defaults and this sequencing are not counted as cuts. Nectar and Quorum stay in the vision, after users.
+
+## D-411: Item 55: open core; claims on GitHub and Linear from day one; existing code kept and frozen; our queens first
+
+- **Date:** 2026-11-26
+- **Kind:** policy
+- **Tickets:** T-069, T-070, T-108, T-109, T-110, T-111, T-112, T-121
+- **Supersedes:** none
+
+**Question:** How is claims-first Waggle shipped: licensing model, where claims live first, what happens to the existing code, and who uses it first?
+
+**Options considered:**
+1. Open core: free CLI, GitHub Action and MCP server now, a hosted GitHub App only after three outside repos use claims. Claims live on GitHub issues and Linear issues from day one. The existing Waggle code is kept and frozen, and claims are the front door. Our queens use claims first for 2 weeks, then outside teams.
+2. Fully open, no hosted App ever.
+3. GitHub only at first; Linear later.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 by 11:13 PM Pacific Time (relayed in writing by the orchestrator, Orca item 55, events e1748 and e1752), in the words "Yes, open core", "Where should claims live first? → GitHub and Linear from day one", "What happens to the existing Waggle code? → Keep it, frozen; claims are the front door" and "Who uses claims-first first? → Our queens for 2 weeks, then outside".
+
+**Rationale:** In-flight approved builds finish (T-123, T-116 phase 1). No new tickets start in Nectar, Quorum, relay, telemetry or further collision hardening: T-069, T-070, T-108 to T-112 and T-121 are held with the reason frozen: claims-first refocus, item 55. The D-235 clock restarts on three outside repos using claims. The hosted App is a later item, not built now.
