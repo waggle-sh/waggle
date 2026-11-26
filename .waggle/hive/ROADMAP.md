@@ -23,7 +23,7 @@ Gate-first is sequencing, not a cut.
 
 RFC-0006 phase 3 on top of the v0.2 Quorum rounds. Sequencing, not a cut: every RFC phase 3 item stays in T-069. Phase A waits for T-054 phases A to D and one real round replayed (D-377).
 
-T-069 · Quorum RFC phase 3 (area rounds, alias merge, collusion flags, commit-reveal) · L (four phases) · proposed · v0.3 (named by the Head Keeper, D-378) · product
+T-069 · Quorum RFC phase 3 (area rounds, alias merge, collusion flags, commit-reveal) · L (four phases) · held (frozen: claims-first refocus, item 55, D-411) · v0.3 (named by the Head Keeper, D-378) · product
 
 ## Backlog (honey and multi-Keeper)
 
@@ -34,7 +34,7 @@ T-053 · Quorum design brief (ballot store, sqrt weight, Head Keeper veto, Sybil
 T-054 · Quorum voting MVP (roadmap/issue priority ballots; four phases, nothing cut) · L · code merged through phase D (#279); pin move merged (#295) · v0.2 · product
 T-071 · Signed Head Keeper approval for protected paths (T-054 Quorum family; verify-leases-and-tiers accepts it so gate/, .github/workflows and control path PRs merge without an admin bypass) · M · merged (#273) · v0.1 (public gate; a gate change, sequenced after T-054 phase A) · product
 T-055 · Multi-Keeper story restore (RFC + README/CONTRIBUTING cut-list unwind; relay design spike) · S · merged (#236) · v0.2 · docs+design
-T-070 · Quorum RFC phase 2 (fork contributor export and import, relay transport with T-055) · TBD · proposed · v0.2 · product
+T-070 · Quorum RFC phase 2 (fork contributor export and import, relay transport with T-055) · TBD · held (frozen: claims-first refocus, item 55, D-411) · v0.2 · product
 T-072 · waggle force-release (the Head Keeper clears a stuck or malformed claim, with an audit trail) · M · merged (phases A, B and the README line: #267, #271, #272) · v0.1 · product
 T-073 · Case-folded claim overlap checks (carries out D-038; opened by T-072 Q-T072-5) · S to M · merged (phases A and B: #266, #274) · v0.1 · product
 T-074 · Gate head tree collision check: Unicode normalization variants (T-073 Q-T073-8) · S to M · merged (#336) · v0.1 · product
@@ -62,8 +62,8 @@ T-097 · Troubleshooting page built from real gate messages · S · merged (#333
 T-098 · Empty states for status and doctor · S · merged (#329) · v0.1 · product
 T-099 · Golden tests for --json output · S · merged (#335) · v0.1 · product
 T-100 · One local check script that matches CI and the release matrix · S · merged (#320) · v0.1 · product
-T-122 · Encode tab and backslash in gate finding lines (D-398) · S · proposed · v0.1 · product
-T-123 · Gate collision check: directory against file with the same folded name (D-395) · S to M · proposed · TBD · product
+T-122 · Encode tab and backslash in gate finding lines (D-398) · S · merged (#358) · v0.1 · product
+T-123 · Gate collision check: directory against file with the same folded name (D-395) · S to M · brief approved (D-408), building · v0.1 · product
 
 ## Security fixes
 
