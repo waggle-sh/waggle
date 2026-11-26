@@ -98,3 +98,27 @@ Exit 1. Claims are git refs under `refs/waggle/`, and the remote refused a push 
 ### `No rule on <branch> requires the <check> check.`
 
 Exit 1. Nothing stops a PR from merging without the gate. In GitHub, add a branch ruleset on the default branch that requires the check `verify-leases-and-tiers`, then run `waggle doctor` again.
+
+### `Forge capability: unknown. Could not tell whether a rule can require a check (<why>).`
+
+Exit is unchanged. The run could not tell whether GitHub lets a rule require the gate check, so it cannot say which `gate.mode` fits. `<why>` is `GitHub answered <status>`, `the request failed`, `the branch has more rules than this build reads` or `a 403 that is not an upgrade answer`. Run `waggle doctor` with a token that can read branch rules, or check the repo settings by hand. A private repo on a plan with no required checks answers 403 with an upgrade message; that reads as `Forge capability: none`, which is not a problem line.
+
+### `gate.mode hold works, but a stronger mode is available: this repo can require the gate check.`
+
+Exit is unchanged. A manual merge click lands first and is detected after, where a required check would block it. Ask the Head Keeper to move `gate.mode` to `guard` and add a ruleset that requires `verify-leases-and-tiers`. `waggle doctor` never changes the mode.
+
+### `gate.mode guard cannot be enforced here: no rule can require the gate check. Recommended: hold.`
+
+Exit is unchanged by this line. A pull request can merge without the gate passing, and no setting on this repo can fix that. Ask the Head Keeper to consider `gate.mode` `hold`. `waggle merge` and the audit workflow are not in this build yet. `waggle doctor` never changes the mode.
+
+### `gate.mode open records findings and holds nothing, and no rule can require a check here. Recommended: hold.`
+
+Exit is unchanged by this line. A pull request can merge whatever the gate finds. The fix is the same as for `guard` on this repo: ask the Head Keeper to consider `gate.mode` `hold`.
+
+### `Could not tell which mode fits (capability unknown).`
+
+Exit is unchanged. Fix the `capability` line above it, then run `waggle doctor` again.
+
+### `Could not count who can write (needs push access to list collaborators).`
+
+Exit is unchanged. The run cannot say how many people could merge by hand. Run `waggle doctor` with a token that can list collaborators. The count never shows a login.
