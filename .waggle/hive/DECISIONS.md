@@ -7964,7 +7964,7 @@
 
 **Rationale:** Claims become the front door. A claims-first refocus brief follows as its own hive PR for Head Keeper approval, with a VISION.md amendment so adoption defaults and this sequencing are not counted as cuts. Nectar and Quorum stay in the vision, after users.
 
-## D-411: Item 55: open core; existing code kept and frozen; our queens first
+## D-411: Item 55: open core; claims on GitHub and Linear from day one; existing code kept and frozen; our queens first
 
 - **Date:** 2026-11-26
 - **Kind:** policy
