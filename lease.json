@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "ticket_id": "T-107",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle/gate_counts.go",
+    "cmd/waggle/gate_counts_test.go",
+    "cmd/waggle/gate_verify.go",
+    "docs/gate.md",
+    "internal/scaffold"
+  ],
+  "claimed_at": "2026-11-26T03:19:45Z",
+  "expires_at": "2026-11-29T03:19:45Z",
+  "branches": [
+    "t-107"
+  ]
+}
