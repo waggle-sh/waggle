@@ -8079,3 +8079,23 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-26, read at 10:07 AM Pacific Time (relayed in writing by the orchestrator, Orca item 55, event e1908), in the words "Yes, build a Backlog.md companion".
 
 **Rationale:** It fills the Level 1 placeholder in the T-124 brief (PR #362). Claims key on an opaque task id from Backlog.md, GitHub issues or Waggle hive tasks, as one flat ref per task in the existing `refs/waggle/claims/` store, mirrored one way onto the issue. Waggle reads Backlog.md's own format and writes none of it. The two-week dogfood is two people's queens on one Level 19 repo; a new task format, CODEOWNERS governance, `/claim`, nesting, edit round trips, the App, Linear and MCP stay out of it. The rest of D-410 to D-412 and D-415 stands.
+
+## D-417: T-124: approve the claims-first brief and every recommendation
+
+- **Date:** 2026-11-26
+- **Kind:** scope
+- **Tickets:** T-124, T-125, T-127, T-128, T-130, T-131, T-132, T-136, T-138, T-142, T-144, T-145
+- **Supersedes:** none
+
+**Question:** Approve the T-124 claims-first brief (#362 at d3787cd: Waggle as the claims layer for Backlog.md and GitHub issues, Level 1 split into S and M tickets T-125 to T-145 with a build order and a two-week dogfood cut), the VISION.md amendment and the ROADMAP section, with the card's recommendation on each open question?
+
+**Options considered:**
+1. Approve the brief and all recommendations: Q-T124-1 (1) expiry only in the ref, the sticky comment a rendered snapshot; Q-T124-2 (1) labels `claimed` and `waggle-task`; Q-T124-4 (1) the current `waggle` binary; Q-T124-5 (1) the MCP server decided in T-134's brief; Q-T124-6 (1) the eight-line dogfood bar, two people's queens on one repo for 14 days; Q-T124-7 (1) anyone who can push may claim through the CLI, outsiders wait for the App; Q-T124-8 (1) the D-235 clock runs eight weeks from the day T-139 starts outreach; Q-T124-9 (1) two guards for T-127, T-136, T-145, T-130, T-131, T-132 and later T-137 and T-133, one guard for the rest with a second after a must-fix (a D-205 change for this program); Q-T124-10 (1) a root `waggle.yml` for a claims-only repo, `.waggle/control/config.yaml` for a hive repo; Q-T124-11 (1) five priority buckets across sources; Q-T124-12 (1) the actor check, with the queens moving to one machine-user login; Q-T124-13 (1) an owner approves steering-file PRs at the exact head; Q-T124-14 (1) the dogfood repo's `TODO.md` becomes Backlog.md files beside its issues; Q-T124-16 (1) a 2-hour default lease renewed every 30 minutes, a 24-hour maximum and a 10-minute grace; Q-T124-17 (1) flat refs in the existing `refs/waggle/claims/` namespace with T-136; Q-T124-18 (1) window issues opened on first claim; Q-T124-19 (1) the sweep on a 15-minute timer on our AWS runner host with a fine-grained token; Q-T124-20 (1) `/claim` and outsider claims through the App only; Q-T124-21 (1) one Level 19 app repo both people work in, named by the Head Keeper with the second person (the queen proposed Expo).
+2. Approve the brief, with some questions answered differently.
+3. Send the brief back for another scout pass.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-26, read at 2:30 PM Pacific Time (relayed in writing by the orchestrator, Orca item 55, event e2020), in the words "Approve brief and all recommendations". His approval at d3787cd carried over the main-only catch-up to 5197ec2 under his standing rule (item 41, e1135), and #362 merged through the gate with the head pinned, no bypass, as a0e8281.
+
+**Rationale:** Two AWS guards reviewed the brief: CHANGES at f1a7ff1 (four must-fix items), then APPROVE at d3787cd. The dogfood-cut tickets are marked ready in build order. Still the Head Keeper's to do (brief section 13): add `internal/claims/` to WAGGLE.md section 2 before T-127 is claimed, approve the gate pin move past T-136 before any new-kind claim is written here, create the sweep token, name the dogfood repo and the second person, and create the queens' machine-user login.
