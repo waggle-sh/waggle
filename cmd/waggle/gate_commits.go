@@ -260,8 +260,8 @@ func (s *commitScan) scan(mb, head string) error {
 			s.maxTier = max(s.maxTier, s.policy.RequiredMinTier(ch.Path))
 		}
 		// A task file edit that changes only its stage line needs no claim
-		// and no approval (T-106, docs/gate.md sections 5 and 6).
-		changes, err = dropStageOnly(s.g, diffFrom, changes)
+		// directory and no approval (T-106, docs/gate.md sections 5 and 6).
+		changes, err = dropStageOnly(s.g, diffFrom, changes, s.policy)
 		if err != nil {
 			return err
 		}

@@ -168,14 +168,17 @@ func readBlobAt(g gitRunner, rev, path string) (data []byte, ok bool, err error)
 // commit the changes were listed for: its single parent is the old side. A new
 // file, a delete, a rename (a delete plus an add), a mode change, a non-task
 // hive file and any other edit stay in the list. Those keep failing the lease
-// check and need the Head Keeper's approval as before.
-func dropStageOnly(g gitRunner, c gateCommit, changes []comb.Change) ([]comb.Change, error) {
+// check and need the Head Keeper's approval as before. A path the repo policy
+// rates Tier 3 (a gate.protected_paths entry that covers the task file) is
+// never carved out: the policy only raises tiers.
+func dropStageOnly(g gitRunner, c gateCommit, changes []comb.Change, policy comb.TierPolicy) ([]comb.Change, error) {
 	if len(c.parents) != 1 {
 		return changes, nil
 	}
 	kept := make([]comb.Change, 0, len(changes))
 	for _, ch := range changes {
-		if !stageTaskPath.MatchString(ch.Path) || ch.OldMode != "100644" || ch.NewMode != "100644" {
+		if !stageTaskPath.MatchString(ch.Path) || ch.OldMode != "100644" || ch.NewMode != "100644" ||
+			policy.RequiredMinTier(ch.Path) == comb.Tier3ControlPlane {
 			kept = append(kept, ch)
 			continue
 		}

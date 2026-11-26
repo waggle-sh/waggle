@@ -269,3 +269,55 @@ func TestTaskStage(t *testing.T) {
 		}
 	}
 }
+
+// A repo that lists the task files in gate.protected_paths keeps them Tier 3:
+// the stage carve-out never lowers a raise-only protected path (T-106 guard).
+func TestStageOnlyProtectedPathStays(t *testing.T) {
+	r := newGateRepo(t)
+	r.write("README.md", []byte("hive\n"))
+	r.write(layout.Decisions, gateLog(1))
+	r.write(layout.Config, []byte("version: 1\ngate:\n  protected_paths: .waggle/hive/tasks/\n"))
+	r.write(stageTask, []byte(stageFile("- **Stage:** backlog")))
+	r.commit("init")
+	r.git("checkout", "-q", "-b", "branch")
+	r.claimOn(31, []string{"x"}, "full", active, "docs")
+	r.write(stageTask, []byte(stageFile("- **Stage:** ready")))
+	r.commit("T-031: stage")
+	out := r.expect(t, 1, stageTask)
+	if !strings.Contains(out, "protected path") {
+		t.Errorf("want the protected path finding\n%s", out)
+	}
+}
+
+// The path rule is exact case: a stage-only edit under .waggle/HIVE/ (a Tier 3
+// path) is never carved out. Built through the index, since a case-folding
+// file system cannot hold both spellings.
+func TestStageOnlyExactCasePath(t *testing.T) {
+	const upper = ".waggle/HIVE/tasks/T-099.md"
+	r := stageRepo(t, stageFile("- **Stage:** backlog"))
+	r.git("config", "core.ignorecase", "false")
+	blob := r.gitIn(stageFile("- **Stage:** backlog"), "hash-object", "-w", "--stdin")
+	r.git("update-index", "--add", "--cacheinfo", "100644,"+blob+","+upper)
+	r.git("commit", "-q", "-m", "T-031: add upper")
+	blob = r.gitIn(stageFile("- **Stage:** ready"), "hash-object", "-w", "--stdin")
+	r.git("update-index", "--cacheinfo", "100644,"+blob+","+upper)
+	r.git("commit", "-q", "-m", "T-031: stage upper")
+	r.expect(t, 1, upper)
+}
+
+// A task file over the blob cap never qualifies, on either side of the edit.
+func TestStageOnlyBlobCap(t *testing.T) {
+	big := strings.Repeat("x", maxStageBlob+1024) + "\n"
+	for _, side := range []string{"both", "new"} {
+		t.Run(side, func(t *testing.T) {
+			old := stageFile("- **Stage:** backlog")
+			if side == "both" {
+				old += big
+			}
+			r := stageRepo(t, old)
+			r.write(stageTask, []byte(stageFile("- **Stage:** ready")+big))
+			r.commit("T-031: stage")
+			r.expect(t, 1, stageFinding)
+		})
+	}
+}
