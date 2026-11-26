@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "ticket_id": "T-106",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "SECURITY.md"
+  ],
+  "claimed_at": "2026-11-26T03:20:05Z",
+  "expires_at": "2026-11-28T03:20:05Z",
+  "branches": [
+    "records-1125c"
+  ]
+}
