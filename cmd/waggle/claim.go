@@ -10,13 +10,16 @@ import (
 	"fmt"
 	"io"
 	"os/signal"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
 	"unicode"
 
 	"github.com/waggle-sh/waggle/internal/comb"
+	"github.com/waggle-sh/waggle/internal/config"
 	"github.com/waggle-sh/waggle/internal/dispatch"
+	"github.com/waggle-sh/waggle/internal/layout"
 )
 
 // jsonVersion is the schema version of the JSON that waggle claim and waggle
@@ -125,6 +128,38 @@ func (o taskOut) warn(ws []string) {
 	for _, w := range ws {
 		fmt.Fprintf(o.stderr, "waggle %s: warning: %s\n", o.command, clean(w))
 	}
+}
+
+// missingRemoteLine returns the one-line message for cmd when err is a
+// dispatch.MissingRemoteError (forge.remote names a remote the repo lacks).
+// claim and release print it through taskOut.fail; doctor prints it directly.
+func missingRemoteLine(cmd string, err error) (string, bool) {
+	var mr *dispatch.MissingRemoteError
+	if !errors.As(err, &mr) {
+		return "", false
+	}
+	return "waggle " + cmd + ": " + clean(mr.Error()), true
+}
+
+// checkMissingRemote returns the missing-remote error when forge.remote names a
+// remote the repo lacks, so release prints one line before the comb fetch can
+// fail with git's own text. Any other problem (no config, not a repo) is left
+// to ReleaseTask to report.
+func checkMissingRemote(ctx context.Context, repo string) error {
+	root, err := repoRoot(repo)
+	if err != nil {
+		return nil
+	}
+	cfg, err := config.Load(filepath.Join(root, layout.Config))
+	if err != nil {
+		return nil
+	}
+	err = dispatch.CheckRemote(ctx, &dispatch.Git{Dir: root}, cfg.Forge.Remote)
+	var mr *dispatch.MissingRemoteError
+	if errors.As(err, &mr) {
+		return err
+	}
+	return nil
 }
 
 func usageError(format string, args ...any) error {
@@ -295,6 +330,9 @@ func runTaskRelease(args []string, stdout, stderr io.Writer) int {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), stopSignals...)
 	defer stop()
+	if err := checkMissingRemote(ctx, *repo); err != nil {
+		return o.fail(task, err)
+	}
 	res, err := dispatch.ReleaseTask(ctx, dispatch.ReleaseRequest{RepoDir: *repo, Ticket: task, Branch: *branch, Unmerged: *unmerged, Owner: *owner, CoKeepers: co})
 	o.warn(res.Warnings)
 	if err != nil {
