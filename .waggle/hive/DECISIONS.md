@@ -8040,3 +8040,42 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-26, read at 7:31 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1846), in the words "T-116 phase 1 needs files that the frozen T-121 claim holds. Release T-121's claim now? → Release T-121's claim now". T-121 was released with `waggle release T-121 --unmerged` (claim e132d2b4defc). Branch receipts-approval-head is kept at 48647a1, and T-121 stays frozen.
 
 **Rationale:** T-116 carries the D-409 approved brief, and the frozen T-121 work is kept on its branch. Lease note: a claim holds at most 5 entries, and the brief's phase t-116 lease names nine files. So the T-116 claim (claim fe2e62b92ec1, owner paulternate19, branch t-116) leases internal/forge, cmd/waggle, docs/gate.md and docs/troubleshooting.md, a coordinator choice. The build stays bound to the brief's nine files, and the claim is released when the PR merges.
+
+## D-415: Item 55: governance in the claims-first brief
+
+- **Date:** 2026-11-26
+- **Kind:** policy
+- **Tickets:** T-124, T-141, T-143
+- **Supersedes:** none
+
+**Question:** Should the claims-first brief say who sets the vision, the roadmap and backlog priority in a Waggle repo?
+
+**Options considered:**
+1. Yes, add it to the brief: the repo's owners own the vision and roadmap, priority comes from the tracker, config sets who may reprioritize, and Quorum is the optional, later answer.
+2. Leave governance out of the claims-first brief.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 by 11:25 PM Pacific Time (relayed in writing by the orchestrator, Orca item 55, event e1759), in the words "Yes, add it to the brief".
+
+**Rationale:** Agents claim and build; people decide what matters. The brief's governance section carries it: a `governance.owners` list defaulting to the repo's admins, priority read from the task source, `governance.reprioritizers` per area, and `governance.mode: owners` the only mode built now. Quorum stays frozen under D-411.
+
+## D-416: Item 55: Waggle is the claims layer for Backlog.md and GitHub issues
+
+- **Date:** 2026-11-26
+- **Kind:** scope
+- **Tickets:** T-124, T-125, T-127, T-128, T-130, T-131, T-132, T-136, T-138, T-142, T-144, T-145
+- **Supersedes:** none
+
+**Question:** The pressure test of the three-layer design advised against a new task-file format and pointed to Backlog.md, which already keeps agent tasks as markdown files in git but has no lease, atomic claim or expiry. Build Waggle as a Backlog.md companion?
+
+**Options considered:**
+1. Yes, build a Backlog.md companion: Waggle is the claims layer for Backlog.md (https://github.com/MrLesk/Backlog.md) and GitHub issues. Backlog.md says what the work is; Waggle says who holds it now, until when, and what it touches.
+2. Build the three-layer design as drawn, with a new `.backlog/` task format of Waggle's own.
+3. Claims on GitHub issues only.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-26, read at 10:07 AM Pacific Time (relayed in writing by the orchestrator, Orca item 55, event e1908), in the words "Yes, build a Backlog.md companion".
+
+**Rationale:** It fills the Level 1 placeholder in the T-124 brief (PR #362). Claims key on an opaque task id from Backlog.md, GitHub issues or Waggle hive tasks, as one flat ref per task in the existing `refs/waggle/claims/` store, mirrored one way onto the issue. Waggle reads Backlog.md's own format and writes none of it. The two-week dogfood is two people's queens on one Level 19 repo; a new task format, CODEOWNERS governance, `/claim`, nesting, edit round trips, the App, Linear and MCP stay out of it. The rest of D-410 to D-412 and D-415 stands.
