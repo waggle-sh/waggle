@@ -69,6 +69,87 @@ func collisionText(prev, p string) string {
 	return "path collides with " + prev + " on checkouts that treat Unicode normalization forms as one name"
 }
 
+// dirIndex is a trie of the folded directory names of a head tree (T-123).
+// Each node is one distinct folded directory, keyed by its parent and the
+// collisionKey of its last component, so memory is linear in the path bytes.
+type dirIndex struct {
+	kids  map[dirKey]int
+	first []dirSpell // by node id; index 0 is the root and is not a directory
+}
+
+type dirKey struct {
+	parent int
+	name   string
+}
+
+// dirSpell is the first path that created a node and where its prefix ends.
+type dirSpell struct {
+	path string
+	end  int
+}
+
+// buildDirIndex indexes every proper prefix of every path. It skips empty
+// paths and paths over maxTreePath.
+func buildDirIndex(paths []string) *dirIndex {
+	x := &dirIndex{kids: map[dirKey]int{}, first: []dirSpell{{}}}
+	for _, p := range paths {
+		if p == "" || len(p) > maxTreePath {
+			continue
+		}
+		node, off := 0, 0
+		for {
+			i := strings.IndexByte(p[off:], '/')
+			if i < 0 {
+				break
+			}
+			k := dirKey{node, collisionKey(p[off : off+i])}
+			id, ok := x.kids[k]
+			if !ok {
+				id = len(x.first)
+				x.kids[k] = id
+				x.first = append(x.first, dirSpell{p, off + i})
+			}
+			node, off = id, off+i+1
+		}
+	}
+	return x
+}
+
+// dirOf reports whether the folded name of the whole path p is a directory in
+// the index, and returns the first spelling of that directory.
+func (x *dirIndex) dirOf(p string) (string, bool) {
+	node, off := 0, 0
+	for p != "" {
+		end := len(p)
+		if i := strings.IndexByte(p[off:], '/'); i >= 0 {
+			end = off + i
+		}
+		id, ok := x.kids[dirKey{node, collisionKey(p[off:end])}]
+		if !ok {
+			return "", false
+		}
+		node = id
+		if end == len(p) {
+			s := x.first[node]
+			return s.path[:s.end], true
+		}
+		off = end + 1
+	}
+	return "", false
+}
+
+// dirCount is the number of distinct folded directories.
+func (x *dirIndex) dirCount() int { return len(x.first) - 1 }
+
+// dirCollisionText is the finding text for a file p whose folded name is the
+// directory dir.
+func dirCollisionText(dir, p string) string {
+	if strings.ToLower(dir) == strings.ToLower(p) {
+		return "path collides with directory " + dir + " on case-insensitive checkouts"
+	}
+	return "path collides with directory " + dir + " on checkouts that treat Unicode normalization forms as one name"
+}
+
 // decomposeTable holds the canonical decompositions of the Latin-1 Supplement
 // and Latin Extended-A letters (U+00C0 to U+017F) as a base and one mark.
 // Compatibility forms such as U+0132 are left out on purpose.
