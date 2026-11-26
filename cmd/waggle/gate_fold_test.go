@@ -4,6 +4,7 @@ package main
 
 import (
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"unicode"
@@ -194,5 +195,190 @@ func TestFoldAddsNoDependency(t *testing.T) {
 	}
 	if _, err := os.Stat("../../go.sum"); err == nil {
 		t.Error("go.sum exists")
+	}
+}
+
+// modeIndex stages one entry with the given mode in the index only.
+func modeIndex(r gateRepo, mode, path string) {
+	r.t.Helper()
+	oid := r.gitIn("x\n", "hash-object", "-w", "--stdin")
+	if mode == "160000" {
+		oid = r.git("rev-parse", "HEAD")
+	}
+	r.git("update-index", "--add", "--cacheinfo", mode+","+oid+","+path)
+}
+
+// indexCommit commits the index as it is, SSH-signed with key. Unlike
+// signedCommit it does not run git add -A, which drops index-only entries.
+func indexCommit(r gateRepo, key, msg string) {
+	r.t.Helper()
+	r.git("-c", "gpg.format=ssh", "-c", "user.signingkey="+key, "commit", "-q", "--allow-empty", "-S", "-m", msg)
+}
+
+// findings counts the tiers findings in out.
+func findings(out string) int { return strings.Count(out, "tiers: FAIL") }
+
+// D1, D2, D3.
+func TestVerifyDirectoryCollision(t *testing.T) {
+	out := foldRepo(t, "docs/Docs", "docs/docs/a").expect(t, 1,
+		"tiers: FAIL: docs/Docs: path collides with directory docs/docs "+oldCase)
+	if findings(out) != 1 || strings.Contains(out, "leases: FAIL") {
+		t.Errorf("want one tiers finding and no leases finding\n%s", out)
+	}
+	for _, c := range [][2]string{{"docs/Zed", "docs/zed/a"}, {"docs/zed", "docs/Zed/a"}} {
+		a := foldRepo(t, c[0], c[1]).expect(t, 1, "tiers: FAIL: "+c[0]+": path collides with directory")
+		b := foldRepo(t, c[1], c[0]).expect(t, 1)
+		if a != b || findings(a) != 1 {
+			t.Errorf("order dependent or wrong count:\n%s\n%s", a, b)
+		}
+	}
+	for _, c := range [][2]string{
+		{"docs/" + nfcCafe, "docs/" + nfdCafe + "/a"},
+		{"docs/" + nfdCafe, "docs/" + nfcCafe + "/a"},
+		{"docs/CAF\u00c9", "docs/" + nfdCafe + "/a"},
+	} {
+		foldRepo(t, c[0], c[1]).expect(t, 1, "tiers: FAIL: "+c[0]+": path collides with directory", newNorm)
+	}
+}
+
+// D4, D5, D7.
+func TestVerifyDirectoryNoFalsePositive(t *testing.T) {
+	for _, ps := range [][]string{
+		{"docs/docs", "docs/docs2/a"},
+		{"docs/doc", "docs/docs/a"},
+		{"docs/a/b", "docs/c/b/x"},
+		{"docs/cafe", "docs/" + nfdCafe + "/a"},
+		{"docs/\u65e5\u672c", "docs/\u00fcber/a"},
+		{"docs/a/Docs", "docs/b/docs/x"},
+		{"docs/Docs/a", "docs/docs/b"},
+	} {
+		foldRepo(t, ps...).expect(t, 0, "leases: ok")
+	}
+	foldRepo(t, "docs/a/Docs", "docs/A/docs/x").expect(t, 1, "tiers: FAIL: docs/a/Docs: path collides with directory docs/A/docs")
+	out := foldRepo(t, "docs/Docs/a", "docs/docs/a").expect(t, 1, "path collides with docs/Docs/a")
+	if strings.Contains(out, "with directory") {
+		t.Errorf("file pair got the directory text\n%s", out)
+	}
+}
+
+// D6.
+func TestVerifyDirectoryOneFindingPerPath(t *testing.T) {
+	out := foldRepo(t, "docs/ZED", "docs/Zed/a", "docs/zed/b").expect(t, 1, "tiers: FAIL: docs/ZED: path collides with directory docs/Zed ")
+	if findings(out) != 1 {
+		t.Errorf("want one finding\n%s", out)
+	}
+	out = foldRepo(t, "docs/ZED", "docs/zed", "docs/Zed/a").expect(t, 1,
+		"tiers: FAIL: docs/ZED: path collides with directory docs/Zed ",
+		"tiers: FAIL: docs/zed: path collides with docs/ZED ")
+	if findings(out) != 2 {
+		t.Errorf("want two findings\n%s", out)
+	}
+}
+
+// D8.
+func TestVerifyDirectoryModes(t *testing.T) {
+	for _, mode := range []string{"120000", "160000"} {
+		r := foldRepo(t, "docs/docs/a")
+		modeIndex(r, mode, "docs/Docs")
+		r.git("commit", "-q", "-m", "T-001: mode")
+		out := r.expect(t, 1, "tiers: FAIL: docs/Docs: path collides with directory docs/docs ")
+		if findings(out) != 1 {
+			t.Errorf("mode %s: want one finding\n%s", mode, out)
+		}
+	}
+}
+
+// D9.
+func TestDirIndexByteEqual(t *testing.T) {
+	x := buildDirIndex([]string{"docs", "docs/a"})
+	if d, ok := x.dirOf("docs"); !ok || d != "docs" {
+		t.Errorf("dirOf(docs) = %q, %v", d, ok)
+	}
+	if _, ok := x.dirOf("docs/a"); ok {
+		t.Error("docs/a is not a directory")
+	}
+	if _, ok := x.dirOf(""); ok {
+		t.Error("empty path is not a directory")
+	}
+}
+
+// D11.
+func TestDirIndexBound(t *testing.T) {
+	deep := "docs/" + strings.Repeat("a/", 1999) + "x"
+	paths := []string{deep}
+	for i := 0; i < 5000; i++ {
+		paths = append(paths, "docs/d"+strconv.Itoa(i)+"/f")
+	}
+	if n := buildDirIndex(paths).dirCount(); n != 7000 {
+		t.Errorf("dirCount = %d; want 7000", n)
+	}
+	// A path over maxTreePath is not indexed.
+	if n := buildDirIndex([]string{strings.Repeat("a/", maxTreePath)}).dirCount(); n != 0 {
+		t.Errorf("over-length path indexed %d directories", n)
+	}
+	// About 2000 loose trees trip git's detached auto maintenance, which writes
+	// into .git while t.TempDir cleans up. Turn it off for every git call.
+	t.Setenv("GIT_CONFIG_COUNT", "2")
+	t.Setenv("GIT_CONFIG_KEY_0", "maintenance.auto")
+	t.Setenv("GIT_CONFIG_VALUE_0", "false")
+	t.Setenv("GIT_CONFIG_KEY_1", "gc.auto")
+	t.Setenv("GIT_CONFIG_VALUE_1", "0")
+	foldRepo(t, deep).expect(t, 0, "leases: ok")
+}
+
+// D12.
+func TestVerifyDirectoryHostileText(t *testing.T) {
+	r := foldRepo(t, "docs/X\n::warning::y", "docs/x\n::warning::y/a")
+	for _, gha := range []bool{true, false} {
+		code, out := r.run("verify", gha)
+		if code != 1 || !strings.Contains(out, "with directory") {
+			t.Fatalf("gha %v: exit %d\n%s", gha, code, out)
+		}
+		for _, line := range strings.Split(out, "\n") {
+			if strings.HasPrefix(line, "::warning::") {
+				t.Errorf("gha %v: injected line %q", gha, line)
+			}
+		}
+	}
+}
+
+// D13.
+func TestVerifyDirectoryApprovalDoesNotClear(t *testing.T) {
+	k := newSignKeys(t)
+	r := signRepo(t, signerLine("alice", k.alicePub), "gate/action.yml")
+	r.index("docs/Docs")
+	r.index("docs/docs/a")
+	indexCommit(r, k.alice, "T-031: Head Keeper approval")
+	code, out := r.run("verify", false)
+	for _, w := range []string{signedTiers, "tiers: FAIL: docs/Docs: path collides with directory docs/docs "} {
+		if !strings.Contains(out, w) {
+			t.Errorf("output lacks %q\n%s", w, out)
+		}
+	}
+	if code != 1 || strings.Contains(out, "tiers: FAIL: gate/action.yml") {
+		t.Errorf("exit %d\n%s", code, out)
+	}
+}
+
+// D16. A tree holding a file and a directory of the same bytes lists docs and
+// docs/a; the byte-equal rule keeps docs from being flagged against itself.
+func TestVerifyDirectoryByteEqualTree(t *testing.T) {
+	r := leaseRepo(t)
+	r.claim(1, "full", active, "docs")
+	blob := r.gitIn("x\n", "hash-object", "-w", "--stdin")
+	sub := r.gitIn("100644 blob "+blob+"\ta\n", "mktree")
+	tree := r.gitIn("100644 blob "+blob+"\tdocs\n040000 tree "+sub+"\tdocs\n", "mktree", "--missing")
+	c := r.git("commit-tree", "-m", "T-001: twin", "-p", "HEAD", tree)
+	r.git("update-ref", "refs/heads/branch", c)
+	r.git("checkout", "-q", "branch")
+	r.expect(t, 1, "tiers: FAIL: docs: path collides with")
+}
+
+// D15. A head equal to main's tree passes.
+func TestVerifyDirectoryHeadEqualsMain(t *testing.T) {
+	r := leaseRepo(t)
+	code, out, errs := gate(func(string) string { return "" }, "verify", "--base", "main", "--head", "main", "--repo", r.dir)
+	if code != 0 {
+		t.Errorf("base main, head main: exit %d\n%s%s", code, out, errs)
 	}
 }

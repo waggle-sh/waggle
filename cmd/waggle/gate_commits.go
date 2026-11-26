@@ -427,14 +427,17 @@ func (s *commitScan) checkHead(id string, l comb.Lease) {
 
 // caseCollisions fails head tree paths that are equal under case folding or
 // Unicode normalization (collisionKey) but differ in bytes, and paths over
-// maxTreePath bytes (T-014 section 4.4, T-074).
+// maxTreePath bytes (T-014 section 4.4, T-074). A file, symlink or gitlink
+// whose folded name is a directory of the tree fails too (T-123).
 func caseCollisions(g gitRunner, head string, rep *gateReport) error {
 	out, err := g.run("ls-tree", "-r", "-z", "--name-only", "--full-tree", head)
 	if err != nil {
 		return err
 	}
+	paths := strings.Split(string(out), "\x00")
+	dirs := buildDirIndex(paths)
 	seen := map[string]string{}
-	for _, p := range strings.Split(string(out), "\x00") {
+	for _, p := range paths {
 		switch {
 		case p == "":
 			continue
@@ -446,6 +449,9 @@ func caseCollisions(g gitRunner, head string, rep *gateReport) error {
 		if prev, dup := seen[k]; dup && prev != p {
 			rep.fail(checkTiers, p, collisionText(prev, p))
 			continue
+		}
+		if dir, hit := dirs.dirOf(p); hit {
+			rep.fail(checkTiers, p, dirCollisionText(dir, p))
 		}
 		seen[k] = p
 	}
