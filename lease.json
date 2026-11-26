@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "ticket_id": "T-116",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "cmd/waggle",
+    "docs/gate.md",
+    "docs/troubleshooting.md",
+    "internal/forge"
+  ],
+  "claimed_at": "2026-11-26T15:33:56Z",
+  "expires_at": "2026-11-26T17:33:56Z",
+  "branches": [
+    "t-116"
+  ]
+}
