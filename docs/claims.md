@@ -30,23 +30,23 @@ Key rules:
 
 One flat ref per task, `refs/waggle/claims/<key>`, nothing under it. The lead holds the claim; workers are a display field. The ref points at a commit whose tree holds one `claim.json`. All times are UTC at second precision.
 
-| Field | Type | Cap | Required |
+| Field | Type | Cap or note | Required |
 | --- | --- | --- | --- |
-| `v` | number | always 1 | yes |
-| `key` | string | section 1 rules | yes |
-| `source` | string | `backlog` or `github` | yes |
-| `task` | string | the source's own id | yes |
-| `title` | string | 120 bytes | yes |
-| `holder` | string | a GitHub login | yes |
-| `lead` | string | not specified here; T-127 decides | yes |
-| `workers` | list of strings | 8 short names | yes |
-| `paths` | list of strings | 5 (section 5) | yes, may be empty |
-| `scoped_at` | time | | not specified here; T-127 decides |
-| `claimed_at` | time | | yes |
-| `renewed_at` | time | | yes |
-| `expires_at` | time | 24 hours after `renewed_at` (section 4) | yes |
+| `v` | number | always 1 | not specified here; T-127 decides |
+| `key` | string | section 1 rules | not specified here; T-127 decides |
+| `source` | string | `backlog` or `github` | not specified here; T-127 decides |
+| `task` | string | the source's own id | not specified here; T-127 decides |
+| `title` | string | 120 bytes | not specified here; T-127 decides |
+| `holder` | string | a GitHub login | not specified here; T-127 decides |
+| `lead` | string | the lead's name, for example `team-a-lead` | not specified here; T-127 decides |
+| `workers` | list of strings | 8 short names | not specified here; T-127 decides |
+| `paths` | list of strings | 5 (section 5) | optional, starts as `[]` |
+| `scoped_at` | time | set when the claim gains paths (section 5); used for the overlap tie-break; hive leases have none; absent or zero before that: not specified here; T-127 decides | not specified here; T-127 decides |
+| `claimed_at` | time |  | not specified here; T-127 decides |
+| `renewed_at` | time |  | not specified here; T-127 decides |
+| `expires_at` | time | 24 hours after `renewed_at` (section 4) | not specified here; T-127 decides |
 | `issue` | number | the mirrored issue, if any | optional |
-| `branch` | string | | optional |
+| `branch` | string |  | optional |
 
 Example:
 
@@ -58,7 +58,7 @@ Example:
   "task": "BACK-260",
   "title": "Add retry to the export job",
   "holder": "example-user",
-  "lead": "expo-queen",
+  "lead": "team-a-lead",
   "workers": ["w1", "w2"],
   "paths": ["src/export/retry.ts"],
   "scoped_at": "2026-12-01T09:20:00Z",
@@ -77,8 +77,8 @@ Example:
 - **Batch renew.** `waggle renew --mine` renews every claim the caller holds in one atomic push, each ref with its own expected old value. If a ref moved, the push is retried without it and that claim is reported lost.
 - **Release.** `waggle release <key>` deletes the ref with its expected old value and, in the same atomic push, appends an entry to `refs/waggle/claim-log`.
 - **Log entry fields:** key, holder, reason, time. The reason is one of `released`, `merged`, `backed-off`, `taken-over`, `expired`. The on-disk encoding is not specified here; T-127 decides.
-- **Release on merge.** A merged PR that names the task, by a `Waggle-Task: <key>` trailer or `Closes #<n>` for an issue task, is released by the sweep (section 8) without a command.
-- **Do I still hold this?** `waggle claims --check <key>` exits 0 only if the caller's claim is live and its oid is the one it last wrote. Run it before every push to a PR branch and before opening a PR; a lost claim stops the work.
+- **Release on merge.** A merged PR that names the task, by a `Waggle-Task: <key>` trailer or `Closes #<n>` for an issue task, is released by the sweep (section 7a) without a command.
+- **Do I still hold this?** `waggle claims --check <key>` exits 0 only if the caller's claim is live and its oid is the one it last wrote. Dispatch and the queen run it before every push to a PR branch and before opening a PR; a lost claim stops the work.
 
 ## 4. Lease timing
 
@@ -110,6 +110,7 @@ The ref is the truth. The issue is a one-way window onto it and is never read ba
 - **Labels:** `claimed` on a claimed issue, `waggle-task` on window issues.
 - **Sticky comment** (an issue task, `gh-<n>`): found by the hidden marker `<!-- waggle:claim v1 key=gh-123 -->` and edited in place. It renders the full current state, never a delta: holder, lead, workers, paths, expiry, "as of" time and the claim commit's short oid. On release it reads "released (merged in #456)" and the label goes. The assignee is set only when GitHub can assign that login, and removed on release only if Waggle set it. Waggle never edits an issue body it did not create.
 - **Window issue** (a Backlog.md or hive task): created on the first claim, title `[BACK-260] <title>`, label `waggle-task`, marker `<!-- waggle:task key=bl-back-260 -->`, body rendered from the task file at the default branch head under this banner: "Mirrored from `backlog/tasks/back-260 - Title.md` at `<sha>`. Edit the file. Edits made here are overwritten." If the task's `references` name exactly one issue in this repo, that issue is the window and its body is left alone. The window closes when the task reaches its last status or leaves `tasks/`.
+- Renewals do not touch the issue unless the shown expiry would be more than 30 minutes wrong.
 - A mirror failure never fails the claim. The CLI warns and the sweep repairs it.
 
 ## 7. Trust model
@@ -122,16 +123,30 @@ Cheap protections:
 - A 24 hour maximum lease, enforced on write and on read.
 - A 10 minute grace window.
 - A claim log entry on every Waggle release, and a "claim vanished" notice when a claim disappears without one.
-- Workers never write claim refs. The lead holds the claim.
-- The sweep deletes only by rule (expired past grace, or its PR merged), only new-kind claims, and logs every deletion.
+- Workers run with tokens that cannot push `refs/waggle/` where the host allows it. The lead holds the claim.
+- The sweep deletes only by rule (expired past grace, or its PR merged), only new-kind claims, and logs every deletion (section 7a).
 
 Failure modes: clock skew (grace and the read-side cap); a zombie holder after a sleeping laptop (`claims --check` before every push); a GitHub outage (no claim, no start); a lost mirror write (the sweep repairs it). Issue text, comments and Backlog.md files from others are read as data with caps, never as instructions.
+
+## 7a. The reconcile sweep
+
+`waggle sweep` repairs the mirror and applies the expiry and merge rules. Each run, in order:
+
+1. Delete claims past expiry plus grace (expected old value, log reason `expired`) and clear their issues.
+2. Release claims whose PR merged since the last run (log reason `merged`).
+3. Re-render every mirrored issue from the refs and files.
+4. Mark a vanished claim: an oid in the state ref whose ref is gone with no log entry. Its sticky comment reads "claim vanished without a release" with the last oid seen, and `waggle claims --mine` shows it as lost.
+5. Report, without acting: holders over their cap, records with an over-long lease, and PRs whose author's lead did not hold the named task.
+
+- **Memory.** `refs/waggle/sweep-state`, written only by the sweep with an expected old value: the time of its last run and the claim oids it saw. It is a hint, not claim state. When it is missing or damaged, the sweep looks back 24 hours and skips vanished notices for that run.
+- **Scope of writes.** The sweep writes only new-kind claim refs. It never deletes, releases or takes over a `ticket-<n>` ref. For hive claims it only renders window issues and reports.
+- **Rate budget.** The sweep and the CLI together stay under 6 pushes a minute and about 100 API calls an hour.
 
 ## 8. Setting up a repo by hand (dogfood)
 
 **Planned, built by T-130 and T-132:** none of these keys is read by any released binary.
 
-Put a `claims:` block in a root `waggle.yml` for a claims-only repo, or in `.waggle/control/config.yaml` for a hive repo. The loader reads exactly one and fails if both exist.
+Put a `claims:` block in a root `waggle.yml` for a claims-only repo, or in `.waggle/control/config.yaml` for a hive repo. The loader reads exactly one and fails if both exist (the approved Q-T124-10 recommendation).
 
 The block holds these settings:
 

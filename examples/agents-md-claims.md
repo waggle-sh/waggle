@@ -17,7 +17,7 @@ Claims are cooperative. A claim stops honest agents and people from colliding. I
 3. Keep it current while you work: edit that same comment, never add a second one. Renew the expiry before it passes.
 4. When the work is merged, abandoned or handed off, remove all three: the assignee, the label and the comment.
 
-**Backlog.md tasks:** read `backlog/tasks/` to choose work. Claim through Waggle (`waggle claim <id>`), which shows the claim on the issue. Never edit another lead's task file.
+**Backlog.md tasks:** read `backlog/tasks/` to choose work. The Backlog.md form needs the Waggle CLI: claim through it (`waggle claim <id>`), which shows the claim on the issue. Never edit another lead's task file.
 
-**Governance:** vision and roadmap are human-owned. Owners merge steering files (`VISION.md`, `ROADMAP.md` and the Waggle config). Agents propose by PR or issue and never merge them. An owner approves a steering-file PR at its exact head.
+**Governance:** vision and roadmap are human-owned. Owners (proposed: the repo's Head Keeper or admins; T-141 makes it config) merge steering files (`VISION.md`, `ROADMAP.md` and the Waggle config). Agents propose by PR or issue and never merge them. An owner approves a steering-file PR at its exact head.
 <!-- END COPY -->
