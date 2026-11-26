@@ -36,6 +36,8 @@ func failWhy(status int, err error) string {
 type gateRead struct {
 	matched, strict bool
 	nonFF           bool // a ruleset rule blocks non-fast-forward updates
+	forbidden       bool // the rules read answered 403
+	upgrade         bool // the 403 message holds the word upgrade
 	why             string
 }
 
@@ -47,6 +49,7 @@ func (g *github) Probe(ctx context.Context, opt ProbeOptions) (Report, error) {
 	gate := cmp.Or(opt.GateCheck, DefaultGateCheck)
 	var info struct {
 		DefaultBranch string `json:"default_branch"`
+		Private       bool   `json:"private"`
 	}
 	if status, err := g.t.do(ctx, "GET", g.repoAPI, nil, &info); err != nil {
 		return Report{}, fmt.Errorf("forge: probe %s/%s: reading the default branch: %s", g.owner, g.repo, failWhy(status, err))
@@ -56,6 +59,7 @@ func (g *github) Probe(ctx context.Context, opt ProbeOptions) (Report, error) {
 		return Report{}, fmt.Errorf("forge: probe %s/%s: GitHub returned a default branch name git rejects", g.owner, g.repo)
 	}
 	read := g.readRules(ctx, branch, gate)
+	capab, capWhy := capability(read, info.Private)
 	if read.why == "" && !read.matched {
 		nonFF := read.nonFF
 		read = g.readClassic(ctx, branch, gate)
@@ -67,7 +71,7 @@ func (g *github) Probe(ctx context.Context, opt ProbeOptions) (Report, error) {
 	}
 	force := g.forcePushFinding(ctx, read, branch)
 	r := Report{Provider: "github", Repo: g.owner + "/" + g.repo, Remote: g.remote, Auth: g.auth,
-		Claims: claims, MergeStrategy: opt.MergeStrategy,
+		Claims: claims, MergeStrategy: opt.MergeStrategy, Capability: capab,
 		Findings: []Finding{gateFinding(read, branch, gate)}}
 	if opt.MergeStrategy == "native_queue" {
 		r.Findings = append(r.Findings,
@@ -79,7 +83,7 @@ func (g *github) Probe(ctx context.Context, opt ProbeOptions) (Report, error) {
 	} else {
 		r.Findings = append(r.Findings, upToDateFinding(read, branch, gate))
 	}
-	r.Findings = append(r.Findings, force)
+	r.Findings = append(r.Findings, force, capabilityFinding(capab, capWhy, branch), g.writeHolders(ctx))
 	return r, nil
 }
 
@@ -97,7 +101,8 @@ func (g *github) readRules(ctx context.Context, branch, gate string) gateRead {
 		path := g.repoAPI + "/rules/branches/" + url.PathEscape(branch) +
 			"?per_page=" + strconv.Itoa(rulesPerPage) + "&page=" + strconv.Itoa(page)
 		if status, err := g.t.do(ctx, "GET", path, nil, &rules); err != nil {
-			return gateRead{why: failWhy(status, err)}
+			forbidden, upgrade := upgradeAnswer(err)
+			return gateRead{why: failWhy(status, err), forbidden: forbidden, upgrade: upgrade}
 		}
 		for _, rule := range rules {
 			if rule.Type == "non_fast_forward" {

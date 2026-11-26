@@ -35,6 +35,11 @@ type Report struct {
 	Provider, Repo, Remote      string
 	Auth, Claims, MergeStrategy string
 	Findings                    []Finding
+	// Capability is what the forge can hold: required_check, none or unknown.
+	// It is empty for a forge that does not say.
+	Capability string
+	// Hold is set when gate.mode is hold and the forge cannot require a check.
+	Hold bool
 }
 
 // NotEnforced returns every missing or unknown finding. Unknown counts as
@@ -53,6 +58,9 @@ func (r Report) NotEnforced() []Finding {
 // the configured merge strategy's rule (up-to-date or merge-queue) are ok,
 // else "advisory" naming the first finding that is not.
 func (r Report) Enforcement() string {
+	if r.Hold {
+		return "advisory (hold parts not checked)"
+	}
 	status := map[string]Status{}
 	for _, f := range r.Findings {
 		status[f.ID] = f.Status
