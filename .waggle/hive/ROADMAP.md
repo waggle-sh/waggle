@@ -9,29 +9,31 @@ Owned by the scout; Full gate. Vision bar: VISION.md (core items need a typed He
 
 Product focus now: an agent lead claims the GitHub issue it works on, and everyone sees the claim on the issue. GitHub first, Linear after the dogfood (D-412): Level 1 ships the GitHub adapter only, the claim format stays tracker-neutral, and the Linear adapter (T-129) is the first ticket after the 14-day dogfood. Level 0 is an `AGENTS.md` convention; Level 1 is the open core CLI, GitHub Action and MCP server (atomic claims, expiry, declared scope, `waggle next`); Level 2 is the gate as an opt-in check that a PR stays inside its claim. Governance (item 55, e1759): owners set vision and roadmap, the tracker sets priority, `waggle next` follows it, and an agent reprioritizing its own claimed issue is a violation. Our queens use it for 14 days against a measured bar, then outreach starts and the D-235 clock restarts on three outside repos using claims. Plan of record: `.waggle/hive/tasks/T-124.md`. The version number is set at release.
 
+Level 1 mechanics held (item 55): the Head Keeper put the Level 1 design on hold while a different design is pressure-tested. T-127 to T-137 are held for that design; a follow-up brief fills T-124 section 4 and restates or replaces them.
+
 Held (frozen: claims-first refocus, item 55, D-411): T-069, T-070, T-108 to T-112 and T-121. In-flight approved builds finish (T-123, T-116 phase 1).
 
 In build order:
 
 T-124 · Claims-first refocus brief, VISION amendment, this section · S · brief written, awaiting Head Keeper approval · claims first · records
 T-125 · Claim format v1 spec and the Level 0 AGENTS.md section · S · proposed · claims first · docs
-T-127 · Pure claims core: record, v1 format, arbitration, expiry, overlap, Tracker interface · M · proposed · claims first · product
+T-127 · Pure claims core: record, v1 format, arbitration, expiry, overlap, Tracker interface · M · held for the Level 1 design · claims first · product
 T-126 · README leads with claims; bee vocabulary to a glossary · S · proposed · claims first · docs
-T-128 · GitHub issues adapter · M · proposed · claims first · product
+T-128 · GitHub issues adapter · M · held for the Level 1 design · claims first · product
 T-141 · Governance config: owners, reprioritizers, steering paths · S · proposed · claims first · product
-T-130 · CLI: issue form of claim, release, heartbeat, claims list · M · proposed · claims first · product
+T-130 · CLI: issue form of claim, release, heartbeat, claims list · M · held for the Level 1 design · claims first · product
 T-142 · Priority order from the tracker · M · proposed · claims first · product
-T-131 · waggle next · S · proposed · claims first · product
-T-132 · Expiry sweep and heartbeat loop · S · proposed · claims first · product
-T-136 · Comb as an optional cache; status shows issue and T-id claims · S · proposed · claims first · product
+T-131 · waggle next · S · held for the Level 1 design · claims first · product
+T-132 · Expiry sweep and heartbeat loop · S · held for the Level 1 design · claims first · product
+T-136 · Comb as an optional cache; status shows issue and T-id claims · S · held for the Level 1 design · claims first · product
 T-144 · Our backlogs move from TODO.md to tracker issues with visible priority · S · proposed · claims first · ops
-T-133 · Claims GitHub Action: /claim, /release, /heartbeat, scheduled sweep · M · proposed · claims first · product
-T-134 · MCP server, waggle mcp · M · proposed · claims first · product
+T-133 · Claims GitHub Action: /claim, /release, /heartbeat, scheduled sweep · M · held for the Level 1 design · claims first · product
+T-134 · MCP server, waggle mcp · M · held for the Level 1 design · claims first · product
 T-143 · Reprioritization check: flag an agent reprioritizing its own claimed issue · S · proposed · claims first · product
-T-135 · waggle init --claims: two-command install, no ruleset · S · proposed · claims first · product
+T-135 · waggle init --claims: two-command install, no ruleset · S · held for the Level 1 design · claims first · product
 T-138 · Dogfood: four queens for 14 days against the bar, GitHub only · S · proposed · claims first · ops
-T-129 · Linear issues adapter; first ticket after the dogfood, depends on T-138 (D-412) · M · proposed · after dogfood · product
-T-137 · Gate Level 2: opt-in, report-only check that a PR stays inside its issue claim · M · proposed · claims first · product
+T-129 · Linear issues adapter; first ticket after the dogfood, depends on T-138 (D-412) · M · held for the Level 1 design · after dogfood · product
+T-137 · Gate Level 2: opt-in, report-only check that a PR stays inside its issue claim · M · held for the Level 1 design · claims first · product
 T-139 · Public proof and outreach kit; restarts the D-235 clock; does not wait for T-129 · S · proposed · claims first · docs
 T-140 · Hosted GitHub App · L · later, not built; after three outside repos (D-411) · unscheduled · product
 
