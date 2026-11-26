@@ -35,8 +35,7 @@ func (r gateRepo) pathsCommit(paths ...string) {
 	r.git("commit", "-q", "-m", "T-001: paths")
 }
 
-// awkwardNames are file names the gate must handle. The tab and the
-// backslash are the two the encoder leaves as they are.
+// awkwardNames are file names the gate must handle.
 var awkwardNames = map[string]string{
 	"space":     "a b.txt",
 	"dquote":    `a"b.txt`,
@@ -62,22 +61,23 @@ func TestPathsAwkwardInsideClaim(t *testing.T) {
 }
 
 // The same names one directory over fail, and the finding prints the path
-// through the encoder, in both output modes. Pinned as is: the encoder keeps
-// a tab and a backslash raw (reported in the PR body).
+// through the encoder, in both output modes. A tab prints as %09 and a
+// backslash as %5C.
 func TestPathsAwkwardOutsideClaim(t *testing.T) {
 	for name, file := range awkwardNames {
 		t.Run(name, func(t *testing.T) {
 			r := leaseRepo(t)
 			r.claim(1, "full", active, "src")
 			r.pathsCommit("lib/" + file)
+			enc := strings.NewReplacer("\t", "%09", `\`, "%5C").Replace(file)
 			code, out := r.run("verify", false)
-			want := "leases: FAIL: lib/" + file + outsideMsg
-			if code != 1 || !strings.Contains(out, want) || strings.Contains(out, "\r") {
+			want := "leases: FAIL: lib/" + enc + outsideMsg
+			if code != 1 || !strings.Contains(out, want) || strings.ContainsAny(out, "\r\t") {
 				t.Errorf("exit %d, want line %q\n%q", code, want, out)
 			}
 			code, out = r.run("verify", true)
-			want = "::error file=lib/" + file + "::leases: T-001: path is outside the claim directories\n"
-			if code != 1 || !strings.Contains(out, want) || strings.Contains(out, "\r") {
+			want = "::error file=lib/" + enc + "::leases: T-001: path is outside the claim directories\n"
+			if code != 1 || !strings.Contains(out, want) || strings.ContainsAny(out, "\r\t") {
 				t.Errorf("gha: exit %d, want line %q\n%q", code, want, out)
 			}
 		})
@@ -142,6 +142,7 @@ func TestPathsInvalidClaimDirs(t *testing.T) {
 			r.claimRaw(1, c.dir)
 			r.pathsCommit("src/x")
 			msg := fmt.Sprintf("T-001: refs/waggle/claims/ticket-1: comb: malformed claim ref: directory %q%s: comb: invalid lease\n", c.dir, c.why)
+			msg = strings.NewReplacer("\t", "%09", `\`, "%5C").Replace(msg)
 			code, out := r.run("verify", false)
 			if code != 1 || !strings.Contains(out, "leases: FAIL: "+msg) || strings.Contains(out, "\t") {
 				t.Errorf("exit %d, want %q\n%q", code, msg, out)
