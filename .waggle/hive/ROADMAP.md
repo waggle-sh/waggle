@@ -5,37 +5,36 @@ Owned by the scout; Full gate. Vision bar: VISION.md (core items need a typed He
 
 ## Releases
 
-### Claims first (next release; proposed by T-124, D-410, D-411 and D-412)
+### Claims first (next release; proposed by T-124 under D-410 to D-412, D-415 and D-416)
 
-Product focus now: an agent lead claims the GitHub issue it works on, and everyone sees the claim on the issue. GitHub first, Linear after the dogfood (D-412): Level 1 ships the GitHub adapter only, the claim format stays tracker-neutral, and the Linear adapter (T-129) is the first ticket after the 14-day dogfood. Level 0 is an `AGENTS.md` convention; Level 1 is the open core CLI, GitHub Action and MCP server (atomic claims, expiry, declared scope, `waggle next`); Level 2 is the gate as an opt-in check that a PR stays inside its claim. Governance (item 55, e1759): owners set vision and roadmap, the tracker sets priority, `waggle next` follows it, and an agent reprioritizing its own claimed issue is a violation. Our queens use it for 14 days against a measured bar, then outreach starts and the D-235 clock restarts on three outside repos using claims. Plan of record: `.waggle/hive/tasks/T-124.md`. The version number is set at release.
+Product focus now: Waggle is the claims layer for Backlog.md and GitHub issues (D-416). Backlog.md, an issue or a hive task says what the work is; Waggle says who holds it now, until when, and what it touches. Claims are flat refs in the existing `refs/waggle/claims/` store keyed on an opaque task id, created atomically, taken over only after expiry with the expected old value, renewed in one push, released on merge, and checked for path overlap after the write (earliest wins). `waggle next` picks the top unheld, non-overlapping task in the sources' own priority order. The CLI mirrors each claim one way onto its GitHub issue (assignee, `claimed` label, one sticky comment), and a 15-minute sweep on our own runner repairs drift. Claims are cooperative among people who can push, with holder caps, a 24-hour maximum lease, a grace window and a "claim vanished" notice; the App, later, is the only writer for outsiders and `/claim`. GitHub first, Linear after the dogfood (D-412). Level 0 is an `AGENTS.md` convention; Level 2 is the gate as an opt-in check that a PR stays inside its claim, after the dogfood. Governance (D-415): owners set vision and roadmap, the tracker sets priority, config sets who may reprioritize, Quorum later. Two people's queens use it on one Level 19 repo for 14 days against a measured bar, then outreach starts and the D-235 clock restarts on three outside repos using claims. Plan of record: `.waggle/hive/tasks/T-124.md`. The version number is set at release.
 
-Level 1 mechanics held (item 55): the Head Keeper put the Level 1 design on hold while a different design is pressure-tested. T-127 to T-137 are held for that design; a follow-up brief fills T-124 section 4 and restates or replaces them.
-
-Held (frozen: claims-first refocus, item 55, D-411): T-069, T-070, T-108 to T-112 and T-121. In-flight approved builds finish (T-123, T-116 phase 1).
+Held (frozen: claims-first refocus, item 55, D-411): T-069, T-070, T-108 to T-112 and T-121. In-flight approved builds finish (T-116 phase 1).
 
 In build order:
 
 T-124 · Claims-first refocus brief, VISION amendment, this section · S · brief written, awaiting Head Keeper approval · claims first · records
-T-125 · Claim format v1 spec and the Level 0 AGENTS.md section · S · proposed · claims first · docs
-T-127 · Pure claims core: record, v1 format, arbitration, expiry, overlap, Tracker interface · M · held for the Level 1 design · claims first · product
-T-126 · README leads with claims; bee vocabulary to a glossary · S · proposed · claims first · docs
-T-128 · GitHub issues adapter · M · held for the Level 1 design · claims first · product
-T-141 · Governance config: owners, reprioritizers, steering paths · S · proposed · claims first · product
-T-130 · CLI: issue form of claim, release, heartbeat, claims list · M · held for the Level 1 design · claims first · product
-T-142 · Priority order from the tracker · M · proposed · claims first · product
-T-131 · waggle next · S · held for the Level 1 design · claims first · product
-T-132 · Expiry sweep and heartbeat loop · S · held for the Level 1 design · claims first · product
-T-136 · Comb as an optional cache; status shows issue and T-id claims · S · held for the Level 1 design · claims first · product
-T-144 · Our backlogs move from TODO.md to tracker issues with visible priority · S · proposed · claims first · ops
-T-133 · Claims GitHub Action: /claim, /release, /heartbeat, scheduled sweep · M · held for the Level 1 design · claims first · product
-T-134 · MCP server, waggle mcp · M · held for the Level 1 design · claims first · product
-T-143 · Reprioritization check: flag an agent reprioritizing its own claimed issue · S · proposed · claims first · product
-T-135 · waggle init --claims: two-command install, no ruleset · S · held for the Level 1 design · claims first · product
-T-138 · Dogfood: four queens for 14 days against the bar, GitHub only · S · proposed · claims first · ops
-T-129 · Linear issues adapter; first ticket after the dogfood, depends on T-138 (D-412) · M · held for the Level 1 design · after dogfood · product
-T-137 · Gate Level 2: opt-in, report-only check that a PR stays inside its issue claim · M · held for the Level 1 design · claims first · product
-T-139 · Public proof and outreach kit; restarts the D-235 clock; does not wait for T-129 · S · proposed · claims first · docs
+T-125 · Claim spec and the Level 0 AGENTS.md section · S · proposed · dogfood · docs
+T-136 · Frozen comb skips claim refs it does not own · S · proposed · dogfood · product
+T-127 · Pure claims core: keys, record, expiry, overlap, caps · M · proposed · dogfood · product
+T-145 · Claim ref store: create, takeover, batch renew, release with log · M · proposed · dogfood · product
+T-142 · Task sources and order: Backlog.md, hive tasks, GitHub issues · M · proposed · dogfood · product
+T-130 · CLI: claim, scope, renew, release, claims · M · proposed · dogfood · product
+T-128 · GitHub issue mirror, one way · M · proposed · dogfood · product
+T-131 · waggle next · S · proposed · dogfood · product
+T-132 · Reconcile sweep and its runner timer · M · proposed · dogfood · product
+T-144 · The dogfood repo's backlog: Backlog.md files plus issues · S · proposed · dogfood · ops
+T-138 · Dogfood: two people's queens on one repo for 14 days · S · proposed · dogfood · ops
+T-126 · README leads with claims and the Backlog.md companion · S · proposed · before outreach · docs
+T-135 · waggle init --claims · S · proposed · before outreach · product
+T-141 · Governance config: owners, reprioritizers, steering paths · S · proposed · after the dogfood starts · product
+T-143 · Reprioritization check in the sweep · S · proposed · after the dogfood starts · product
+T-129 · Linear source and mirror; first ticket after the dogfood (D-412) · M · proposed · after the dogfood · product
+T-137 · Gate Level 2: report-only claim scope check · M · proposed · after the dogfood · product
+T-134 · MCP server over the claims core · M · proposed · after the dogfood · product
+T-139 · Public proof and outreach kit; restarts the D-235 clock · S · proposed · outreach · docs
 T-140 · Hosted GitHub App · L · later, not built; after three outside repos (D-411) · unscheduled · product
+T-133 · /claim and outsider claims, through the App only · M · later, after T-140 · unscheduled · product
 
 ### v0.1 Public Waggle Gate (in flight)
 
