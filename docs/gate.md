@@ -126,6 +126,8 @@ The `Waggle-Ticket`, `Waggle-Risk-Tier` and `Waggle-Verdict` trailers in the las
 
 Exit 0 pass, 1 check failed, 2 usage, 3 git or I/O error. No override flag exists; an override is an admin merge that bypasses the required check (`cmd/waggle/gate.go:22-28, 51-56`). Under GitHub Actions each finding is an `::error::` or `::warning::` annotation, otherwise a `<check>: FAIL: <message>` or `<check>: warning: <message>` line; a passing check prints `<check>: ok` (`cmd/waggle/gate_verify.go:65-94`). `verify` runs leases, tiers and decisions and exits with the worst code (`cmd/waggle/gate_verify.go:172-181`).
 
+`waggle gate verify --counts <path>` also writes a small JSON file at `path`: `{"failed":{"binding":0,"decisions":N,"leases":N,"tiers":N},"schema":1,"would_fail":{...}}`, keys sorted. The numbers count non-warning findings per check (`decisions` is 0 or 1; `binding` is always 0, as binding failures are counted under `leases`). Under `gate.mode: open` the counts are in `would_fail` and `failed` is all zero; under `guard` and `hold` it is the reverse. The file holds no path, message, SHA, login, branch or ticket name. Without the flag nothing is written, and the exit code and printed lines do not change. On a gate error (exit 3) no file is written, so the counts are omitted, never guessed. A write failure prints one `gate: warning: cannot write counts file: <reason>` line to stderr and leaves the exit code unchanged. The Action passes `--counts` in `verify` mode, and the template uploads the file as the `waggle-gate-counts` artifact, kept 7 days (`cmd/waggle/gate_counts.go`).
+
 ## 10. Limits and known bypasses
 
 - **L1, who can use a claim.** A commit's task is whatever its subject, trailer or branch names, and the claim's branch list is the only tie to the PR. So anyone who can push to a branch a claim names can add commits under that claim (same-repo branches are writable by every repo writer unless protected). A claim with no list fails every bound commit with `<id>: claim names no branch; renew it with waggle claim --branch` until it is renewed and the check re-run (`cmd/waggle/gate_commits.go:404-407`). Only printable ASCII branch names can be listed (`internal/comb/backend.go:524-544`), so a PR head with a non-ASCII name never matches and always fails. A re-claim after expiry resets the list (`internal/dispatch/claim.go:58-60`). The PR-body `Waggle-Ticket` trailer only warns on a mismatch. Mitigation: protect claimed branches or keep one writer per branch, and have reviewers check that the named task is the one assigned.
@@ -237,7 +239,13 @@ jobs:
           # Repos without the gate source on base run the pinned gate Action instead.
           git worktree add --detach "$RUNNER_TEMP/gate-src" "$BASE_SHA"
           (cd "$RUNNER_TEMP/gate-src" && go build -o "$RUNNER_TEMP/waggle" ./cmd/waggle)
-          "$RUNNER_TEMP/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA"
+          # A base older than T-107 has no --counts flag and would exit 2 on it.
+          counts=()
+          help=$("$RUNNER_TEMP/waggle" gate verify --help 2>&1 || true)
+          case "$help" in
+            *-counts*) counts=(--counts "$RUNNER_TEMP/waggle-gate-counts.json") ;;
+          esac
+          "$RUNNER_TEMP/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA" "${counts[@]}"
 
       - name: Waggle gate (Action)
         if: steps.src.outputs.present == 'false'
@@ -246,6 +254,16 @@ jobs:
           base-sha: ${{ github.event.pull_request.base.sha }}
           head-sha: ${{ github.event.pull_request.head.sha }}
           token: ${{ github.token }}
+
+      - name: Upload gate counts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: waggle-gate-counts
+          path: ${{ runner.temp }}/waggle-gate-counts.json
+          if-no-files-found: ignore
+          retention-days: 7
+          overwrite: true
 
   # Optional. Writes a gate-run release record for each task that lands on the
   # default branch with a live claim and no record. It needs push rights to
@@ -275,7 +293,7 @@ jobs:
           token: ${{ github.token }}
 ```
 
-The Action takes the inputs `mode`, `base-sha`, `head-sha`, `before`, `after` and `token`. `mode` is `verify` by default. The SHA inputs default to the event's values and `token` to `github.token`. It builds the gate from its own pinned tree with the module proxy off and fetches claim refs. In `verify` mode it runs `gate verify --base --head` with no `--branch`, and its inputs and exit codes are the same as before. In `gate-receipt` mode it runs `nectar gate-receipt --before --after --actor` (section 14). Any other `mode` exits 2 (`gate/action.yml`).
+The Action takes the inputs `mode`, `base-sha`, `head-sha`, `before`, `after` and `token`. `mode` is `verify` by default. The SHA inputs default to the event's values and `token` to `github.token`. It builds the gate from its own pinned tree with the module proxy off and fetches claim refs. In `verify` mode it runs `gate verify --base --head --counts` with no `--branch`, and its inputs and exit codes are the same as before. In `gate-receipt` mode it runs `nectar gate-receipt --before --after --actor` (section 14). Any other `mode` exits 2 (`gate/action.yml`).
 
 ## 14. Release records written by the gate run
 
