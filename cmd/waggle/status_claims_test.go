@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/waggle-sh/waggle/internal/comb"
 	"github.com/waggle-sh/waggle/internal/layout"
@@ -51,6 +52,31 @@ func TestRenderStatusOtherClaims(t *testing.T) {
 	}
 	if strings.ContainsAny(got, "\x1b") {
 		t.Error("control character in output")
+	}
+}
+
+func TestRenderStatusOtherClaimHolderTruncatedOnRuneBoundary(t *testing.T) {
+	h := header{Name: "waggle", Pin: "v1", Mode: "direct", Remote: "origin"}
+	block := usage.Render(nil, layout.Usage)
+	// 63 ASCII bytes, then a 3-byte rune that straddles byte 64, then more text.
+	holder := strings.Repeat("a", 63) + "\u20ac" + strings.Repeat("b", 10)
+	h.Other = []comb.OtherClaim{{Key: "gh-1", Holder: holder, Lead: "q", ExpiresAt: fixedNow.Add(time.Hour), Readable: true}}
+	got := string(renderStatus(h, nil, nil, nil, block, fixedNow))
+	var line string
+	for _, l := range strings.Split(got, "\n") {
+		if strings.HasPrefix(l, "  gh-1") {
+			line = l
+		}
+	}
+	if line == "" {
+		t.Fatalf("no gh-1 row in:\n%s", got)
+	}
+	cell := strings.Fields(line)[1]
+	if !utf8.ValidString(cell) || len(cell) > 64 || strings.ContainsRune(cell, '\u20ac') || strings.ContainsRune(cell, utf8.RuneError) {
+		t.Errorf("holder cell %q (%d bytes) is not a clean prefix of at most 64 bytes", cell, len(cell))
+	}
+	if !strings.HasPrefix(holder, cell) {
+		t.Errorf("holder cell %q is not a prefix of the holder", cell)
 	}
 }
 

@@ -56,30 +56,15 @@ func TestOtherClaimsSkippedByScan(t *testing.T) {
 	f.set("bl-back-260", f.commitWith("claim.json", record("bob", "expo-queen", exp)))
 	f.set("gh-123", f.commitWith("claim.json", record("carol", "lead", exp)))
 	f.set("ticket-007", f.commitWith("claim.json", record("x", "y", exp)))
-	f.set("Ticket-5", f.commitWith("claim.json", record("x", "y", exp)))
 	f.set("a/b", f.commitWith("claim.json", record("x", "y", exp)))
 
 	wantBad := map[string]string{
 		ClaimRefPrefix + "ticket-007": "ref name is not canonical ticket-<n>",
-		ClaimRefPrefix + "Ticket-5":   "ref name is not canonical ticket-<n>",
 		ClaimRefPrefix + "a/b":        "ref name is not canonical ticket-<n>",
 	}
 	check := func(name string, leases []Lease, err error) {
 		t.Helper()
-		var mce *MalformedClaimsError
-		if !errors.As(err, &mce) {
-			t.Fatalf("%s: err = %v; want *MalformedClaimsError", name, err)
-		}
-		got := map[string]string{}
-		for _, c := range mce.Claims {
-			got[c.Ref] = c.Reason
-		}
-		if fmt.Sprint(got) != fmt.Sprint(wantBad) {
-			t.Errorf("%s: malformed = %v; want %v", name, got, wantBad)
-		}
-		if len(leases) != 1 || leases[0].TicketID != "T-005" {
-			t.Errorf("%s: leases = %+v; want only T-005", name, leases)
-		}
+		checkMalformed(t, name, leases, err, wantBad, []string{"T-005"})
 	}
 	leases, err := f.b.ListActiveLeases(ctx)
 	check("ListActiveLeases", leases, err)
@@ -103,6 +88,51 @@ func TestOtherClaimsSkippedByScan(t *testing.T) {
 	f.set("gh-10", f.commitWith("claim.json", `{"paths":["only-here"]}`))
 	if err := f.b.AcquireLease(ctx, mkLease("T-010", "dave", "only-here")); err != nil {
 		t.Fatalf("AcquireLease over a new-kind claim with overlapping paths: %v", err)
+	}
+}
+
+// checkMalformed asserts err names exactly the wantBad refs and leases holds wantIDs.
+func checkMalformed(t *testing.T, name string, leases []Lease, err error, wantBad map[string]string, wantIDs []string) {
+	t.Helper()
+	var mce *MalformedClaimsError
+	if !errors.As(err, &mce) {
+		t.Fatalf("%s: err = %v; want *MalformedClaimsError", name, err)
+	}
+	got := map[string]string{}
+	for _, c := range mce.Claims {
+		got[c.Ref] = c.Reason
+	}
+	if fmt.Sprint(got) != fmt.Sprint(wantBad) {
+		t.Errorf("%s: malformed = %v; want %v", name, got, wantBad)
+	}
+	var ids []string
+	for _, l := range leases {
+		ids = append(ids, l.TicketID)
+	}
+	if strings.Join(ids, " ") != strings.Join(wantIDs, " ") {
+		t.Errorf("%s: leases = %+v; want only %v", name, leases, wantIDs)
+	}
+}
+
+// Refs that differ only in letter case must never share a repo: on a
+// case-insensitive filesystem the second loose ref replaces the first. Each
+// miscased name gets its own repo, which holds no ticket-5.
+func TestOtherClaimsMiscasedTicketNames(t *testing.T) {
+	for _, name := range []string{"Ticket-5", "TICKET-5"} {
+		t.Run(name, func(t *testing.T) {
+			f := newOtherFixture(t)
+			ctx := context.Background()
+			exp := f.clock.Now().Add(time.Hour).Format(time.RFC3339)
+			f.set(name, f.commitWith("claim.json", record("x", "y", exp)))
+			wantBad := map[string]string{ClaimRefPrefix + name: "ref name is not canonical ticket-<n>"}
+			leases, err := f.b.ListActiveLeases(ctx)
+			checkMalformed(t, "ListActiveLeases", leases, err, wantBad, nil)
+			leases, leasesErr, collisions, err := f.b.ClaimsView(ctx)
+			if err != nil || len(collisions) != 0 {
+				t.Fatalf("ClaimsView: collisions %v, err %v", collisions, err)
+			}
+			checkMalformed(t, "ClaimsView", leases, leasesErr, wantBad, nil)
+		})
 	}
 }
 
