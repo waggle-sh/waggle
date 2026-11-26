@@ -95,6 +95,7 @@ func runDoctor(args []string, stdout, stderr io.Writer, getenv func(string) stri
 	if err != nil {
 		return exit(3, "failed: %v", err)
 	}
+	holdFindings(&report, cfg.Gate.Mode)
 	claims := probeClaims(ctx, root, cfg.Forge.Remote, !*noWrite, stdout)
 	report.Findings = append([]forge.Finding{claims}, report.Findings...)
 	if err := forge.Render(stdout, report); err != nil {
