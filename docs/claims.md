@@ -41,10 +41,10 @@ One flat ref per task, `refs/waggle/claims/<key>`, nothing under it. The lead ho
 | `lead` | string | the lead's name, for example `team-a-lead` | not specified here; T-127 decides |
 | `workers` | list of strings | 8 short names | not specified here; T-127 decides |
 | `paths` | list of strings | 5 (section 5) | optional, starts as `[]` |
-| `scoped_at` | time | set when the claim gains paths (section 5); used for the overlap tie-break; hive leases have none; absent or zero before that: not specified here; T-127 decides | not specified here; T-127 decides |
+| `scoped_at` | time | used only for the overlap tie-break (section 5); hive leases have none; when it is set and whether a scope change resets it: not specified here; T-127 decides | not specified here; T-127 decides |
 | `claimed_at` | time |  | not specified here; T-127 decides |
 | `renewed_at` | time |  | not specified here; T-127 decides |
-| `expires_at` | time | 24 hours after `renewed_at` (section 4) | not specified here; T-127 decides |
+| `expires_at` | time | at most 24 hours after `renewed_at` (section 4) | not specified here; T-127 decides |
 | `issue` | number | the mirrored issue, if any | optional |
 | `branch` | string |  | optional |
 
@@ -101,7 +101,7 @@ Git makes each ref atomic but not the set, so overlap is checked after the write
 
 **A live hive lease (`ticket-<n>`) always wins.** Between two new-kind claims, the winner is the smaller `scoped_at`, then the smaller key in byte order, so every reader of one snapshot picks the same winner.
 
-Two writers whose pushes and re-lists interleave can each miss the other. The next renew runs the check again, so a double hold between two new-kind claims lasts at most one renewal interval.
+Two writers whose pushes and re-lists interleave can each miss the other. The next renew runs the check again, so a double hold between two new-kind claims lasts at most one renewal interval. A double hold against a hive lease ends when the new-kind claim backs off at its next renew (a hive lease written after the new claim still wins, since today's `waggle claim` checks only other `ticket-` refs). `claims --check` before a push catches either sooner.
 
 ## 6. The issue mirror
 
@@ -109,7 +109,7 @@ The ref is the truth. The issue is a one-way window onto it and is never read ba
 
 - **Labels:** `claimed` on a claimed issue, `waggle-task` on window issues.
 - **Sticky comment** (an issue task, `gh-<n>`): found by the hidden marker `<!-- waggle:claim v1 key=gh-123 -->` and edited in place. It renders the full current state, never a delta: holder, lead, workers, paths, expiry, "as of" time and the claim commit's short oid. On release it reads "released (merged in #456)" and the label goes. The assignee is set only when GitHub can assign that login, and removed on release only if Waggle set it. Waggle never edits an issue body it did not create.
-- **Window issue** (a Backlog.md or hive task): created on the first claim, title `[BACK-260] <title>`, label `waggle-task`, marker `<!-- waggle:task key=bl-back-260 -->`, body rendered from the task file at the default branch head under this banner: "Mirrored from `backlog/tasks/back-260 - Title.md` at `<sha>`. Edit the file. Edits made here are overwritten." If the task's `references` name exactly one issue in this repo, that issue is the window and its body is left alone. The window closes when the task reaches its last status or leaves `tasks/`.
+- **Window issue** (a Backlog.md or hive task): created on the first claim (the CLI opens it for a Backlog.md claim and the sweep for a hive claim, since today's code writes those), title `[BACK-260] <title>`, label `waggle-task`, marker `<!-- waggle:task key=bl-back-260 -->`, body rendered from the task file at the default branch head under this banner: "Mirrored from `backlog/tasks/back-260 - Title.md` at `<sha>`. Edit the file. Edits made here are overwritten." If the task's `references` name exactly one issue in this repo, that issue is the window and its body is left alone. The window closes when the task reaches its last status or leaves `tasks/`.
 - Renewals do not touch the issue unless the shown expiry would be more than 30 minutes wrong.
 - A mirror failure never fails the claim. The CLI warns and the sweep repairs it.
 
@@ -140,7 +140,7 @@ Failure modes: clock skew (grace and the read-side cap); a zombie holder after a
 
 - **Memory.** `refs/waggle/sweep-state`, written only by the sweep with an expected old value: the time of its last run and the claim oids it saw. It is a hint, not claim state. When it is missing or damaged, the sweep looks back 24 hours and skips vanished notices for that run.
 - **Scope of writes.** The sweep writes only new-kind claim refs. It never deletes, releases or takes over a `ticket-<n>` ref. For hive claims it only renders window issues and reports.
-- **Rate budget.** The sweep and the CLI together stay under 6 pushes a minute and about 100 API calls an hour.
+- **Rate budget.** The sweep and the CLI together stay under 6 pushes a minute and about 100 API calls an hour for a repo with tens of live claims.
 
 ## 8. Setting up a repo by hand (dogfood)
 
