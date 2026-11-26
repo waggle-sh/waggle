@@ -62,7 +62,7 @@ runs:
         set -euo pipefail
         case "$MODE" in
           verify)
-            "$RUNNER_TEMP/waggle-gate/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA"
+            "$RUNNER_TEMP/waggle-gate/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA" --counts "$RUNNER_TEMP/waggle-gate-counts.json"
             ;;
           gate-receipt)
             "$RUNNER_TEMP/waggle-gate/waggle" nectar gate-receipt --before "$BEFORE_SHA" --after "$AFTER_SHA" --actor "$GITHUB_ACTOR"

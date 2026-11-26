@@ -112,7 +112,7 @@ func TestGateActionText(t *testing.T) {
 		t.Error("inputs.token must appear once, in the gate step env")
 	}
 	for _, s := range []string{
-		`gate verify --base "$BASE_SHA" --head "$HEAD_SHA"`,
+		`gate verify --base "$BASE_SHA" --head "$HEAD_SHA" --counts "$RUNNER_TEMP/waggle-gate-counts.json"`,
 		`nectar gate-receipt --before "$BEFORE_SHA" --after "$AFTER_SHA" --actor "$GITHUB_ACTOR"`,
 		"MODE: ${{ inputs.mode }}",
 		"  mode:\n    description:",
@@ -149,12 +149,33 @@ func TestGateTemplateAction(t *testing.T) {
 		"          base-sha: ${{ github.event.pull_request.base.sha }}\n" +
 		"          head-sha: ${{ github.event.pull_request.head.sha }}\n" +
 		"          token: ${{ github.token }}\n"
+	upload := "\n      - name: Upload gate counts\n" +
+		"        if: always()\n" +
+		"        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2\n" +
+		"        with:\n" +
+		"          name: waggle-gate-counts\n" +
+		"          path: ${{ runner.temp }}/waggle-gate-counts.json\n" +
+		"          if-no-files-found: ignore\n" +
+		"          retention-days: 7\n"
 	jobs := strings.SplitN(gate, "\n  # Optional. Writes a gate-run", 2)
 	if len(jobs) != 2 {
 		t.Fatalf("workflow lacks the gate-receipt job:\n%s", gate)
 	}
-	if !strings.HasSuffix(jobs[0], want) {
-		t.Errorf("verify job does not end with the Action step:\n%s", jobs[0])
+	if !strings.HasSuffix(jobs[0], want+upload) {
+		t.Errorf("verify job does not end with the Action step and the counts upload:\n%s", jobs[0])
+	}
+	if !regexp.MustCompile(`uses: \S+@[0-9a-f]{40} # v\d`).MatchString(upload) || !strings.Contains(upload, "if: always()") {
+		t.Error("upload step must be pinned by a 40-hex SHA and run if: always()")
+	}
+	// The base-built binary may predate --counts, so the flag is probed first.
+	for _, s := range []string{
+		`grep -q -- '-counts'`,
+		`counts=(--counts "$RUNNER_TEMP/waggle-gate-counts.json")`,
+		`--head "$HEAD_SHA" "${counts[@]}"`,
+	} {
+		if !strings.Contains(gate, s) {
+			t.Errorf("base-source gate step lacks %q", s)
+		}
 	}
 	if strings.Contains(jobs[0], ": write") || !strings.Contains(jobs[0], "permissions:\n  contents: read\n") {
 		t.Error("the verify job and the top level must stay read only")
