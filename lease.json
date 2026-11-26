@@ -5,13 +5,14 @@
   "role": "builder",
   "gate": "full",
   "directories": [
+    "cmd/waggle/gate.go",
     "cmd/waggle/gate_encode_test.go",
     "cmd/waggle/gate_paths_test.go",
     "cmd/waggle/gate_verify.go",
     "docs/gate.md"
   ],
-  "claimed_at": "2026-11-26T06:16:40Z",
-  "expires_at": "2026-11-29T06:16:40Z",
+  "claimed_at": "2026-11-26T06:51:24Z",
+  "expires_at": "2026-11-29T06:51:24Z",
   "branches": [
     "t-122"
   ]
