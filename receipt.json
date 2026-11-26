@@ -1,21 +1,21 @@
 {
   "version": 1,
   "source": "release",
-  "ticket_id": "T-106",
+  "ticket_id": "T-105",
   "keeper_id": "paulternate19",
   "co_keepers": [],
   "role": "builder",
   "gate": "full",
-  "claimed_at": "2026-11-26T01:03:25Z",
+  "claimed_at": "2026-11-26T01:03:21Z",
   "branches": [
-    "t-106"
+    "t-105"
   ],
-  "base_sha": "6510c691df50dc4d8fccd0926dbf642ebbd56657",
-  "merged_sha": "1e3f26e9d494442a484fd088855d003e216510ad",
-  "merged_at": "2026-11-26T02:41:49Z",
-  "pr_number": 351,
+  "base_sha": "1e3f26e9d494442a484fd088855d003e216510ad",
+  "merged_sha": "9a652d3b6299af6edc07977339357183b76dec5e",
+  "merged_at": "2026-11-26T03:18:20Z",
+  "pr_number": 353,
   "pr_author": "paulternate19",
-  "head_branch": "t-106",
+  "head_branch": "t-105",
   "approvers": [
     "paulternate"
   ],
