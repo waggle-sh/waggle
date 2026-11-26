@@ -53,7 +53,9 @@ func TestGateTemplateBaseBuilt(t *testing.T) {
 	if !strings.Contains(gate[verify:receipt], "    permissions:\n      contents: read\n") {
 		t.Error("verify job lacks job-level contents: read")
 	}
-	if strings.Contains(gate, "|| true") {
+	// Only the --counts flag probe may swallow an exit (help text capture).
+	probe := `help=$("$RUNNER_TEMP/waggle" gate verify --help 2>&1 || true)`
+	if strings.Contains(strings.ReplaceAll(gate, probe, ""), "|| true") {
 		t.Error("claim fetch swallows its exit")
 	}
 	for _, s := range []string{
