@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "ticket_id": "T-124",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "docs/claims.md"
+  ],
+  "claimed_at": "2026-11-26T07:21:35Z",
+  "expires_at": "2026-11-29T07:21:35Z",
+  "branches": [
+    "records-1126b",
+    "t-124-brief"
+  ]
+}
