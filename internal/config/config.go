@@ -76,6 +76,16 @@ type Config struct {
 	Gate    GateConfig
 	Relay   RelayConfig
 	Quorum  QuorumConfig
+	// Telemetry is the top-level telemetry: section (T-105). An older build
+	// ignores the whole section.
+	Telemetry TelemetryConfig
+}
+
+// TelemetryConfig is the telemetry: section (docs/telemetry.md).
+type TelemetryConfig struct {
+	// Enabled opts the hive in to the weekly report. Default false. It never
+	// affects `waggle telemetry show`, which sends nothing.
+	Enabled bool
 }
 
 // QuorumConfig is the quorum: section (T-054, RFC-0006 4.2, 5.1).
@@ -326,6 +336,25 @@ func Parse(data []byte) (*Config, error) {
 				c.Quorum.Credits, err = intValue(p, n)
 			case "round_days":
 				c.Quorum.RoundDays, err = intValue(p, n)
+			default:
+				err = invalid(n.line, p, "unknown key")
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if t, ok := tree["telemetry"]; ok {
+		if !t.isMapping() {
+			return nil, invalid(t.line, "telemetry", "must be a mapping")
+		}
+		for _, k := range sortedKeys(t.children) {
+			n, p := t.children[k], "telemetry."+k
+			lines[p] = n.line
+			switch k {
+			case "enabled":
+				c.Telemetry.Enabled, err = boolValue(p, n)
 			default:
 				err = invalid(n.line, p, "unknown key")
 			}
