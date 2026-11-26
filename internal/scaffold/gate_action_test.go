@@ -111,6 +111,9 @@ func TestGateActionText(t *testing.T) {
 	if strings.Count(action, "inputs.token") != 1 || !strings.Contains(gate, "GITHUB_TOKEN: ${{ inputs.token }}") {
 		t.Error("inputs.token must appear once, in the gate step env")
 	}
+	if n := strings.Count(action, "--counts"); n != 1 {
+		t.Errorf("action has --counts %d times, want once (verify mode only)", n)
+	}
 	for _, s := range []string{
 		`gate verify --base "$BASE_SHA" --head "$HEAD_SHA" --counts "$RUNNER_TEMP/waggle-gate-counts.json"`,
 		`nectar gate-receipt --before "$BEFORE_SHA" --after "$AFTER_SHA" --actor "$GITHUB_ACTOR"`,
@@ -156,7 +159,8 @@ func TestGateTemplateAction(t *testing.T) {
 		"          name: waggle-gate-counts\n" +
 		"          path: ${{ runner.temp }}/waggle-gate-counts.json\n" +
 		"          if-no-files-found: ignore\n" +
-		"          retention-days: 7\n"
+		"          retention-days: 7\n" +
+		"          overwrite: true\n"
 	jobs := strings.SplitN(gate, "\n  # Optional. Writes a gate-run", 2)
 	if len(jobs) != 2 {
 		t.Fatalf("workflow lacks the gate-receipt job:\n%s", gate)
@@ -169,7 +173,8 @@ func TestGateTemplateAction(t *testing.T) {
 	}
 	// The base-built binary may predate --counts, so the flag is probed first.
 	for _, s := range []string{
-		`grep -q -- '-counts'`,
+		`help=$("$RUNNER_TEMP/waggle" gate verify --help 2>&1 || true)`,
+		`*-counts*) counts=`,
 		`counts=(--counts "$RUNNER_TEMP/waggle-gate-counts.json")`,
 		`--head "$HEAD_SHA" "${counts[@]}"`,
 	} {

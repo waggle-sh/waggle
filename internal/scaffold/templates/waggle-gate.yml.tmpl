@@ -65,9 +65,10 @@ jobs:
           (cd "$RUNNER_TEMP/gate-src" && go build -o "$RUNNER_TEMP/waggle" ./cmd/waggle)
           # A base older than T-107 has no --counts flag and would exit 2 on it.
           counts=()
-          if "$RUNNER_TEMP/waggle" gate verify --help 2>&1 | grep -q -- '-counts'; then
-            counts=(--counts "$RUNNER_TEMP/waggle-gate-counts.json")
-          fi
+          help=$("$RUNNER_TEMP/waggle" gate verify --help 2>&1 || true)
+          case "$help" in
+            *-counts*) counts=(--counts "$RUNNER_TEMP/waggle-gate-counts.json") ;;
+          esac
           "$RUNNER_TEMP/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA" "${counts[@]}"
 
       - name: Waggle gate (Action)
@@ -86,6 +87,7 @@ jobs:
           path: ${{ runner.temp }}/waggle-gate-counts.json
           if-no-files-found: ignore
           retention-days: 7
+          overwrite: true
 
   # Optional. Writes a gate-run release record for each task that lands on the
   # default branch with a live claim and no record. It needs push rights to

@@ -225,12 +225,12 @@ func runGateRange(check string, args []string, stdout, stderr io.Writer, getenv 
 		decFailed = decisionsFailed(dcode, open, dout.String())
 		code = max(code, dcode)
 	}
-	if *counts != "" {
+	// On a gate error no file is written: without the artifact the counts are
+	// omitted, never guessed. A write failure only warns; telemetry must never
+	// fail the required gate.
+	if *counts != "" && code != gateError {
 		if err := writeGateCounts(*counts, countGate(rep.findings, open, decFailed)); err != nil {
-			fmt.Fprintf(stderr, "gate: error: cannot write counts file: %s\n", annotData.Replace(err.Error()))
-			if code == gatePass {
-				code = gateError
-			}
+			fmt.Fprintf(stderr, "gate: warning: cannot write counts file: %s\n", annotData.Replace(err.Error()))
 		}
 	}
 	return code

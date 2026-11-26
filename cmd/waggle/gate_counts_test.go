@@ -99,6 +99,7 @@ func TestCountsNoFlagNoFile(t *testing.T) {
 	r := protRepo(t, guardCfg)
 	twoLease(r)
 	dir := t.TempDir()
+	// The module is go1.23, so t.Chdir (go1.24) is not available.
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -106,7 +107,11 @@ func TestCountsNoFlagNoFile(t *testing.T) {
 	if err := os.Chdir(dir); err != nil {
 		t.Fatal(err)
 	}
-	defer os.Chdir(wd)
+	t.Cleanup(func() {
+		if err := os.Chdir(wd); err != nil {
+			t.Error(err)
+		}
+	})
 	r.runWith(nil, "verify")
 	if ents, _ := os.ReadDir(dir); len(ents) != 0 {
 		t.Errorf("verify without --counts wrote %d files", len(ents))
@@ -123,16 +128,29 @@ func TestCountsNoFlagNoFile(t *testing.T) {
 }
 
 func TestCountsOutputUnchanged(t *testing.T) {
-	r := protRepo(t, guardCfg)
-	twoLease(r)
-	run := func(extra ...string) (int, string, string) {
-		args := append([]string{"verify", "--base", "main", "--head", "branch", "--repo", r.dir}, extra...)
-		return gate(nil, args...)
-	}
-	c1, o1, e1 := run()
-	c2, o2, e2 := run("--counts", filepath.Join(t.TempDir(), "c.json"))
-	if c1 != 1 || c1 != c2 || o1 != o2 || e1 != e2 {
-		t.Errorf("output differs: %d %q %q vs %d %q %q", c1, o1, e1, c2, o2, e2)
+	for _, cfg := range []string{guardCfg, openCfg} {
+		for _, gha := range []bool{false, true} {
+			r := protRepo(t, cfg)
+			twoLease(r)
+			getenv := func(string) string { return "" }
+			if gha {
+				getenv = func(k string) string {
+					if k == "GITHUB_ACTIONS" {
+						return "true"
+					}
+					return ""
+				}
+			}
+			run := func(extra ...string) (int, string, string) {
+				args := append([]string{"verify", "--base", "main", "--head", "branch", "--repo", r.dir}, extra...)
+				return gate(getenv, args...)
+			}
+			c1, o1, e1 := run()
+			c2, o2, e2 := run("--counts", filepath.Join(t.TempDir(), "c.json"))
+			if c1 != c2 || o1 != o2 || e1 != e2 {
+				t.Errorf("cfg %q gha %v: output differs: %d %q %q vs %d %q %q", cfg, gha, c1, o1, e1, c2, o2, e2)
+			}
+		}
 	}
 	// A passing run prints its three ok lines, with the flag too.
 	p := protRepo(t, guardCfg)
@@ -150,14 +168,34 @@ func TestCountsWriteFailure(t *testing.T) {
 	r.write("docs/a.md", []byte("a\n"))
 	r.commit("T-031: add")
 	code, _, errs := gate(nil, "verify", "--base", "main", "--head", "branch", "--repo", r.dir, "--counts", bad)
-	if code != gateError || strings.Count(errs, "cannot write counts file") != 1 {
+	if code != gatePass || strings.Count(errs, "gate: warning: cannot write counts file: ") != 1 {
 		t.Errorf("pass: exit %d stderr %q", code, errs)
 	}
 	r2 := protRepo(t, guardCfg)
 	twoLease(r2)
 	code, _, errs = gate(nil, "verify", "--base", "main", "--head", "branch", "--repo", r2.dir, "--counts", bad)
-	if code != gateFail || strings.Count(errs, "cannot write counts file") != 1 || !strings.Contains(errs, "leases: FAIL") {
+	if code != gateFail || strings.Count(errs, "gate: warning: cannot write counts file: ") != 1 || !strings.Contains(errs, "leases: FAIL") {
 		t.Errorf("fail: exit %d stderr %q", code, errs)
+	}
+}
+
+func TestCountsRenameFailureLeavesNoTemp(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "c.json")
+	if err := os.MkdirAll(filepath.Join(path, "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeGateCounts(path, gateCounts{Schema: gateCountsSchema}); err == nil {
+		t.Fatal("rename onto a non-empty directory succeeded")
+	}
+	ents, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range ents {
+		if strings.HasPrefix(e.Name(), ".waggle-gate-counts-") {
+			t.Errorf("temp file left behind: %s", e.Name())
+		}
 	}
 }
 
@@ -178,8 +216,8 @@ func TestCountsGateError(t *testing.T) {
 	r := protRepo(t, guardCfg)
 	path := filepath.Join(t.TempDir(), "c.json")
 	code, _, _ := gate(nil, "verify", "--base", "main", "--head", "nosuchref", "--repo", r.dir, "--counts", path)
-	b, err := os.ReadFile(path)
-	if code != gateError || err != nil || string(b) != countsJSON(zeros, zeros) {
-		t.Errorf("exit %d err %v file %q", code, err, b)
+	_, err := os.Stat(path)
+	if code != gateError || !os.IsNotExist(err) {
+		t.Errorf("exit %d stat err %v: want exit 3 and no counts file", code, err)
 	}
 }

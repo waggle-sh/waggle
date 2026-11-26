@@ -126,7 +126,7 @@ The `Waggle-Ticket`, `Waggle-Risk-Tier` and `Waggle-Verdict` trailers in the las
 
 Exit 0 pass, 1 check failed, 2 usage, 3 git or I/O error. No override flag exists; an override is an admin merge that bypasses the required check (`cmd/waggle/gate.go:22-28, 51-56`). Under GitHub Actions each finding is an `::error::` or `::warning::` annotation, otherwise a `<check>: FAIL: <message>` or `<check>: warning: <message>` line; a passing check prints `<check>: ok` (`cmd/waggle/gate_verify.go:65-94`). `verify` runs leases, tiers and decisions and exits with the worst code (`cmd/waggle/gate_verify.go:172-181`).
 
-`waggle gate verify --counts <path>` also writes a small JSON file at `path`: `{"failed":{"binding":0,"decisions":N,"leases":N,"tiers":N},"schema":1,"would_fail":{...}}`, keys sorted. The numbers count non-warning findings per check (`decisions` is 0 or 1; `binding` is always 0, as binding failures are counted under `leases`). Under `gate.mode: open` the counts are in `would_fail` and `failed` is all zero; under `guard` and `hold` it is the reverse. The file holds no path, message, SHA, login, branch or ticket name. Without the flag nothing is written, and the exit code and printed lines do not change. A write failure prints one line to stderr and turns a pass into exit 3. The Action passes `--counts` in `verify` mode, and the template uploads the file as the `waggle-gate-counts` artifact, kept 7 days (`cmd/waggle/gate_counts.go`).
+`waggle gate verify --counts <path>` also writes a small JSON file at `path`: `{"failed":{"binding":0,"decisions":N,"leases":N,"tiers":N},"schema":1,"would_fail":{...}}`, keys sorted. The numbers count non-warning findings per check (`decisions` is 0 or 1; `binding` is always 0, as binding failures are counted under `leases`). Under `gate.mode: open` the counts are in `would_fail` and `failed` is all zero; under `guard` and `hold` it is the reverse. The file holds no path, message, SHA, login, branch or ticket name. Without the flag nothing is written, and the exit code and printed lines do not change. On a gate error (exit 3) no file is written, so the counts are omitted, never guessed. A write failure prints one `gate: warning: cannot write counts file: <reason>` line to stderr and leaves the exit code unchanged. The Action passes `--counts` in `verify` mode, and the template uploads the file as the `waggle-gate-counts` artifact, kept 7 days (`cmd/waggle/gate_counts.go`).
 
 ## 10. Limits and known bypasses
 
@@ -241,9 +241,10 @@ jobs:
           (cd "$RUNNER_TEMP/gate-src" && go build -o "$RUNNER_TEMP/waggle" ./cmd/waggle)
           # A base older than T-107 has no --counts flag and would exit 2 on it.
           counts=()
-          if "$RUNNER_TEMP/waggle" gate verify --help 2>&1 | grep -q -- '-counts'; then
-            counts=(--counts "$RUNNER_TEMP/waggle-gate-counts.json")
-          fi
+          help=$("$RUNNER_TEMP/waggle" gate verify --help 2>&1 || true)
+          case "$help" in
+            *-counts*) counts=(--counts "$RUNNER_TEMP/waggle-gate-counts.json") ;;
+          esac
           "$RUNNER_TEMP/waggle" gate verify --base "$BASE_SHA" --head "$HEAD_SHA" "${counts[@]}"
 
       - name: Waggle gate (Action)
@@ -262,6 +263,7 @@ jobs:
           path: ${{ runner.temp }}/waggle-gate-counts.json
           if-no-files-found: ignore
           retention-days: 7
+          overwrite: true
 
   # Optional. Writes a gate-run release record for each task that lands on the
   # default branch with a live claim and no record. It needs push rights to
