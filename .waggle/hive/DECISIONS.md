@@ -7964,7 +7964,7 @@
 
 **Rationale:** Claims become the front door. A claims-first refocus brief follows as its own hive PR for Head Keeper approval, with a VISION.md amendment so adoption defaults and this sequencing are not counted as cuts. Nectar and Quorum stay in the vision, after users.
 
-## D-411: Item 55: open core; claims on GitHub and Linear from day one; existing code kept and frozen; our queens first
+## D-411: Item 55: open core; existing code kept and frozen; our queens first
 
 - **Date:** 2026-11-26
 - **Kind:** policy
@@ -7983,3 +7983,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 by 11:13 PM Pacific Time (relayed in writing by the orchestrator, Orca item 55, events e1748 and e1752), in the words "Yes, open core", "Where should claims live first? → GitHub and Linear from day one", "What happens to the existing Waggle code? → Keep it, frozen; claims are the front door" and "Who uses claims-first first? → Our queens for 2 weeks, then outside".
 
 **Rationale:** In-flight approved builds finish (T-123, T-116 phase 1). No new tickets start in Nectar, Quorum, relay, telemetry or further collision hardening: T-069, T-070, T-108 to T-112 and T-121 are held with the reason frozen: claims-first refocus, item 55. The D-235 clock restarts on three outside repos using claims. The hosted App is a later item, not built now.
+
+## D-412: Item 55: GitHub first, Linear after dogfood
+
+- **Date:** 2026-11-26
+- **Kind:** scope
+- **Tickets:** T-124
+- **Supersedes:** D-411
+
+**Question:** Where do claims live first, now that the claims-first brief is being written?
+
+**Options considered:**
+1. GitHub first: Level 1 ships the GitHub adapter only, the claim format stays tracker-neutral, and the Linear adapter is the first ticket after the 2-week dogfood.
+2. GitHub and Linear from day one (D-411).
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 by 11:25 PM Pacific Time (relayed in writing by the orchestrator, Orca item 55, event e1771), in the words "GitHub first, Linear after dogfood". It replaces the claim-location part of D-411 (event e1752).
+
+**Rationale:** The rest of D-411 stands: open core, existing code kept and frozen, our queens first for 2 weeks.
