@@ -7863,3 +7863,23 @@
 **Keeper choice:** Option 2, approved by the Head Keeper on 2026-11-25 at 5:30 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1384), in the words "Yes, make them optional".
 
 **Rationale:** The schema and docs change is its own protected-path PR. install_id stays required in the schema, because every sent payload has one; show omits it until send creates it.
+
+## D-406: T-106: stage-line-only task file edits pass without the Head Keeper
+
+- **Date:** 2026-11-26
+- **Kind:** policy
+- **Tickets:** T-106
+- **Supersedes:** none
+
+**Question:** Who may edit the machine-readable stage line in .waggle/hive/tasks/*.md (T-106, RFC open question 10)?
+
+**Options considered:**
+1. A gate carve-out: a commit whose only change to an existing task file is one stage line with a value of backlog, ready, in-progress or done passes without Head Keeper approval (a merge rule change, Tier 3, two guards).
+2. Stage edits stay ordinary hive edits that need the Head Keeper's waggle-approve.
+3. Keep the stage outside the hive.
+
+**Hive recommendation:** Option 1.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 4:38 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1349), in the words "Yes, carve them out". The final diff was approved for merge in event e1410 ("Yes, post it").
+
+**Rationale:** Built in #351. The commit still needs a bound ticket with a claim naming the branch. A task file covered by gate.protected_paths never qualifies (found by the Opus guard and fixed before merge). Every other byte of the file must stay unchanged, and the blob must be under 256 KiB.
