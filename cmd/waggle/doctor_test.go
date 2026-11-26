@@ -41,6 +41,9 @@ func doctorRepo(t *testing.T, forgeYAML string) string {
 	if err := os.WriteFile(cfg, []byte("version: 1\nforge:\n"+forgeYAML), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	if strings.Contains(forgeYAML, "remote:") && !strings.Contains(forgeYAML, "remote: \"\"") {
+		git(t, dir, "remote", "add", "origin", "https://example.invalid/o/r.git")
+	}
 	return dir
 }
 
@@ -222,5 +225,70 @@ func TestDoctorGoldenNativeQueue(t *testing.T) {
 	code, out, _ := runDoc("--repo", dir, "--no-write")
 	if code != 0 || out != queueGolden || strings.Contains(out, "found missing") {
 		t.Errorf("exit %d, got:\n%s", code, out)
+	}
+}
+
+// missingRemoteWant is the exact line for cmd when forge.remote names a remote
+// the repo does not have.
+func missingRemoteWant(cmd, name string) string {
+	return "waggle " + cmd + ": forge.remote is " + name + ", but this repo has no remote named " + name +
+		"; add it with git remote add " + name + " <url> or set forge.remote: \"\" for local-only use\n"
+}
+
+// TestNoRemote runs claim, release and doctor in a repo whose forge.remote
+// names a remote that does not exist (exit 3, one line, no raw git text), has
+// an empty forge.remote (local-only, no new message) or names a real remote
+// (no new message).
+func TestNoRemote(t *testing.T) {
+	cmds := []struct {
+		name string
+		args []string
+	}{
+		{"claim", []string{"claim", "T-91", "--dirs", "cmd", "--gate", "full", "--owner", "me"}},
+		{"release", []string{"release", "T-91", "--owner", "me"}},
+		{"doctor", []string{"doctor", "--no-write"}},
+	}
+	cases := []struct {
+		name    string
+		cfg     string
+		missing bool
+	}{
+		// doctorRepo adds origin whenever the YAML names a remote.
+		{"missing remote, other one exists", "  provider: github\n  remote: upstream\n", true},
+		{"empty remote", "  provider: github\n  remote: \"\"\n", false},
+		{"existing remote", "  provider: github\n  remote: origin\n", false},
+	}
+	for _, c := range cases {
+		for _, cmd := range cmds {
+			t.Run(c.name+"/"+cmd.name, func(t *testing.T) {
+				dir := doctorRepo(t, c.cfg)
+				seamForge(t, &fakeForge{report: report("up_to_date", okGate, okUpTo)}, okClaims)
+				var out, errb bytes.Buffer
+				args := append(append([]string{}, cmd.args...), "--repo", dir)
+				code := runMain(args, strings.NewReader(""), &out, &errb, func(string) string { return "" })
+				name := "upstream"
+				want := missingRemoteWant(cmd.name, name)
+				if c.missing {
+					if code != 3 || errb.String() != want || out.Len() != 0 {
+						t.Fatalf("code %d stdout %q stderr %q, want 3 and %q", code, out.String(), errb.String(), want)
+					}
+					if strings.Contains(errb.String(), "fatal:") {
+						t.Fatalf("raw git text in %q", errb.String())
+					}
+					return
+				}
+				if strings.Contains(errb.String(), "has no remote named") {
+					t.Fatalf("unexpected missing remote message %q", errb.String())
+				}
+				if cmd.name == "doctor" {
+					if code != 0 {
+						t.Fatalf("doctor exit %d, stderr %q", code, errb.String())
+					}
+					if !c.missing && c.name == "empty remote" && !strings.Contains(out.String(), "Local-only repo") {
+						t.Fatalf("doctor stdout %q, want the local-only line", out.String())
+					}
+				}
+			})
+		}
 	}
 }
