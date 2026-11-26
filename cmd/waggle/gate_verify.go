@@ -29,8 +29,8 @@ const (
 // that reaches output goes through gateReport.print, which applies them, so
 // attacker-chosen text can never start a new line or a new command.
 var (
-	annotData = strings.NewReplacer("%", "%25", "\r", "%0D", "\n", "%0A")
-	annotProp = strings.NewReplacer("%", "%25", "\r", "%0D", "\n", "%0A", ":", "%3A", ",", "%2C")
+	annotData = strings.NewReplacer("%", "%25", "\r", "%0D", "\n", "%0A", "\t", "%09", "\\", "%5C")
+	annotProp = strings.NewReplacer("%", "%25", "\r", "%0D", "\n", "%0A", "\t", "%09", "\\", "%5C", ":", "%3A", ",", "%2C")
 )
 
 type gateFinding struct {
