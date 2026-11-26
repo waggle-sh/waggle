@@ -7803,3 +7803,23 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 at 1:53 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e1296), in the words "Yes, protect them".
 
 **Rationale:** The config change is its own PR. It touches .waggle/control, so it needs the Head Keeper's SSH-signed head commit.
+
+## D-403: T-091: fail only when forge.remote names a missing remote
+
+- **Date:** 2026-11-26
+- **Kind:** technical
+- **Tickets:** T-091
+- **Supersedes:** none
+
+**Question:** T-091's stub wanted claim, release and doctor to exit 3 with 'this repo has no remote named origin' when origin is missing. An empty forge.remote is the deliberate local-only mode (dispatch.ResolveBase skips the fetch, and doctor says Local-only repo and exits 0, as TestDoctorLocalOnly checks). How should a missing remote behave?
+
+**Options considered:**
+1. Fail only when forge.remote names a remote that does not exist, with one fix-it line and exit 3; an empty forge.remote keeps local-only mode.
+2. Build the stub as written, breaking local-only mode and TestDoctorLocalOnly.
+3. Drop the no-remote half and mark T-091 done with the not-a-repo half (#341).
+
+**Hive recommendation:** Option 1: it keeps the stub's goal, a clear message instead of a raw git error, without breaking a supported mode.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-25 (relayed in writing by the orchestrator, Orca item 11, in the same relay as event e1331, 3:30 PM Pacific Time), in the words "Yes, that".
+
+**Rationale:** Built in #348: claim, release and doctor print 'waggle <cmd>: forge.remote is <name>, but this repo has no remote named <name>; add it with git remote add <name> <url> or set forge.remote: "" for local-only use' and exit 3. With #341 (the not-a-git-repo half), T-091 is done.

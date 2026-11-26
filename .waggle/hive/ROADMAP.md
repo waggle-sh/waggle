@@ -52,7 +52,7 @@ T-087 · Top-level help and version flags, usage on the right stream · S · mer
 T-088 · waggle init testable and strict about its arguments · S · merged (#332) · v0.1 · product
 T-089 · Docs drift test: usage lines and command list · S · merged (#339) · v0.1 · product
 T-090 · Claim and release error messages name the flag and the fix · S · merged (#330) · v0.1 · product
-T-091 · Clear message when run outside a git repo or without a remote · S · in part (#341, no-remote half held) · v0.1 · product
+T-091 · Clear message when run outside a git repo or without a remote · S · merged (#341, #348) · v0.1 · product
 T-092 · Gate tests: submodule end to end and rename out of a Tier 3 path · S · merged (#325) · v0.1 · product
 T-093 · Gate tests: awkward path names and claim directory spelling · S · merged (#328) · v0.1 · product
 T-094 · Test the install script offline · S · merged (#326) · v0.1 · product
