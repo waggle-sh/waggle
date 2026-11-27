@@ -7,11 +7,10 @@
   "directories": [
     "CODE_OF_CONDUCT.md"
   ],
-  "claimed_at": "2026-11-27T16:27:21Z",
-  "expires_at": "2026-11-30T16:27:21Z",
+  "claimed_at": "2026-11-27T20:56:56Z",
+  "expires_at": "2026-11-30T20:56:56Z",
   "branches": [
-    "claims-module-entry",
-    "records-t136-merge",
-    "pin-past-t136"
+    "pin-past-t136",
+    "records-dogfood-repo"
   ]
 }
