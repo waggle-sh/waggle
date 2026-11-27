@@ -8118,3 +8118,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-26, read at 2:32 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e2032), in the words "Yes, merge it". The waggle-approve line was posted at ced8690da8199596202372fc29ed9f22df7a43a8 and carried over three main-only catch-ups (48b9a42, 668f847, 79f01b6) under the standing rule (item 41, e1135). #363 merged through the gate with the head pinned, no bypass, as 4624a55. The T-116 claim was then released, which let T-136 be claimed.
 
 **Rationale:** T-116 carries the D-409 approved brief; phase t-116b still waits on T-114 and T-115.
+
+## D-419: T-136 merged at 8f8f67f
+
+- **Date:** 2026-11-27
+- **Kind:** scope
+- **Tickets:** T-136
+- **Supersedes:** none
+
+**Question:** Merge T-136 (#368, the frozen comb skips claim refs it does not own and `waggle status` lists them) at head 8f8f67f, before #365 is signed?
+
+**Options considered:**
+1. Yes, merge #368.
+2. Hold.
+
+**Hive recommendation:** Option 1. Tier 3 by content (frozen claim code, D-411): two guards on different models and a confirming guard. Sonnet approved at 82bb592; Fable asked for a test-only fix (a fixture holding `ticket-5` and `Ticket-5`, which a case-insensitive filesystem folds into one ref), fixed in e76efe2; Opus approved at e76efe2. 8f8f67f adds only main-only catch-ups.
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-27, read at 8:24 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e2245), in the words "Merge waggle #368 (T-136) after #365? → Yes, merge it". On signing #365 the same answer said "Later". The waggle-approve line and an approving review were posted at 8f8f67fc79600b82914c124ad97ee03c10bf2cdf, and #368 merged through the gate with the head pinned, no bypass, as 9bc2434. The T-136 claim was then released as merged.
+
+**Rationale:** T-136 is step 1 of the T-124 build order and the compatibility fix D-411 allows. The hive gate pin must move past it before any new-kind claim is written to this repo (T-124 section 6); that move is a separate Head Keeper pin card.
