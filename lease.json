@@ -7,11 +7,11 @@
   "directories": [
     "CODE_OF_CONDUCT.md"
   ],
-  "claimed_at": "2026-11-26T22:47:50Z",
-  "expires_at": "2026-11-29T22:47:50Z",
+  "claimed_at": "2026-11-27T16:27:21Z",
+  "expires_at": "2026-11-30T16:27:21Z",
   "branches": [
-    "records-1126b",
-    "records-t125-t136",
-    "claims-module-entry"
+    "claims-module-entry",
+    "records-t136-merge",
+    "pin-past-t136"
   ]
 }
