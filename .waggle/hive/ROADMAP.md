@@ -14,8 +14,8 @@ Held (frozen: claims-first refocus, item 55, D-411): T-069, T-070, T-108 to T-11
 In build order:
 
 T-124 · Claims-first refocus brief, VISION amendment, this section · S · approved (D-417), merged #362 · claims first · records
-T-125 · Claim spec and the Level 0 AGENTS.md section · S · claimed, building (D-417) · dogfood · docs
-T-136 · Frozen comb skips claim refs it does not own · S · claimed, building (D-417) · dogfood · product
+T-125 · Claim spec and the Level 0 AGENTS.md section · S · merged (#366) · dogfood · docs
+T-136 · Frozen comb skips claim refs it does not own · S · merged (#368, D-419); pin move pending · dogfood · product
 T-127 · Pure claims core: keys, record, expiry, overlap, caps · M · ready (D-417) · dogfood · product
 T-145 · Claim ref store: create, takeover, batch renew, release with log · M · ready (D-417) · dogfood · product
 T-142 · Task sources and order: Backlog.md, hive tasks, GitHub issues · M · ready (D-417) · dogfood · product
