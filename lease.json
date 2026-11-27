@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "ticket_id": "T-126",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "CONTRIBUTING.md",
+    "README.md",
+    "docs/glossary.md"
+  ],
+  "claimed_at": "2026-11-27T16:38:52Z",
+  "expires_at": "2026-11-30T16:38:52Z",
+  "branches": [
+    "t-126"
+  ]
+}
