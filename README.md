@@ -1,55 +1,45 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Waggle
 
-Waggle is a system for many people, each running their own agent team, to work on one repository without colliding. Coding speed is rarely the hard part any more. Review time, merge coordination and keeping agents inside the paths they were given are. Waggle handles those, and it speaks in bees on purpose.
+When several people, each running their own agent team, work on one repository, they collide. Two leads pick up the same task, or two tasks edit the same files, and the clash shows up late, as a duplicate pull request or a merge conflict. Nothing on the task says that someone already holds it.
 
-The **hive** is the shared repository and the rules every agent works under. It has people and agents in clear roles:
+Backlog.md says what the work is; Waggle says who holds it now, until when, and what it touches.
 
-- **Keepers** are the humans. Each keeper owns a plan and the agents that carry it out. The **Head Keeper** is the keeper who owns the product direction and can approve changes to the hive's own steering files.
-- **Queens** are the coordinating agents a keeper talks to. A queen agrees the task with the keeper, writes the **claim** (the record of who is working on what, and which directories the task may change) and starts the workers.
-- **Foragers** reproduce bugs, write the failing test and map which directories a task needs.
-- **Builders** implement the task inside their claim.
-- **Guards** review the change, ideally on a different model than the builder used, and end with a pass or a must-fix.
-- **Scouts** plan ahead, write the task brief and keep the roadmap and specs.
+## Claim a task today: the Level 0 convention
 
-Every task has one claim at a time, written before the work starts. Two claims that overlap are refused when the second is written, and every commit is checked against its own task's claim before it can merge. That holds for one keeper with a few agents, for a company with several teams on one private repo, and for an open source project whose outside contributors bring their own agents. Each keeper runs their own agents on their own plan, so nobody donates tokens or shares agent credentials.
+A **claim** says who holds a **task**, until when, and which **paths** it touches. On a GitHub issue it shows as an assignee, a `claimed` label and one comment that names the holder, the paths and the expiry. The convention in [examples/agents-md-claims.md](examples/agents-md-claims.md) is a section you copy into your own `AGENTS.md`. It works today and needs only `gh`:
 
-On top of those records sits **honey**, a contributor's standing in the project, built from real merged work. It has two halves. **Nectar** is reputation earned from work that survives 30 days on `main` without being reverted, credited through the claim. **Quorum** is how the project picks what to build next, by quadratic voting where each person's weight is the square root of their Nectar. The **Master Keeper** is the name for the owner's veto over a Quorum result. Today the Head Keeper holds it, through `waggle quorum veto`.
+1. Read the issue first. Skip it if it shows a live claim or an assignee.
+2. To claim, assign yourself, add the `claimed` label and post one claim comment.
+3. Keep that comment current while you work, and renew the expiry before it passes.
+4. When the work is merged, abandoned or handed off, remove the assignee, the label and the comment.
 
-The **gate** is a required GitHub check named `verify-leases-and-tiers`, and it is the first piece of Waggle you can use today. On a repo where it is a required check and PRs are required, it fails a PR whose commits change paths outside the claim of the task each commit names, or whose task's claim does not name the PR's branch. It works with any agent that pushes a branch and opens a PR. The gate's records, who held which task and what merged, are what Nectar is measured from.
+Claims are cooperative. A claim stops honest agents and people from colliding. It is not a lock against anyone who can push. Anyone with push access can overwrite or delete any claim with `--force`, and holder names are self-asserted ([trust model](docs/claims.md#7-trust-model)).
 
-## Status
-
-"Built" means in the latest release, v0.1.1. "On main" means merged to `main` but not in a release yet: the install script does not get it, so build from source to use it. "Roadmap" means designed on paper, with a plan and no code. "Coming soon" means the next steps on a part that already works in a smaller form. Dates are not promised. Waggle is pre-1.0.
+## What ships today, and what is in progress
 
 | Piece | Status |
 | --- | --- |
-| Claims and path leases, the merge gate, approvers and the Head Keeper, the decisions log (`waggle decide`), role templates | Built |
-| `waggle dispatch` (claims a task, runs a worker in its own worktree, checks its changes against the claim) | Built, runs Claude Code today |
-| Release records (`waggle release` records who held each task, and `--co` shares the credit) and `waggle nectar backfill` | Built |
-| Guidance for many keepers on one repo | Built: the [multi-keeper guide](docs/multi-keeper.md) covers identity, contention, stale claims and review between keepers |
-| `waggle force-release` (the Head Keeper clears a stuck or malformed claim, with an audit record) | On main |
-| Signed Head Keeper approval (an SSH signature on the PR head commit passes Tier 3 paths) | On main |
-| Claim overlap compared with letter case folded, and a `waggle status` warning for older claims that differ only in case | On main |
-| Nectar scoring: [`waggle nectar`](docs/nectar.md), `nectar explain`, and receipts written after a merge by `nectar gate-receipt` | On main |
-| Quorum: [`waggle vote` and `waggle quorum`](docs/quorum.md) | On main |
-| Master Keeper veto | On main, as `waggle quorum veto`, held by the Head Keeper |
-| Contributors without push access claiming for themselves | Coming soon. Today a maintainer writes the claim for a fork |
-| Queens opening issues from keeper conversations | Roadmap. Today a queen can use the GitHub tools she already has |
+| The Level 0 convention (`gh` only, above) | Ships today |
+| The gate: a required GitHub check that fails a PR whose commits change paths outside the claim of the task they name | Ships today; see the [quick start](#quick-start) |
+| `waggle claim`, `waggle release` and `waggle force-release` for task ids such as `T-001` | Ships today; see [Writing a claim](#writing-a-claim) |
+| The claims layer: claims for Backlog.md tasks and GitHub issues, with `scope`, `renew`, `release`, `claims`, `next` and `sweep`, expiry and a path overlap check | In progress (T-127 onward). The spec is [docs/claims.md](docs/claims.md). Its new commands do not exist yet |
 
-The [gate spec](docs/gate.md) describes what the gate code does today. The recipes have not been run end to end with each tool.
+The gate is a required check named `verify-leases-and-tiers`. It works with any agent that pushes a branch and opens a PR. Each person runs their own agents on their own plan, so nobody shares agent credentials.
 
 ## Documentation
 
-Start at [getwaggle.dev](https://getwaggle.dev) and its [docs](https://getwaggle.dev/docs). The [vision page](https://getwaggle.dev/docs/hive/) lays out the whole hive. In this repo:
+Start at [getwaggle.dev](https://getwaggle.dev) and its [docs](https://getwaggle.dev/docs). In this repo:
 
+- [Claims spec](docs/claims.md): the claims layer in progress
+- [Glossary](docs/glossary.md): the project's own words, such as hive, queen and Nectar
 - [Gate spec](docs/gate.md)
 - [Several keepers on one repo](docs/multi-keeper.md)
 - [Nectar: the reputation score](docs/nectar.md) and [Quorum: priority rounds](docs/quorum.md) (on main, not in a release yet)
 - [Recipes](docs/recipes/README.md)
 - [Troubleshooting: the failure lines the gate, doctor and claim print](docs/troubleshooting.md)
 - [Gate walkthrough: a runnable pass and fail, no GitHub needed](examples/gate-walkthrough/README.md)
-- [Contributing: product layer, repo records and the glossary](CONTRIBUTING.md)
+- [Contributing: product layer and repo records](CONTRIBUTING.md)
 
 ## Quick start
 
@@ -74,6 +64,27 @@ waggle claim T-001 --dirs src --gate light --branch t-001 --owner <your-github-l
 ```
 
 Now a PR from branch `t-001` whose commits start with `T-001: ` passes while they change only `src/`, and fails once one touches anything else. The install commit changes `.github/workflows/` and `.waggle/`, which the gate always protects, so if you push it as a PR it fails its own gate and needs an admin merge. [Install](#install) has the details, and [Writing a claim](#writing-a-claim) covers the flags.
+
+## Status
+
+"Built" means in the latest release, v0.1.1. "On main" means merged to `main` but not in a release yet: the install script does not get it, so build from source to use it. "Roadmap" means designed on paper, with a plan and no code. "Coming soon" means the next steps on a part that already works in a smaller form. Dates are not promised. Waggle is pre-1.0.
+
+| Piece | Status |
+| --- | --- |
+| Claims and path leases, the merge gate, approvers and the Head Keeper, the decisions log (`waggle decide`), role templates | Built |
+| `waggle dispatch` (claims a task, runs a worker in its own worktree, checks its changes against the claim) | Built, runs Claude Code today |
+| Release records (`waggle release` records who held each task, and `--co` shares the credit) and `waggle nectar backfill` | Built |
+| Guidance for many keepers on one repo | Built: the [multi-keeper guide](docs/multi-keeper.md) covers identity, contention, stale claims and review between keepers |
+| `waggle force-release` (the Head Keeper clears a stuck or malformed claim, with an audit record) | On main |
+| Signed Head Keeper approval (an SSH signature on the PR head commit passes Tier 3 paths) | On main |
+| Claim overlap compared with letter case folded, and a `waggle status` warning for older claims that differ only in case | On main |
+| Nectar scoring: [`waggle nectar`](docs/nectar.md), `nectar explain`, and receipts written after a merge by `nectar gate-receipt` | On main |
+| Quorum: [`waggle vote` and `waggle quorum`](docs/quorum.md) | On main |
+| Master Keeper veto | On main, as `waggle quorum veto`, held by the Head Keeper |
+| Contributors without push access claiming for themselves | Coming soon. Today a maintainer writes the claim for a fork |
+| Queens opening issues from keeper conversations | Roadmap. Today a queen can use the GitHub tools she already has |
+
+The [gate spec](docs/gate.md) describes what the gate code does today. The recipes have not been run end to end with each tool.
 
 ## What the gate checks
 
