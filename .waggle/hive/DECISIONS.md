@@ -8137,3 +8137,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-27, read at 8:24 AM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e2245), in the words "Merge waggle #368 (T-136) after #365? → Yes, merge it". On signing #365 the same answer said "Later". The waggle-approve line and an approving review were posted at 8f8f67fc79600b82914c124ad97ee03c10bf2cdf, and #368 merged through the gate with the head pinned, no bypass, as 9bc2434. The T-136 claim was then released as merged.
 
 **Rationale:** T-136 is step 1 of the T-124 build order and the compatibility fix D-411 allows. The hive gate pin must move past it before any new-kind claim is written to this repo (T-124 section 6); that move is a separate Head Keeper pin card.
+
+## D-420: T-124 Q-T124-21: the claims trial runs on l19-ltd/Expo with two queens
+
+- **Date:** 2026-11-27
+- **Kind:** scope
+- **Tickets:** T-124, T-138, T-144
+- **Supersedes:** none
+
+**Question:** Run the claims trial on l19-ltd/Expo with paulternate and paulternate19 as the two queens (Q-T124-21)?
+
+**Options considered:**
+1. Yes: l19-ltd/Expo, queens on paulternate and paulternate19.
+2. Another repo or another second person.
+
+**Hive recommendation:** Option 1 for the repo (the queen proposed Expo in T-124).
+
+**Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-27, read at 12:54 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e2276), in the words "Yes".
+
+**Rationale:** Expo is a Level 19 app repo with an active team and a 465-line TODO.md, so T-144 (TODO.md to Backlog.md files) and T-138 have real traffic to measure. Trial rule: on a PR opened by queen B (paulternate19), the cross-review comes from paulternate, since GitHub never counts an author's own approval. Note for the T-138 bar: both queens act for the Head Keeper, so the trial measures two leads colliding on one repo, not a second person reading claims (T-124 section 9); if the bar needs a second person, T-138's brief says so.
