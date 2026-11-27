@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "ticket_id": "T-144",
+  "keeper_id": "paulternate19",
+  "role": "builder",
+  "gate": "full",
+  "directories": [
+    "examples/backlog-move"
+  ],
+  "claimed_at": "2026-11-27T20:55:49Z",
+  "expires_at": "2026-11-30T20:55:49Z",
+  "branches": [
+    "t-144-brief",
+    "t-144"
+  ]
+}
