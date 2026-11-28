@@ -8156,3 +8156,22 @@
 **Keeper choice:** Option 1, approved by the Head Keeper on 2026-11-27, read at 12:54 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e2276), in the words "Yes".
 
 **Rationale:** Expo is a Level 19 app repo with an active team and a 465-line TODO.md, so T-144 (TODO.md to Backlog.md files) and T-138 have real traffic to measure. Trial rule: on a PR opened by queen B (paulternate19), the cross-review comes from paulternate, since GitHub never counts an author's own approval. Note for the T-138 bar: both queens act for the Head Keeper, so the trial measures two leads colliding on one repo, not a second person reading claims (T-124 section 9); if the bar needs a second person, T-138's brief says so.
+
+## D-421: T-144 brief and T-126 merged
+
+- **Date:** 2026-11-27
+- **Kind:** scope
+- **Tickets:** T-126, T-144
+- **Supersedes:** none
+
+**Question:** Approve and merge #373 (the T-144 brief for moving Expo's backlog to Backlog.md files) at head 286ab6d, and #371 (T-126: the README leads with claims; bee words move to a glossary) at head 58b4f36, #373 first?
+
+**Options considered:**
+1. Yes, approve and merge both.
+2. Hold either.
+
+**Hive recommendation:** Option 1. #373 is Tier 3 (hive file): opus and sonnet guards asked for changes at a382c0f (the open row count is 97, not 96; a stale header; an unrecorded constraint cited as a ruling; the Keeper named in the first commit), fixed and squashed to one commit; an opus confirming guard approved at 286ab6d. Merging records Q-T144-1 to Q-T144-8 and rules none of them. #371 is Tier 2 with a code-owner review on README.md: the opus guard approved with three should-fixes, fixed in 1fbdf97, and a sonnet confirming guard approved.
+
+**Keeper choice:** Option 1 for both, approved by the Head Keeper on 2026-11-27, read at 8:43 PM Pacific Time (relayed in writing by the orchestrator, Orca item 11, event e2391), in the words "Approve waggle #371 (the README leads with claims; bee words move to a glossary)? → Approve, merge it" and "Approve waggle #373 (the T-144 brief for moving Expo's backlog to Backlog.md files)? → Approve, merge it". The waggle-approve line and an approving review were posted at 286ab6d3643eebba002beb4f4dd1ff6fb304dce8, and #373 merged through the gate with the head pinned, no bypass, as 5849ade. #371 then took a main-only catch-up to c66a515cb6236bc137a837cce98f41ed40f956fc (net diff unchanged), the code-owner approval was posted there, and it merged through the gate, no bypass, as 90539d8. The T-126 claim was then released as merged.
+
+**Rationale:** T-126 is the README step of T-124 section 11 (before outreach). The T-144 brief is build order step 5; its questions go to the Head Keeper on one card before any dispatch. The README's older Status table (latest release v0.1.1, rows marked on main that are in v0.1.4) was stale before T-126 and is left for a follow-up.
