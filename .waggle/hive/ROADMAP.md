@@ -23,7 +23,7 @@ T-130 · CLI: claim, scope, renew, release, claims · M · ready (D-417) · dogf
 T-128 · GitHub issue mirror, one way · M · ready (D-417) · dogfood · product
 T-131 · waggle next · S · ready (D-417) · dogfood · product
 T-132 · Reconcile sweep and its runner timer · M · ready (D-417) · dogfood · product
-T-144 · The dogfood repo's backlog: Backlog.md files plus issues · S · ready (D-417) · dogfood · ops
+T-144 · The dogfood repo's backlog: Backlog.md files plus issues (Expo, two queens) · S · brief written, ready (D-417) · dogfood · ops
 T-138 · Dogfood: two people's queens on one repo for 14 days · S · ready (D-417) · dogfood · ops
 T-126 · README leads with claims and the Backlog.md companion · S · claimed, in review (#371) · before outreach · docs
 T-135 · waggle init --claims · S · proposed · before outreach · product
