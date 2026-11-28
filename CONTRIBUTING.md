@@ -8,7 +8,7 @@ This file is for people building Waggle itself. If you use Waggle in your own re
 - **Build and test:** `scripts/check.sh` runs `go build ./...`, `go vet ./...`, the gofmt check and `go test -race ./...` as CI does, and stops at the first failing step. `--quick` skips the race tests; `--cross` also cross-builds `./cmd/waggle` for the release matrix and vets darwin and windows.
 - **Sign off every commit** with `git commit -s`. The DCO check fails a PR whose commits lack `Signed-off-by` (section 6).
 - New files start with an SPDX header; no em dashes or en dashes.
-- **Where work comes from.** Work items normally come from keepers' queens, who open issues and write claims for them. Humans can also open issues: use the bug or feature template, and report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). A maintainer may need to write a claim naming your branch before the repo's gate passes on your PR.
+- **Where work comes from.** Work items normally come from issues, and each task is claimed before work starts. Humans can also open issues: use the bug or feature template, and report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). A maintainer may need to write a claim naming your branch before the repo's gate passes on your PR. To claim an issue yourself with only `gh`, follow the [Level 0 convention](examples/agents-md-claims.md).
 - Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## 1. Two layers in this repo
@@ -34,7 +34,7 @@ These are not part of Waggle's schema.
 
 ## 4. Words in this repo's records
 
-Our hive's records (briefs, decisions, reviews) use bee words. The docs site uses them too, each with a short plain gloss, as [the hive page](https://getwaggle.dev/docs/hive/) does. Where a plain term exists (task, claim, lease, protected path, approver, reviewer, maintainer, merge gate, required check), the gloss uses it. Keeping this section current:
+Our hive's records (briefs, decisions, reviews) use bee words, and [docs/glossary.md](docs/glossary.md) gives each one a short definition. The docs site uses them too, each with a short plain gloss, as [the hive page](https://getwaggle.dev/docs/hive/) does. Where a plain term exists (task, claim, lease, protected path, approver, reviewer, maintainer, merge gate, required check), the gloss uses it. Keeping this section current:
 
 - Any brief that introduces a role or term updates this section in the same PR. The guard checks this: a new capitalized or code-formatted term in a brief with no entry here is a must-fix.
 - Each entry is one or two plain sentences. No decision IDs in an entry; sources stay in the brief that adds it.
