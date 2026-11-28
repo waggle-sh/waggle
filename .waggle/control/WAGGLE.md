@@ -11,6 +11,7 @@
 ## 2. Module Boundaries (Directory Leases)
 Define the top-level modules Builders may lease:
 - `cmd/waggle/`: Operator CLI entrypoint
+- `internal/claims/`: Claims layer for Backlog.md, GitHub issues and hive tasks: keys, the claim record, the ref store, task sources and the issue mirror (T-124, T-127)
 - `internal/comb/`: Unified Git ref `CombBackend` implementation
 - `internal/config/`: Parses `.waggle/control/config.yaml` into typed options (T-004)
 - `internal/decisions/`: Append-only `DECISIONS.md` writer behind `waggle decide` (T-006)
