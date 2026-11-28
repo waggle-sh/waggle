@@ -25,7 +25,7 @@ T-131 · waggle next · S · ready (D-417) · dogfood · product
 T-132 · Reconcile sweep and its runner timer · M · ready (D-417) · dogfood · product
 T-144 · The dogfood repo's backlog: Backlog.md files plus issues · S · ready (D-417) · dogfood · ops
 T-138 · Dogfood: two people's queens on one repo for 14 days · S · ready (D-417) · dogfood · ops
-T-126 · README leads with claims and the Backlog.md companion · S · proposed · before outreach · docs
+T-126 · README leads with claims and the Backlog.md companion · S · claimed, in review (#371) · before outreach · docs
 T-135 · waggle init --claims · S · proposed · before outreach · product
 T-141 · Governance config: owners, reprioritizers, steering paths · S · proposed · after the dogfood starts · product
 T-143 · Reprioritization check in the sweep · S · proposed · after the dogfood starts · product
