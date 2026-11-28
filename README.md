@@ -14,7 +14,7 @@ A **claim** says who holds a **task**, until when, and which **paths** it touche
 3. Keep that comment current while you work, and renew the expiry before it passes.
 4. When the work is merged, abandoned or handed off, remove the assignee, the label and the comment.
 
-Claims are cooperative. A claim stops honest agents and people from colliding. It is not a lock against anyone who can push. Anyone with push access can overwrite or delete any claim with `--force`, and holder names are self-asserted ([trust model](docs/claims.md#7-trust-model)).
+Claims are cooperative. A claim stops honest agents and people from colliding. It is not a lock against anyone who can push. Anyone with push access can overwrite or delete any claim with `git push --force`, and holder names are self-asserted ([trust model](docs/claims.md#7-trust-model)).
 
 ## What ships today, and what is in progress
 
@@ -22,7 +22,7 @@ Claims are cooperative. A claim stops honest agents and people from colliding. I
 | --- | --- |
 | The Level 0 convention (`gh` only, above) | Ships today |
 | The gate: a required GitHub check that fails a PR whose commits change paths outside the claim of the task they name | Ships today; see the [quick start](#quick-start) |
-| `waggle claim`, `waggle release` and `waggle force-release` for task ids such as `T-001` | Ships today; see [Writing a claim](#writing-a-claim) |
+| `waggle claim` and `waggle release` for task ids such as `T-001` | Ships today; see [Writing a claim](#writing-a-claim) |
 | The claims layer: claims for Backlog.md tasks and GitHub issues, with `scope`, `renew`, `release`, `claims`, `next` and `sweep`, expiry and a path overlap check | In progress (T-127 onward). The spec is [docs/claims.md](docs/claims.md). Its new commands do not exist yet |
 
 The gate is a required check named `verify-leases-and-tiers`. It works with any agent that pushes a branch and opens a PR. Each person runs their own agents on their own plan, so nobody shares agent credentials.
